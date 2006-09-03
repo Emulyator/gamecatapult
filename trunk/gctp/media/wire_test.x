@@ -280,7 +280,7 @@ Frame Frame_SCENE_ROOT {
      0.000000;0.000000;0.000000;;
 
      TextureFilename {
-      "gradriel_tex.bmp";
+      "Reflect.tga";
      }
     }
    }
@@ -323,7 +323,7 @@ Frame Frame_SCENE_ROOT {
    }
 
    MeshMaterialList {
-    2;
+    1;
     12;
     0,
     0,
@@ -343,17 +343,6 @@ Frame Frame_SCENE_ROOT {
      51.200001;
      0.000000;0.000000;0.000000;;
      0.000000;0.000000;0.000000;;
-    }
-
-    Material {
-     1.000000;1.000000;1.000000;1.000000;;
-     51.200001;
-     0.000000;0.000000;0.000000;;
-     0.000000;0.000000;0.000000;;
-
-     TextureFilename {
-      "gradriel_tex.bmp";
-     }
     }
    }
   }

@@ -154,13 +154,28 @@ namespace gctp { namespace graphic {
 //		dwShaderFlags |= D3DXSHADER_FORCE_PS_SOFTWARE_NOOPT;
 #endif
 		HRslt hr;
-		ID3DXBufferPtr err;
-		hr = D3DXCreateEffectFromFile( device().impl(), fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+		{
+			ID3DXBufferPtr err;
+			hr = D3DXCreateEffectFromFile( device().impl(), fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+			if(!hr && err) {
+				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+			}
+		}
 		if(!hr) {
-			hr = D3DXCreateEffectFromResource( device().impl(), NULL, fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+			{
+				ID3DXBufferPtr err;
+				hr = D3DXCreateEffectFromResource( device().impl(), NULL, fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+				if(!hr && err) {
+					GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+				}
+			}
 			if(!hr) {
 				if(string("skinnedmesh.fx") == fname) {
+					ID3DXBufferPtr err;
 					hr = D3DXCreateEffect( device().impl(), shaders[0], shader_sizes[0], NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+					if(!hr && err) {
+						GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+					}
 				}
 			}
 		}
@@ -173,7 +188,6 @@ namespace gctp { namespace graphic {
 			}
 		}
 		GCTP_TRACE(hr);
-		if(err) PRNN((const char *)err->GetBufferPointer());
 		return hr;
 	}
 

@@ -352,7 +352,7 @@ extern "C" int main(int argc, char *argv[])
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/untitled.x").lock();
+		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/untitled.x").lock();
 		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/room1.x").lock();
 
 		{

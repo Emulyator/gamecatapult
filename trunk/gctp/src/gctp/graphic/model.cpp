@@ -168,7 +168,7 @@ namespace gctp { namespace graphic {
 			if(effect_) {
 				D3DXEFFECTINSTANCE *_effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(effect_->GetBufferPointer());
 				if(_effect->pEffectFilename) {
-					PRNN("Effect _effect->pEffectFilename");
+					PRNN("Effect "<<_effect->pEffectFilename);
 					context().load(_effect->pEffectFilename);
 					brush_ = db()[_effect->pEffectFilename];
 					if(brush_) {;
