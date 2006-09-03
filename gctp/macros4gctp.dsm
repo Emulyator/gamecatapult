@@ -1,0 +1,352 @@
+'------------------------------------------------------------------------------
+'FILE DESCRIPTION: ﾏｸﾛ ﾌｧｲﾙの新規作成
+'------------------------------------------------------------------------------
+
+'***********************************
+' REVISION LOG ENTRY
+' Revision By: ...
+' Revised on 2002/12/31 16:42:02
+' Comment: ...
+'***********************************'
+
+
+Sub OpenCppH()
+'DESCRIPTION: H/Hpp ファイルと C/Cpp ファイルの表示切替
+    sn = ActiveDocument.FullName '現在編集中のファイル名
+    cl = len(sn) '現在のファイル名の文字数
+    set fs = CreateObject("Scripting.FileSystemObject") 'FileSystemObject
+
+    '現在が H なら C/Cpp を表示
+    if right(sn, 2) = ".h" then
+        s2 = left(sn, cl - 2) + ".cpp" 'Cpp ファイル名
+        if fs.FileExists(s2) = false then
+	        s2 = left(sn, cl - 2) + ".c" 'C ファイル名
+	        if fs.FileExists(s2) = false then
+				s2 = Replace(left(sn, cl - 2) + ".cpp", "\include\", "\src\") 'srcをincludeに変換して試す
+				if fs.FileExists(s2) = false then
+					s2 = Replace(left(sn, cl - 2) + ".cpp", "\Include\", "\src\")
+					if fs.FileExists(s2) = false then
+						s2 = Replace(left(sn, cl - 2) + ".c", "\include\", "\src\")
+						if fs.FileExists(s2) = false then
+							s2 = Replace(left(sn, cl - 2) + ".c", "\Include\", "\src\")
+							if fs.FileExists(s2) = false then
+								exit Sub 'ファイルが存在しないときは終了
+							end if
+						end if
+					end if
+				end if
+			end if
+        end if
+        Documents.Open s2, "Text" '開く
+    end if
+
+    '現在が Hpp なら Cpp を表示
+    if right(sn, 4) = ".hpp" then
+        s2 = left(sn, cl - 4) + ".cpp" 'Cpp ファイル名
+        if fs.FileExists(s2) = false then
+			s2 = Replace(left(sn, cl - 4) + ".cpp", "\include\", "\src\")
+            if fs.FileExists(s2) = false then
+				s2 = Replace(left(sn, cl - 4) + ".cpp", "\Include\", "\src\")
+				if fs.FileExists(s2) = false then
+		            exit Sub 'ファイルが存在しないときは終了
+	            end if
+            end if
+        end if
+        Documents.Open s2, "Text" '開く
+    end if
+
+    '現在が Cpp なら H/Hpp を表示
+    if right(sn, 4) = ".cpp" then
+        s2 = left(sn, cl - 4) + ".hpp" 'Hpp ファイル名
+        if fs.FileExists(s2) = false then
+	        s2 = left(sn, cl - 4) + ".h" 'H ファイル名
+	        if fs.FileExists(s2) = false then
+			    s2 = replace(left(sn, cl - 4) + ".hpp", "\src\", "\include\")
+                if fs.FileExists(s2) = false then
+					s2 = replace(left(sn, cl - 4) + ".hpp", "\Src\", "\include\")
+					if fs.FileExists(s2) = false then
+						s2 = replace(left(sn, cl - 4) + ".h", "\src\", "\include\")
+						if fs.FileExists(s2) = false then
+							s2 = replace(left(sn, cl - 4) + ".h", "\Src\", "\include\")
+							if fs.FileExists(s2) = false then
+				                exit Sub 'ファイルが存在しないときは終了
+			                end if
+		                end if
+	                end if
+                end if
+			end if
+        end if
+        Documents.Open s2, "Text" '開く
+    end if
+
+	'現在が C なら H を表示
+	if right(sn, 2) = ".c" then
+		s2 = left(sn, cl - 2) + ".h" 'H ファイル名
+		if fs.FileExists(s2) = false then
+			s2 = Replace(left(sn, cl - 2) + ".h", "\src\", "\include\") 'srcをincludeに変換して試す
+			if fs.FileExists(s2) = false then
+				s2 = Replace(left(sn, cl - 2) + ".h", "\Src\", "\include\") 'srcをincludeに変換して試す
+				if fs.FileExists(s2) = false then
+					exit Sub 'ファイルが存在しないときは終了
+				end if
+			end if
+		end if
+		Documents.Open s2, "Text" '開く
+	end if
+End Sub
+
+'現在のヘッダー ファイルが複数回インクルードされることを防ぎます。
+' これを行うためには 2 つの方法があります、#pragma once ディレクティブを 
+' 使うか、またはファイル全体を #ifndef/#endif 構造の中で囲む方法です。最初
+' の方法は大変簡潔ですが、VC++ 固有でそのため移植には適していません。 
+' 他のコンパイラでコンパイルする可能性がある場合は、#ifndef/#endif メソッド 
+' を使い、そうでない場合には #pragma once オプションを使う方が望ましいです。
+Sub IncludeOnce()
+'DESCRIPTION: 現在のヘッダー ファイルへコードを追加し、c/cpp ファイル毎に一度だけインクルードされるようにします。
+	
+	ext = ActiveDocument.Name
+	If ext = "" Then
+		If MsgBox("使用しているﾌｧｲﾙにはﾌｧｲﾙの拡張子がありません。" + _
+				vbLF + "これは C/C++ のﾍｯﾀﾞｰ ﾌｧｲﾙですか?", 4) = vbCancel Then
+			Exit Sub
+		End If
+		ext = "nofilenamegiven.h"
+	End If
+	DocName = UCase(ext)
+	pos = Instr(ext, ".")
+	Do While pos <> 1
+		ext = Mid(ext, pos, (Len(ext) - pos + 1))
+		pos = Instr(ext, ".")
+	Loop
+	ext = LCase(ext)
+	If ext = ".h" Or ext = ".hpp" Then
+		pos = Instr(DocName, ".")
+		ActiveDocument.Selection.StartOfDocument (False)
+		Prefix = ""
+		If Instr(ActiveDocument.FullName, "\gctp\audio\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_AUDIO_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\audio\dx\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_AUDIO_DX_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\graphic\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_GRAPHIC_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\graphic\dx\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_GRAPHIC_DX_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\input\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_INPUT_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\input\dx\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_INPUT_DX_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\core\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_CORE_"
+		ElseIf Instr(ActiveDocument.FullName, "\gctp\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GCTP_"
+		ElseIf Instr(ActiveDocument.FullName, "\luapp\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_LUAPP_"
+		ElseIf Instr(ActiveDocument.FullName, "\luapp\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_LUAPP_"
+		ElseIf Instr(ActiveDocument.FullName, "\gutil\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_GUTIL_"
+		ElseIf Instr(ActiveDocument.FullName, "\lwpp\"+ActiveDocument.Name) > 0 Then
+			Prefix = "_LWPP_"
+		Else
+			Prefix = "_"
+		End If
+		ControlVarName = Prefix + Left(DocName, pos - 1) + "_" + UCase(Right(ext, len(ext) - 1)) + "_"
+		ActiveDocument.Selection = "#ifndef " + ControlVarName + vbLf + "#define " + ControlVarName + vbLf
+		ActiveDocument.Selection.EndOfDocument(False)
+		ActiveDocument.Selection = vbLf + "#endif //" + ControlVarName
+	Else
+		MsgBox("このﾏｸﾛは .h または .hpp ﾌｧｲﾙ上でのみ実行できます")
+	End If
+End Sub
+
+Sub CommentSkel()
+'DESCRIPTION: JavaDoc型コメントのスケルトンを挿入
+	Author = "SAM (T&GG, Org.)"
+	EMail = "sowwa_NO_SPAM_THANKS@water.sannet.ne.jp"
+'Begin Recording
+	ActiveDocument.Selection = "/**"
+	ActiveDocument.Selection.NewLine
+	ActiveDocument.Selection = " *"
+	ActiveDocument.Selection.NewLine
+	ActiveDocument.Selection = "* @author " + Author + "<" + EMail + ">"
+	ActiveDocument.Selection.NewLine
+	ActiveDocument.Selection = "* @date " + CStr(Now)
+	ActiveDocument.Selection.NewLine
+	ActiveDocument.Selection = "* Copyright (C) 2001,2002,2003,2004 " + Author +". All rights reserved."
+	ActiveDocument.Selection.NewLine
+	ActiveDocument.Selection = "*/"
+'End Recording
+End Sub
+
+
+'.NET版マクロ
+    Sub OpenCppH()
+        'DESCRIPTION: H/Hpp ファイルと C/Cpp ファイルの表示切替
+        Dim sn, cl, fs, s2
+        sn = DTE.ActiveDocument.FullName     '現在編集中のファイル名
+        cl = Len(sn) '現在のファイル名の文字数
+        fs = CreateObject("Scripting.FileSystemObject")         'FileSystemObject
+
+        '現在が H なら C/Cpp を表示
+        If Right(sn, 2) = ".h" Then
+            s2 = Left(sn, cl - 2) + ".cpp" 'Cpp ファイル名
+            If fs.FileExists(s2) = False Then
+                s2 = Left(sn, cl - 2) + ".c" 'C ファイル名
+                If fs.FileExists(s2) = False Then
+                    s2 = Replace(Left(sn, cl - 2) + ".cpp", "\include\", "\src\") 'srcをincludeに変換して試す
+                    If fs.FileExists(s2) = False Then
+                        s2 = Replace(Left(sn, cl - 2) + ".cpp", "\Include\", "\src\")
+                        If fs.FileExists(s2) = False Then
+                            s2 = Replace(Left(sn, cl - 2) + ".c", "\include\", "\src\")
+                            If fs.FileExists(s2) = False Then
+                                s2 = Replace(Left(sn, cl - 2) + ".c", "\Include\", "\src\")
+                                If fs.FileExists(s2) = False Then
+                                    Exit Sub 'ファイルが存在しないときは終了
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+            DTE.Documents.Open(s2, "Text") '開く
+        End If
+
+        '現在が Hpp なら Cpp を表示
+        If Right(sn, 4) = ".hpp" Then
+            s2 = Left(sn, cl - 4) + ".cpp" 'Cpp ファイル名
+            If fs.FileExists(s2) = False Then
+                s2 = Replace(Left(sn, cl - 4) + ".cpp", "\include\", "\src\")
+                If fs.FileExists(s2) = False Then
+                    s2 = Replace(Left(sn, cl - 4) + ".cpp", "\Include\", "\src\")
+                    If fs.FileExists(s2) = False Then
+                        Exit Sub 'ファイルが存在しないときは終了
+                    End If
+                End If
+            End If
+            DTE.Documents.Open(s2, "Text") '開く
+        End If
+
+        '現在が Cpp なら H/Hpp を表示
+        If Right(sn, 4) = ".cpp" Then
+            s2 = Left(sn, cl - 4) + ".hpp" 'Hpp ファイル名
+            If fs.FileExists(s2) = False Then
+                s2 = Left(sn, cl - 4) + ".h" 'H ファイル名
+                If fs.FileExists(s2) = False Then
+                    s2 = Replace(Left(sn, cl - 4) + ".hpp", "\src\", "\include\")
+                    If fs.FileExists(s2) = False Then
+                        s2 = Replace(Left(sn, cl - 4) + ".hpp", "\Src\", "\include\")
+                        If fs.FileExists(s2) = False Then
+                            s2 = Replace(Left(sn, cl - 4) + ".h", "\src\", "\include\")
+                            If fs.FileExists(s2) = False Then
+                                s2 = Replace(Left(sn, cl - 4) + ".h", "\Src\", "\include\")
+                                If fs.FileExists(s2) = False Then
+                                    Exit Sub 'ファイルが存在しないときは終了
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+            DTE.Documents.Open(s2, "Text") '開く
+        End If
+
+        '現在が C なら H を表示
+        If Right(sn, 2) = ".c" Then
+            s2 = Left(sn, cl - 2) + ".h" 'H ファイル名
+            If fs.FileExists(s2) = False Then
+                s2 = Replace(Left(sn, cl - 2) + ".h", "\src\", "\include\") 'srcをincludeに変換して試す
+                If fs.FileExists(s2) = False Then
+                    s2 = Replace(Left(sn, cl - 2) + ".h", "\Src\", "\include\") 'srcをincludeに変換して試す
+                    If fs.FileExists(s2) = False Then
+                        Exit Sub 'ファイルが存在しないときは終了
+                    End If
+                End If
+            End If
+            DTE.Documents.Open(s2, "Text") '開く
+        End If
+    End Sub
+
+    '現在のヘッダー ファイルが複数回インクルードされることを防ぎます。
+    ' これを行うためには 2 つの方法があります、#pragma once ディレクティブを 
+    ' 使うか、またはファイル全体を #ifndef/#endif 構造の中で囲む方法です。最初
+    ' の方法は大変簡潔ですが、VC++ 固有でそのため移植には適していません。 
+    ' 他のコンパイラでコンパイルする可能性がある場合は、#ifndef/#endif メソッド 
+    ' を使い、そうでない場合には #pragma once オプションを使う方が望ましいです。
+    Sub IncludeOnce()
+        'DESCRIPTION: 現在のヘッダー ファイルへコードを追加し、c/cpp ファイル毎に一度だけインクルードされるようにします。
+
+        Dim ext, DocName, pos, Prefix, ControlVarName
+        ext = ActiveDocument.Name
+        If ext = "" Then
+            If MsgBox("使用しているﾌｧｲﾙにはﾌｧｲﾙの拡張子がありません。" + _
+              vbLf + "これは C/C++ のﾍｯﾀﾞｰ ﾌｧｲﾙですか?", 4) = vbCancel Then
+                Exit Sub
+            End If
+            ext = "nofilenamegiven.h"
+        End If
+        DocName = UCase(ext)
+        pos = InStr(ext, ".")
+        Do While pos <> 1
+            ext = Mid(ext, pos, (Len(ext) - pos + 1))
+            pos = InStr(ext, ".")
+        Loop
+        ext = LCase(ext)
+        If ext = ".h" Or ext = ".hpp" Then
+            pos = InStr(DocName, ".")
+            ActiveDocument.Selection.StartOfDocument(False)
+            Prefix = ""
+            If InStr(ActiveDocument.FullName, "\gctp\audio\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_AUDIO_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\audio\dx\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_AUDIO_DX_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\graphic\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_GRAPHIC_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\graphic\dx\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_GRAPHIC_DX_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\input\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_INPUT_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\input\dx\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_INPUT_DX_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\core\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_CORE_"
+            ElseIf InStr(ActiveDocument.FullName, "\gctp\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GCTP_"
+            ElseIf InStr(ActiveDocument.FullName, "\luapp\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_LUAPP_"
+            ElseIf InStr(ActiveDocument.FullName, "\luapp\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_LUAPP_"
+            ElseIf InStr(ActiveDocument.FullName, "\gutil\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_GUTIL_"
+            ElseIf InStr(ActiveDocument.FullName, "\lwpp\" + ActiveDocument.Name) > 0 Then
+                Prefix = "_LWPP_"
+            Else
+                Prefix = "_"
+            End If
+            ControlVarName = Prefix + Left(DocName, pos - 1) + "_" + UCase(Right(ext, Len(ext) - 1)) + "_"
+            ActiveDocument.Selection.Text() = "#ifndef " + ControlVarName + vbLf + "#define " + ControlVarName + vbLf
+            ActiveDocument.Selection.EndOfDocument(False)
+            ActiveDocument.Selection.Text() = vbLf + "#endif //" + ControlVarName
+        Else
+            MsgBox("このﾏｸﾛは .h または .hpp ﾌｧｲﾙ上でのみ実行できます")
+        End If
+    End Sub
+
+    Sub CommentSkel()
+        'DESCRIPTION: JavaDoc型コメントのスケルトンを挿入
+        Dim Author, Email
+        Author = "SAM (T&GG, Org.)"
+        EMail = "sowwa_NO_SPAM_THANKS@water.sannet.ne.jp"
+        'Begin Recording
+        ActiveDocument.Selection.Text() = "/**"
+        ActiveDocument.Selection.NewLine()
+        ActiveDocument.Selection.Text() = " *"
+        ActiveDocument.Selection.NewLine()
+        ActiveDocument.Selection.Text() = "* @author " + Author + "<" + Email + ">"
+        ActiveDocument.Selection.NewLine()
+        ActiveDocument.Selection.Text() = "* @date " + CStr(Now)
+        ActiveDocument.Selection.NewLine()
+        ActiveDocument.Selection.Text() = "* Copyright (C) 2001,2002,2003,2004 " + Author + ". All rights reserved."
+        ActiveDocument.Selection.NewLine()
+        ActiveDocument.Selection.Text() = "*/"
+        'End Recording
+    End Sub
