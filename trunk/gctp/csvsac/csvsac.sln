@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "csvsac", "csvsac.vcproj", "{B81D0E70-7630-4F92-BA80-70757C8CCA29}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DF73FCEA-E07B-4B41-8B28-7341CD82E102} = {DF73FCEA-E07B-4B41-8B28-7341CD82E102}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "..\core.vcproj", "{DF73FCEA-E07B-4B41-8B28-7341CD82E102}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{B81D0E70-7630-4F92-BA80-70757C8CCA29}.Debug.ActiveCfg = Debug|Win32
+		{B81D0E70-7630-4F92-BA80-70757C8CCA29}.Debug.Build.0 = Debug|Win32
+		{B81D0E70-7630-4F92-BA80-70757C8CCA29}.Release.ActiveCfg = Release|Win32
+		{B81D0E70-7630-4F92-BA80-70757C8CCA29}.Release.Build.0 = Release|Win32
+		{DF73FCEA-E07B-4B41-8B28-7341CD82E102}.Debug.ActiveCfg = Debug|Win32
+		{DF73FCEA-E07B-4B41-8B28-7341CD82E102}.Debug.Build.0 = Debug|Win32
+		{DF73FCEA-E07B-4B41-8B28-7341CD82E102}.Release.ActiveCfg = Release|Win32
+		{DF73FCEA-E07B-4B41-8B28-7341CD82E102}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

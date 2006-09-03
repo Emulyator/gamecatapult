@@ -1,0 +1,127 @@
+・ロードマップ（取らぬ狸の皮算用）
+0.3->0.4（ライブラリへ）
+DXラップ部分を一通り整える
+またその分離。以下にあるように５つのモジュールに分割
+平行してLWSDKのC++ラッパーを用意(lwppとして別プロジェクト)
+Xファイルエキスポーターを自作する
+
+0.4->0.5（フレームワークへ）
+
+0.5->0.6（ミドルウェアへ）
+
+0.6->0.7（エンジンへ）
+
+0.7->0.8 (エンジンモジュールの追加)
+
+0.8->0.9 (サンプルゲーム)
+
+0.9->1.0 (ドキュメントを整える)
+
+・全体
+GameCatapult Input -- DirectInputなど入力ペリフェラルAPIラップ関連
+GameCatapult Windows -- ウィンドウクラスなど、MS Windows固有のもの
+現在sceneに入っているこれらを分割すべきか…
+
+デバッグビルドはdllランタイム版も用意する
+
+いいかげん、ドキュメントをちゃんとする。
+
+・Core
+ウィンドウクラスを、WTL版以外にMFC版、FOX版も用意する。
+
+Fileをbfstreamの派生に。truncateやstrstream << File()等の
+インターフェースは残して。
+
+非同期ファイル読み込みに対応する。Windowsでは、スレッド立てれば良いだけかな。
+DMAを使うには、どうしたら良いのだろう？自動でDMAしている？多分そうなんでしょう
+ちがかったらまた考える。とりあえずスレッド立てとけば、非同期にはなるんだし。
+
+Propertyにメンバメソッド呼び出し機能の追加。インターフェースは
+void (*)(lua_State L)に統一すれば、やれそう。
+Property要素を自動でluaにバインドする機構を用意する。
+
+まだぜんぜん出来ていない…
+幾何演算 衝突解決 AIフレームワーク メッセージイベント シグナル
+
+・Graphic
+graphic名前空間に全部突っ込んで、モジュール分けする
+根本的に整理。
+仕事で入用になるので、複数ビューに本格対応
+
+あと、Modelをgctp::graphicだけでなくgctpにも定義して、こっちはもっと抽象化する
+テキストだろうとスプライトだろうとポリゴンだろうと、表示可能物で、というかdraw(Stance)があるものは全部、Model
+
+・Audio
+ACMとOggVorbisに対応させる
+Clipの機構は、ちょっと後回し。ACIDかLiveをオーサリングソフトにできるといいのだが…
+なにか、もっと別のオーサリングソフトは無いものか。Music Studio Producerはどうだろう？
+DirectMusicProducerはまるで駄目なので。
+任意地点へのシークを実装する
+
+・シーン管理
+
+gctp::Objectを一種のプラグインサーバーにする
+下のクラスツリーでメンバとして持たせようとしている各要素、Figure,MediaMapなどは、
+Objectにアタッチされるプラグインにする｡
+そのために、今のInvoker/InvokeeをSignal/Slot機構にする
+
+現在あるのは、Entity Invoker&Invokee MatrixTree Context
+
+SceneStaff : 
+	+ update()->doUpdate()
+	+ draw()->doDraw()
+	: chain( Scene )
+
+Scene<-SceneStaff : シーン
+	+ Invoker( update + draw + collisiondetect .... )
+		//この辺自由に追加できるようにするには、どうしたら良いだろう？）
+	+ MatrixTree
+	+ add( SceneStaff )
+
+Ambient<-SceneStaff : Sceneに繋がれるが、位置を持たない。
+　　　// これ、通常ありえないんじゃないだろうか｡ 大抵効果範囲という位置情報をもつはず
+　　　// つまりEntity派生になるはず
+　　　// 一戸でいいなら、効果範囲に無限大を入れられれば良い
+		// BGMや環境光、平行光源、レンダリングターゲット、描画パケット処理者
+	+ flag update draw colision  どれに繋ぐか
+	+ chain( Scene ) // Invoker update/draw に登録するが、 MatrixTreeに連結しない
+
+Entity<-SceneStaff : Sceneに繋がれる、空間位置をもつ存在。キャラや背景、カメラ、ライト、音源
+	+ Stance
+	+ Skeleton
+	+ chain( Scene ) // MatrixTreeにも連結
+
+Actor<-Entity : EntityのうちキャラクターなどMediaMap制御が有効なもの
+		// あと、汎用のデコレート機能を提供<-これがオブジェクトのプラグイン機構を利用する
+	+ Figure
+	+ MediaState
+	+ MediaMap
+	+ Ghost
+	+ doDraw()->MediaMap.setToFigure( MediaState Figure ),Figure.draw()
+	+ doUpdate()->Ghost.update( MediaState )
+
+MediaMap : (状態→表示すべきモデル、再生すべきモーション、音 の対応表)
+	+ Model*
+	+ Motion*
+	+ Player*
+	+ setToFigure(state, Figure)
+
+Figure : 現在の Model & Motion & Sound
+	+ Model*
+	+ MotionTracker <- Motion*
+	+ AudioTracker <- Player* : play or stop
+
+Ghost : AI処理  あるいは単純に状態の更新 Entityの参照を渡されて動く
+	+ update( Entity ) <- doUpdate()
+	- updateMediaState( MediaState )
+	- editPose( Pose )
+
+Invoker/Invokee --- プライオリティー順に全部実行して回るもの
+Talker/Listener --- 特定のイベントに反応するメソッドのみ呼び出すもの
+		// これはプロパティー機構で実装してしまおう。イベント名が"onUpdate"なら
+		// "onUpdate"でメソッド登録しておけ、と。Talkerにはオブジェクトのハンドルを渡す
+		// 返り値がboolで、これはハンドルしたかどうか（呼び出すメソッドの検索を打ち切るか）、
+		// の判断に使う
+ -> この辺Signal/Slotとしてまとめる
+
+リポジトリ更新
