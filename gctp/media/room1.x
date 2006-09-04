@@ -24,9 +24,9 @@ template SkinWeights {
 }
 
 template EffectInstance {
- <E331F7E4-0559-4cc2-8E99-1CEC1657928F>
+ <e331f7e4-0559-4cc2-8e99-1cec1657928f>
  STRING EffectFilename;
- [ ... ]
+ [...]
 }
 
 Frame Frame_SCENE_ROOT {

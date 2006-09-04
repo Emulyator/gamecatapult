@@ -34,7 +34,7 @@ namespace gctp {
 				diff.normalize();
 				r = (std::max)(r, rhs.r) + d/2;
 				Vector p1 = c+diff*r, p2 = rhs.c-diff*rhs.r;
-				r = distance(p1, p2);
+				r = (std::max)(r, distance(p1, p2));
 				c = (p1+p2)/2;
 			}
 			return *this;
