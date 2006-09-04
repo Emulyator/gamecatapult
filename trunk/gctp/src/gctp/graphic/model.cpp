@@ -136,9 +136,6 @@ namespace gctp { namespace graphic {
 		MeshVertexLock _src(src.mesh_);
 		if(_dst && _src) {
 			for(uint i = 0; i < vnum; i++, _dst.step(), _src.step()) {
-				//Vector *pdst = _dst;
-				//Vector *psrc = _src;
-				//mat.transformPoint(*pdst, *psrc);
 				*_dst = mat * *_src;
 			}
 		}
@@ -351,7 +348,6 @@ namespace gctp { namespace graphic {
 	{
 		HRslt hr;
 		if(wire_) {
-			device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
 			if(brush_ && *brush_) {
 				Brush &brush = const_cast<Brush &>(*brush_);
 				Matrix wv = mat*getView();
@@ -384,14 +380,20 @@ namespace gctp { namespace graphic {
 						hr = brush->end();
 						if(!hr) GCTP_TRACE(hr);
 					}
-					else hr = wire_->draw(i);
+					else {
+						device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
+						hr = wire_->draw(i);
+						device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+					}
 
 					if(!hr) return hr;
 				}
 			}
-			else wire_->draw();
-			
-			device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+			else {
+				device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
+				wire_->draw();
+				device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+			}
 		}
 		if(mesh_) {
 			if(brush_ && *brush_) {

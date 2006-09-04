@@ -319,7 +319,7 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/wire_test.x").lock();
+		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/wire_test.x").lock();
 
 		for(int i = 0; i < 20; i++) {
 			entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/gradriel.x").lock();
@@ -352,8 +352,8 @@ extern "C" int main(int argc, char *argv[])
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 		}
 
-		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/untitled.x").lock();
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/room1.x").lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/cell.x").lock();
+		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/room1.x").lock();
 
 		{
 			graphic::setAmbient(Color(0.5f,0.5f,0.5f));
