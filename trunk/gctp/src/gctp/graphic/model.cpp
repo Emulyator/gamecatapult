@@ -205,7 +205,7 @@ namespace gctp { namespace graphic {
 
 	Vector Model::calcCenter() const
 	{
-		AABB aabb = getAABB();
+		AABox aabb = getAABB();
 		return aabb.center();
 	}
 
@@ -228,11 +228,11 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
-	AABB Model::getAABB() const
+	AABox Model::getAABB() const
 	{
 		if(wire_) return wire_->getAABB();
-		if(!mesh_) return AABB(VectorC(0, 0, 0));
-		AABB ret;
+		if(!mesh_) return AABox(VectorC(0, 0, 0));
+		AABox ret;
 		
 		uint vnum = mesh_->GetNumVertices();
 
@@ -247,11 +247,11 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
-	AABB Model::getAABB(const Matrix &mat) const
+	AABox Model::getAABB(const Matrix &mat) const
 	{
 		if(wire_) return wire_->getAABB(mat);
-		if(!mesh_) return AABB(VectorC(0, 0, 0));
-		AABB ret;
+		if(!mesh_) return AABox(VectorC(0, 0, 0));
+		AABox ret;
 		Vector vec;
 		
 		uint vnum = mesh_->GetNumVertices();
@@ -1888,9 +1888,9 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
-	AABB WireMesh::getAABB() const
+	AABox WireMesh::getAABB() const
 	{
-		AABB ret;
+		AABox ret;
 		VertexBuffer::ScopedLock vbl(*const_cast<Pointer<VertexBuffer>&>(vbuf_));
 		if(vbl.buf) {
 			uint vnum = vbuf_->numVerticies();
@@ -1903,9 +1903,9 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
-	AABB WireMesh::getAABB(const Matrix &mat) const
+	AABox WireMesh::getAABB(const Matrix &mat) const
 	{
-		AABB ret;
+		AABox ret;
 		VertexBuffer::ScopedLock vbl(*const_cast<Pointer<VertexBuffer>&>(vbuf_));
 		if(vbl.buf) {
 			Vector vec;

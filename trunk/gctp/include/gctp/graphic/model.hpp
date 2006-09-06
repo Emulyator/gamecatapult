@@ -10,7 +10,7 @@
 #include <gctp/graphic.hpp>
 #include <gctp/line.hpp>
 #include <gctp/sphere.hpp>
-#include <gctp/aabb.hpp>
+#include <gctp/aabox.hpp>
 #include <gctp/xfile.hpp>
 #include <gctp/skeleton.hpp>
 #include <gctp/graphic/material.hpp>
@@ -130,9 +130,9 @@ namespace gctp { namespace graphic {
 		float calcRadius(const Vector &center) const;
 
 		/// AABBを計測
-		AABB getAABB() const;
+		AABox getAABB() const;
 		/// ワールド座標系でのAABBを返す
-		AABB getAABB(const Matrix &mat) const;
+		AABox getAABB(const Matrix &mat) const;
 
 	protected:
 		Pointer<VertexBuffer>	vbuf_;
@@ -212,9 +212,9 @@ namespace gctp { namespace graphic {
 		}
 
 		/// AABBを返す
-		AABB getAABB() const;
+		AABox getAABB() const;
 		/// ワールド座標系でのAABBを返す
-		AABB getAABB(const Matrix &mat) const;
+		AABox getAABB(const Matrix &mat) const;
 		/// 交差テスト
 		bool hasIntersected(const RayLine &ray, ulong &idx, float &u, float &v, float &dist) const;
 		/// 交差テスト

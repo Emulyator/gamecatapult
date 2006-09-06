@@ -325,7 +325,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\include\gctp\aabb.hpp"
+				RelativePath="..\..\..\include\gctp\aabox.hpp"
 				>
 			</File>
 			<File
@@ -445,6 +445,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\frustum.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\grabball.hpp"
 				>
 			</File>
@@ -497,11 +501,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\obb.hpp"
+				RelativePath="..\..\..\include\gctp\object.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\object.hpp"
+				RelativePath="..\..\..\include\gctp\obox.hpp"
 				>
 			</File>
 			<File
@@ -642,10 +646,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\vector.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\viewfrustum.hpp"
 				>
 			</File>
 			<File

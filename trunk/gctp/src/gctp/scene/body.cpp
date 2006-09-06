@@ -53,10 +53,10 @@ namespace gctp { namespace scene {
 	 */
 	void Body::update()
 	{
-		bs_.c = root()->val.wtm().position(); bs_.r = 0;
 		for(PointerList<Flesh>::iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
 			(*i)->update();
-			bs_ |= (*i)->bs();
+			if(i == fleshies_.begin()) bs_ = (*i)->bs();
+			else bs_ |= (*i)->bs();
 		}
 	}
 
