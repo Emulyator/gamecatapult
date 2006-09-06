@@ -1,11 +1,11 @@
-#ifndef _GCTP_AABB_HPP_
-#define _GCTP_AABB_HPP_
+#ifndef _GCTP_AABOX_HPP_
+#define _GCTP_AABOX_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
 #endif // GCTP_ONCE
 /** @file
- * GameCatapult AABBクラスヘッダファイル
+ * GameCatapult Axis-Aligned Box クラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/03/02 14:48:18
@@ -17,13 +17,16 @@
 
 namespace gctp {
 
-	/// Axis Aligned Bouncing Box
-	struct AABB {
+	/** 軸並行ボックスクラス
+	 *
+	 * 主に境界ボックス(AABB:Axis-Aligned Bounding Box)として使われる
+	 */
+	struct AABox {
 		Vector upper;
 		Vector lower;
 
-		AABB() {}
-		AABB(const Vector &src) : upper(src), lower(src) {}
+		AABox() {}
+		AABox(const Vector &src) : upper(src), lower(src) {}
 
 		void initialize(const Vector &vec)
 		{
@@ -48,9 +51,9 @@ namespace gctp {
 			return false;
 		}
 
-		AABB operator & (const AABB &rhs) const
+		AABox operator & (const AABox &rhs) const
 		{
-			AABB ret;
+			AABox ret;
 			ret.upper.x = (std::min)(upper.x, rhs.upper.x);
 			ret.upper.y = (std::min)(upper.y, rhs.upper.y);
 			ret.upper.z = (std::min)(upper.z, rhs.upper.z);
@@ -60,9 +63,9 @@ namespace gctp {
 			return ret;
 		}
 
-		AABB operator | (const AABB &rhs) const
+		AABox operator | (const AABox &rhs) const
 		{
-			AABB ret;
+			AABox ret;
 			ret.upper.x = (std::max)(upper.x, rhs.upper.x);
 			ret.upper.y = (std::max)(upper.y, rhs.upper.y);
 			ret.upper.z = (std::max)(upper.z, rhs.upper.z);
@@ -77,18 +80,18 @@ namespace gctp {
 			return (lower.x <= upper.x && lower.y <= upper.y && lower.z <= upper.z);
 		}
 
-		bool isColliding(const AABB &with) const
+		bool isColliding(const AABox &with) const
 		{
 			return ((*this) & with).isCorrect();
 		}
 		
 		Vector center() const
 		{
-			return (upper + lower)/2.0f;
+			return (upper + lower)/Real(2);
 		}
 	};
 
-	template<class E, class T> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, AABB const & v)
+	template<class E, class T> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, AABox const & v)
 	{
 		os<<"{"<<v.upper<<"-"<<v.lower<<"}";
 		return os;
@@ -96,4 +99,4 @@ namespace gctp {
 
 } // namespace gctp
 
-#endif //_GCTP_AABB_HPP_
+#endif //_GCTP_AABOX_HPP_

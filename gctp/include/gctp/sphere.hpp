@@ -18,24 +18,26 @@ namespace gctp {
 	/// 球クラス
 	struct Sphere {
 		Vector	c; ///< 中心点
-		float	r; ///< 半径
+		Real	r; ///< 半径
 		
 		/// コンストラクタ
 		Sphere() {}
 		/// コンストラクタ
-		Sphere(const Vector &_c, const float _r) : c(_c), r(_r) {}
+		Sphere(const Vector &c, const Real r) : c(c), r(r) {}
 		
 		/// 自分とrhsを包括する球に
 		Sphere &operator |= (const Sphere &rhs)
 		{
 			Vector diff = c - rhs.c;
-			float d = diff.length();
+			Real d = diff.length();
 			if(d+rhs.r > r) {
-				diff.normalize();
-				r = (std::max)(r, rhs.r) + d/2;
-				Vector p1 = c+diff*r, p2 = rhs.c-diff*rhs.r;
-				r = (std::max)(r, distance(p1, p2));
-				c = (p1+p2)/2;
+				if(d > Real(0)) {
+					diff /= d; // normalize
+					Vector p1 = c-diff*r, p2 = rhs.c+diff*rhs.r;
+					r = distance(p1, p2);
+					c = (p1+p2)/2;
+				}
+				else r = (std::max)(r, rhs.r);
 			}
 			return *this;
 		}
@@ -48,7 +50,7 @@ namespace gctp {
 
 		bool isColliding(const Sphere &with, Vector &inc) const
 		{
-			inc = Vector(with.c - c);
+			inc = with.c - c;
 			return (inc.length() <= r + with.r);
 		}
 		bool isColliding(const Sphere &with) const
@@ -60,7 +62,7 @@ namespace gctp {
 	/// レイと球の交差テスト
 	inline bool intersection(const RayLine &ray, const Sphere &sphere)
 	{
-	    float dist2 = distance2(sphere.c, ray);
+	    Real dist2 = distance2(sphere.c, ray);
 		return dist2 <= sphere.r*sphere.r;
 	}
 
@@ -69,19 +71,19 @@ namespace gctp {
 	{
 		// set up quadratic Q(t) = a*t^2 + 2*b*t + c
 		Vector diff = ray.s - sphere.c;
-		float A = ray.v.length2();
-		float B = diff*ray.v;
-		float C = diff.length2()-sphere.r*sphere.r;
+		Real A = ray.v.length2();
+		Real B = diff*ray.v;
+		Real C = diff.length2()-sphere.r*sphere.r;
 
-		float T[2];
-		float discr = B*B - A*C;
+		Real T[2];
+		Real discr = B*B - A*C;
 		if( discr < 0.0f ) {
 			quantity = 0;
 			return false;
 		}
 		else if( discr > 0.0f ) {
-			float root = sqrtf(discr);
-			float invA = 1.0f/A;
+			Real root = sqrtf(discr);
+			Real invA = 1.0f/A;
 			T[0] = (-B - root)*invA;
 			T[1] = (-B + root)*invA;
 

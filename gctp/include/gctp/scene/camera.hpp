@@ -11,7 +11,7 @@
 #include <gctp/signal.hpp>
 #include <gctp/types.hpp>
 #include <gctp/strutumnode.hpp>
-#include <gctp/viewfrustum.hpp>
+#include <gctp/frustum.hpp>
 #include <gctp/scene/renderingnode.hpp>
 #include <gctp/tuki.hpp>
 
@@ -93,13 +93,10 @@ namespace gctp { namespace scene {
 			return frustum_.isColliding(bs);
 		}
 
-		/// 境界球
-		const Sphere &bs() { return bs_; }
-
 		/// 視錘台
-		const ViewFrustum &frustum() { return frustum_; }
+		const Frustum &frustum() { return frustum_; }
 
-		/// 視錘台と境界球を更新
+		/// 視錘台を更新
 		void update();
 
 	protected:
@@ -115,8 +112,7 @@ namespace gctp { namespace scene {
 		float fov_;
 		Size2f window_;
 		Rectf subwindow_;
-		Sphere bs_;
-		ViewFrustum frustum_;
+		Frustum frustum_;
 
 		mutable Camera* backup_current_;
 		GCTP_TLS static Camera* current_;

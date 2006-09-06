@@ -9,7 +9,7 @@
 #include <gctp/scene/camera.hpp>
 #include <gctp/scene/stage.hpp>
 #include <gctp/graphic.hpp>
-#include <gctp/aabb.hpp>
+#include <gctp/aabox.hpp>
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -91,47 +91,6 @@ namespace gctp { namespace scene {
 	{
 		node_->val.wtm().orthoNormalize();
 		frustum_.set(view()*projection());
-
-		Vector p[8];
-		Size2f size = screen();
-		if(isPerspective()) {
-			float aspect = size.x/size.y;
-			float arctan = atanf(fov_/2);
-			Vector up = node_->val.wtm().up()*arctan*nearclip_,
-				right = node_->val.wtm().right()*arctan*aspect*nearclip_;
-			p[0] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_+up+right;
-			p[1] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_+up-right;
-			p[2] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_-up+right;
-			p[3] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_-up-right;
-			up = node_->val.wtm().up()*arctan*farclip_;
-			right = node_->val.wtm().right()*arctan*aspect*farclip_;
-			p[4] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_+up+right;
-			p[5] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_+up-right;
-			p[6] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_-up+right;
-			p[7] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_-up-right;
-		}
-		else {
-			Vector up = node_->val.wtm().up()*(size.y/2),
-				right = node_->val.wtm().right()*(size.x/2);
-			p[0] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_+up+right;
-			p[1] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_+up-right;
-			p[2] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_-up+right;
-			p[3] = node_->val.wtm().position()+node_->val.wtm().at()*nearclip_-up-right;
-			p[4] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_+up+right;
-			p[5] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_+up-right;
-			p[6] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_-up+right;
-			p[7] = node_->val.wtm().position()+node_->val.wtm().at()*farclip_-up-right;
-		}
-		AABB aabb(p[0]);
-		for(int i = 1; i < 8; i++) {
-			aabb.add(p[i]);
-		}
-		bs_.c = aabb.center();
-		bs_.r = 0;
-		for(int i = 0; i < 8; i++) {
-			float r = distance(bs_.c, p[i]);
-			if(bs_.r < r) bs_.r = r;
-		}
 	}
 	
 	bool Camera::setUp(luapp::Stack &L)

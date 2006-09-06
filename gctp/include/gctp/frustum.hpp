@@ -1,11 +1,11 @@
-#ifndef _GCTP_VIEWFRUSTUM_HPP_
-#define _GCTP_VIEWFRUSTUM_HPP_
+#ifndef _GCTP_FRUSTUM_HPP_
+#define _GCTP_FRUSTUM_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
 #endif // GCTP_ONCE
 /** @file
- * GameCatapult 視錐台クラスヘッダファイル
+ * GameCatapult 錐台クラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/07/15 2:42:16
@@ -16,8 +16,8 @@
 
 namespace gctp {
 
-	/// 視錐体クラス
-	struct ViewFrustum {
+	/// 錐台クラス
+	struct Frustum {
 		enum {
 			LEFT,
 			RIGHT,
@@ -30,9 +30,9 @@ namespace gctp {
 		Plane planes[PLANE_NUM];
 		
 		/// コンストラクタ
-		ViewFrustum() {}
+		Frustum() {}
 
-		ViewFrustum(const Matrix &wvp_mat)
+		Frustum(const Matrix &wvp_mat)
 		{
 			set(wvp_mat);
 		}
@@ -70,7 +70,7 @@ namespace gctp {
 			planes[FARCLIP].c = wvp_mat._43 - wvp_mat._33;
 			planes[FARCLIP].d = wvp_mat._44 - wvp_mat._34;
 
-			for(int i = 0; i < ViewFrustum::PLANE_NUM; i++) {
+			for(int i = 0; i < PLANE_NUM; i++) {
 				planes[i].normalize();
 			}
 		}
@@ -108,7 +108,7 @@ namespace gctp {
 			planes[FARCLIP].c = wvp_mat._43 - wvp_mat._33;
 			planes[FARCLIP].d = wvp_mat._44 - wvp_mat._34;
 
-			for(int i = 0; i < ViewFrustum::PLANE_NUM; i++) {
+			for(int i = 0; i < PLANE_NUM; i++) {
 				planes[i].normalize();
 			}
 		}
@@ -122,19 +122,20 @@ namespace gctp {
 #endif
 		}
 
+		/** 境界球が視野に入っているか？
+		 *
+		 * 速度のためにこれは不正確。６つある角の付近では、正確に球との接触判定にならない。
+		 */
 		bool isColliding(const Sphere &to) const
 		{
-			for(int i = 0; i < ViewFrustum::PLANE_NUM; i++) {
+			for(int i = 0; i < PLANE_NUM; i++) {
 				gctp::Real dot = planes[i] * to.c;
-				if(dot < -to.r) return false; // 外側
-				if(abs(dot) <= to.r) return true; // 交差
+				if(dot < -to.r) return false; // 完全に外側
 			}
-			return true; // 錘台の内側
+			return true; // 錘台の内側・もしくは交差
 		}
-
 	};
-
 
 } //namespace gctp
 
-#endif //_GCTP_VIEWFRUSTUM_HPP_
+#endif //_GCTP_FRUSTUM_HPP_
