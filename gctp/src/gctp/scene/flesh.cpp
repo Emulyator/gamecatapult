@@ -57,7 +57,7 @@ namespace gctp { namespace scene {
 				}
 				else if(node_) {
 					Pointer<StrutumNode> node = node_.lock();
-					model->draw(node->val.wtm());
+					if(node) model->draw(node->val.wtm());
 					// ƒGƒ‰[•\¦‚µ‚½‚Ù‚¤‚ª‚¢‚¢‚Ì‚©‚È
 				}
 			}

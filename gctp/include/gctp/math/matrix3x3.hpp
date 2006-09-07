@@ -232,6 +232,7 @@ namespace gctp { namespace math {
 		{
 			_11 = _22 = _33 = _Type(1);
 			_21 = _31 = _12 = _32 = _13 = _23 = _Type(0);
+			return *this;
 		}
 
 		/// ê≥ãKâª
