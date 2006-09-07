@@ -12,11 +12,10 @@
 #include <gctp/graphic/texture.hpp>
 #include <gctp/graphic/brush.hpp>
 #include <gctp/graphic/light.hpp>
-#include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/graphic/vertexbuffer.hpp>
 #include <gctp/graphic/indexbuffer.hpp>
-#include <gctp/context.hpp>
+#include <gctp/graphic/dx/device.hpp>
 #include <gctp/dbgout.hpp>
 #include <rmxfguid.h>
 
@@ -33,39 +32,15 @@ namespace gctp { namespace graphic {
 	 *
 	 * すでにセットアップされていたら、レストア
 	 */
-	HRslt Model::setUp(const XData &data)
+	void Model::setUp(CStr name, ID3DXMeshPtr mesh, ID3DXSkinInfoPtr skin, ID3DXBufferPtr adjc)
 	{
-		HRslt hr;
-		if(mesh_) mesh_ = 0;
-		name_ = data.name();
-		ID3DXBufferPtr mtrl;
-		ulong mtrl_num;
-		// 指定したチャンクからスキン（かも知れない）モデルをロードする。
-		hr = D3DXLoadSkinMeshFromXof(data, D3DXMESH_SYSTEMMEM, device().impl(), &adjc_, &mtrl, &effect_, &mtrl_num, &skin_, &mesh_);
-		if(!hr) return hr;
-		setUpMaterial(mtrl, mtrl_num);
-		if(isSkin() && !isSkinned()) useBrush(); // デフォルトでHLSL
+		name_ = name;
+		mesh_ = mesh;
+		skin_ = skin;
+		adjc_ = adjc;
 		
+		if(isSkin() && !isSkinned()) useBrush(); // デフォルトでHLSL
 		updateBS();
-
-		{
-//			ID3DXBufferPtr message;
-//			HRslt hr = D3DXValidMesh(mesh_, adjacency(), &message);
-//			if(!hr) PRNN(hr << " : " << reinterpret_cast<char *>(message->GetBufferPointer()));
-#if 0
-			MeshVertexLock vbl(mesh_);
-			MeshIndexLock ibl(mesh_);
-			for(uint i = 0; i < mesh_->GetNumFaces(); i++) {
-				if(i == 1824 || i == 1755) {
-					PRNN("invalid face ("<<i<<")");
-					PRNN("index : "<<ibl[i*3]<<","<<ibl[i*3+1]<<","<<ibl[i*3+2]);
-					PRNN("vertex : "<<vbl[i*3]<<","<<vbl[i*3+1]<<","<<vbl[i*3+2]);
-					PRNN("adjacency : "<<adjacency()[i*3]<<","<<adjacency()[i*3+1]<<","<<adjacency()[i*3+2]);
-				}
-			}
-#endif
-		}
-		return hr;
 	}
 
 	/** ワイヤモデル製作
@@ -73,18 +48,12 @@ namespace gctp { namespace graphic {
 	 * あくまで表示物はModel、という設計を守るための暫定処置…
 	 * もっとスマートな手段を考えましょう
 	 */
-	HRslt Model::setUpWire(const XData &data)
+	HRslt Model::setUpWire(CStr name, const void *data, const void *mlist, ID3DXBufferPtr mtrls, ulong mtrl_num)
 	{
-		HRslt hr;
-		name_ = data.name();
+		name_ = name;
 		if(!wire_) wire_ = new WireMesh;
-		ID3DXBufferPtr mtrl;
-		ulong mtrl_num;
-		wire_->setUp(data, mtrl, mtrl_num);
-		setUpMaterial(mtrl, mtrl_num);
-		
-		updateBS();
-
+		HRslt hr = wire_->setUp(data, mlist, mtrls, mtrl_num);
+		if(hr) updateBS();
 		return hr;
 	}
 
@@ -98,10 +67,8 @@ namespace gctp { namespace graphic {
 		brush_ = brush;
 	}
 
-	/** ワイヤモデル製作
+	/** モデルを複写
 	 *
-	 * あくまで表示物はModel、という設計を守るための暫定処置…
-	 * もっとスマートな手段を考えましょう
 	 */
 	HRslt Model::copy(const Model &src)
 	{
@@ -140,67 +107,6 @@ namespace gctp { namespace graphic {
 			}
 		}
 		return S_OK;
-	}
-
-	/** テクスチャ参照解決
-	 */
-	void Model::setUpMaterial(ID3DXBufferPtr mtrl, ulong mtrl_num)
-	{
-		if(mtrl) {
-			D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrl->GetBufferPointer());
-			mtrls.resize(mtrl_num);
-			for(uint i = 0; i < mtrl_num; i++) {
-				mtrls[i].diffuse  = _mtrls[i].MatD3D.Diffuse;
-				mtrls[i].ambient  = _mtrls[i].MatD3D.Ambient;
-//				mtrls[i].ambient  = Color(0.2f,0.2f,0.2f,0.2f);
-				mtrls[i].specular = _mtrls[i].MatD3D.Specular;
-				mtrls[i].emissive = _mtrls[i].MatD3D.Emissive;
-				mtrls[i].power    = _mtrls[i].MatD3D.Power;
-				mtrls[i].blend    = Material::ALPHA;
-				if(_mtrls[i].pTextureFilename) {
-					context().load(_mtrls[i].pTextureFilename);
-					mtrls[i].tex = db()[_mtrls[i].pTextureFilename];
-				}
-			}
-			if(effect_) {
-				D3DXEFFECTINSTANCE *_effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(effect_->GetBufferPointer());
-				if(_effect->pEffectFilename) {
-					PRNN("Effect "<<_effect->pEffectFilename);
-					context().load(_effect->pEffectFilename);
-					brush_ = db()[_effect->pEffectFilename];
-					if(brush_) {;
-						for(DWORD i = 0; i < _effect->NumDefaults; i++) {
-							(*brush_)->SetValue(_effect->pDefaults[i].pParamName, _effect->pDefaults[i].pValue, _effect->pDefaults[i].NumBytes);
-						}
-					}
-				}
-				else {
-					for(DWORD i = 0; i < _effect->NumDefaults; i++) {
-						switch(_effect->pDefaults[i].Type) {
-						case D3DXEDT_STRING:
-							PRNN(i<<")STRING "<<_effect->pDefaults[i].pParamName<<" "<<(const char *)_effect->pDefaults[i].pValue);
-							break;
-						case D3DXEDT_FLOATS:
-							PRN(i<<")FLOATS "<<_effect->pDefaults[i].pParamName<<" ");
-							for(DWORD j = 0; j < _effect->pDefaults[i].NumBytes/sizeof(float); j++) {
-								if(j > 0) PRN(", ");
-								PRN(((float *)_effect->pDefaults[i].pValue)[j]);
-							}
-							PRN(endl);
-							break;
-						case D3DXEDT_DWORD:
-							PRN(i<<")DWORD "<<_effect->pDefaults[i].pParamName<<" ");
-							for(DWORD j = 0; j < _effect->pDefaults[i].NumBytes/sizeof(DWORD); j++) {
-								if(j > 0) PRN(", ");
-								PRN(((DWORD *)_effect->pDefaults[i].pValue)[j]);
-							}
-							PRN(endl);
-							break;
-						}
-					}
-				}
-			}
-		}
 	}
 
 	Vector Model::calcCenter() const
@@ -1712,63 +1618,48 @@ namespace gctp { namespace graphic {
 				p = pos; color = col; tu = uv.x; tv = uv.y;
 			}
 		};
+
+		struct LineIndex {
+			ulong start, end;
+		};
+
+#if _MSC_VER <= 1400
+#pragma warning(push)
+#pragma warning(disable:4200)
+#endif
+		struct Verticies {
+			ulong num;
+			Vector verticies[];
+		};
+
+		struct Indicies {
+			ulong num;
+			LineIndex indicies[];
+		};
+
+		struct XMeshMaterialList {
+			DWORD mtrlnum;
+			DWORD mtrlnonum;
+			DWORD mtrlno[];
+		};
+#if _MSC_VER <= 1400
+#pragma warning(pop)
+#endif
 	}
 
 	/** モデル製作
 	 *
 	 * すでにセットアップされていたら、レストア
 	 */
-	HRslt WireMesh::setUp(const XData &data, ID3DXBufferPtr &mtrls, ulong &mtrl_num)
+	HRslt WireMesh::setUp(const void *data, const void *mlist, ID3DXBufferPtr mtrls, ulong mtrl_num)
 	{
 		HRslt hr;
 		if(vbuf_) vbuf_ = 0;
 		if(ibuf_) ibuf_ = 0;
 		
-		const gctp::xext::Verticies *vert;
-		const gctp::xext::Indicies  *idx;
-		const gctp::XMeshMaterialList *mtrllist = NULL;
-		D3DXMATERIAL *_mtrls = NULL;
-		vert = reinterpret_cast<const gctp::xext::Verticies *>(data.data());
-		idx = reinterpret_cast<const gctp::xext::Indicies *>(&vert->verticies[vert->num]);
-
-		mtrl_num = 0;
-		// マテリアル情報かき集め
-		for(uint i = 0; i < data.size(); i++) {
-			XData child = data.getChild(i);
-			if(child.type() == TID_D3DRMMeshMaterialList) {
-				mtrllist = reinterpret_cast<const gctp::XMeshMaterialList *>(child.data());
-				mtrl_num = mtrllist->mtrlnum;
-				D3DXCreateBuffer(sizeof(D3DXMATERIAL)*mtrllist->mtrlnum, &mtrls);
-				_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
-				int mn = 0;
-				for(uint i = 0; i < child.size(); i++) {
-					XData mlchild = child.getChild(i);
-					if(mlchild.type() == TID_D3DRMMaterial) {
-						const XMaterial *xmtrl = reinterpret_cast<const XMaterial *>(mlchild.data());
-						_mtrls[mn].MatD3D.Diffuse = xmtrl->face_color;
-						_mtrls[mn].MatD3D.Ambient = Color(0, 0, 0);
-						_mtrls[mn].MatD3D.Power   = xmtrl->power;
-						_mtrls[mn].MatD3D.Specular.a = 1.0f;
-						_mtrls[mn].MatD3D.Specular.r = xmtrl->specular_r;
-						_mtrls[mn].MatD3D.Specular.g = xmtrl->specular_g;
-						_mtrls[mn].MatD3D.Specular.b = xmtrl->specular_b;
-						_mtrls[mn].MatD3D.Emissive.a = 1.0f;
-						_mtrls[mn].MatD3D.Emissive.r = xmtrl->emissive_r;
-						_mtrls[mn].MatD3D.Emissive.g = xmtrl->emissive_g;
-						_mtrls[mn].MatD3D.Emissive.b = xmtrl->emissive_b;
-						_mtrls[mn].pTextureFilename  = 0;
-						for(uint i = 0; i < mlchild.size(); i++) {
-							XData mchild = mlchild.getChild(i);
-							if(mchild.type() == TID_D3DRMTextureFilename) {
-								_mtrls[mn].pTextureFilename = const_cast<LPSTR>(reinterpret_cast<LPCSTR>(mchild.data()));
-								break;
-							}
-						}
-						mn++;
-					}
-				}
-			}
-		}
+		const XMeshMaterialList *mtrllist = reinterpret_cast<const XMeshMaterialList *>(mlist);
+		const Verticies *vert = reinterpret_cast<const Verticies *>(data);
+		const Indicies *idx = reinterpret_cast<const Indicies *>(&vert->verticies[vert->num]);
 
 		vbuf_ = new VertexBuffer;
 		if(!vbuf_) return E_OUTOFMEMORY;
@@ -1779,6 +1670,7 @@ namespace gctp { namespace graphic {
 			VertexBuffer::ScopedLock al(*vbuf_);
 			//memcpy(al.buf, vert->verticies, vert->num*sizeof(Vector));
 			LVertex *vtx = reinterpret_cast<LVertex *>(al.buf);
+			D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
 			for(uint i = 0; i < vert->num; i++) {
 				vtx[i].p = vert->verticies[i];
 				if(_mtrls) vtx[i].color = Color32(_mtrls[mtrllist->mtrlno[i]].MatD3D.Diffuse);

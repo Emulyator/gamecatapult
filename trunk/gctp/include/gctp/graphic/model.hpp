@@ -11,20 +11,21 @@
 #include <gctp/line.hpp>
 #include <gctp/sphere.hpp>
 #include <gctp/aabox.hpp>
-#include <gctp/xfile.hpp>
 #include <gctp/skeleton.hpp>
 #include <gctp/graphic/material.hpp>
 #include <gctp/dxcomptrs.hpp>
 
 struct ID3DXMesh;
 struct ID3DXSkinInfo;
+namespace gctp {
+	TYPEDEF_DXCOMPTR(ID3DXMesh);
+	TYPEDEF_DXCOMPTR(ID3DXSkinInfo);
+}
 
 namespace gctp { namespace graphic {
 
 	class Texture;
 	class Brush;
-	TYPEDEF_DXCOMPTR(ID3DXMesh);
-	TYPEDEF_DXCOMPTR(ID3DXSkinInfo);
 
 	/** D3DXメッシュ頂点データのロックと自動開放
 	 *
@@ -121,7 +122,7 @@ namespace gctp { namespace graphic {
 	class WireMesh : public Object {
 	public:
 		/// すでにセットアップされていたら、レストア
-		HRslt setUp(const XData &data, ID3DXBufferPtr &mtrls, ulong &mtrl_num);
+		HRslt setUp(const void *data, const void *mtrllist, ID3DXBufferPtr mtrls, ulong mtrl_num);
 		
 		/// 描画
 		HRslt draw() const;
@@ -170,9 +171,9 @@ namespace gctp { namespace graphic {
 		friend class ModelDetail;
 	public:
 		/// すでにセットアップされていたら、レストア
-		HRslt setUp(const XData &data);
+		void setUp(CStr name, ID3DXMeshPtr mesh, ID3DXSkinInfoPtr skin, ID3DXBufferPtr adjc);
 		/// すでにセットアップされていたら、レストア
-		HRslt setUpWire(const XData &data);
+		HRslt setUpWire(CStr name, const void *data, const void *mlist, ID3DXBufferPtr mtrls, ulong mtrl_num);
 		
 		/// 描画
 		HRslt draw(const Matrix &mat) const;
@@ -267,13 +268,10 @@ namespace gctp { namespace graphic {
 		void setName(const char *str) { name_ = str; }
 
 	protected:
-		void setUpMaterial(ID3DXBufferPtr mtrl, ulong mtrl_num);
-
 		CStr					name_;		// シーンファイル上での名前
 		ID3DXMeshPtr			mesh_;      // ファイルから読み込んだままののメッシュ
 		ID3DXSkinInfoPtr		skin_;		// スキン情報
 		ID3DXBufferPtr			adjc_;		// 面の接続情報
-		ID3DXBufferPtr			effect_;	// エフェクトインスタンス情報
 
 		Vector calcCenter() const;
 		float calcRadius(const Vector &center) const;
