@@ -9,12 +9,16 @@
 #include <gctp/pointer.hpp>
 #include <gctp/vector.hpp>
 #include <gctp/xfile.hpp>
-#include <gctp/scene/graphfile.hpp>
 #include <gctp/graphic/model.hpp>
+#include <gctp/graphic/brush.hpp>
+#include <gctp/graphic/texture.hpp>
+#include <gctp/graphic/dx/device.hpp>
+#include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/motion.hpp>
 #include <gctp/extension.hpp>
+#include <gctp/context.hpp>
 #include <gctp/dbgout.hpp>
 #include <gctp/uri.hpp>
 #include <rmxfguid.h>
@@ -99,7 +103,292 @@ namespace gctp { namespace scene {
 	namespace {
 		GCTP_REGISTER_REALIZER2(x, GraphFile, &GraphFile::setUpFromX);
 		//Extention extention_x("x", Realizer<XFile>);
-		
+
+		/** モデルのマテリアルをセットアップ
+		 */
+		void setUpModelMaterial(graphic::Model &model, ID3DXBufferPtr mtrls, ulong mtrl_num, ID3DXBufferPtr eff)
+		{
+			// マテリアル設定
+			if(mtrls) {
+				D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
+				model.mtrls.resize(mtrl_num);
+				for(uint i = 0; i < mtrl_num; i++) {
+					model.mtrls[i].diffuse  = _mtrls[i].MatD3D.Diffuse;
+					model.mtrls[i].ambient  = _mtrls[i].MatD3D.Ambient;
+					model.mtrls[i].specular = _mtrls[i].MatD3D.Specular;
+					model.mtrls[i].emissive = _mtrls[i].MatD3D.Emissive;
+					model.mtrls[i].power    = _mtrls[i].MatD3D.Power;
+					model.mtrls[i].blend    = graphic::Material::ALPHA;
+					if(_mtrls[i].pTextureFilename) {
+						context().load(_mtrls[i].pTextureFilename);
+						model.mtrls[i].tex = graphic::db()[_mtrls[i].pTextureFilename];
+						PRNN(model.mtrls[i].tex);
+					}
+				}
+				if(eff) {
+					D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff->GetBufferPointer());
+					if(effect->pEffectFilename) {
+						PRNN("Effect "<<effect->pEffectFilename);
+						context().load(effect->pEffectFilename);
+						Handle<graphic::Brush> brush = graphic::db()[effect->pEffectFilename];
+						if(brush) {
+							model.setBrush(brush);
+							for(DWORD i = 0; i < effect->NumDefaults; i++) {
+								(*brush)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
+							}
+						}
+					}
+					else {
+						for(DWORD i = 0; i < effect->NumDefaults; i++) {
+							switch(effect->pDefaults[i].Type) {
+							case D3DXEDT_STRING:
+								PRNN(i<<")STRING "<<effect->pDefaults[i].pParamName<<" "<<(const char *)effect->pDefaults[i].pValue);
+								break;
+							case D3DXEDT_FLOATS:
+								PRN(i<<")FLOATS "<<effect->pDefaults[i].pParamName<<" ");
+								for(DWORD j = 0; j < effect->pDefaults[i].NumBytes/sizeof(float); j++) {
+									if(j > 0) PRN(", ");
+									PRN(((float *)effect->pDefaults[i].pValue)[j]);
+								}
+								PRN(endl);
+								break;
+							case D3DXEDT_DWORD:
+								PRN(i<<")DWORD "<<effect->pDefaults[i].pParamName<<" ");
+								for(DWORD j = 0; j < effect->pDefaults[i].NumBytes/sizeof(DWORD); j++) {
+									if(j > 0) PRN(", ");
+									PRN(((DWORD *)effect->pDefaults[i].pValue)[j]);
+								}
+								PRN(endl);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		/** モデル製作
+		 *
+		 * すでにセットアップされていたら、レストア
+		 */
+		HRslt setUpModel(graphic::Model &model, const XData &data)
+		{
+			ID3DXMeshPtr mesh;
+			ID3DXSkinInfoPtr skin;
+			ID3DXBufferPtr adjc, effect, mtrls;
+			ulong mtrl_num;
+			// 指定したチャンクからスキン（かも知れない）モデルをロードする。
+			HRslt hr = D3DXLoadSkinMeshFromXof(data, D3DXMESH_SYSTEMMEM, graphic::device().impl(), &adjc, &mtrls, &effect, &mtrl_num, &skin, &mesh);
+			if(!hr) return hr;
+			setUpModelMaterial(model, mtrls, mtrl_num, effect);
+			model.setUp(data.name(), mesh, skin, adjc);
+
+			{
+	//			ID3DXBufferPtr message;
+	//			HRslt hr = D3DXValidMesh(mesh_, adjacency(), &message);
+	//			if(!hr) PRNN(hr << " : " << reinterpret_cast<char *>(message->GetBufferPointer()));
+#if 0
+				MeshVertexLock vbl(mesh_);
+				MeshIndexLock ibl(mesh_);
+				for(uint i = 0; i < mesh_->GetNumFaces(); i++) {
+					if(i == 1824 || i == 1755) {
+						PRNN("invalid face ("<<i<<")");
+						PRNN("index : "<<ibl[i*3]<<","<<ibl[i*3+1]<<","<<ibl[i*3+2]);
+						PRNN("vertex : "<<vbl[i*3]<<","<<vbl[i*3+1]<<","<<vbl[i*3+2]);
+						PRNN("adjacency : "<<adjacency()[i*3]<<","<<adjacency()[i*3+1]<<","<<adjacency()[i*3+2]);
+					}
+				}
+#endif
+			}
+			return hr;
+		}
+
+		/** ワイヤモデル製作
+		 *
+		 */
+		HRslt setUpWireModel(graphic::Model &model, const XData &data)
+		{
+			ID3DXBufferPtr mtrls;
+			ulong mtrl_num = 0;
+			const gctp::XMeshMaterialList *mtrllist = 0;
+			// マテリアル情報かき集め
+			for(uint i = 0; i < data.size(); i++) {
+				XData child = data.getChild(i);
+				if(child.type() == TID_D3DRMMeshMaterialList) {
+					mtrllist = reinterpret_cast<const gctp::XMeshMaterialList *>(child.data());
+					mtrl_num = mtrllist->mtrlnum;
+					D3DXCreateBuffer(sizeof(D3DXMATERIAL)*mtrllist->mtrlnum, &mtrls);
+					D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
+					int mn = 0;
+					for(uint i = 0; i < child.size(); i++) {
+						XData mlchild = child.getChild(i);
+						if(mlchild.type() == TID_D3DRMMaterial) {
+							const XMaterial *xmtrl = reinterpret_cast<const XMaterial *>(mlchild.data());
+							_mtrls[mn].MatD3D.Diffuse = xmtrl->face_color;
+							_mtrls[mn].MatD3D.Ambient = Color(0, 0, 0);
+							_mtrls[mn].MatD3D.Power   = xmtrl->power;
+							_mtrls[mn].MatD3D.Specular.a = 1.0f;
+							_mtrls[mn].MatD3D.Specular.r = xmtrl->specular_r;
+							_mtrls[mn].MatD3D.Specular.g = xmtrl->specular_g;
+							_mtrls[mn].MatD3D.Specular.b = xmtrl->specular_b;
+							_mtrls[mn].MatD3D.Emissive.a = 1.0f;
+							_mtrls[mn].MatD3D.Emissive.r = xmtrl->emissive_r;
+							_mtrls[mn].MatD3D.Emissive.g = xmtrl->emissive_g;
+							_mtrls[mn].MatD3D.Emissive.b = xmtrl->emissive_b;
+							_mtrls[mn].pTextureFilename  = 0;
+							for(uint i = 0; i < mlchild.size(); i++) {
+								XData mchild = mlchild.getChild(i);
+								if(mchild.type() == TID_D3DRMTextureFilename) {
+									_mtrls[mn].pTextureFilename = const_cast<LPSTR>(reinterpret_cast<LPCSTR>(mchild.data()));
+									break;
+								}
+							}
+							mn++;
+						}
+					}
+				}
+			}
+			setUpModelMaterial(model, mtrls, mtrl_num, ID3DXBufferPtr());
+			return model.setUpWire(data.name(), data.data(), mtrllist, mtrls, mtrl_num);
+		}
+
+		/** XFileからの読みこみ
+		 */
+		HRslt setUpMotionChannel(MotionChannel &self, const XData &dat/**< カレントの位置を示すXDataオブジェクト*/)
+		{
+			HRslt hr;
+			const XKeys *keys = dat.keys();
+			if(keys) {
+				if(keys->type == XKEY_SCALING) {
+					const XScalingKeys *anim_keys = dat.sclkeys();
+					MotionChannel::ScalingKeys *w = new MotionChannel::ScalingKeys(MotionChannel::Keys::SCALING, anim_keys->num);
+					//個数分コピー
+					for(uint i = 0; i < anim_keys->num; i++) {
+						(*w)[i].time = anim_keys->keys[i].time;
+						(*w)[i].val = VectorC(anim_keys->keys[i].val);
+					}
+					self.setKeys(w);
+					//PRNN("ScalingKey read");
+				}
+				else if(keys->type == XKEY_POSTURE) {
+					const XPostureKeys *anim_keys = dat.posturekeys();
+					MotionChannel::PostureKeys *w = new MotionChannel::PostureKeys(MotionChannel::Keys::POSTURE, anim_keys->num);
+					//個数分コピー
+					for(uint i = 0; i < anim_keys->num; i++) {
+						(*w)[i].time = anim_keys->keys[i].time;
+						(*w)[i].val.w = anim_keys->keys[i].val.w;
+						(*w)[i].val.x = anim_keys->keys[i].val.x;
+						(*w)[i].val.y = anim_keys->keys[i].val.y;
+						(*w)[i].val.z = anim_keys->keys[i].val.z;
+					}
+					self.setKeys(w);
+					//PRNN("PostureKey read");
+				}
+				else if(keys->type == XKEY_YPR) {
+					const XYPRKeys *anim_keys = dat.yprkeys();
+					MotionChannel::YPRKeys *w = new MotionChannel::YPRKeys(MotionChannel::Keys::YPR, anim_keys->num);
+					//個数分コピー
+					for(uint i = 0; i < anim_keys->num; i++) {
+						(*w)[i].time = anim_keys->keys[i].time;
+						(*w)[i].val = VectorC(anim_keys->keys[i].val);
+					}
+					self.setKeys(w);
+					//PRNN("YPRKey read");
+				}
+				else if(keys->type == XKEY_POSITION) {
+					const XPositionKeys *anim_keys = dat.positionkeys();
+					MotionChannel::PositionKeys *w = new MotionChannel::PositionKeys(MotionChannel::Keys::POSITION, anim_keys->num);
+					//個数分コピー
+					for(uint i = 0; i < anim_keys->num; i++) {
+						(*w)[i].time = anim_keys->keys[i].time;
+						(*w)[i].val = VectorC(anim_keys->keys[i].val);
+					}
+					self.setKeys(w);
+					//PRNN("PositionKey read");
+				}
+				else if(keys->type == XKEY_MATRIX) {
+					const XMatrixKeys *anim_keys = dat.matkeys();
+					MotionChannel::MatrixKeys *w = new MotionChannel::MatrixKeys(MotionChannel::Keys::MATRIX, anim_keys->num);
+					//個数分コピー
+					for(uint i = 0; i < anim_keys->num; i++) {
+						(*w)[i].time = anim_keys->keys[i].time;
+						(*w)[i].val = MatrixC(anim_keys->keys[i].val);
+					}
+					self.setKeys(w);
+					//PRNN("MatrixKey read");
+				}
+				else {
+					PRNN("Motion:"<<keys->type<<":対応していないキータイプです。");
+					hr = E_FAIL;
+				}
+			}
+			else hr = E_FAIL;
+			return hr;
+		}
+
+		HRslt setUpMotion(
+			Motion &self,
+			const XData &cur/**< カレントの位置を示すXDataオブジェクト*/
+		)
+		{
+			HRslt hr;
+			for(uint i = 0; i < cur.size(); i++) {
+				XData setdat = cur[i];
+				if(TID_D3DRMAnimation == setdat.type()) {
+					bool is_open = true;
+					MotionChannel::PosType postype = MotionChannel::LINEAR;
+					CStr framename;
+					MotionChannelVector channels;
+					//PRNN("chunk name : "<<cur.name());
+					for(uint i = 0; i < setdat.size(); i++) {
+						XData dat = setdat[i];
+						if(!dat.isRef()) {
+							if( TID_D3DRMFrame == dat.type() ) {
+								// 参照でなく、直接フレームが格納されていることがあるようだ……
+								// 対応しなきゃだめか……
+								/*hr = LoadFrames(pxofobjChild, pde, options, fvf, graphic(), pframeCur);
+								if (FAILED(hr))
+									goto e_Exit;*/
+								PRNN("Motion::フレームの指定は参照以外対応していません。");
+							}
+							else if( TID_D3DRMAnimationOptions == dat.type() ) {
+								const XAnimOption *opt = dat.animoption();
+								if(opt) {
+									is_open = (opt->openclosed==1)? true : false;
+									postype = (opt->positionquality == 1)? MotionChannel::SPLINE : MotionChannel::LINEAR;
+								}
+							}
+							else if( TID_D3DRMAnimationKey == dat.type() ) {
+								MotionChannel *channel = new MotionChannel;
+								if(channel) {
+									hr = setUpMotionChannel(*channel, dat);
+									if(!hr) delete channel;
+									else channels.push_back(Pointer<MotionChannel>(channel));
+								}
+								else hr = E_FAIL;
+							}
+						}
+						else {
+							if(TID_D3DRMFrame == dat.type()) {
+								framename = dat.name();
+							}
+							else {
+								PRNN("AnimationRsrc::対応していない参照データです。");
+								hr = E_FAIL;
+							}
+						}
+					}
+
+					for(MotionChannelVector::iterator i = channels.begin(); i != channels.end(); ++i) {
+						(*i)->setIsOpen(is_open);
+						(*i)->setPosType(postype);
+					}
+					if(!framename.empty()) self.set(framename, channels);
+				}
+			}
+			return hr;
+		}
+
 		/** XFileの読みこみ
 		 */
 		HRslt loadX(
@@ -115,7 +404,7 @@ namespace gctp { namespace scene {
 				//PRNN("TID_D3DRMMesh found");
 				Pointer<graphic::Model> w = new graphic::Model;
 				if(w) {
-					HRslt hr = w->setUp(cur);
+					HRslt hr = setUpModel(*w, cur);
 					if(hr) {
 						self.push_back(w);
 						if(body) {
@@ -134,7 +423,7 @@ namespace gctp { namespace scene {
 				//PRNN("xext::TID_Wire found");
 				Pointer<graphic::Model> w = new graphic::Model;
 				if(w) {
-					HRslt hr = w->setUpWire(cur);
+					HRslt hr = setUpWireModel(*w, cur);
 					if(hr) {
 						self.push_back(w);
 						if(body) {
@@ -163,7 +452,7 @@ namespace gctp { namespace scene {
 				Pointer<Motion> w = new Motion;
 				if(w) {
 					GCTP_TRACE(w);
-					w->setUp(cur);
+					setUpMotion(*w, cur);
 					w->setTicksPerSec(static_cast<float>(work.ticks_per_sec));
 					self.push_back(w);
 				}

@@ -26,62 +26,6 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_TYPEINFO(MotionChannel, Object);
 
-	/** XFileからの読みこみ
-	 */
-	HRslt MotionChannel::setUp(const XData &dat/**< カレントの位置を示すXDataオブジェクト*/)
-	{
-		HRslt hr;
-		const XKeys *keys = dat.keys();
-		if(keys) {
-			if(keys->type == XKEY_SCALING) {
-				const XScalingKeys *anim_keys = dat.sclkeys();
-				ScalingKeys *w = new ScalingKeys(Keys::SCALING, anim_keys->num);
-				p_ = auto_ptr<Keys>(w);
-				//個数分コピー
-				for(uint i = 0; i < anim_keys->num; i++) (*w)[i] = anim_keys->keys[i];
-				//PRNN("ScalingKey read");
-			}
-			else if(keys->type == XKEY_POSTURE) {
-				const XPostureKeys *anim_keys = dat.posturekeys();
-				PostureKeys *w = new PostureKeys(Keys::POSTURE, anim_keys->num);
-				p_ = auto_ptr<Keys>(w);
-				//個数分コピー
-				for(uint i = 0; i < anim_keys->num; i++) (*w)[i] = anim_keys->keys[i];
-				//PRNN("PostureKey read");
-			}
-			else if(keys->type == XKEY_YPR) {
-				const XYPRKeys *anim_keys = dat.yprkeys();
-				YPRKeys *w = new YPRKeys(Keys::YPR, anim_keys->num);
-				p_ = auto_ptr<Keys>(w);
-				//個数分コピー
-				for(uint i = 0; i < anim_keys->num; i++) (*w)[i] = anim_keys->keys[i];
-				//PRNN("YPRKey read");
-			}
-			else if(keys->type == XKEY_POSITION) {
-				const XPositionKeys *anim_keys = dat.positionkeys();
-				PositionKeys *w = new PositionKeys(Keys::POSITION, anim_keys->num);
-				p_ = auto_ptr<Keys>(w);
-				//個数分コピー
-				for(uint i = 0; i < anim_keys->num; i++) (*w)[i] = anim_keys->keys[i];
-				//PRNN("PositionKey read");
-			}
-			else if(keys->type == XKEY_MATRIX) {
-				const XMatrixKeys *anim_keys = dat.matkeys();
-				MatrixKeys *w = new MatrixKeys(Keys::MATRIX, anim_keys->num);
-				p_ = auto_ptr<Keys>(w);
-				//個数分コピー
-				for(uint i = 0; i < anim_keys->num; i++) (*w)[i] = anim_keys->keys[i];
-				//PRNN("MatrixKey read");
-			}
-			else {
-				PRNN("Motion:"<<keys->type<<":対応していないキータイプです。");
-				hr = E_FAIL;
-			}
-		}
-		else hr = E_FAIL;
-		return hr;
-	}
-
 	void MotionChannel::get(Stance &stance, PosType custom_postype, IsOpen custom_is_open, float keytime) const
 	{
 		Keys *ks = const_cast<Keys *>(getKeys());
@@ -310,75 +254,17 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_TYPEINFO(Motion, Object);
 
-	/**
-	 * XFileの読みこみ
-	 */
-	HRslt Motion::setUp(const XData &cur/**< カレントの位置を示すXDataオブジェクト*/)
+	void Motion::set(CStr name, MotionChannelVector &channels)
 	{
-		HRslt hr;
-		for(uint i = 0; i < cur.size(); i++) {
-			XData setdat = cur[i];
-			if(TID_D3DRMAnimation == setdat.type()) {
-				bool is_open = true;
-				MotionChannel::PosType postype = MotionChannel::LINEAR;
-				CStr framename;
-				MotionChannelVector channels;
-				//PRNN("chunk name : "<<cur.name());
-				for(uint i = 0; i < setdat.size(); i++) {
-					XData dat = setdat[i];
-					if(!dat.isRef()) {
-						if( TID_D3DRMFrame == dat.type() ) {
-							// 参照でなく、直接フレームが格納されていることがあるようだ……
-							// 対応しなきゃだめか……
-							/*hr = LoadFrames(pxofobjChild, pde, options, fvf, graphic(), pframeCur);
-							if (FAILED(hr))
-								goto e_Exit;*/
-							PRNN("Motion::フレームの指定は参照以外対応していません。");
-						}
-						else if( TID_D3DRMAnimationOptions == dat.type() ) {
-							const XAnimOption *opt = dat.animoption();
-							if(opt) {
-								is_open = (opt->openclosed==1)? true : false;
-								postype = (opt->positionquality == 1)? MotionChannel::SPLINE : MotionChannel::LINEAR;
-							}
-						}
-						else if( TID_D3DRMAnimationKey == dat.type() ) {
-							MotionChannel *channel = new MotionChannel;
-							if(channel) {
-								hr = channel->setUp(dat);
-								if(!hr) delete channel;
-								else channels.push_back(Pointer<MotionChannel>(channel));
-							}
-							else hr = E_FAIL;
-						}
-					}
-					else {
-						if(TID_D3DRMFrame == dat.type()) {
-							framename = dat.name();
-						}
-						else {
-							PRNN("AnimationRsrc::対応していない参照データです。");
-							hr = E_FAIL;
-						}
-					}
-				}
-
-				for(MotionChannelVector::iterator i = channels.begin(); i != channels.end(); ++i) {
-					(*i)->setIsOpen(is_open);
-					(*i)->setPosType(postype);
-				}
 #if defined _MSC_VER && _MSC_VER < 1400
 #pragma warning(push)
 #pragma warning(disable:4675) // 何でこの警告つぶせないんだ？ＯＫなのに！！！！
 #endif
-				std::sort(channels.begin(), channels.end(), predMotionChannel); // モーションの処理順にソート
+		std::sort(channels.begin(), channels.end(), predMotionChannel); // モーションの処理順にソート
 #if defined _MSC_VER && _MSC_VER < 1400
 #pragma warning(pop)
 #endif
-				if(!framename.empty()) map_[framename] = channels;
-			}
-		}
-		return hr;
+		map_[name] = channels;
 	}
 
 	void Motion::setPosType(const MotionChannel::PosType _new) {

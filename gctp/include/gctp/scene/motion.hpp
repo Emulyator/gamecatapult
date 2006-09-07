@@ -11,7 +11,6 @@
 #include <gctp/quat.hpp>
 #include <gctp/matrix.hpp>
 #include <gctp/pointervector.hpp>
-#include <gctp/xfile.hpp>
 #include <gctp/cstr.hpp>
 #include <map>
 
@@ -52,55 +51,15 @@ namespace gctp { namespace scene {
 		 * アニメーションデータの型定義
 		 */
 		/* @{ */
-		class Key {
-		public:
-			Key() {}
-			Key(const ulong t) : time(t) {}
+		struct Key {
 			/// キータイム
 			ulong			time;
 		};
 
 		template<typename _T>
-		class TKey : public Key {
-		public:
+		struct TKey : Key {
 			typedef _T ValType;
-			TKey() {}
-			TKey(const ulong t) : Key(t) {}
-			TKey(const ulong t, const _T &v) : Key(t), val(v) {}
 			_T val;
-		};
-
-		class Scaling : public TKey<Vector> {
-		public:
-			Scaling() {}
-			Scaling(const XScalingKey &src) : TKey<Vector>(src.time, VectorC(src.val)) {}
-		};
-		
-		class Posture : public TKey<Quat> {
-		public:
-			Posture() {}
-			Posture(const XPostureKey &src) : TKey<Quat>(src.time) {
-				//注意： Ｘファイル は w x y z 、QUATERNIONS は x y z w
-				val.x = src.val.x; val.y = src.val.y; val.z = src.val.z; val.w = src.val.w;
-			}
-		};
-		
-		class YPR : public TKey<Vector> {
-		public:
-			YPR() {}
-			YPR(const XYPRKey &src) : TKey<Vector>(src.time, VectorC(src.val)) {}
-		};
-		
-		class Position : public TKey<Vector> {
-		public:
-			Position() {}
-			Position(const XPositionKey &src) : TKey<Vector>(src.time, VectorC(src.val)) {}
-		};
-		
-		class MatKey : public TKey<Matrix> {
-		public:
-			MatKey() {}
-			MatKey(const XMatrixKey &src) : TKey<Matrix>(src.time, MatrixC(src.val)) {}
 		};
 		
 		/// AnimationKeyチャンクの型
@@ -238,16 +197,16 @@ namespace gctp { namespace scene {
 		/** @name アニメーションキー配列クラス
 		 */
 		/* @{ */
-		typedef KeyArray<Scaling,Vector> ScalingKeys;
-		typedef KeyArray<Posture,Quat> PostureKeys;
-		typedef KeyArray<YPR,Vector> YPRKeys;
-		typedef KeyArray<Position,Vector> PositionKeys;
-		typedef KeyArray<MatKey,Matrix> MatrixKeys;
+		typedef KeyArray<TKey<Vector>,Vector> ScalingKeys;
+		typedef KeyArray<TKey<Quat>,Quat> PostureKeys;
+		typedef KeyArray<TKey<Vector>,Vector> YPRKeys;
+		typedef KeyArray<TKey<Vector>,Vector> PositionKeys;
+		typedef KeyArray<TKey<Matrix>,Matrix> MatrixKeys;
 		/* @} */
 		
-		HRslt setUp(const XData &cur);
 		MotionChannel() : is_open_(false), position_type_(SPLINE) {}
 		
+		void setKeys(Keys *p) { p_ = std::auto_ptr<Keys>(p); }
 		Keys *getKeys() { return p_.get(); }
 		const Keys *getKeys() const { return p_.get(); }
 		ulong time() const { return p_->time(); }
@@ -286,8 +245,9 @@ namespace gctp { namespace scene {
 	public:
 		typedef std::map<CStr, MotionChannelVector>::iterator iterator;
 		typedef std::map<CStr, MotionChannelVector>::const_iterator const_iterator;
-		HRslt setUp(const XData &cur);
-		void setPosType(const MotionChannel::PosType _new);
+
+		void set(CStr name, MotionChannelVector &channels);
+		void setPosType(const MotionChannel::PosType postype);
 		void setIsOpen(bool is_open);
 		void setTicksPerSec(float ticks_per_sec);
 		float ticksPerSec() const;
