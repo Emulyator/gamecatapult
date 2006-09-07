@@ -319,7 +319,7 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 
-		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/wire_test.x").lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/wire_test.x").lock();
 
 		for(int i = 0; i < 20; i++) {
 			entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/gradriel.x").lock();

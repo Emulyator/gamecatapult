@@ -161,7 +161,7 @@ public:
 			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2fC(256, 8)).setColor(Color32(255,0,0))).end();
 			
 			spr_->begin(*tex_);
-			spr_->draw(SpriteDesc().setUp(*tex_).mult(Point2fC(tex_->originalSize())/2, Matrix2(true).scale(scale_, scale_)*Matrix2(true).rot(theta_)));
+			spr_->draw(SpriteDesc().setUp(*tex_).mult(Point2fC(tex_->originalSize())/2, Matrix2C(true).scale(scale_, scale_)*Matrix2C(true).rot(theta_)));
 			spr_->draw(SpriteDesc().setUp(*tex_).addOffset(Point2fC(scale_*100.0f, scale_*100.0f)));
 			spr_->end();
 			theta_ += 1/180.0f*g_pi;

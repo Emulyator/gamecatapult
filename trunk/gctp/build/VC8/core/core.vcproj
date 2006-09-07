@@ -521,7 +521,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\pathsearcher.hpp"
+				RelativePath="..\..\..\include\gctp\pathfinder.hpp"
 				>
 			</File>
 			<File

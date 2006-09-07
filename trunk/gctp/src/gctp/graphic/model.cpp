@@ -380,19 +380,17 @@ namespace gctp { namespace graphic {
 						hr = brush->end();
 						if(!hr) GCTP_TRACE(hr);
 					}
-					else {
-						device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
-						hr = wire_->draw(i);
-						device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
-					}
+					else hr = wire_->draw(i);
 
 					if(!hr) return hr;
 				}
 			}
 			else {
-				device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
-				wire_->draw();
-				device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+				Material mtrl;
+				mtrl.setUp();
+				device().setMaterial(mtrl);
+				hr = wire_->draw();
+				if(!hr) return hr;
 			}
 		}
 		if(mesh_) {

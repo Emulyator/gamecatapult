@@ -1,3 +1,8 @@
+#ifndef _GCTP_PATHFINDER_HPP_
+#define _GCTP_PATHFINDER_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /**@file 経路探索テンプレートクラス
  *
  * Aアルゴリズムを行うクラスをテンプレート化
@@ -65,7 +70,7 @@ namespace gctp {
 	 * &copy; 2005 SowwaRay All Right Reserved.
 	 */
 	template<typename NodeType, typename CostType>
-	class PathSearcher {
+	class PathFinder {
 	public:
 		/** コンストラクタ
 		 *
@@ -75,7 +80,7 @@ namespace gctp {
 		 * @param buf 作業用バッファ
 		 * @param size 作業用バッファのサイズ
 		 */
-		PathSearcher(void *buf, std::size_t size)
+		PathFinder(void *buf, std::size_t size)
 			: opened_(reinterpret_cast<NodeAndCost **>(buf), size/(sizeof(NodeAndCost*)+sizeof(NodeAndCost)))
 			, closed_(reinterpret_cast<NodeAndCost *>(buf)+
 				(size/(sizeof(NodeAndCost*)+sizeof(NodeAndCost))*sizeof(NodeAndCost *)+sizeof(NodeAndCost)-1)/sizeof(NodeAndCost)
@@ -126,18 +131,14 @@ namespace gctp {
 					CostType estimated_cost = 0;
 					NodeAndCost *child = closed_.find(*i);
 					if(child) {
-						//OS_Printf("already exist %d\n", (int)child->node);
 						estimated_cost = child->estimated_cost;
 						if(child->cost+estimated_cost <= cost+estimated_cost) continue;
-						//OS_Printf("update\n");
 					}
 					else {
-						//OS_Printf("new node\n");
 						child = &closed_.push();
 						estimated_cost = c.estimateCost(*i, to);
 					}
 					opened_.push(child);
-					//OS_Printf("parent %d child %d\n", n->node, *i);
 					child->parent = n;
 					child->node = *i;
 					child->cost = cost;
@@ -145,7 +146,6 @@ namespace gctp {
 				}
 				opened_.sort();
 			}
-			GCTP_TRACE("パスが見つからない");
 			return 0;
 		}
 	
@@ -223,3 +223,4 @@ namespace gctp {
 	};
 
 } // namespace gctp
+#endif // _GCTP_PATHFINDER_HPP_
