@@ -44,6 +44,33 @@ namespace gctp { namespace graphic {
 
 		/// •W€“I‚È‰Šú’l‚ğ—^‚¦‚é
 		void setUp();
+
+		// ‘ã“ü‰‰Zq
+		Material &operator+=(const Material &src) {
+			diffuse += src.diffuse;
+			ambient += src.ambient;
+			specular += src.specular;
+			emissive += src.emissive;
+			power += src.power;
+			return *this;
+		}
+		// ‘ã“ü‰‰Zq
+		Material &operator*=(Real rhs) {
+			diffuse *= rhs;
+			ambient *= rhs;
+			specular *= rhs;
+			emissive *= rhs;
+			power *= rhs;
+			return *this;
+		}
+
+		Material operator+(const Material &rhs) const {
+			return Material(*this)+=rhs;
+		}
+
+		Material operator*(Real rhs) const {
+			return Material(*this)*=rhs;
+		}
 	};
 
 #if 0

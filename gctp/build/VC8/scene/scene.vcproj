@@ -182,6 +182,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\modelmixer.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\motion.cpp"
 				>
 			</File>
@@ -257,6 +261,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\light.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\modelmixer.hpp"
 				>
 			</File>
 			<File

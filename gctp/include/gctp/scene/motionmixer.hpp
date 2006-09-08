@@ -1,5 +1,5 @@
-#ifndef _GCTP_MOTIONMIXER_HPP_
-#define _GCTP_MOTIONMIXER_HPP_
+#ifndef _GCTP_SCENE_MOTIONMIXER_HPP_
+#define _GCTP_SCENE_MOTIONMIXER_HPP_
 /** @file
  * GameCatapult モーション制御クラスヘッダファイル
  *

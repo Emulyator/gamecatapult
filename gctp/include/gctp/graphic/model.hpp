@@ -194,7 +194,7 @@ namespace gctp { namespace graphic {
 		/// 面接続情報
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
 
-		Model() : bs_(VectorC(0,0,0),0) {}
+		Model() : bs_(VectorC(0,0,0),0), offset_(0) {}
 
 		/// 境界球
 		const Sphere &bs() { return bs_; }
@@ -202,7 +202,7 @@ namespace gctp { namespace graphic {
 		/// 境界球を再計算
 		void updateBS()
 		{
-			// バウンシングスフィアを計算
+			// 境界球を計算
 			bs_.c = calcCenter();
 			if(wire_) {
 				bs_.r = wire_->calcRadius(bs_.c);
@@ -266,6 +266,13 @@ namespace gctp { namespace graphic {
 		const char *name() const { return name_.c_str(); }
 		/// 名前をつける
 		void setName(const char *str) { name_ = str; }
+		/// （モーフ時の）オフセットを設定。差分モデルの場合これが必要
+		void setOffset(int offset) { offset_ = offset; }
+		/// （モーフ時の）オフセット
+		int offset(int offset) { return offset_; }
+
+		/// ブレンド
+		void blend(const Model **models, Real *weights, int num);
 
 	protected:
 		CStr					name_;		// シーンファイル上での名前
@@ -276,11 +283,12 @@ namespace gctp { namespace graphic {
 		Vector calcCenter() const;
 		float calcRadius(const Vector &center) const;
 
-		Handle<Brush>			brush_;
 	private:
 		Pointer<ModelDetail> detail_;
 		Pointer<WireMesh>    wire_; // あくまで表示物はModel、という設計を守るための暫定処置…
+		Handle<Brush> brush_;
 		Sphere bs_;
+		int offset_;
 	};
 
 }} //namespace gctp
