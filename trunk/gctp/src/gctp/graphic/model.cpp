@@ -1601,6 +1601,117 @@ namespace gctp { namespace graphic {
 		CREATE_DETAIL(BrushSkinModel);
 	}
 
+	namespace {
+
+		void setBlend(void *dst, const void *src, Real weight, D3DVERTEXELEMENT9 decl[MAX_FVF_DECL_SIZE], bool first)
+		{
+			for(int i = 0; i < MAX_FVF_DECL_SIZE; i++) {
+				if(i > 0 && decl[i].Offset == 0) break;
+				switch(decl[i].Type) {
+				case D3DDECLTYPE_FLOAT1:
+					if(first) (*(float *)(((char *)dst)+decl[i].Offset)) = (*(float *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(float *)(((char *)dst)+decl[i].Offset)) += (*(float *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_FLOAT2:
+					if(first) (*(Vector2 *)(((char *)dst)+decl[i].Offset)) = (*(Vector2 *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(Vector2 *)(((char *)dst)+decl[i].Offset)) += (*(Vector2 *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_FLOAT3:
+					if(first) (*(Vector *)(((char *)dst)+decl[i].Offset)) = (*(Vector *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(Vector *)(((char *)dst)+decl[i].Offset)) += (*(Vector *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_FLOAT4:
+					if(first) (*(Vector4 *)(((char *)dst)+decl[i].Offset)) = (*(Vector4 *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(Vector4 *)(((char *)dst)+decl[i].Offset)) += (*(Vector4 *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_D3DCOLOR:
+					if(first) (*(Color32 *)(((char *)dst)+decl[i].Offset)) = (*(Color32 *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(Color32 *)(((char *)dst)+decl[i].Offset)) += (*(Color32 *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_UBYTE4:
+					if(first) (*(Color32 *)(((char *)dst)+decl[i].Offset)) = (*(Color32 *)(((char *)dst)+decl[i].Offset))*weight;
+					else (*(Color32 *)(((char *)dst)+decl[i].Offset)) += (*(Color32 *)(((char *)dst)+decl[i].Offset))*weight;
+					break;
+				case D3DDECLTYPE_SHORT2:
+					break;
+				case D3DDECLTYPE_SHORT4:
+					break;
+				case D3DDECLTYPE_UBYTE4N:
+					break;
+				case D3DDECLTYPE_SHORT2N:
+					break;
+				case D3DDECLTYPE_SHORT4N:
+					break;
+				case D3DDECLTYPE_USHORT2N:
+					break;
+				case D3DDECLTYPE_USHORT4N:
+					break;
+				case D3DDECLTYPE_UDEC3:
+					break;
+				case D3DDECLTYPE_DEC3N:
+					break;
+				case D3DDECLTYPE_FLOAT16_2:
+					break;
+				case D3DDECLTYPE_FLOAT16_4:
+					break;
+				case D3DDECLTYPE_UNUSED:
+					break;
+				}
+			}
+		}
+
+	}
+
+	/** 複数モデルのブレンド結果で置き換える
+	 *
+	 * このオブジェクトを基準にモーフする、つまりほかのモデルは
+	 * このオブジェクトと同じ頂点数である必要がある.
+	 */
+	void Model::blend(const Model **models, Real *weights, int num)
+	{
+		MeshVertexLock _dst(mesh_);
+		if(_dst) {
+			D3DVERTEXELEMENT9 decl[MAX_FVF_DECL_SIZE];
+			D3DXDeclaratorFromFVF(mesh_->GetFVF(), decl);
+			int highest = 0; Real highest_weight = Real(0);
+			for(int i = 0; i < num; i++) {
+				if(weights[i] > highest_weight) {
+					highest_weight = weights[i];
+					highest = i;
+				}
+			}
+			for(int i = 0; i < num; i++) {
+				uint mnum = (std::max)(mesh_->GetNumVertices(), models[i]->mesh_->GetNumVertices());
+				if(i == 0) {
+					for(uint j = 0; j < mtrls.size(); j++) {
+						mtrls[j] = models[i]->mtrls[j]*weights[i];
+						//テクスチャ等は最も高ウェイトのものを採用
+						mtrls[j].blend = models[highest]->mtrls[j].blend;
+						mtrls[j].tex = models[highest]->mtrls[j].tex;
+						mtrls[j].tex1 = models[highest]->mtrls[j].tex1;
+						mtrls[j].tex2 = models[highest]->mtrls[j].tex2;
+					}
+				}
+				else {
+					for(uint j = 0; j < mtrls.size(); j++) {
+						mtrls[j] += models[i]->mtrls[j]*weights[i];
+						//テクスチャ等は最も高ウェイトのものを採用
+						mtrls[j].blend = models[highest]->mtrls[j].blend;
+						mtrls[j].tex = models[highest]->mtrls[j].tex;
+						mtrls[j].tex1 = models[highest]->mtrls[j].tex1;
+						mtrls[j].tex2 = models[highest]->mtrls[j].tex2;
+					}
+				}
+				MeshVertexLock _src(models[i]->mesh_);
+				if(_src) {
+					uint vnum = (std::max)(mesh_->GetNumVertices(), models[i]->mesh_->GetNumVertices());
+					for(uint j = 0; j < vnum; j++, _dst.step(), _src.step()) {
+						setBlend(_dst.get(), _src.get(), weights[i], decl, i == 0);
+					}
+				}
+			}
+		}
+	}
 
 	///////////////////////
 	// WireMesh

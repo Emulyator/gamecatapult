@@ -122,7 +122,6 @@ namespace gctp { namespace scene {
 					if(_mtrls[i].pTextureFilename) {
 						context().load(_mtrls[i].pTextureFilename);
 						model.mtrls[i].tex = graphic::db()[_mtrls[i].pTextureFilename];
-						PRNN(model.mtrls[i].tex);
 					}
 				}
 				if(eff) {

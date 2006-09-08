@@ -20,6 +20,7 @@ namespace gctp {
 
 namespace gctp { namespace scene {
 
+	class ModelMixer;
 	/** モデルインスタンス
 	 *
 	 * Modelを描画可能にしたもの
@@ -60,6 +61,7 @@ namespace gctp { namespace scene {
 	GCTP_DECLARE_CLASS
 	private:
 		void calcBS();
+		Pointer<ModelMixer>		modelmixer_;
 		Handle<graphic::Model>	model_;
 		Handle<StrutumNode>		node_;
 		Handle<Skeleton>		skl_;

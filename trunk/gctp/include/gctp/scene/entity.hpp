@@ -54,7 +54,7 @@ namespace gctp { namespace scene {
 		Skeleton &skeleton() { return *target_; }
 		/// スケルトン
 		const Skeleton &skeleton() const { return *target_; }
-		/// スケルトンがあるか？
+		/// モーションミキサーがあるか？
 		bool hasMotionMixer() { return mixer_; }
 		/// モーションミキサー
 		MotionMixer &mixer() { return *mixer_; }
