@@ -97,7 +97,7 @@ namespace gctp { namespace graphic {
 		}
 
 		/// テクスチャ領域のセットアップ（createOnDB等用）
-		HRslt setUp(const char *name) { return setUp(); }
+		HRslt setUp(const _TCHAR *name) { return setUp(); }
 
 		/// テクスチャ領域のセットアップ
 		HRslt setUp();
@@ -138,13 +138,13 @@ namespace gctp { namespace graphic {
 	};
 
 	/// FontTextureを使った文字表示
-	void drawText(SpriteBuffer &spr, FontTexture &font, const Handle<Font> cfont, const Point2f &pos, Color32 color, const char *_text);
+	void drawText(SpriteBuffer &spr, FontTexture &font, const Handle<Font> cfont, const Point2f &pos, Color32 color, const _TCHAR *_text);
 
 	/// タブ境界に整列
 	inline float toTabbed(float x, int tabwidth) { return static_cast<float>(static_cast<int>(x)/tabwidth*tabwidth+tabwidth); }
 
 	/// 文字列中の指定文字の位置を取得
-	Point2f getTextPos(const FontTexture &font, const Handle<Font> cfont, const char *text, uint idx);
+	Point2f getTextPos(const FontTexture &font, const Handle<Font> cfont, const _TCHAR *text, uint idx);
 
 	/** 複数のフォントテクスチャをまとめて管理する
 	 *

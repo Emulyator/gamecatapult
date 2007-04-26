@@ -24,7 +24,7 @@ namespace gctp { namespace graphic {
 			operator bool() { return buf ? true : false; }
 		};
 
-		HRslt setUp(const char *fname);
+		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(int _width, int _height, int _format);
 
 //		HRslt restore();
@@ -76,7 +76,7 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	protected:
-		CStr name_;
+		TCStr name_;
 		int org_width_;
 		int org_height_;
 		dx::IDirect3DTexture9Ptr ptr_;

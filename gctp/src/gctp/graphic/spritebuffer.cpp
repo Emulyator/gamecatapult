@@ -12,7 +12,7 @@
 #include <gctp/graphic/texture.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <sstream>
-#include <gctp/csv.hpp>
+#include <gctp/tcsv.hpp>
 #include <boost/lexical_cast.hpp>
 #include <assert.h>
 
@@ -37,13 +37,13 @@ namespace gctp { namespace graphic {
 		void record()
 		{
 			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
-			device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+			device().impl()->SetRenderState( D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA );
+			device().impl()->SetRenderState( D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA );
 			device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
 			device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
-			device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
-			device().impl()->SetRenderState( D3DRS_FILLMODE,   D3DFILL_SOLID );
-			device().impl()->SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );
+			device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
+			device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
+			device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
 			device().impl()->SetRenderState( D3DRS_ZENABLE,          FALSE );
 			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
 			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
@@ -114,12 +114,12 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/15 4:40:33
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt SpriteBuffer::setUp(const char *name)
+	HRslt SpriteBuffer::setUp(const _TCHAR *name)
 	{
 		if(name) {
-			stringstream ioss;
+			basic_stringstream<_TCHAR> ioss;
 			ioss << name;
-			CSVRow csv;
+			TCSVRow csv;
 			ioss >> csv;
 			if(csv.size() > 1) {
 				bool is_TL = true;
@@ -143,7 +143,7 @@ namespace gctp { namespace graphic {
 		HRslt hr;
 		locked_ = 0;
 		cur_ = 0;
-		sb_ = createOnDB<SpriteSB>("SPRITESB");
+		sb_ = createOnDB<SpriteSB>(_T("SPRITESB"));
 
 		is_TL_ = is_TL;
 		maxnum_ = maxnum;

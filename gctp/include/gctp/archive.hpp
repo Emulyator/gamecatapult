@@ -13,9 +13,10 @@
  */
 #include <gctp/iobstream.hpp>
 #include <gctp/buffer.hpp>
-#include <gctp/cstr.hpp>
+#include <gctp/tcstr.hpp>
 #include <map>
 #include <list>
+#include <tchar.h> // VC限定だな…
 
 namespace gctp {
 	
@@ -33,14 +34,14 @@ namespace gctp {
 	public:
 		enum Mode {NEW, READ, WRITE};
 		FileBuf(bool tmp = false) : fd_(-1) { if(tmp) open(); }
-		explicit FileBuf(const char *fname, Mode mode = READ) : fd_(-1)
+		explicit FileBuf(const _TCHAR *fname, Mode mode = READ) : fd_(-1)
 		{ open(fname, mode); }
 		virtual ~FileBuf() { sync(); close(); }
 		bool is_open() const
 		{ return (fd_!=-1)?true:false; }
 		Mode mode()
 		{ return mode_; }
-		void open(const char *fname, Mode mode = READ);
+		void open(const _TCHAR *fname, Mode mode = READ);
 		void open();
 		void close();
 
@@ -82,14 +83,14 @@ namespace gctp {
 		enum Mode {NEW, READ, WRITE};
 		enum {BEG, CUR, END};
 		File(bool tmp = false) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) { if(tmp) open(); }
-		explicit File(const char *fname, Mode mode = READ) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE)
+		explicit File(const _TCHAR *fname, Mode mode = READ) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE)
 		{ open(fname, mode); }
 		virtual ~File() {flush(); close();}
 		bool is_open() const
 		{return _M_buf.is_open();}
 		Mode mode()
 		{return (Mode)_M_buf.mode();}
-		void open(const char *fname, Mode mode = READ)
+		void open(const _TCHAR *fname, Mode mode = READ)
 		{ _M_buf.open(fname, (FileBuf::Mode)mode); }
 		void open()
 		{ _M_buf.open(); }
@@ -173,16 +174,16 @@ namespace gctp {
 	{
 	public:
 		/// アーカイブ内のファイル情報の索引を表すクラス
-		typedef std::map<CStr, ArchiveEntry> Index;
+		typedef std::map<TCStr, ArchiveEntry> Index;
 		/// Indexのiterator
 		typedef Index::iterator IndexItr;
 
 		/// デフォルトコンストラクタ
 		Archive() : index_size_(0) {}
 		/// アーカイブファイル名を指定して開く
-		explicit Archive(const char *fn);
+		explicit Archive(const _TCHAR *fn);
 		/// アーカイブファイル名を指定して開く
-		void open(const char *fn);
+		void open(const _TCHAR *fn);
 		/// 開いているか？
 		bool is_open() {return File::is_open();}
 		/// 閉じる
@@ -190,31 +191,31 @@ namespace gctp {
 		/// アーカイブファイルの長さ
 		int length() {return File::length();}
 		/// エントリ取得
-		ArchiveEntry *get(const char *fn);
+		ArchiveEntry *get(const _TCHAR *fn);
 		/// エントリ先頭にシーク
 		Archive &seek(const ArchiveEntry *entry);
 		/// エントリ先頭にシーク
-		Archive &seek(const char *fn);
+		Archive &seek(const _TCHAR *fn);
 		/// 内部のファイルを別ファイルに抽出
-		Archive &extract(const char *fn, const char *entryname);
+		Archive &extract(const _TCHAR *fn, const _TCHAR *entryname);
 		/// 内部のファイルを別ファイルに抽出
-		Archive &extract(const char *fn, const ArchiveEntry *entry);
+		Archive &extract(const _TCHAR *fn, const ArchiveEntry *entry);
 		/// すべての内部ファイルを別ファイルに抽出
 		Archive &extract();
 		/// 読み込み
-		Archive &read(void *dst, const char *fn);
+		Archive &read(void *dst, const _TCHAR *fn);
 		/// 読み込み
 		Archive &read(void *dst, const ArchiveEntry *entry);
 		/// 読み込み
 		Archive &read(void *dst, const int size);
 		/// 内部ファイルをBufferで返す
-		Buffer load(const char *fn);
+		Buffer load(const _TCHAR *fn);
 		/// 内部ファイルをBufferで返す
 		Buffer load(const ArchiveEntry *entry);
 		/// 指定サイズ読み込んでBufferで返す
 		Buffer load(const int size);
 		/// 索引をコンソールに出力
-		void printIndex(std::ostream &os);
+		void printIndex(std::basic_ostream<_TCHAR> &os);
 		
 	protected:
 		Index index_; // 読み出しのときの索引
@@ -239,14 +240,14 @@ namespace gctp {
 		public:
 			enum Attr {ALREADY, NEW, UPDATE, REMOVE};
 			/// エントリのパス
-			CStr name;
+			TCStr name;
 			/// 属性
 			Attr attr;
 
 			/// デフォルトコンストラクタ
 			EntryAttr() : attr(ALREADY) {}
 			/// コンストラクタ
-			EntryAttr(const char *name, ArchiveEntry &entry, Attr attr = ALREADY) : ArchiveEntry(entry), name(name), attr(attr) {}
+			EntryAttr(const _TCHAR *name, ArchiveEntry &entry, Attr attr = ALREADY) : ArchiveEntry(entry), name(name), attr(attr) {}
 			bool operator==(const EntryAttr &rhs) const { return pos==rhs.pos; }
 			bool operator!=(const EntryAttr &rhs) const { return pos!=rhs.pos; }
 			bool operator<(const EntryAttr &rhs) const { return pos<rhs.pos; }
@@ -262,31 +263,31 @@ namespace gctp {
 		/// デフォルトコンストラクタ
 		ArchiveEditable() : alignment_(4), index_page_size_(4) {}
 		/// コンストラクタ
-		explicit ArchiveEditable(const char *fn);
+		explicit ArchiveEditable(const _TCHAR *fn);
 		/// アライメントを指定
 		void setAlign(int n) { alignment_ = index_page_size_ = n; }
 		/// 開く
-		void open(const char *fn);
+		void open(const _TCHAR *fn);
 		/// エントリ追加
-		void add(const char *fn);
+		void add(const _TCHAR *fn);
 		/// 更新日付を無視し、強制再構築
-		void forceUpdate(const char *fn);
+		void forceUpdate(const _TCHAR *fn);
 		/// 再構築
 		void update();
 		/// エントリ削除
-		void remove(const char *fn);
+		void remove(const _TCHAR *fn);
 		/// 確定
 		void commit();
 		/// 編集中リストを出力
-		void printList(std::ostream &os);
+		void printList(std::basic_ostream<_TCHAR> &os);
 	protected:
 		List list_; // 書き込みのときのリスト
 		void setUpList();
 		long calcIndexLen();
 		long commitEntrys(int index_size);
 		void commitIndex(int index_size);
-		ListItr find(const char *fn) {
-			LStr wfn(fn);
+		ListItr find(const _TCHAR *fn) {
+			TLStr wfn(fn);
 			ListItr i;
 			for(i = list_.begin(); i != list_.end(); ++i) {
 				if(i->name == wfn) break;

@@ -178,11 +178,7 @@ namespace gctp {
 	inline Input &input() { return *Input::input_; }
 
 	/// 入力デバイス情報デバッグ出力
-#ifdef UNICODE
-	extern std::wostream &operator<<(std::wostream &os, const Input::Device &device);
-#else
-	extern std::ostream &operator<<(std::ostream &os, const Input::Device &device);
-#endif
+	extern std::basic_ostream<_TCHAR> &operator<<(std::basic_ostream<_TCHAR> &os, const Input::Device &device);
 
 } // namespace gctp
 

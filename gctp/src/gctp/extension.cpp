@@ -7,8 +7,8 @@
  */
 #include "common.h"
 #include <gctp/extension.hpp>
-#include <gctp/stringmap.hpp>
-#include <gctp/uri.hpp>
+#include <gctp/tstringmap.hpp>
+#include <gctp/turi.hpp>
 
 using namespace std;
 
@@ -19,7 +19,7 @@ namespace gctp {
 	//
 
 	namespace {
-		typedef StaticStringMap<RealizeMethod> RealizerMap;
+		typedef TStaticStringMap<RealizeMethod> RealizerMap;
 		// RealizerMap‚ÌƒVƒ“ƒOƒ‹ƒgƒ“‚ð•Ô‚·
 		RealizerMap &realizers()
 		{
@@ -34,7 +34,7 @@ namespace gctp {
 	 * @date 2004/02/08 12:04:48
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Extension::Extension(const char *extension, const RealizeMethod f) : ext_(extension)
+	Extension::Extension(const _TCHAR *extension, const RealizeMethod f) : ext_(extension)
 	{
 		realizers().put(extension, f);
 	}
@@ -56,15 +56,15 @@ namespace gctp {
 	 * @date 2004/01/29 20:37:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	RealizeMethod Extension::get(const char *extension)
+	RealizeMethod Extension::get(const _TCHAR *extension)
 	{
 		RealizeMethod ret = realizers().get(extension);
 		if(!ret) {
-			string ext = URI(extension).extension();
-			while(ext != "") {
+			std::basic_string<_TCHAR> ext = TURI(extension).extension();
+			while(ext != _T("")) {
 				ret = realizers().get(ext.c_str());
 				if(ret) break;
-				ext = URI(ext).extension();
+				ext = TURI(ext).extension();
 			}
 		}
 		return ret;

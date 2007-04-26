@@ -466,11 +466,13 @@ namespace gctp { namespace graphic { namespace dx {
 	{
 		os<<"driver : "<<adapter.Driver<<endl;
 		os<<"caption : "<<adapter.Description<<endl;
+		os<<"screen descs : ";
 		for(uint i = 0; i < adapter.modes.size(); i++) {
 			os<<i<<": "<<adapter.modes[i].Width<<"x"<<adapter.modes[i].Height<<" "<<adapter.modes[i].Format;
 			if(adapter.modes[i].RefreshRate==D3DPRESENT_RATE_DEFAULT) os<<":DEFAULT  ";
 			else os<<":"<<adapter.modes[i].RefreshRate<<"Hz  ";
 		}
+		os<<endl;
 		return os;
 	}
 

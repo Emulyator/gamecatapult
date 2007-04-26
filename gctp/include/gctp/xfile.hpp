@@ -298,13 +298,17 @@ namespace gctp {
 	class XFileReader : public ID3DXFileEnumObjectPtr {
 	public:
 		XFileReader() {}
-		explicit XFileReader(const char* fn) { open(fn); }
-		XFileReader(XFileEnv &env, const char* fn) { open(env, fn); }
+		explicit XFileReader(const _TCHAR* fn) { open(fn); }
+		XFileReader(XFileEnv &env, const _TCHAR* fn) { open(env, fn); }
 		
 		// ファイルオープン
 		HRslt open(XFileEnv &env, const char *fn);
 		HRslt open(const char *fn);
-		
+#ifdef UNICODE
+		HRslt open(XFileEnv &env, const wchar_t *fn);
+		HRslt open(const wchar_t *fn);
+#endif
+
 		bool isOpen() { return (*this) ? true : false; }
 		
 		void close()

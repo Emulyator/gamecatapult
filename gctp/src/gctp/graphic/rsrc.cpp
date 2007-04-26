@@ -22,10 +22,10 @@ namespace gctp { namespace graphic {
 	Rsrc::Rsrc()
 	{
 		if(!device().isOpen()) {
-			GCTP_TRACE_MSGBOX("graphic::Deviceがセットアップされていないか、\n"
-				"カレントデバイスが設定されていない状態でデバイス管理リソースが製作されています。\n"
-				"静的オブジェクトとしてデバイス管理リソースを持ちたい場合は、\n"
-				"ポインターにするなどして、デバイスのオープン後に製作されるようにしてください。");
+			GCTP_TRACE_MSGBOX(_T("graphic::Deviceがセットアップされていないか、\n")
+				_T("カレントデバイスが設定されていない状態でデバイス管理リソースが製作されています。\n")
+				_T("静的オブジェクトとしてデバイス管理リソースを持ちたい場合は、\n")
+				_T("ポインターにするなどして、デバイスのオープン後に製作されるようにしてください。"));
 		}
 		else device().registerRsrc(Handle<Rsrc>(this));
 	}

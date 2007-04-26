@@ -87,7 +87,7 @@ namespace gctp { namespace graphic {
 		HRslt hr;
 		locked_ = 0;
 		cur_ = 0;
-		sb_ = createOnDB<ParticleSB>("PARTICLESB");
+		sb_ = createOnDB<ParticleSB>(_T("PARTICLESB"));
 
 		dx::FVF fvf(FVF_L);
 		maxnum_ = maxnum;

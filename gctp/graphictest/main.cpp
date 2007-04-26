@@ -70,9 +70,9 @@ public:
 		}
 		g_.setCurrent();
 
-		tex_ = graphic::createOnDB<Texture>("../media/gctp.jpg");
-		spr_ = graphic::createOnDB<SpriteBuffer>("spritebuffer");
-		font_ = graphic::createOnDB<FontTexture>("fonttexture");
+		tex_ = graphic::createOnDB<Texture>(_T("../../../media/gctp.jpg"));
+		spr_ = graphic::createOnDB<SpriteBuffer>(_T("spritebuffer"));
+		font_ = graphic::createOnDB<FontTexture>(_T("fonttexture"));
 		theta_ = 0; scale_ = 0; count_ = 0;
 
 		updateDisplay();
@@ -156,7 +156,7 @@ public:
 			setProjection(Matrix().setFOV(g_pi/4, getViewPort().aspectRatio(), 1.0f, 100.0f));
 
 			if(mesh) mesh->DrawSubset(0);
-			else PRNN("ティーポッドが無い。。。");
+			else PRNN(_T("ティーポッドが無い。。。"));
 
 			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2fC(256, 8)).setColor(Color32(255,0,0))).end();
 			
@@ -168,7 +168,7 @@ public:
 			scale_ = fabsf(sinf(theta_))+0.5f;
 
 			text_.setClumpPos(10, -20).out() << "Alt + F4 to exit";
-			text_.setPos(10, 20).setColor(Color32(255, 0, 127)).out() << "現在の角度:";
+			text_.setPos(10, 20).setColor(Color32(255, 0, 127)).out() << _T("現在の角度:");
 			text_.setPos(90, 20).out() << theta_;
 			text_.setPos(160, 20).out() << scale_;
 			text_.setPos(10, 40).out() << "mouse (" << mouse_pos_.x << ", " << mouse_pos_.y << ")";
@@ -176,7 +176,7 @@ public:
 			Point2f cursor_pos = text_.getPos(*font_, (int)ibuf_.cursor()-(int)ibuf_.get().size());
 			if(ime_.isOpen()) {
 				ime_.setPos(Point2C(cursor_pos));
-				Handle<gctp::Font> default_font = gctp::db()["defaultfont"];
+				Handle<gctp::Font> default_font = gctp::db()[_T("defaultfont")];
 				if(default_font) {
 					LOGFONT logfont;
 					default_font->getLogFont(logfont);
@@ -202,9 +202,13 @@ public:
 			}
 			else text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << (isleadbyte(ibuf_.cursorChar()) ? "＿" : "_");
 #else
-			text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << (isleadbyte(ibuf_.cursorChar()) ? "＿" : "_");
+# ifdef UNICODE
+			text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << "_";
+# else
+			text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << (isleadbyte(ibuf_.cursorChar()) ? _T("＿") : _T("_"));
+# endif
 #endif
-			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << "変換";
+			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << _T("変換");
 			text_.draw(*spr_, *font_);
 
 			end();
@@ -374,7 +378,7 @@ private:
 			//device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
 
 			if(mesh) mesh->DrawSubset(0);
-			else PRNN("ティーポッドが無い。。。");
+			else PRNN(_T("ティーポッドが無い。。。"));
 
 			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2f(200, 8)).setColor(Color32(255,0,0))).end();
 			

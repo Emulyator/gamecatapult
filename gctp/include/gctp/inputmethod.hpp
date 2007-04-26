@@ -87,23 +87,14 @@ namespace gctp {
 				if(!(status & GCS_RESULTSTR)){
 					cur_ = ImmGetCompositionString(himc, GCS_CURSORPOS, NULL, 0);
 					// 属性情報読み取り
-					DWORD dwSize = ImmGetCompositionString(himc, GCS_COMPATTR, NULL, 0);
-					HANDLE hMem = GlobalAlloc(GPTR, dwSize);
-					uint8_t *attr = reinterpret_cast<uint8_t *>(GlobalLock(hMem));
-					ImmGetCompositionString(himc, GCS_COMPATTR, attr, dwSize);
-					attrs_.clear();
-					for(uint i = 0; i < dwSize; i++) attrs_.push_back(attr[i]);
-					GlobalUnlock(hMem);
-					GlobalFree(hMem);
+					DWORD size = ImmGetCompositionString(himc, GCS_COMPATTR, NULL, 0);
+					attrs_.resize(size);
+					ImmGetCompositionString(himc, GCS_COMPATTR, &attrs_[0], size);
 					// 現在の変換候補を取得
-					dwSize = ImmGetCompositionString(himc, GCS_COMPSTR, NULL, 0);
-					hMem = GlobalAlloc(GPTR, dwSize+1);
-					char *str = reinterpret_cast<char *>(GlobalLock(hMem));
-					ImmGetCompositionString(himc, GCS_COMPSTR, str, dwSize);
-					str[dwSize] = 0;
-					str_ = str;
-					GlobalUnlock(hMem);
-					GlobalFree(hMem);
+					size = ImmGetCompositionString(himc, GCS_COMPSTR, NULL, 0);
+					str_.resize(size/sizeof(_TCHAR)+1);
+					ImmGetCompositionString(himc, GCS_COMPSTR, (void *)str_.data(), size);
+					str_[size/sizeof(_TCHAR)] = 0;
 					return true;
 				}
 				else {
@@ -129,7 +120,7 @@ namespace gctp {
 			return true;
 		}
 
-		const std::string &str() const { return str_; }
+		const std::basic_string<_TCHAR> &str() const { return str_; }
 		const std::vector<uint8_t> &attrs() const { return attrs_; }
 		uint cursor() const { return cur_; }
 
@@ -146,7 +137,7 @@ namespace gctp {
 		bool is_open_;
 		uint cur_;
 		std::vector<uint8_t> attrs_;
-		std::string str_; // 現在の編集内容
+		std::basic_string<_TCHAR> str_; // 現在の編集内容
 	};
 
 }

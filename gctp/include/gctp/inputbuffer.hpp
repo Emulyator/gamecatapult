@@ -23,6 +23,8 @@ namespace gctp {
 	 */
 	class InputBuffer {
 	public:
+		typedef std::basic_string<_TCHAR> StringType;
+
 		InputBuffer() : cur_(0), do_insert_(true) {}
 		/// inputKeyで受け付けるキーコードのシノニム
 		enum {
@@ -46,7 +48,7 @@ namespace gctp {
 		 */
 		void input(int c)
 		{
-			if(iscntrl(c)) {
+			if(_istcntrl(c)) {
 				switch(c) {
 				case '\b': // BS
 					if(cur_ <= buf_.length()) {
@@ -108,7 +110,7 @@ namespace gctp {
 		 * @date 2004/07/14 0:56:43
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		void input(const char *s)
+		void input(const _TCHAR *s)
 		{
 			int c;
 			while(s && *s) {
@@ -123,7 +125,7 @@ namespace gctp {
 		 * @date 2004/07/14 1:41:51
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		const char *getCStr()
+		const _TCHAR *getCStr()
 		{
 			return buf_.c_str();
 		}
@@ -134,7 +136,7 @@ namespace gctp {
 		 * @date 2004/07/14 1:41:51
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		const std::string &get()
+		const StringType &get()
 		{
 			return buf_;
 		}
@@ -145,7 +147,7 @@ namespace gctp {
 		 * @date 2004/07/14 3:14:23
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		std::string::size_type cursor() { return cur_; }
+		StringType::size_type cursor() { return cur_; }
 
 		/** カーソル位置の文字を返す
 		 *
@@ -168,13 +170,13 @@ namespace gctp {
 	protected:
 		inline void insert(int c)
 		{
-			std::string _c = charToStr(c);
+			StringType _c = charToStr(c);
 			buf_.insert(cur_, _c);
 			cur_ += _c.length();
 		}
 		inline void replace(int c)
 		{
-			std::string _c = charToStr(c);
+			StringType _c = charToStr(c);
 			buf_.replace(cur_, nextCur()-cur_, _c);
 			cur_ += _c.length();
 		}
@@ -182,9 +184,12 @@ namespace gctp {
 		{
 			buf_.erase(cur_, nextCur()-cur_);
 		}
-		inline std::string::size_type backCur()
+		inline StringType::size_type backCur()
 		{
-			std::string::size_type len = buf_.length();// size_typeはどこでもunsigedであるはずだ！！だから､ゼロ以下のチェックはしなくていいはず
+			StringType::size_type len = buf_.length();// size_typeはどこでもunsigedであるはずだ！！だから､ゼロ以下のチェックはしなくていいはず
+#ifdef UNICODE
+			if(cur_-1 <= len) return cur_ - 1;
+#else
 #ifdef GCTP_SHIFT_JIS
 			// SJISは二文字目もisleadbyteがTRUEになるし、アスキー文字に見える文字もある。
 			// 一文字戻るには、正しい境界にあることを保証された地点から順に見ていくしかない。（なるほどワイド文字は必要なはずだ）
@@ -192,7 +197,7 @@ namespace gctp {
 			if(cur_-1 <= len) {
 				mblen(NULL, 0);
 				const char *str = buf_.c_str();
-				std::string::size_type cur = 0;
+				StringType::size_type cur = 0;
 				int n = 0;
 				do {
 					str+=n; cur+=n;
@@ -206,7 +211,7 @@ namespace gctp {
 			if(cur_-1 <= len) {
 				mblen(NULL, 0);
 				const char *str = buf_.c_str();
-				std::string::size_type cur = 0;
+				StringType::size_type cur = 0;
 				int n = 0;
 				do {
 					str+=n; cur+=n;
@@ -224,23 +229,28 @@ namespace gctp {
 //			}
 //			if(cur_-1 <= len) return cur_-1;
 #endif
+#endif
 			return cur_;
 		}
-		inline std::string::size_type nextCur()
+		inline StringType::size_type nextCur()
 		{
-			std::string::size_type len = buf_.length();
+			StringType::size_type len = buf_.length();
+#ifdef UNICODE
+			if(cur_+1 <= len) return cur_ + 1;
+#else
 			if(cur_+1 <= len) {
 				mblen(NULL, 0); // 順に進む分には問題ないだろう
 				int n = mblen(&buf_[cur_], (std::max)((int)MB_CUR_MAX, (int)(len-cur_)));
 				if(n > 0 && cur_+n <= len) return cur_+n;
 			}
+#endif
 			return cur_;
 		}
 
 		/// 入力を確保するバッファ
-		std::string buf_; // これしかないか？？
+		StringType buf_; // これしかないか？？
 		/// カーソル位置
-		std::string::size_type cur_;
+		StringType::size_type cur_;
 		bool do_insert_;
 	};
 

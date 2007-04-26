@@ -33,7 +33,7 @@ namespace gctp { namespace scene {
 		target_ = src->dup();
 	}
 
-	void Entity::setUp(const char *filename)
+	void Entity::setUp(const _TCHAR *filename)
 	{
 		if(filename) {
 			Pointer<GraphFile> file = db()[filename].lock();
@@ -102,8 +102,14 @@ namespace gctp { namespace scene {
 		if(L.top()>=1) {
 			const char *fname = L[1].toCStr();
 			if(fname) {
+#ifdef UNICODE
+				WCStr fn = fname;
+				context().load(fn.c_str());
+				setUp(fn.c_str());
+#else
 				context().load(fname);
 				setUp(fname);
+#endif
 			}
 		}
 		return true;
@@ -134,7 +140,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, exit)
 	TUKI_IMPLEMENT_END(Entity)
 	
-	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const char *name, const char *srcfilename)
+	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) context.load(srcfilename);
 		Pointer<Entity> ret = context.create(classname).lock();
@@ -146,7 +152,7 @@ namespace gctp { namespace scene {
 		return ret;
 	}
 
-	Handle<Entity> newEntity(Context &context, Stage &stage, const GCTP_TYPEINFO &typeinfo, const char *name, const char *srcfilename)
+	Handle<Entity> newEntity(Context &context, Stage &stage, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) context.load(srcfilename);
 		Pointer<Entity> ret = context.create(typeinfo).lock();

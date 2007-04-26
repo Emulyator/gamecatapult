@@ -35,11 +35,17 @@ namespace gctp {
 		int   count; ///< このプロファイルエントリの呼び出し回数
 	};
 
-	template<class E, class T>
-	std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, Profile const & p)
+	template<class T>
+	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, Profile const & p)
 	{
 	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
-		return os << boost::format("%1$#04.1f%% %2$#08.6fs %3$#08.6fs %4$#08.6fs %5$#08.6fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+		return os << boost::basic_format<char, T>("%1$#04.1f%% %2$#08.6fs %3$#08.6fs %4$#08.6fs %5$#08.6fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+	}
+	template<class T>
+	std::basic_ostream<wchar_t, T> & operator<< (std::basic_ostream<wchar_t, T> & os, Profile const & p)
+	{
+	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
+		return os << boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.6fs %3$#08.6fs %4$#08.6fs %5$#08.6fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
 	}
 
 	/** プロファイル計測クラス
@@ -104,8 +110,8 @@ namespace gctp {
 		bool begun_;
 	};
 
-	template<class E, class T>
-	std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, Profiler const & p)
+	template<class T>
+	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, Profiler const & p)
 	{
 		os<<"#"<<p.name()<<"\t"<<p.prof<<endl;
 		for(Profiler::SubEntries::const_iterator i = p.subentries().begin(); i != p.subentries().end(); ++i)
@@ -115,7 +121,22 @@ namespace gctp {
 		}
 		if(!p.subentries().empty()) {
 			for(int tab = p.depth()+1; tab > 0; tab--) os << "\t";
-			os<<"--------\t"<<boost::format("%1$#04.1f%% %2$#08.6fs")%(p.other_rate*100.0f)%p.other_total<<endl;
+			os<<"--------\t"<<boost::basic_format<char, T>("%1$#04.1f%% %2$#08.6fs")%(p.other_rate*100.0f)%p.other_total<<endl;
+		}
+		return os;
+	}
+	template<class T>
+	std::basic_ostream<wchar_t, T> & operator<< (std::basic_ostream<wchar_t, T> & os, Profiler const & p)
+	{
+		os<<"#"<<p.name()<<"\t"<<p.prof<<endl;
+		for(Profiler::SubEntries::const_iterator i = p.subentries().begin(); i != p.subentries().end(); ++i)
+		{
+			for(int tab = i->depth(); tab > 0; tab--) os << "\t";
+			os<<(*i);
+		}
+		if(!p.subentries().empty()) {
+			for(int tab = p.depth()+1; tab > 0; tab--) os << "\t";
+			os<<"--------\t"<<boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.6fs")%(p.other_rate*100.0f)%p.other_total<<endl;
 		}
 		return os;
 	}

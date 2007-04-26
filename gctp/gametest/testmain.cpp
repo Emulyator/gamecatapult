@@ -279,22 +279,22 @@ extern "C" int main(int argc, char *argv[])
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
 
-//	audio::Player bgm = audio::ready("../media/hugeraw.wav");
-//	bgm.play(true);
-//	audio::Player se = audio::ready("../media/pang.wav");
+	audio::Player bgm = audio::ready(_T("../../../media/hugeraw.wav"));
+	bgm.play(true);
+	audio::Player se = audio::ready(_T("../../../media/pang.wav"));
 
 	graphic::Text text;
 
 	graphic::ParticleBuffer pbuf;
 	pbuf.setUp();
-	Pointer<graphic::Texture> ptex = createOnDB<graphic::Texture>("../../../media/BitmapSet4.bmp"/*"particle.bmp"*/);
+	Pointer<graphic::Texture> ptex = createOnDB<graphic::Texture>(_T("../../../media/BitmapSet4.bmp")/*_T("particle.bmp")*/);
 
 	// ルートスクリプト実行
 	Context context;
-	context.load("../../../media/Reflect.tga");
+	context.load(_T("../../../media/Reflect.tga"));
 	Pointer<scene::Stage> stage = context.create("gctp.Stage").lock();
 	if(stage) {
-		Pointer<scene::Camera> camera = stage->newNode(context, "gctp.Camera", "camera").lock();
+		Pointer<scene::Camera> camera = stage->newNode(context, "gctp.Camera", _T("camera")).lock();
 		if(camera) {
 			scene::Camera *c = camera.get();
 			camera->setUp();
@@ -305,7 +305,7 @@ extern "C" int main(int argc, char *argv[])
 			camera->node()->val.getLCM().position() = VectorC(0.0f, 0.5f, -2.0f);
 		}
 		Pointer<scene::Entity> entity;
-		entity = newEntity(context, *stage, "gctp.Entity", "chara", "../../../media/gradriel.x").lock();
+		entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("../../../media/gradriel.x")).lock();
 		if(entity) {
 			//entity->skeleton().setPosType(MotionChannel::LINEAR);
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
@@ -319,10 +319,10 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/wire_test.x").lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/wire_test.x")).lock();
 
 		for(int i = 0; i < 20; i++) {
-			entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/gradriel.x").lock();
+			entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gradriel.x")).lock();
 			if(entity) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
 				entity->mixer().tracks()[0].setLoop(true);
@@ -330,7 +330,8 @@ extern "C" int main(int argc, char *argv[])
 				entity->getLpos().z = ((float)rand()/(float)RAND_MAX)*30.0f;
 			}
 		}
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/gctp_gun.x").lock();
+
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gctp_gun.x")).lock();
 		if(entity) {
 			if(entity->mixer().isExist(0)) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
@@ -341,7 +342,8 @@ extern "C" int main(int argc, char *argv[])
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 			//entity->do_loop_ = true;
 		}
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/gctp_base.x").lock();
+
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gctp_base.x")).lock();
 		if(entity) {
 			if(entity->mixer().isExist(0)) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
@@ -352,8 +354,8 @@ extern "C" int main(int argc, char *argv[])
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/cell.x").lock();
-		//entity = newEntity(context, *stage, "gctp.Entity", NULL, "../../../media/room1.x").lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/cell.x")).lock();
+		//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/room1.x")).lock();
 
 		{
 			graphic::setAmbient(Color(0.5f,0.5f,0.5f));
@@ -379,7 +381,7 @@ extern "C" int main(int argc, char *argv[])
 				//pl->enter(*stage);
 			}
 		}
-		Pointer<scene::QuakeLikeCamera> qcam = stage->newNode(context, "gctp.QuakeLikeCamera", "qcamera").lock();
+		Pointer<scene::QuakeLikeCamera> qcam = stage->newNode(context, "gctp.QuakeLikeCamera", _T("qcamera")).lock();
 		if(qcam) {
 			qcam->target() = camera;
 			qcam->enter(*stage);
@@ -388,8 +390,8 @@ extern "C" int main(int argc, char *argv[])
 
 	while(app().canContinue()) {
 		//if(input().kbd().press(DIK_ESCAPE)) break;
-		Pointer<scene::Camera> camera = (*stage)["camera"].lock();
-		Pointer<scene::QuakeLikeCamera> qcam = (*stage)["qcamera"].lock();
+		Pointer<scene::Camera> camera = (*stage)[_T("camera")].lock();
+		Pointer<scene::QuakeLikeCamera> qcam = (*stage)[_T("qcamera")].lock();
 		if(camera && qcam) {
 			if(input().kbd().push(DIK_TAB)) {
 				qcam->setEnable(!qcam->enable());
@@ -404,7 +406,7 @@ extern "C" int main(int argc, char *argv[])
 				camera->fov() = g_pi/4;
 			}
 		}
-		Pointer<scene::Entity> chr = (*stage)["chara"].lock();
+		Pointer<scene::Entity> chr = (*stage)[_T("chara")].lock();
 		if(chr) {
 			if(input().kbd().push(DIK_NUMPADPLUS)||input().kbd().push(DIK_COMMA)) chr->mixer().setSpeed(chr->mixer().speed()+0.1f);
 			if(input().kbd().push(DIK_NUMPADMINUS)||input().kbd().push(DIK_PERIOD)) chr->mixer().setSpeed(chr->mixer().speed()-0.1f);
@@ -455,7 +457,7 @@ extern "C" int main(int argc, char *argv[])
 
 			stage->onDraw();
 
-			graphic::LineParticleDesc pdesc;
+			/*graphic::LineParticleDesc pdesc;
 			Vector pos[2];
 			pos[0] = VectorC(0.5f, 0.5f, 1.0f);
 			pos[1] = VectorC(1.5f, 1.5f, 1.0f);
@@ -468,29 +470,29 @@ extern "C" int main(int argc, char *argv[])
 			graphic::setWorld(MatrixC(true));
 			pbuf.begin(*ptex);
 			pbuf.draw(pdesc);
-			pbuf.end();
+			pbuf.end();*/
 
-			text.setPos(10, 10).setColor(Color32(200, 200, 127)).setFixedPitch(true).out()
+			text.setPos(10, 10).setColor(Color32(200, 200, 127)).setFixedPitch(true, 14).out()
 				<< "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl
-				<< "ＦＰＳ:" << app().fps.latestave << endl << endl
+				<< "FPS:" << app().fps.latestave << endl << endl
 				<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
 				<< "	" << chr->mixer().tracks()[0].keytime() << endl
 				<< "track 1 " << chr->mixer().tracks()[1].weight() << endl
 				<< "	" << chr->mixer().tracks()[1].keytime() << endl
 				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
 				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl
-				<< "ヨー  :" << qcam->yaw_ << endl
-				<< "ピッチ:" << qcam->pitch_ << endl
-				<< "速度  :" << qcam->speed_ << endl
-				<< "視野角:" << toDeg(camera->fov()) << "°" << endl
-				<< "位置  :" << camera->node()->val.wtm().position() << endl << endl
-				<< "モード: " << mesh_mode << endl << endl
-				<< "マウス: " << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
+				<< _T("ヨー  :") << qcam->yaw_ << endl
+				<< _T("ピッチ:") << qcam->pitch_ << endl
+				<< _T("速度  :") << qcam->speed_ << endl
+				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
+				<< _T("位置  :") << camera->node()->val.wtm().position() << endl << endl
+				<< _T("モード: ") << mesh_mode << endl << endl
+				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
 
 			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).setFixedPitch(true).out() << app().profile();
 
 			if(qcam->enable()) text.setFixedPitch(false).setClumpPos(10, -20).setColor(Color32(200, 127, 200)).out()
-				<< "ウォークスルー中";
+				<< _T("ウォークスルー中");
 
 			text.draw();
 

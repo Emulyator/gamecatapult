@@ -14,6 +14,7 @@
 #include <gctp/pointerlist.hpp>
 #include <gctp/extension.hpp>
 #include <gctp/tuki.hpp>
+#include <tchar.h> // VC限定だな…
 
 namespace gctp {
 
@@ -66,7 +67,7 @@ namespace gctp {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		bool load(const char *name);
+		bool load(const _TCHAR *name);
 
 		/** オブジェクト登録
 		 *
@@ -74,7 +75,7 @@ namespace gctp {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl add(const Ptr ptr, const char *name = 0);
+		Hndl add(const Ptr ptr, const _TCHAR *name = 0);
 
 		/** オブジェクト製作
 		 *
@@ -82,7 +83,7 @@ namespace gctp {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl create(const GCTP_TYPEINFO &typeinfo, const char *name = 0);
+		Hndl create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name = 0);
 		
 		/** オブジェクト製作
 		 *
@@ -90,7 +91,7 @@ namespace gctp {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl create(const char *classname, const char *name = 0);
+		Hndl create(const char *classname, const _TCHAR *name = 0);
 
 		/// シーケンスの先頭を返す
 		PtrList::iterator begin()

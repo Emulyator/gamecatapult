@@ -17,12 +17,12 @@ namespace gctp { namespace audio { namespace dx {
 
 	WavFile::WavFile() : wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {}
 
-	WavFile::WavFile(const char *fname)
+	WavFile::WavFile(const _TCHAR *fname)
 		: wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {
 		open(fname);
 	}
 
-	WavFile::WavFile(const char *fname, const WAVEFORMATEX * const wfx)
+	WavFile::WavFile(const _TCHAR *fname, const WAVEFORMATEX * const wfx)
 		: wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {
 		open(fname, wfx);
 	}
@@ -43,7 +43,7 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/21 1:51:30
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt WavFile::open(const char *fname) {
+	HRslt WavFile::open(const _TCHAR *fname) {
 		if(!fname) return E_INVALIDARG;
 		if( (flags_ & MEMORY) && isOpen() ) {
 			if(fname_ == fname) return S_FALSE;
@@ -55,12 +55,14 @@ namespace gctp { namespace audio { namespace dx {
 		flags_ = READ;
 
 		HRslt hr;
-		hmmio_ = mmioOpen(const_cast<char *>(fname), NULL, MMIO_ALLOCBUF | MMIO_READ);
+		_TCHAR fn[_MAX_PATH];
+		_tcsncpy(fn, fname, _MAX_PATH);
+		hmmio_ = mmioOpen(fn, NULL, MMIO_ALLOCBUF | MMIO_READ);
 		if(!hmmio_) {
 			// Loading it as a file failed, so try it as a resource
-			HRSRC hResInfo = FindResource(NULL, fname, TEXT("WAVE"));
+			HRSRC hResInfo = FindResource(NULL, fn, TEXT("WAVE"));
 			if(!hResInfo) {
-				hResInfo = FindResource(NULL, fname, TEXT("WAV"));
+				hResInfo = FindResource(NULL, fn, TEXT("WAV"));
 				if(!hResInfo) return DXTRACE_ERR(TEXT("FindResource"), ERROR_FILE_NOT_FOUND);
 			}
 
@@ -105,14 +107,16 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/21 2:05:58
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt WavFile::open(const char *fname, const WAVEFORMATEX * const wfx) {
+	HRslt WavFile::open(const _TCHAR *fname, const WAVEFORMATEX * const wfx) {
 		if( (flags_ & MEMORY) && isOpen() ) {
 			if(fname_ == fname) return S_FALSE;
 			close();
 		}
 		fname_ = fname;
 
-		hmmio_ = mmioOpen(const_cast<char *>(fname), NULL, MMIO_ALLOCBUF|MMIO_READWRITE|MMIO_CREATE);
+		_TCHAR fn[_MAX_PATH];
+		_tcsncpy(fn, fname, _MAX_PATH);
+		hmmio_ = mmioOpen(fn, NULL, MMIO_ALLOCBUF|MMIO_READWRITE|MMIO_CREATE);
 		if(!hmmio_) return DXTRACE_ERR(TEXT("mmioOpen"), E_FAIL);
 		flags_ = WRITE;
 

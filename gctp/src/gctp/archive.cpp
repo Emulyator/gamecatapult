@@ -36,17 +36,17 @@ namespace gctp {
 	////////////////////////
 	// File
 	//
-	void FileBuf::open(const char *fname, Mode mode)
+	void FileBuf::open(const _TCHAR *fname, Mode mode)
 	{
 		close();
 		if(mode == READ) {
-			fd_ = _open(fname, _O_RDONLY|_O_BINARY);
+			fd_ = _topen(fname, _O_RDONLY|_O_BINARY);
 		}
 		else if(mode == WRITE) {
-			fd_ = _open(fname, _O_RDWR|_O_CREAT|_O_BINARY, _S_IREAD|_S_IWRITE);
+			fd_ = _topen(fname, _O_RDWR|_O_CREAT|_O_BINARY, _S_IREAD|_S_IWRITE);
 		}
 		else if(mode == NEW) {
-			fd_ = _open(fname, _O_RDWR|_O_CREAT|_O_TRUNC|_O_BINARY, _S_IREAD|_S_IWRITE);
+			fd_ = _topen(fname, _O_RDWR|_O_CREAT|_O_TRUNC|_O_BINARY, _S_IREAD|_S_IWRITE);
 		}
 		mode_ = mode;
 	}
@@ -55,18 +55,10 @@ namespace gctp {
 	{
 		close();
 		mode_ = NEW;
-#ifdef UNICODE
-		wchar_t fname[_MAX_PATH];
+		_TCHAR fname[_MAX_PATH];
 		GetTempPath(_MAX_PATH, fname);
-		GetTempFileName(fname, L"tmp", 0, fname);
-		char _fname[_MAX_PATH];
-		if(0 == WideCharToMultiByte(932, 0, fname, -1, _fname, _MAX_PATH, NULL, NULL)) WideCharToMultiByte(CP_ACP, 0, fname, -1, _fname, _MAX_PATH, NULL, NULL);
-#else
-		char fname[_MAX_PATH];
-		GetTempPath(_MAX_PATH, fname);
-		GetTempFileName(fname, "tmp", 0, fname);
-#endif
-		fd_ = _open(fname, _O_RDWR|_O_CREAT|_O_TEMPORARY|_O_BINARY, _S_IREAD|_S_IWRITE);
+		GetTempFileName(fname, _T("tmp"), 0, fname);
+		fd_ = _topen(fname, _O_RDWR|_O_CREAT|_O_TEMPORARY|_O_BINARY, _S_IREAD|_S_IWRITE);
 	}
 
 	void FileBuf::close()
@@ -351,12 +343,12 @@ namespace gctp {
 	////////////////////////
 	// Archive
 	//
-	Archive::Archive(const char *fn) : index_size_(0)
+	Archive::Archive(const _TCHAR *fn) : index_size_(0)
 	{
 		open(fn);
 	}
 
-	void Archive::open(const char *fn)
+	void Archive::open(const _TCHAR *fn)
 	{
 		File::open(fn);
 		if(!readIndex()) close();
@@ -373,7 +365,7 @@ namespace gctp {
 	 */
 	bool Archive::readIndex()
 	{
-	#define _SWAP_(n)	(((n)&0xFF000000)>>24|((n)&0xFF0000)>>8|((n)&0xFF00)<<8|((n)&0xFF)<<24)
+#define _SWAP_(n)	(((n)&0xFF000000)>>24|((n)&0xFF0000)>>8|((n)&0xFF00)<<8|((n)&0xFF)<<24)
 		if(length()>0) {
 			File::seek(0);
 			int head, size;
@@ -382,7 +374,7 @@ namespace gctp {
 				(*this) >> size;
 				index_size_ = size;
 				while(tell() < size) {
-					string name; /*time_t time;*/ int time, size, pos;
+					basic_string<_TCHAR> name; /*time_t time;*/ int time, size, pos;
 					(*this) >> name >> time >> size >> pos;
 					PRNN("read " << name.c_str() << " " << ctime((time_t *)&time) <<"\tsize " << size << ", pos " << pos);
 					ArchiveEntry &ent = index_[name];
@@ -394,10 +386,10 @@ namespace gctp {
 			else return false;
 		}
 		return true;
-	#undef _SWAP_
+#undef _SWAP_
 	}
 
-	ArchiveEntry *Archive::get(const char *fn)
+	ArchiveEntry *Archive::get(const _TCHAR *fn)
 	{
 		if(index_.end() != index_.find(fn)) {
 			return &index_[fn];
@@ -411,7 +403,7 @@ namespace gctp {
 		return *this;
 	}
 
-	Archive &Archive::seek(const char *fn)
+	Archive &Archive::seek(const _TCHAR *fn)
 	{
 		IndexItr i = index_.find(fn);
 		if(index_.end() != i) {
@@ -420,14 +412,14 @@ namespace gctp {
 		return *this;
 	}
 
-	Archive &Archive::extract(const char *fn, const char *entryname)
+	Archive &Archive::extract(const _TCHAR *fn, const _TCHAR *entryname)
 	{
 		ArchiveEntry *entry = get(entryname);
 		File::extract(File(fn, File::WRITE), entry->pos, entry->size);
 		return *this;
 	}
 
-	Archive &Archive::extract(const char *fn, const ArchiveEntry *entry)
+	Archive &Archive::extract(const _TCHAR *fn, const ArchiveEntry *entry)
 	{
 		File::extract(File(fn, File::WRITE), entry->pos, entry->size);
 		return *this;
@@ -441,7 +433,7 @@ namespace gctp {
 		return *this;
 	}
 
-	Archive &Archive::read(void *dst, const char *entryname)
+	Archive &Archive::read(void *dst, const _TCHAR *entryname)
 	{
 		ArchiveEntry *entry = get(entryname);
 		File::seek(entry->pos);
@@ -462,7 +454,7 @@ namespace gctp {
 		return *this;
 	}
 
-	Buffer Archive::load(const char *entryname)
+	Buffer Archive::load(const _TCHAR *entryname)
 	{
 		ArchiveEntry *entry = get(entryname);
 		if(entry) return load(entry);
@@ -479,7 +471,7 @@ namespace gctp {
 		return File::load(-1, size);
 	}
 
-	void Archive::printIndex(std::ostream &os)
+	void Archive::printIndex(std::basic_ostream<_TCHAR> &os)
 	{
 		for(IndexItr i = index_.begin(); i != index_.end(); ++i) {
 			char *time = ctime(&i->second.time);
@@ -491,37 +483,37 @@ namespace gctp {
 	////////////////////////
 	// ArchiveEditable
 	//
-	ArchiveEditable::ArchiveEditable(const char *fn) : alignment_(4), index_page_size_(4)
+	ArchiveEditable::ArchiveEditable(const _TCHAR *fn) : alignment_(4), index_page_size_(4)
 	{
 		open(fn);
 	}
 
-	void ArchiveEditable::open(const char *fn)
+	void ArchiveEditable::open(const _TCHAR *fn)
 	{
 		File::open(fn, File::WRITE);
 		if(readIndex()) setUpList();
 		else close();
 	}
 
-	void ArchiveEditable::add(const char *fn)
+	void ArchiveEditable::add(const _TCHAR *fn)
 	{
 		ListItr li = find(fn);
 		if(li == list_.end()) {
 			struct _stat st;
-			if( 0 == _stat(fn, &st) ) {
+			if( 0 == _tstat(fn, &st) ) {
 				if(st.st_mode & _S_IFDIR) { // ディレクトリなら
-					DIR *dir; dirent *ent;
-					dir = opendir(fn);
+					TDIR *dir; tdirent *ent;
+					dir = topendir(fn);
 					while(dir) {
-						ent = readdir(dir);
+						ent = treaddir(dir);
 						if(!ent) break;
-						if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-							string path(fn); (path += "/") += ent->d_name;
+						if(_tcscmp(ent->d_name, _T(".")) && _tcscmp(ent->d_name, _T(".."))) {
+							basic_string<_TCHAR> path(fn); (path += _T("/")) += ent->d_name;
 							add(path.c_str());
 							PRN(path.c_str());
 						}
 					}
-					closedir(dir);
+					tclosedir(dir);
 				}
 				else {
 					// 最後尾に追加
@@ -536,7 +528,7 @@ namespace gctp {
 		}
 		else {
 			struct _stat st;
-			if( 0 == _stat(fn, &st) && (li->time != st.st_mtime || li->size != st.st_size)) {
+			if( 0 == _tstat(fn, &st) && (li->time != st.st_mtime || li->size != st.st_size)) {
 				li->attr = EntryAttr::UPDATE;
 				li->time = st.st_mtime; li->size = st.st_size;
 			}
@@ -544,19 +536,19 @@ namespace gctp {
 		}
 	}
 
-	void ArchiveEditable::forceUpdate(const char *fn)
+	void ArchiveEditable::forceUpdate(const _TCHAR *fn)
 	{
 		ListItr li = find(fn);
 		if(li != list_.end() && li->attr != EntryAttr::NEW) {
 			struct _stat st;
-			if(0 == _stat(fn, &st)) {
+			if(0 == _tstat(fn, &st)) {
 				li->attr = EntryAttr::UPDATE;
 				li->time = st.st_mtime; li->size = st.st_size;
 			}
 		}
 	}
 
-	void ArchiveEditable::remove(const char *fn)
+	void ArchiveEditable::remove(const _TCHAR *fn)
 	{
 		ListItr li;
 		if((li = find(fn))!=list_.end()) {
@@ -569,7 +561,7 @@ namespace gctp {
 	{
 		for(ListItr i = list_.begin(); i != list_.end(); ++i) {
 			struct _stat st;
-			if( 0 == _stat(i->name.c_str(), &st) && (i->time != st.st_mtime || i->size != st.st_size) && i->attr != EntryAttr::NEW) {
+			if( 0 == _tstat(i->name.c_str(), &st) && (i->time != st.st_mtime || i->size != st.st_size) && i->attr != EntryAttr::NEW) {
 				i->attr = EntryAttr::UPDATE;
 				i->time = st.st_mtime; i->size = st.st_size;
 			}
@@ -581,7 +573,7 @@ namespace gctp {
 		int ret = 8; // ヘッダサイズ
 		for(ListItr i = list_.begin(); i != list_.end(); i++) {
 			if(i->attr != EntryAttr::REMOVE) {
-				ret += static_cast<int>(i->name.size() + 1 + sizeof(time_t) + sizeof(long) + sizeof(long));
+				ret += static_cast<int>(i->name.size() + sizeof(_TCHAR) + sizeof(time_t) + sizeof(long) + sizeof(long));
 			}
 		}
 		assert(ret > 0);
@@ -659,7 +651,7 @@ namespace gctp {
 		else close();
 	}
 
-	void ArchiveEditable::printList(std::ostream &os)
+	void ArchiveEditable::printList(std::basic_ostream<_TCHAR> &os)
 	{
 		for(ListItr i = list_.begin(); i != list_.end(); ++i) {
 			char *attr;

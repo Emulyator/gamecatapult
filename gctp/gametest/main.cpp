@@ -18,6 +18,8 @@
 #include <gctp/input.hpp>
 #include <gctp/app.hpp>
 
+#include <mbstring.h>
+
 extern "C" int main(int argc, char *argv[]);
 
 class GameWindow 
@@ -404,27 +406,21 @@ public:
 private:
 	void addToComboBox(DWORD data, DWORD width, DWORD height, DWORD format, DWORD refresh_rate)
 	{
-		char *str;
+		_TCHAR *str;
 		switch(format) {
 		case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-			str = "フルカラー";
+			str = _T("フルカラー");
 			break;
 		case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
 		case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-			str = "ハイカラー";
+			str = _T("ハイカラー");
 			break;
 		default:
 			return;
 		};
-#ifdef UNICODE
-		wchar_t screenstr[256];
-		if(refresh_rate==D3DPRESENT_RATE_DEFAULT) wsprintf(screenstr, L"%d×%d:%s:規定値", width, height, str);
-		else wsprintf(screenstr, L"%d×%d:%s:%dHz", width, height, str, refresh_rate);
-#else
-		char screenstr[256];
-		if(refresh_rate==D3DPRESENT_RATE_DEFAULT) sprintf(screenstr, "%d×%d:%s:規定値", width, height, str);
-		else sprintf(screenstr, "%d×%d:%s:%dHz", width, height, str, refresh_rate);
-#endif
+		_TCHAR screenstr[256];
+		if(refresh_rate==D3DPRESENT_RATE_DEFAULT) _stprintf(screenstr, _T("%d×%d:%s:規定値"), width, height, str);
+		else _stprintf(screenstr, _T("%d×%d:%s:%dHz"), width, height, str, refresh_rate);
 		int idx = screens_->addValue(screenstr);
 		screen_map_[idx] = data;
 	}
@@ -462,11 +458,11 @@ namespace {
 		graphic::initialize();
 		Input::initialize(hinst);
 
-		PRNN("列挙されたアダプタ");
+		PRNN(_T("列挙されたアダプタ"));
 		for(graphic::dx::AdapterList::const_iterator i = graphic::dx::adapters().begin(); i != graphic::dx::adapters().end(); ++i) {
 			PRNN(*i);
 		}
-		PRNN("列挙された入力デバイス");
+		PRNN(_T("列挙された入力デバイス"));
 		for(Input::DeviceList::const_iterator i = Input::devicies().begin(); i != Input::devicies().end(); ++i) {
 			PRNN(*i);
 		}
@@ -503,7 +499,10 @@ namespace {
 
 int SmartWinMain(Application & app)
 {
-	locale::global(locale("japanese"));
+	locale::global(locale("Japanese_Japan.932"));
+	PRNN(_wsetlocale(LC_CTYPE, 0));
+	PRNN((iswprint(L'ー')!=0?L"true":L"false"));
+	PRNN((_ismbcprint('ー')!=0?L"true":L"false"));
 	initialize(app.getAppHandle());
 	GameWindow *window = new GameWindow;
 	window->splash(_T("GameCatapult DEMO"), IDB_BITMAP1);

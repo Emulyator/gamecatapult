@@ -20,7 +20,7 @@
 #include <gctp/extension.hpp>
 #include <gctp/context.hpp>
 #include <gctp/dbgout.hpp>
-#include <gctp/uri.hpp>
+#include <gctp/turi.hpp>
 #include <rmxfguid.h>
 
 using namespace std;
@@ -120,16 +120,28 @@ namespace gctp { namespace scene {
 					model.mtrls[i].power    = _mtrls[i].MatD3D.Power;
 					model.mtrls[i].blend    = graphic::Material::ALPHA;
 					if(_mtrls[i].pTextureFilename) {
+#ifdef UNICODE
+						WCStr fname = _mtrls[i].pTextureFilename;
+						context().load(fname.c_str());
+						model.mtrls[i].tex = graphic::db()[fname.c_str()];
+#else
 						context().load(_mtrls[i].pTextureFilename);
 						model.mtrls[i].tex = graphic::db()[_mtrls[i].pTextureFilename];
+#endif
 					}
 				}
 				if(eff) {
 					D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff->GetBufferPointer());
 					if(effect->pEffectFilename) {
 						PRNN("Effect "<<effect->pEffectFilename);
+#ifdef UNICODE
+						WCStr fname = effect->pEffectFilename;
+						context().load(fname.c_str());
+						Handle<graphic::Brush> brush = graphic::db()[fname.c_str()];
+#else
 						context().load(effect->pEffectFilename);
 						Handle<graphic::Brush> brush = graphic::db()[effect->pEffectFilename];
+#endif
 						if(brush) {
 							model.setBrush(brush);
 							for(DWORD i = 0; i < effect->NumDefaults; i++) {
@@ -391,7 +403,7 @@ namespace gctp { namespace scene {
 		/** XFileの読みこみ
 		 */
 		HRslt loadX(
-			const char *filename, /**< ファイル名 */
+			const _TCHAR *filename, /**< ファイル名 */
 			GraphFile &self, /**< 対象のXfileオブジェクト*/
 			XFileReadingWork &work,
 			const XData &cur, /**< カレントの位置を示すXDataオブジェクト */
@@ -544,7 +556,7 @@ namespace gctp { namespace scene {
 	 *
 	 * @return エラー値
 	 */
-	bool GraphFile::setUpFromX(const char *fn/**< ファイル名 */)
+	bool GraphFile::setUpFromX(const _TCHAR *fn/**< ファイル名 */)
 	{
 		HRslt hr;
 		XFileReader file;
@@ -565,21 +577,12 @@ namespace gctp { namespace scene {
 		}
 		if(hr) {
 			PRN("Begin read Xfile : "<<fn<<endl);
-			URI _fn = fn;
+			TURI _fn = fn;
 			XFileReadingWork work;
 			work.ticks_per_sec = 30;
-#ifdef UNICODE
-			wchar_t cur_dir[MAX_PATH];
-			::GetCurrentDirectory(MAX_PATH, cur_dir);
-			string __dir = _fn.path();
-			wchar_t _dir[MAX_PATH];
-			if(0 == MultiByteToWideChar(932, 0, __dir.c_str(), -1, _dir, 256)) MultiByteToWideChar(CP_ACP, 0, __dir.c_str(), -1, _dir, 256);
-			::SetCurrentDirectory(_dir);
-#else
-			char cur_dir[MAX_PATH];
+			_TCHAR cur_dir[MAX_PATH];
 			::GetCurrentDirectory(MAX_PATH, cur_dir);
 			::SetCurrentDirectory(_fn.path().c_str());
-#endif
 			for(uint i = 0; i < file.size(); i++) {
 				hr = loadX(fn, *this, work, file[i]);
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
@@ -596,13 +599,8 @@ namespace gctp { namespace scene {
 				}
 				if(!hr) break;
 			}
-#ifdef UNICODE
 			::SetCurrentDirectory(cur_dir);
-			PRN(L"End read Xfile : "<<fn<<endl);
-#else
-			::SetCurrentDirectory(cur_dir);
-			PRN("End read Xfile : "<<fn<<endl);
-#endif
+			PRN(_T("End read Xfile : ")<<fn<<endl);
 			if(!hr) GCTP_TRACE(hr);
 		}
 		else PRNN("Xfile "<<fn<<" : "<<hr);

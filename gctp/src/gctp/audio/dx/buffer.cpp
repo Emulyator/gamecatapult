@@ -215,7 +215,7 @@ namespace gctp { namespace audio { namespace dx {
 			}
 #endif
 
-			HRslt setUp(IDirectSound8Ptr device, const char *fname, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus) {
 				HRslt hr;
 
 				if( !device ) return CO_E_NOTINITIALIZED;
@@ -425,7 +425,7 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:43:00
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const char *fname, bool global_focus)
+	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus)
 	{
 		StreamingBuffer *buffer = new StreamingBuffer;
 		buffer->setUp(device, fname, global_focus);

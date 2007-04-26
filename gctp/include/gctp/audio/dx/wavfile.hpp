@@ -31,13 +31,13 @@ namespace gctp { namespace audio { namespace dx {
 		};
 
 		WavFile();
-		explicit WavFile(const char *fname);
-		WavFile(const char *fname, const WAVEFORMATEX * const wfx);
+		explicit WavFile(const _TCHAR *fname);
+		WavFile(const _TCHAR *fname, const WAVEFORMATEX * const wfx);
 		WavFile(const void * const data, std::size_t size, const WAVEFORMATEX *wfx);
 		~WavFile();
 
-		HRslt open(const char *fname);
-		HRslt open(const char *fname, const WAVEFORMATEX * const wfx);
+		HRslt open(const _TCHAR *fname);
+		HRslt open(const _TCHAR *fname, const WAVEFORMATEX * const wfx);
 		HRslt open(const void * const src, std::size_t size, const WAVEFORMATEX * const wfx);
 		HRslt close();
 
@@ -47,7 +47,7 @@ namespace gctp { namespace audio { namespace dx {
 		HRslt rewind();
 
 		std::size_t size() const { return size_; }
-		const char *fname() const { return fname_.c_str(); }
+		const _TCHAR *fname() const { return fname_.c_str(); }
 		const WAVEFORMATEX *format() const { return wfx_; }
 		
 	protected:
@@ -55,18 +55,18 @@ namespace gctp { namespace audio { namespace dx {
 		HRslt writeMMIO(const WAVEFORMATEX *src);
 
 	private:
-		std::string    fname_;
-		WAVEFORMATEX   *wfx_;        // Pointer to WAVEFORMATEX structure
-		HMMIO          hmmio_;       // MM I/O handle for the WAVE
-		MMCKINFO       ck_;          // Multimedia RIFF chunk
-		MMCKINFO       ckriff_;      // Use in opening a WAVE file
-		std::size_t    size_;        // The size of the wave file
-		MMIOINFO       mmioinfo_;
-		uint32_t       flags_;
-		uint8_t        *data_;
-		uint8_t        *datacur_;
-		std::size_t    datasize_;
-		void           *buffer_;
+		std::basic_string<_TCHAR> fname_;
+		WAVEFORMATEX              *wfx_;        // Pointer to WAVEFORMATEX structure
+		HMMIO                     hmmio_;       // MM I/O handle for the WAVE
+		MMCKINFO                  ck_;          // Multimedia RIFF chunk
+		MMCKINFO                  ckriff_;      // Use in opening a WAVE file
+		std::size_t               size_;        // The size of the wave file
+		MMIOINFO                  mmioinfo_;
+		uint32_t                  flags_;
+		uint8_t                   *data_;
+		uint8_t                   *datacur_;
+		std::size_t               datasize_;
+		void                      *buffer_;
 	};
 
 }}} // namespace gctp

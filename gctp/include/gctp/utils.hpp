@@ -21,8 +21,12 @@ namespace gctp {
 	 * @date 2004/07/20 4:06:17
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline std::string charToStr(int c)
+	inline std::basic_string<_TCHAR> charToStr(int c)
 	{
+#ifdef UNICODE
+		wchar_t buf[2] = {c, 0};
+		return buf;
+#else
 		char buf[5];
 		int _c = (c>>24)&0xFF;
 		if(_c>0 && _c != 0xFF) {
@@ -51,18 +55,27 @@ namespace gctp {
 		buf[0] = c;
 		buf[1] = 0;
 		return buf;
+#endif
 	}
 
 	/** 文字列から（マルチバイトを考慮して）一文字読み取る
 	 *
-	 * @return 読み取った文字のバイトサイズ
+	 * @return 読み取った文字のバイトサイズ/sizeof(_TCHAR)
 	 * @param c 読み取った文字を入れる
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/07/20 4:06:17
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline int getChar(int &c, const char *text)
+	inline int getChar(int &c, const _TCHAR *text)
 	{
+#ifdef UNICODE
+		if(text && *text) {
+			c =  text[0];
+			return 1;
+		}
+		c = 0;
+		return 0;
+#else
 		if(text && *text) {
 #ifdef GCTP_SHIFT_JIS
 			if(isleadbyte(*text) && text[1]) {
@@ -85,7 +98,54 @@ namespace gctp {
 		}
 		c = 0;
 		return 0;
+#endif
 	}
+	
+#ifdef _MBCS
+	inline int isPrintChar(int c)
+	{
+		return _ismbcprint(c);
+	}
+	inline int isSpaceChar(int c)
+	{
+		return _ismbcspace(c);
+	}
+
+#elif defined _UNICODE
+# ifdef _WIN32
+	// Win32はiswprintがバグってる
+	inline int isPrintChar(wchar_t c)
+	{
+		unsigned short char_type;
+		::GetStringTypeW(CT_CTYPE1, &c, 1, &char_type);
+		return (char_type & C1_CNTRL)==0;
+	}
+	inline int isSpaceChar(wchar_t c)
+	{
+		unsigned short char_type;
+		::GetStringTypeW(CT_CTYPE1, &c, 1, &char_type);
+		return (char_type & C1_SPACE)!=0;
+	}
+# else
+	inline int isPrintChar(wchar_t c)
+	{
+		return iswprint(c);
+	}
+	inline int isSpaceChar(wchar_t c)
+	{
+		return iswspace(c);
+	}
+# endif
+#else
+	inline int isPrintChar(int c)
+	{
+		return isprint(c);
+	}
+	inline int isSpaceChar(int c)
+	{
+		return isspace(c);
+	}
+#endif
 
 } //namespace gctp
 

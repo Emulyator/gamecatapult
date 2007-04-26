@@ -39,7 +39,7 @@ namespace gctp { namespace scene {
 		/// セットアップ
 		void setUp(Pointer<Body> src);
 		/// セットアップ
-		void setUp(const char *filename);
+		void setUp(const _TCHAR *filename);
 
 		/// 登場
 		void enter(Stage &stage);
@@ -102,9 +102,9 @@ namespace gctp { namespace scene {
 	};
 
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const char *name, const char *srcfilename);
+	extern Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename);
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, Stage &stage, const std::type_info &typeinfo, const char *name, const char *srcfilename);
+	extern Handle<Entity> newEntity(Context &context, Stage &stage, const std::type_info &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename);
 
 }} // namespace gctp::scene
 
