@@ -12,9 +12,10 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/pointer.hpp>
-#include <gctp/cstr.hpp>
+#include <gctp/tcstr.hpp>
 #include <map>
 #include <iosfwd>
+#include <tchar.h> // VC限定だな…
 
 namespace gctp {
 
@@ -30,22 +31,22 @@ namespace gctp {
 	 */
 	class DB {
 	public:
-		typedef std::map<CStr, Hndl> Index;
+		typedef std::map<TCStr, Hndl> Index;
 
 		/// 追加
-		bool insert(const char *key, const Hndl hndl);
+		bool insert(const _TCHAR *key, const Hndl hndl);
 
 		/// 置き換え
-		void set(const char *key, Hndl);
+		void set(const _TCHAR *key, Hndl);
 
 		/// 削除
-		void erase(const char *key);
+		void erase(const _TCHAR *key);
 
 		/// 検索
-		Hndl find(const char *key) const;
+		Hndl find(const _TCHAR *key) const;
 
 		/// 検索
-		Hndl operator[](const char *key) const
+		Hndl operator[](const _TCHAR *key) const
 		{
 			return find(key);
 		}
@@ -67,19 +68,19 @@ namespace gctp {
 			return index_.end();
 		}
 
-		Index::iterator findUpper(const char *key)
+		Index::iterator findUpper(const _TCHAR *key)
 		{
 			return index_.upper_bound(key);
 		}
-		Index::const_iterator findUpper(const char *key) const
+		Index::const_iterator findUpper(const _TCHAR *key) const
 		{
 			return index_.upper_bound(key);
 		}
-		Index::iterator findLower(const char *key)
+		Index::iterator findLower(const _TCHAR *key)
 		{
 			return index_.lower_bound(key);
 		}
-		Index::const_iterator findLower(const char *key) const
+		Index::const_iterator findLower(const _TCHAR *key) const
 		{
 			return index_.lower_bound(key);
 		}
@@ -110,7 +111,7 @@ namespace gctp {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	template<class _T>
-	Pointer<_T> createOnDB(const char *name)
+	Pointer<_T> createOnDB(const _TCHAR *name)
 	{
 		Handle<_T> h = db()[name];
 		if(h) return h.lock();
@@ -118,13 +119,13 @@ namespace gctp {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(name)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}
@@ -141,8 +142,8 @@ namespace gctp {
 	 * @date 2004/07/16 14:03:54
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<class _T, bool (_T::*SetUpMethod)(const char *name)>
-	Pointer<_T> createOnDB(const char *name)
+	template<class _T, bool (_T::*SetUpMethod)(const _TCHAR *name)>
+	Pointer<_T> createOnDB(const _TCHAR *name)
 	{
 		Handle<_T> h = db()[name];
 		if(h) return h.lock();
@@ -150,13 +151,13 @@ namespace gctp {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if((ret.get()->*SetUpMethod)(name)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}
@@ -173,7 +174,7 @@ namespace gctp {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	template<class _T>
-	Pointer<_T> createOnDB(const char *name, const char *setup)
+	Pointer<_T> createOnDB(const _TCHAR *name, const _TCHAR *setup)
 	{
 		Handle<_T> h = db()[name];
 		if(h) return h.lock();
@@ -181,13 +182,13 @@ namespace gctp {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(setup)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}
@@ -204,8 +205,8 @@ namespace gctp {
 	 * @date 2004/07/16 14:03:54
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<class _T, bool (_T::*SetUpMethod)(const char *name)>
-	Pointer<_T> createOnDB(const char *name, const char *setup)
+	template<class _T, bool (_T::*SetUpMethod)(const _TCHAR *name)>
+	Pointer<_T> createOnDB(const _TCHAR *name, const _TCHAR *setup)
 	{
 		Handle<_T> h = db()[name];
 		if(h) return h.lock();
@@ -213,13 +214,13 @@ namespace gctp {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if((ret->*SetUpMethod)(setup)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}

@@ -7,122 +7,69 @@
  */
 #include "common.h"
 #include <gctp/dbgout.hpp>
-#include <mbctype.h>
+#include <gctp/dbgoutbuf.hpp>
 
 using namespace std;
 
 namespace gctp {
-	/// デバッガログストリームクラス
-#ifdef UNICODE
-	class debuggeroutbuf : public wstreambuf {
-	public:
-		debuggeroutbuf() : wstreambuf() {
-			setbuf(__buf, sizeof(__buf)-1);
-			__buf[sizeof(__buf)-1] = '\0';
-		}
-		~debuggeroutbuf() {
-			if(pptr() != pbase()) sync();
-		}
-	protected:
-		wstreambuf *setbuf(wchar_t *s, streamsize n) {
-			if(s && n) {
-				setp(s, s+n);
-				return this;
+
+	template<>
+	debuggeroutbuf<char>::int_type debuggeroutbuf<char>::overflow(debuggeroutbuf<char>::int_type ch)
+	{
+		*epptr() = ch;
+		// SJIS?
+		if(-1 == _ismbstrail((const unsigned char *)pbase(), (const unsigned char *)epptr())) {
+			char *lbp;
+			for(lbp = epptr()-1; lbp > pbase(); lbp--) {
+				if(-1 == _ismbslead((const unsigned char *)pbase(), (const unsigned char *)lbp)) {
+					break;
+				}
 			}
-			return 0;
+			int _ch = *lbp; *lbp = '\0';
+			sync();
+			sputc(_ch);
+			for(lbp++; lbp <= epptr(); lbp++) {
+				sputc(*lbp);
+			}
+			*epptr() = '\0';
 		}
-		int sync() {
-			output();
-			setbuf(__buf, sizeof(__buf)-1);
-			return wstreambuf::sync();
-		}
-		int overflow(int ch) {
-			*epptr() = ch;
+		else {
 			*epptr() = '\0';
 			sync();
 			sputc(ch);
-			return ch;
 		}
-		void output() {
-			if(pptr() != epptr()) *pptr() = '\0';
-			OutputDebugString(pbase());
-		}
-	private:
-		wchar_t __buf[256];
-	};
-#else
-	class debuggeroutbuf
-		: public streambuf {
-	public:
-		debuggeroutbuf() : streambuf() {
-			setbuf(__buf, sizeof(__buf)-1);
-			__buf[sizeof(__buf)-1] = '\0';
-		}
-		~debuggeroutbuf() {
-			if(pptr() != pbase()) sync();
-		}
-	protected:
-		streambuf *setbuf(char *s, streamsize n) {
-			if(s && n) {
-				setp(s, s+n);
-				return this;
-			}
-			return 0;
-		}
-		int sync() {
-			output();
-			setbuf(__buf, sizeof(__buf)-1);
-			return streambuf::sync();
-		}
-		int overflow(int ch) {
-			*epptr() = ch;
-			// マルチバイト文字に対応
-			if(-1 == _ismbstrail((const unsigned char *)pbase(), (const unsigned char *)epptr())) {
-				char *lbp;
-				for(lbp = epptr()-1; lbp > pbase(); lbp--) {
-					if(-1 == _ismbslead((const unsigned char *)pbase(), (const unsigned char *)lbp)) {
-						break;
-					}
-				}
-				int _ch = *lbp; *lbp = '\0';
-				sync();
-				sputc(_ch);
-				for(lbp++; lbp <= epptr(); lbp++) {
-					sputc(*lbp);
-				}
-				*epptr() = '\0';
-			}
-			else {
-				*epptr() = '\0';
-				sync();
-				sputc(ch);
-			}
-			return ch;
-		}
-		void output() {
-			if(pptr() != epptr()) *pptr() = '\0';
-			OutputDebugString(pbase());
-		}
-	private:
-		char __buf[256];
-	};
-	//class_end
-#endif
+		return ch;
+	}
 
-#ifdef UNICODE
-	static debuggeroutbuf _dbgout_buf;
-	wostream dbgout(&_dbgout_buf);		// デバッガアウトプットストリーム
+	template<>
+	debuggeroutbuf<wchar_t>::int_type debuggeroutbuf<wchar_t>::overflow(debuggeroutbuf<wchar_t>::int_type ch)
+	{
+		*epptr() = ch;
+		*epptr() = L'\0';
+		sync();
+		sputc(ch);
+		return ch;
+	}
 
-# if GCTP_LOGFILE
-	wofstream logfile("log.txt");		// ログファイルストリーム
-# endif
-#else
-	static debuggeroutbuf _dbgout_buf;
-	ostream dbgout(&_dbgout_buf);		// デバッガアウトプットストリーム
+	template<>
+	void debuggeroutbuf<char>::output()
+	{
+		if(pptr() != epptr()) *pptr() = '\0';
+		OutputDebugStringA(pbase());
+	}
 
-# if GCTP_LOGFILE
-	ofstream logfile("log.txt");		// ログファイルストリーム
-# endif
+	template<>
+	void debuggeroutbuf<wchar_t>::output()
+	{
+		if(pptr() != epptr()) *pptr() = L'\0';
+		OutputDebugStringW(pbase());
+	}
+
+	static debuggeroutbuf<_TCHAR> _dbgout_buf;
+	basic_ostream<_TCHAR> dbgout(&_dbgout_buf);		// デバッガアウトプットストリーム
+
+#if GCTP_LOGFILE
+	basic_ofstream<_TCHAR> logfile(_T("log.txt"));		// ログファイルストリーム
 #endif
 
 };	// namespace gctp

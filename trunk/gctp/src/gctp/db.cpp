@@ -22,7 +22,7 @@ namespace gctp {
 	 * @date 2004/01/29 18:17:48
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool DB::insert(const char *key, const Hndl hndl)
+	bool DB::insert(const _TCHAR *key, const Hndl hndl)
 	{
 		if(index_.find(key) == index_.end()) {
 			index_[key] = hndl;
@@ -38,7 +38,7 @@ namespace gctp {
 	 * @date 2004/01/29 18:17:30
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	void DB::set(const char *key, Hndl hndl)
+	void DB::set(const _TCHAR *key, Hndl hndl)
 	{
 		if(key) index_[key] = hndl;
 	}
@@ -49,7 +49,7 @@ namespace gctp {
 	 * @date 2004/01/29 18:17:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	void DB::erase(const char *key)
+	void DB::erase(const _TCHAR *key)
 	{
 		index_.erase(key);
 	}
@@ -60,7 +60,7 @@ namespace gctp {
 	 * @date 2004/01/29 18:17:30
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl DB::find(const char *key) const
+	Hndl DB::find(const _TCHAR *key) const
 	{
 		if(key) {
 			Index::const_iterator ret = index_.find(key);

@@ -49,7 +49,7 @@ namespace gctp { namespace audio { namespace dx {
 			hr = ptr_->SetCooperativeLevel(hwnd, coop_mode);
 			if(hr) {
 				notify_thread_ = CreateThread( NULL, 0, handleEvents, this, 0, &notify_thread_id_ );
-				PRNN("オーディオスレッド製作 : " << notify_thread_id_);
+				PRNN(_T("オーディオスレッド製作 : ") << notify_thread_id_);
 			}
 			else ptr_ = 0;
 		}
@@ -144,7 +144,7 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:44:56
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	BufferPtr Device::ready(const char *fname) {
+	BufferPtr Device::ready(const _TCHAR *fname) {
 		BufferPtr ret;
 		dx::WavFile wav;
 		if(wav.open(fname)) {
@@ -156,6 +156,9 @@ namespace gctp { namespace audio { namespace dx {
 				ret = newStreamingBuffer(ptr_, fname, global_focus_);
 				add(BufferHandle(ret));
 			}
+		}
+		else {
+			GCTP_TRACE(_T("指定のファイルを読み込めませんでした :")<<fname);
 		}
 		return ret;
 	}
@@ -260,7 +263,7 @@ namespace gctp { namespace audio { namespace dx {
 			
 			if( events.size() )	result = MsgWaitForMultipleObjects(events.size(), &events[0], FALSE, INFINITE, QS_ALLEVENTS );
 			if( events.size() && WAIT_OBJECT_0 <= result && result < WAIT_OBJECT_0+events.size() ) {
-				//PRNN("イベントシグナル " << result << "," << events[result-WAIT_OBJECT_0] << "," << bufs[result-WAIT_OBJECT_0]->event());
+				//PRNN(_T("イベントシグナル ") << result << "," << events[result-WAIT_OBJECT_0] << "," << bufs[result-WAIT_OBJECT_0]->event());
 				if( !( hr = bufs[result-WAIT_OBJECT_0]->onNotified() ) ) {
 					DXTRACE_ERR( TEXT("audio::dx::Device::handleEvents"), hr.i );
 					done = true;

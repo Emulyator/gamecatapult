@@ -16,17 +16,6 @@
 #include <gctp/utils.hpp>
 #include <gctp/dbgout.hpp>
 
-#ifdef _MBCS
-#define isPrintChar(c) _ismbcprint(c)
-#define isSpaceChar(c) _ismbcspace(c)
-#elif defined _UNICODE
-#define isPrintChar(c) iswprint(c)
-#define isSpaceChar(c) iswspace(c)
-#else
-#define isPrintChar(c) isprint(c)
-#define isSpaceChar(c) isspace(c)
-#endif
-
 using namespace std;
 
 namespace gctp { namespace graphic {
@@ -40,11 +29,16 @@ namespace gctp { namespace graphic {
 					float x;
 					float y;
 				};
+				struct FixPitch {
+					bool fixed;
+					short pitch;
+				};
 				enum Type {
 					POSITION,
 					COLOR,
 					BACKCOLOR,
 					FIXPITCH,
+					PITCHWIDTH,
 					FONT,
 					CURSOR,
 				} type;
@@ -54,13 +48,14 @@ namespace gctp { namespace graphic {
 				explicit Attr(D3DCOLOR _color) : type(COLOR), color(_color) {}
 				explicit Attr(D3DCOLOR _color, bool dummy) : type(BACKCOLOR), color(_color) {}
 				explicit Attr(const Handle<Font> &_font) : type(FONT), font(_font) {}
-				explicit Attr(bool _fixpitch) : type(FIXPITCH), fixpitch(_fixpitch) {}
+				explicit Attr(bool fixed, short pitch) : type(FIXPITCH) { fixpitch.fixed = fixed; fixpitch.pitch = pitch; }
 				explicit Attr(Type _type) : type(_type) {}
 
 				union {
 					Pos pos;
 					D3DCOLOR color;
-					bool fixpitch;
+					FixPitch fixpitch;
+					unsigned char pitch_width;
 				};
 				Handle<Font> font;
 			};
@@ -71,18 +66,18 @@ namespace gctp { namespace graphic {
 		public:
 			TextDetail()
 			{
-				default_font_ = gctp::createOnDB<Font>(",10,BOLD");
-				gctp::db().set("defaultfont", default_font_);
+				default_font_ = gctp::createOnDB<Font>(_T(",10,BOLD"));
+				gctp::db().set(_T("defaultfont"), default_font_);
 			}
 
-			string::size_type position(int ofs)
+			basic_string<_TCHAR>::size_type position(int ofs)
 			{
-				int n = static_cast<int>(os.str().size())+ofs;
+				int n = static_cast<int>(os.tellp())+ofs;
 				if(n > 0) return n;
 				return 0;
 			}
 
-			ostringstream os;
+			basic_ostringstream<_TCHAR> os;
 			AttrMap attrs_;
 			Pointer<Font> default_font_;
 			Pointer<graphic::FontTexture> default_texture_;
@@ -137,18 +132,18 @@ namespace gctp { namespace graphic {
 		return *this;
 	}
 
-	Text &Text::setFixedPitch(bool yes, int ofs)
+	Text &Text::setFixedPitch(bool yes, int pitch, int ofs)
 	{
-		detail_->attrs_.insert(std::make_pair(detail_->position(ofs), Attr(yes)));
+		detail_->attrs_.insert(std::make_pair(detail_->position(ofs), Attr(yes, pitch)));
 		return *this;
 	}
 
-	std::ostream &Text::out() { return detail_->os; }
+	std::basic_ostream<_TCHAR> &Text::out() { return detail_->os; }
 
 	HRslt Text::draw() const
 	{
-		if(!detail_->default_sprite_) detail_->default_sprite_ = graphic::createOnDB<graphic::SpriteBuffer>("SPRITEBUFFER");
-		if(!detail_->default_texture_) detail_->default_texture_ = graphic::createOnDB<graphic::FontTexture>("FONTTEXTURE");
+		if(!detail_->default_sprite_) detail_->default_sprite_ = graphic::createOnDB<graphic::SpriteBuffer>(_T("SPRITEBUFFER"));
+		if(!detail_->default_texture_) detail_->default_texture_ = graphic::createOnDB<graphic::FontTexture>(_T("FONTTEXTURE"));
 		return proccess(const_cast<graphic::SpriteBuffer *>(detail_->default_sprite_.get()), *detail_->default_texture_, NULL, 0);
 	}
 
@@ -166,7 +161,7 @@ namespace gctp { namespace graphic {
 
 	Point2f Text::getPos(int ofs)
 	{
-		if(!detail_->default_texture_) detail_->default_texture_ = graphic::createOnDB<graphic::FontTexture>("FONTTEXTURE");
+		if(!detail_->default_texture_) detail_->default_texture_ = graphic::createOnDB<graphic::FontTexture>(_T("FONTTEXTURE"));
 		Point2f ret;
 		proccess(NULL, *detail_->default_texture_, &ret, ofs);
 		return ret;
@@ -175,16 +170,13 @@ namespace gctp { namespace graphic {
 	HRslt Text::proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &font, Point2f *lastpos, int ofs) const
 	{
 		Pointer<Font> _font = detail_->default_font_;
-		string::size_type i = 0, size = detail_->os.str().length();
-#if 0
-		ios::pos_type i = 0, size = detail_->os.tellp(); // バッファの伸張が行われたときに、-1や0が返ってくるな…
-		if(size <= 0) {
-			PRNN("AsciiText::draw: \"! size > 0\" ("<<size<<"): 何も文字が書き込まれないままdrawが呼ばれたか、バッファの伸張が行われました。後者の場合、表示がちらつきます。");
+		basic_string<_TCHAR>::size_type i = 0, size = detail_->os.tellp(), len = detail_->os.str().length();
+		if(size > len) {
+			GCTP_TRACE("Text::draw: \"! size <= len\" ("<<size<<_T("): 何も文字が書き込まれないままdrawが呼ばれたか、不正な文字が入力されました。"));
 			return S_FALSE;
 		}
-#endif
-		const string &str = detail_->os.str();
-		const char *text = str.c_str();
+		const basic_string<_TCHAR> &str = detail_->os.str();
+		const _TCHAR *text = str.c_str();
 		graphic::FontGlyph glyph;
 
 		font.gabage();
@@ -203,7 +195,7 @@ namespace gctp { namespace graphic {
 					if(!glyph) font.cacheAscii(_font);
 				}
 			}
-			if( isascii(c) ) {
+			if( _istascii(c) ) {
 				if(!font.isCached(_font, c)) font.cacheAscii(_font);
 			}
 			text += n;
@@ -221,7 +213,7 @@ namespace gctp { namespace graphic {
 					_font = attri->second.font.get();
 				}
 			}
-			if( !isascii(c) ) {
+			if( !_istascii(c) ) {
 				if(!font.isCached(_font, c)) {
 					if(!began) {
 						font.begin();
@@ -260,8 +252,11 @@ namespace gctp { namespace graphic {
 					backcolor = attri->second.color;
 				}
 				else if(attri->second.type == Attr::FIXPITCH) {
-					fixpitch = attri->second.fixpitch;
-					if(_font) fixed_pitch = static_cast<int>(ceilf(_font->maxWidth()*1.1f/2.0f));
+					fixpitch = attri->second.fixpitch.fixed;
+					if(attri->second.fixpitch.pitch == 0) {
+						if(_font) fixed_pitch = static_cast<int>(ceilf(_font->maxWidth()*1.1f/2.0f));
+					}
+					else fixed_pitch = attri->second.fixpitch.pitch;
 				}
 				else if(attri->second.type == Attr::FONT) {
 					_font = attri->second.font.get();
@@ -318,7 +313,7 @@ namespace gctp { namespace graphic {
 					if(fixpitch) x += fixed_pitch*n;
 					else x += glyph.size.x;
 				}
-				else PRNN("フォントが設定されていません！");
+				else PRNN(_T("フォントが設定されていません！"));
 			}
 		}
 		if(lastpos) {
@@ -327,7 +322,9 @@ namespace gctp { namespace graphic {
 		}
 		if(spr) {
 			spr->end();
-			detail_->os.str("");
+			// sprがNULLで呼び出されるというのは事前検査だから、
+			// バッファを巻き戻してはまずい
+			detail_->os.seekp(0);
 			detail_->attrs_.clear();
 		}
 		return S_OK;

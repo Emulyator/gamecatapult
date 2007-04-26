@@ -9,12 +9,17 @@
 #include <cppunit/TextOutputter.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
-#include <gctp/dbgout.hpp>
 #include <locale.h>
 #if defined _MSC_VER && _MSC_VER == 1400
 #include <io.h>
 #include <fcntl.h>
 #endif
+#define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
+#include <windows.h>
+#include <gctp/dbgoutbuf.hpp>
+
+static gctp::debuggeroutbuf<char> _sdbgout_buf;
+static std::basic_ostream<char> sdbgout(&_sdbgout_buf);		// デバッガアウトプットストリーム
 
 int main(int argc, char* argv[]) {
   setlocale(LC_ALL, "");
@@ -51,7 +56,7 @@ int main(int argc, char* argv[]) {
     static_cast<CppUnit::XmlOutputter*>(outputter)->setStyleSheet(xsl);
     break;*/
   case 2 :
-	outputter = new CppUnit::CompilerOutputter(&runner.result(),gctp::dbgout);
+	outputter = new CppUnit::CompilerOutputter(&runner.result(),sdbgout);
 	break;
   }
   runner.setOutputter(outputter);

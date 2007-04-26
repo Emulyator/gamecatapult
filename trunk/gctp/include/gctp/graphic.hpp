@@ -481,7 +481,7 @@ namespace gctp { namespace graphic {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	template<class _T>
-	Pointer<_T> createOnDB(const char *name)
+	Pointer<_T> createOnDB(const _TCHAR *name)
 	{
 		Handle<_T> h = device().db()[name];
 		if(h) return h.get();
@@ -489,13 +489,13 @@ namespace gctp { namespace graphic {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(name)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					device().db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}
@@ -511,7 +511,7 @@ namespace gctp { namespace graphic {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	template<class _T>
-	Pointer<_T> createOnDB(const char *name, const char *setup)
+	Pointer<_T> createOnDB(const _TCHAR *name, const _TCHAR *setup)
 	{
 		Handle<_T> h = device().db()[name];
 		if(h) return h.lock();
@@ -519,13 +519,13 @@ namespace gctp { namespace graphic {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(setup)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース")<<name<<_T("を制作"));
 					h = ret;
 					device().db().insert(name, h);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
 		return 0;
 	}

@@ -5,7 +5,7 @@
 #include <gctp/dbgout.hpp>
 #include <gctp/context.hpp>
 #include <gctp/class.hpp>
-#include <gctp/uri.hpp>
+#include <gctp/turi.hpp>
 //CUPPA:include=-
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestAssert.h>
@@ -24,7 +24,7 @@ using namespace gctp;
 		typedef Handle<ContextTestFoo> Hndl;
 		typedef Pointer<ContextTestFoo> Ptr;
 		ContextTestFoo() : data(123) {}
-		bool setUp(const std::string &name)
+		bool setUp(const std::basic_string<_TCHAR> &name)
 		{
 			return true;
 		}
@@ -49,26 +49,26 @@ public:
 //CUPPA:decl=+
   void testURI() {
 	  {
-		  URI uri("host0:/test/leaf.ext");
-		  CPPUNIT_ASSERT(uri.scheme()=="host0");
-		  CPPUNIT_ASSERT(uri.path()=="host0:/test");
-		  CPPUNIT_ASSERT(uri.directory()=="/test");
-		  CPPUNIT_ASSERT(uri.leaf()=="leaf.ext");
-		  CPPUNIT_ASSERT(uri.basename()=="leaf");
-		  CPPUNIT_ASSERT(uri.extension()=="ext");
+		  TURI uri(_T("host0:/test/leaf.ext"));
+		  CPPUNIT_ASSERT(uri.scheme()==_T("host0"));
+		  CPPUNIT_ASSERT(uri.path()==_T("host0:/test"));
+		  CPPUNIT_ASSERT(uri.directory()==_T("/test"));
+		  CPPUNIT_ASSERT(uri.leaf()==_T("leaf.ext"));
+		  CPPUNIT_ASSERT(uri.basename()==_T("leaf"));
+		  CPPUNIT_ASSERT(uri.extension()==_T("ext"));
 	  }
 	  {
-		  URI uri("test/leaf");
+		  TURI uri(_T("test/leaf"));
 		  //dbgout << uri.path() << endl;
-		  CPPUNIT_ASSERT(uri.scheme()=="");
-		  CPPUNIT_ASSERT(uri.path()=="test");
-		  CPPUNIT_ASSERT(uri.leaf()=="leaf");
-		  CPPUNIT_ASSERT(uri.basename()=="leaf");
-		  CPPUNIT_ASSERT(uri.extension()=="");
+		  CPPUNIT_ASSERT(uri.scheme()==_T(""));
+		  CPPUNIT_ASSERT(uri.path()==_T("test"));
+		  CPPUNIT_ASSERT(uri.leaf()==_T("leaf"));
+		  CPPUNIT_ASSERT(uri.basename()==_T("leaf"));
+		  CPPUNIT_ASSERT(uri.extension()==_T(""));
 	  }
   }
   void testRealizer() {
-	  URI uri("test/leaf.ext");
+	  TURI uri(_T("test/leaf.ext"));
 	  RealizeMethod f = Extension::get(uri.extension().c_str());
 	  CPPUNIT_ASSERT(f);
 	  ContextTestFoo::Ptr p = f(uri.raw().c_str());
@@ -77,11 +77,11 @@ public:
   void testContext() {
 	  {
 		  Context context;
-		  context.load("test/context.ext");
-		  ContextTestFoo::Hndl h = db()["test/context.ext"];
+		  context.load(_T("test/context.ext"));
+		  ContextTestFoo::Hndl h = db()[_T("test/context.ext")];
 		  CPPUNIT_ASSERT(h);
 	  }
-	  ContextTestFoo::Hndl h = db()["test/context.ext"];
+	  ContextTestFoo::Hndl h = db()[_T("test/context.ext")];
 	  CPPUNIT_ASSERT(!h);
   }
 //CUPPA:decl=-

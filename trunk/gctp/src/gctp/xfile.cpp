@@ -10,6 +10,10 @@
 #include <gctp/vector.hpp>
 #include <gctp/xfile.hpp>
 #include <gctp/uri.hpp>
+#ifdef UNICODE
+#include <gctp/wcstr.hpp>
+#include <gctp/wuri.hpp>
+#endif
 #include <rmxfguid.h>
 #include <rmxftmpl.h>
 
@@ -67,7 +71,11 @@ namespace gctp {
 			hr = env->CreateEnumObject((LPVOID)fn, DXFILELOAD_FROMFILE, &(*this));
 			if(!hr) {
 				std::string base = URI(fn).basename();
+#ifdef UNICODE
+				PRNN(L"Win32リソース検索 " << WURI(WCStr(fn).c_str()).basename());
+#else
 				PRNN("Win32リソース検索 " << base);
+#endif
 /*				HRSRC rc = FindResource(NULL, "PEDITUIX", "XFILE");
 				if(rc) {
 					HGLOBAL gl = LoadResource(NULL, rc);
@@ -104,6 +112,23 @@ namespace gctp {
 		if(!hr) return hr;
 		return open(env, fn);
 	}
+
+#ifdef UNICODE
+	HRslt XFileReader::open(XFileEnv &env, const wchar_t *fn)
+	{
+		return open(env, CStr(fn).c_str());
+	}
+
+	HRslt XFileReader::open(const wchar_t *fn)
+	{
+		HRslt hr;
+		XFileEnv env;
+		// Register templates for d3drm.
+		hr = env.registerDefaultTemplate();
+		if(!hr) return hr;
+		return open(env, fn);
+	}
+#endif
 
 	// ファイルオープン
 	HRslt XFileWriter::open(XFileEnv &env, const char *fn, Option option)

@@ -53,12 +53,12 @@ namespace gctp { namespace graphic {
 		Text &setColor(Color32 color, int ofs = 0);
 		Text &setBackColor(Color32 color, int ofs = 0);
 		Text &setFont(const Handle<Font> &font, int ofs = 0);
-		Text &setFixedPitch(bool yes, int ofs = 0);
+		Text &setFixedPitch(bool yes, int pitch = 0, int ofs = 0);
 
 		Point2f getPos(graphic::FontTexture &font, int ofs = 0);
 		Point2f getPos(int ofs = 0);
 
-		std::ostream &out();
+		std::basic_ostream<_TCHAR> &out();
 
 	GCTP_DECLARE_CLASS
 

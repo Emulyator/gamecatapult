@@ -60,7 +60,7 @@ namespace gctp { namespace graphic { namespace dx {
 		/// 製作
 		HRslt setUp();
 		/// 製作(リソース用)
-		HRslt setUp(const char *name) { return setUp(); }
+		HRslt setUp(const _TCHAR *name) { return setUp(); }
 		// 適用
 		HRslt setCurrent() const;
 		// 元に戻す

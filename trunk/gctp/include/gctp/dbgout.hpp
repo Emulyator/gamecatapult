@@ -21,6 +21,9 @@
 #define GCTP_DBGTRACE	1
 #endif
 
+#if GCTP_LOGFILE || GCTP_DBGOUT
+# include <tchar.h>
+#endif
 #if GCTP_LOGFILE
 # include <fstream>
 #endif
@@ -31,19 +34,11 @@
 namespace gctp {
 
 #if GCTP_LOGFILE
-# ifdef UNICODE
-	extern std::wofstream logfile;
-# else
-	extern std::ofstream logfile;
-# endif
+	extern std::basic_ofstream<_TCHAR> logfile;
 #endif
 
 #if GCTP_DBGOUT
-# ifdef UNICODE
-	extern std::wostream dbgout;
-# else
-	extern std::ostream dbgout;
-# endif
+	extern std::basic_ostream<_TCHAR> dbgout;
 #endif
 
 } // namespace gctp
@@ -51,12 +46,12 @@ namespace gctp {
 //------------------------------------
 // Debug Output Macros
 //------------------------------------
-#define LOCATION	__FILE__<<"("<<__LINE__<<") : "
+#define GCTP_LOCATION	__FILE__<<_T("(")<<__LINE__<<_T(") : ")
 
 #if GCTP_DBGOUT & GCTP_LOGFILE
-# define PRN(_S)		(gctp::logfile<<_S, gctp::logfile.flush(), gctp::dbgout<<_S)
+# define PRN(_S)	(gctp::logfile<<_S, gctp::logfile.flush(), gctp::dbgout<<_S)
 # define PRNN(_S)	PRN(_S<<std::endl)
-# define LOG(_S)		(gctp::logfile << _S, gctp::logfile.flush())
+# define LOG(_S)	(gctp::logfile << _S, gctp::logfile.flush())
 # define LOGN(_S)	LOG(_S<<std::endl)
 #elif GCTP_DBGOUT
 # define PRN(_S)		(gctp::dbgout << _S)
@@ -76,8 +71,8 @@ namespace gctp {
 #endif
 
 #if GCTP_DBGTRACE
-# define GCTP_TRACE(_S)	PRN(LOCATION<<_S<<std::endl)
-# define GCTP_TRACE_MSGBOX(_S)	(PRN(LOCATION<<_S<<std::endl), ::MessageBox(NULL, _S, 0, MB_OK))
+# define GCTP_TRACE(_S)	PRNN(GCTP_LOCATION<<_S)
+# define GCTP_TRACE_MSGBOX(_S)	(PRNN(GCTP_LOCATION<<_S), ::MessageBox(NULL, _S, 0, MB_OK))
 #else
 # define GCTP_TRACE(_S)
 # define GCTP_TRACE_MSGBOX(_S)

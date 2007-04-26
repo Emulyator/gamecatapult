@@ -23,117 +23,117 @@ namespace gctp { namespace graphic {
 		GCTP_REGISTER_REALIZER(fx, Brush);
 		
 		// SkinnedMesh.fx
-		const _TCHAR skinned_mesh_fx[] =
-			_T("//\n")
-			_T("// Skinned Mesh Effect file \n")
-			_T("// Copyright (c) 2000-2002 Microsoft Corporation. All rights reserved.\n")
-			_T("//\n")
-			_T("\n")
-			_T("float4 lhtDir = {0.0f, 0.0f, -1.0f, 1.0f};    //light Direction \n")
-			_T("float4 lightDiffuse = {0.6f, 0.6f, 0.6f, 1.0f}; // Light Diffuse\n")
-			_T("float4 MaterialAmbient : MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};\n")
-			_T("float4 MaterialDiffuse : MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};\n")
-			_T("\n")
-			_T("// Matrix Pallette\n")
-			_T("static const int MAX_MATRICES = 26;\n")
-			_T("float4x3    mWorldMatrixArray[MAX_MATRICES] : WORLDMATRIXARRAY;\n")
-			_T("float4x4    mViewProj : VIEWPROJECTION;\n")
-			_T("\n")
-			_T("///////////////////////////////////////////////////////\n")
-			_T("struct VS_INPUT\n")
-			_T("{\n")
-			_T("    float4  Pos             : POSITION;\n")
-			_T("    float4  BlendWeights    : BLENDWEIGHT;\n")
-			_T("    float4  BlendIndices    : BLENDINDICES;\n")
-			_T("    float3  Normal          : NORMAL;\n")
-			_T("    float3  Tex0            : TEXCOORD0;\n")
-			_T("};\n")
-			_T("\n")
-			_T("struct VS_OUTPUT\n")
-			_T("{\n")
-			_T("    float4  Pos     : POSITION;\n")
-			_T("    float4  Diffuse : COLOR;\n")
-			_T("    float2  Tex0    : TEXCOORD0;\n")
-			_T("};\n")
-			_T("\n")
-			_T("\n")
-			_T("float3 Diffuse(float3 Normal)\n")
-			_T("{\n")
-			_T("    float CosTheta;\n")
-			_T("    \n")
-			_T("    // N.L Clamped\n")
-			_T("    CosTheta = max(0.0f, dot(Normal, lhtDir.xyz));\n")
-			_T("       \n")
-			_T("    // propogate scalar result to vector\n")
-			_T("    return (CosTheta);\n")
-			_T("}\n")
-			_T("\n")
-			_T("\n")
-			_T("VS_OUTPUT VShade(VS_INPUT i, uniform int NumBones)\n")
-			_T("{\n")
-			_T("    VS_OUTPUT   o;\n")
-			_T("    float3      Pos = 0.0f;\n")
-			_T("    float3      Normal = 0.0f;    \n")
-			_T("    float       LastWeight = 0.0f;\n")
-			_T("     \n")
-			_T("    // Compensate for lack of UBYTE4 on Geforce3\n")
-			_T("    int4 IndexVector = D3DCOLORtoUBYTE4(i.BlendIndices);\n")
-			_T("\n")
-			_T("    // cast the vectors to arrays for use in the for loop below\n")
-			_T("    float BlendWeightsArray[4] = (float[4])i.BlendWeights;\n")
-			_T("    int   IndexArray[4]        = (int[4])IndexVector;\n")
-			_T("    \n")
-			_T("    // calculate the pos/normal using the \"normal\" weights \n")
-			_T("    //        and accumulate the weights to calculate the last weight\n")
-			_T("    for (int iBone = 0; iBone < NumBones-1; iBone++)\n")
-			_T("    {\n")
-			_T("        LastWeight = LastWeight + BlendWeightsArray[iBone];\n")
-			_T("        \n")
-			_T("        Pos += mul(i.Pos, mWorldMatrixArray[IndexArray[iBone]]) * BlendWeightsArray[iBone];\n")
-			_T("        Normal += mul(i.Normal, mWorldMatrixArray[IndexArray[iBone]]) * BlendWeightsArray[iBone];\n")
-			_T("    }\n")
-			_T("    LastWeight = 1.0f - LastWeight; \n")
-			_T("\n")
-			_T("    // Now that we have the calculated weight, add in the final influence\n")
-			_T("    Pos += (mul(i.Pos, mWorldMatrixArray[IndexArray[NumBones-1]]) * LastWeight);\n")
-			_T("    Normal += (mul(i.Normal, mWorldMatrixArray[IndexArray[NumBones-1]]) * LastWeight); \n")
-			_T("    \n")
-			_T("    // transform position from world space into view and then projection space\n")
-			_T("    o.Pos = mul(float4(Pos.xyz, 1.0f), mViewProj);\n")
-			_T("\n")
-			_T("    // normalize normals\n")
-			_T("    Normal = normalize(Normal);\n")
-			_T("\n")
-			_T("    // Shade (Ambient + etc.)\n")
-			_T("    o.Diffuse.xyz = MaterialAmbient.xyz + Diffuse(Normal) * MaterialDiffuse.xyz;\n")
-			_T("    o.Diffuse.w = 1.0f;\n")
-			_T("\n")
-			_T("    // copy the input texture coordinate through\n")
-			_T("    o.Tex0  = i.Tex0.xy;\n")
-			_T("\n")
-			_T("    return o;\n")
-			_T("}\n")
-			_T("\n")
-			_T("int CurNumBones = 2;\n")
-			_T("VertexShader vsArray[4] = { compile vs_1_1 VShade(1), \n")
-			_T("                            compile vs_1_1 VShade(2),\n")
-			_T("                            compile vs_1_1 VShade(3),\n")
-			_T("                            compile vs_1_1 VShade(4)\n")
-			_T("                          };\n")
-			_T("\n")
-			_T("\n")
-			_T("//////////////////////////////////////\n")
-			_T("// Techniques specs follow\n")
-			_T("//////////////////////////////////////\n")
-			_T("technique t0\n")
-			_T("{\n")
-			_T("    pass p0\n")
-			_T("    {\n")
-			_T("        VertexShader = (vsArray[CurNumBones]);\n")
-			_T("    }\n")
-			_T("}\n");
+		const char skinned_mesh_fx[] =
+			"//\n"
+			"// Skinned Mesh Effect file \n"
+			"// Copyright (c) 2000-2002 Microsoft Corporation. All rights reserved.\n"
+			"//\n"
+			"\n"
+			"float4 lhtDir = {0.0f, 0.0f, -1.0f, 1.0f};    //light Direction \n"
+			"float4 lightDiffuse = {0.6f, 0.6f, 0.6f, 1.0f}; // Light Diffuse\n"
+			"float4 MaterialAmbient : MATERIALAMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};\n"
+			"float4 MaterialDiffuse : MATERIALDIFFUSE = {0.8f, 0.8f, 0.8f, 1.0f};\n"
+			"\n"
+			"// Matrix Pallette\n"
+			"static const int MAX_MATRICES = 26;\n"
+			"float4x3    mWorldMatrixArray[MAX_MATRICES] : WORLDMATRIXARRAY;\n"
+			"float4x4    mViewProj : VIEWPROJECTION;\n"
+			"\n"
+			"///////////////////////////////////////////////////////\n"
+			"struct VS_INPUT\n"
+			"{\n"
+			"    float4  Pos             : POSITION;\n"
+			"    float4  BlendWeights    : BLENDWEIGHT;\n"
+			"    float4  BlendIndices    : BLENDINDICES;\n"
+			"    float3  Normal          : NORMAL;\n"
+			"    float3  Tex0            : TEXCOORD0;\n"
+			"};\n"
+			"\n"
+			"struct VS_OUTPUT\n"
+			"{\n"
+			"    float4  Pos     : POSITION;\n"
+			"    float4  Diffuse : COLOR;\n"
+			"    float2  Tex0    : TEXCOORD0;\n"
+			"};\n"
+			"\n"
+			"\n"
+			"float3 Diffuse(float3 Normal)\n"
+			"{\n"
+			"    float CosTheta;\n"
+			"    \n"
+			"    // N.L Clamped\n"
+			"    CosTheta = max(0.0f, dot(Normal, lhtDir.xyz));\n"
+			"       \n"
+			"    // propogate scalar result to vector\n"
+			"    return (CosTheta);\n"
+			"}\n"
+			"\n"
+			"\n"
+			"VS_OUTPUT VShade(VS_INPUT i, uniform int NumBones)\n"
+			"{\n"
+			"    VS_OUTPUT   o;\n"
+			"    float3      Pos = 0.0f;\n"
+			"    float3      Normal = 0.0f;    \n"
+			"    float       LastWeight = 0.0f;\n"
+			"     \n"
+			"    // Compensate for lack of UBYTE4 on Geforce3\n"
+			"    int4 IndexVector = D3DCOLORtoUBYTE4(i.BlendIndices);\n"
+			"\n"
+			"    // cast the vectors to arrays for use in the for loop below\n"
+			"    float BlendWeightsArray[4] = (float[4])i.BlendWeights;\n"
+			"    int   IndexArray[4]        = (int[4])IndexVector;\n"
+			"    \n"
+			"    // calculate the pos/normal using the \"normal\" weights \n"
+			"    //        and accumulate the weights to calculate the last weight\n"
+			"    for (int iBone = 0; iBone < NumBones-1; iBone++)\n"
+			"    {\n"
+			"        LastWeight = LastWeight + BlendWeightsArray[iBone];\n"
+			"        \n"
+			"        Pos += mul(i.Pos, mWorldMatrixArray[IndexArray[iBone]]) * BlendWeightsArray[iBone];\n"
+			"        Normal += mul(i.Normal, mWorldMatrixArray[IndexArray[iBone]]) * BlendWeightsArray[iBone];\n"
+			"    }\n"
+			"    LastWeight = 1.0f - LastWeight; \n"
+			"\n"
+			"    // Now that we have the calculated weight, add in the final influence\n"
+			"    Pos += (mul(i.Pos, mWorldMatrixArray[IndexArray[NumBones-1]]) * LastWeight);\n"
+			"    Normal += (mul(i.Normal, mWorldMatrixArray[IndexArray[NumBones-1]]) * LastWeight); \n"
+			"    \n"
+			"    // transform position from world space into view and then projection space\n"
+			"    o.Pos = mul(float4(Pos.xyz, 1.0f), mViewProj);\n"
+			"\n"
+			"    // normalize normals\n"
+			"    Normal = normalize(Normal);\n"
+			"\n"
+			"    // Shade (Ambient + etc.)\n"
+			"    o.Diffuse.xyz = MaterialAmbient.xyz + Diffuse(Normal) * MaterialDiffuse.xyz;\n"
+			"    o.Diffuse.w = 1.0f;\n"
+			"\n"
+			"    // copy the input texture coordinate through\n"
+			"    o.Tex0  = i.Tex0.xy;\n"
+			"\n"
+			"    return o;\n"
+			"}\n"
+			"\n"
+			"int CurNumBones = 2;\n"
+			"VertexShader vsArray[4] = { compile vs_1_1 VShade(1), \n"
+			"                            compile vs_1_1 VShade(2),\n"
+			"                            compile vs_1_1 VShade(3),\n"
+			"                            compile vs_1_1 VShade(4)\n"
+			"                          };\n"
+			"\n"
+			"\n"
+			"//////////////////////////////////////\n"
+			"// Techniques specs follow\n"
+			"//////////////////////////////////////\n"
+			"technique t0\n"
+			"{\n"
+			"    pass p0\n"
+			"    {\n"
+			"        VertexShader = (vsArray[CurNumBones]);\n"
+			"    }\n"
+			"}\n";
 		
-		const _TCHAR *shaders[] = {
+		const char *shaders[] = {
 			skinned_mesh_fx,
 		};
 		
@@ -145,7 +145,7 @@ namespace gctp { namespace graphic {
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Brush, Object);
 
 	/// シェーダーファイルから読みこみ
-	HRslt Brush::setUp(const char *fname)
+	HRslt Brush::setUp(const _TCHAR *fname)
 	{
 		DWORD dwShaderFlags = 0;
 #ifdef GCTP_DEBUG
@@ -170,7 +170,7 @@ namespace gctp { namespace graphic {
 				}
 			}
 			if(!hr) {
-				if(string("skinnedmesh.fx") == fname) {
+				if(TLStr(_T("skinnedmesh.fx")) == fname) {
 					ID3DXBufferPtr err;
 					hr = D3DXCreateEffect( device().impl(), shaders[0], shader_sizes[0], NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
 					if(!hr && err) {

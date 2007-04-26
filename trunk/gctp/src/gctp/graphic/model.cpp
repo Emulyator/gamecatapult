@@ -849,225 +849,225 @@ namespace gctp { namespace graphic {
 	namespace {
 
 		// Infl 1
-		const _TCHAR asm_shaders_1[] =
-			_T("vs.1.1\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T("; v0 = position\n")
-			_T("; v1 = blend weights\n")
-			_T("; v2 = blend indices\n")
-			_T("; v3 = normal\n")
-			_T("; v4 = texture coordinates\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T("; r0.w = Last blend weight\n")
-			_T("; r1 = Blend indices\n")
-			_T("; r2 = Temp position\n")
-			_T("; r3 = Temp normal\n")
-			_T("; r4 = Blended position in camera space\n")
-			_T("; r5 = Blended normal in camera space\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T("; Constants specified by the app;\n")
-			_T(";\n")
-			_T("; c9-c95 = world-view matrix palette\n")
-			_T("; c8	  = diffuse * light.diffuse\n")
-			_T("; c7	  = ambient color\n")
-			_T("; c2-c5   = projection matrix\n")
-			_T("; c1	  = light direction\n")
-			_T("; c0	  = {1, power, 0, 1020.01};\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T("; oPos	  = Output position\n")
-			_T("; oD0	  = Diffuse\n")
-			_T("; oD1	  = Specular\n")
-			_T("; oT0	  = texture coordinates\n")
-			_T(";------------------------------------------------------------------------------\n")
-			_T("dcl_position v0;\n")
-			_T("dcl_blendweight v1;\n")
-			_T("dcl_blendindices v2;\n")
-			_T("dcl_normal v3;\n")
-			_T("dcl_texcoord0 v4;\n")
-			_T("// Compensate for lack of UBYTE4 on Geforce3\n")
-			_T("mul r1,v2.zyxw,c0.wwww\n")
-			_T("//mul r1,v2,c0.wwww\n")
-			_T("//Set 1\n")
-			_T("mov a0.x,r1.x\n")
-			_T("m4x3 r4.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r5.xyz,v3,c[a0.x + 9]; \n")
-			_T("//compute position\n")
-			_T("mov r4.w,c0.x\n")
-			_T("m4x4 oPos,r4,c2\n")
-			_T("// normalize normals\n")
-			_T("dp3 r5.w, r5, r5;\n")
-			_T("rsq r5.w, r5.w;\n")
-			_T("mul r5, r5, r5.w;\n")
-			_T("; Do the lighting calculation\n")
-			_T("dp3 r1.x, r5, c1      ; normal dot light\n")
-			_T("lit r1, r1\n")
-			_T("mul r0, r1.y, c8      ; Multiply with diffuse\n")
-			_T("add r0, r0, c7        ; Add in ambient\n")
-			_T("min oD0, r0, c0.x     ; clamp if > 1\n")
-			_T("mov oD1, c0.zzzz      ; output specular\n")
-			_T("; Copy texture coordinate\n")
-			_T("mov oT0, v4\n");
+		const char asm_shaders_1[] =
+			"vs.1.1\n"
+			";------------------------------------------------------------------------------\n"
+			"; v0 = position\n"
+			"; v1 = blend weights\n"
+			"; v2 = blend indices\n"
+			"; v3 = normal\n"
+			"; v4 = texture coordinates\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; r0.w = Last blend weight\n"
+			"; r1 = Blend indices\n"
+			"; r2 = Temp position\n"
+			"; r3 = Temp normal\n"
+			"; r4 = Blended position in camera space\n"
+			"; r5 = Blended normal in camera space\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; Constants specified by the app;\n"
+			";\n"
+			"; c9-c95 = world-view matrix palette\n"
+			"; c8	  = diffuse * light.diffuse\n"
+			"; c7	  = ambient color\n"
+			"; c2-c5   = projection matrix\n"
+			"; c1	  = light direction\n"
+			"; c0	  = {1, power, 0, 1020.01};\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; oPos	  = Output position\n"
+			"; oD0	  = Diffuse\n"
+			"; oD1	  = Specular\n"
+			"; oT0	  = texture coordinates\n"
+			";------------------------------------------------------------------------------\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
 		
 		// Infl 2
-		const _TCHAR asm_shaders_2[] =
-			_T("vs.1.1\n")
-			_T("dcl_position v0;\n")
-			_T("dcl_blendweight v1;\n")
-			_T("dcl_blendindices v2;\n")
-			_T("dcl_normal v3;\n")
-			_T("dcl_texcoord0 v4;\n")
-			_T("// Compensate for lack of UBYTE4 on Geforce3\n")
-			_T("mul r1,v2.zyxw,c0.wwww\n")
-			_T("//mul r1,v2,c0.wwww\n")
-			_T("//first compute the last blending weight\n")
-			_T("dp3 r0.w,v1.xyz,c0.xzz; \n")
-			_T("add r0.w,-r0.w,c0.x\n")
-			_T("//Set 1\n")
-			_T("mov a0.x,r1.x\n")
-			_T("m4x3 r4.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r5.xyz,v3,c[a0.x + 9];\n")
-			_T("//blend them\n")
-			_T("mul r4.xyz,r4.xyz,v1.xxxx\n")
-			_T("mul r5.xyz,r5.xyz,v1.xxxx\n")
-			_T("//Set 2\n")
-			_T("mov a0.x,r1.y\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,r0.wwww,r4;\n")
-			_T("mad r5.xyz,r3.xyz,r0.wwww,r5;\n")
-			_T("//compute position\n")
-			_T("mov r4.w,c0.x\n")
-			_T("m4x4 oPos,r4,c2\n")
-			_T("// normalize normals\n")
-			_T("dp3 r5.w, r5, r5;\n")
-			_T("rsq r5.w, r5.w;\n")
-			_T("mul r5, r5, r5.w;\n")
-			_T("; Do the lighting calculation\n")
-			_T("dp3 r1.x, r5, c1      ; normal dot light\n")
-			_T("lit r1, r1\n")
-			_T("mul r0, r1.y, c8      ; Multiply with diffuse\n")
-			_T("add r0, r0, c7        ; Add in ambient\n")
-			_T("min oD0, r0, c0.x     ; clamp if > 1\n")
-			_T("mov oD1, c0.zzzz      ; output specular\n")
-			_T("; Copy texture coordinate\n")
-			_T("mov oT0, v4\n");
+		const char asm_shaders_2[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xzz; \n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
 
 		// Infl 3
-		const _TCHAR asm_shaders_3[] =
-			_T("vs.1.1\n")
-			_T("dcl_position v0;\n")
-			_T("dcl_blendweight v1;\n")
-			_T("dcl_blendindices v2;\n")
-			_T("dcl_normal v3;\n")
-			_T("dcl_texcoord0 v4;\n")
-			_T("// Compensate for lack of UBYTE4 on Geforce3\n")
-			_T("mul r1,v2.zyxw,c0.wwww\n")
-			_T("//mul r1,v2,c0.wwww\n")
-			_T("//first compute the last blending weight\n")
-			_T("dp3 r0.w,v1.xyz,c0.xxz; \n")
-			_T("add r0.w,-r0.w,c0.x\n")
-			_T("//Set 1\n")
-			_T("mov a0.x,r1.x\n")
-			_T("m4x3 r4.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r5.xyz,v3,c[a0.x + 9];\n")
-			_T("//blend them\n")
-			_T("mul r4.xyz,r4.xyz,v1.xxxx\n")
-			_T("mul r5.xyz,r5.xyz,v1.xxxx\n")
-			_T("//Set 2\n")
-			_T("mov a0.x,r1.y\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,v1.yyyy,r4;\n")
-			_T("mad r5.xyz,r3.xyz,v1.yyyy,r5;\n")
-			_T("//Set 3\n")
-			_T("mov a0.x,r1.z\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,r0.wwww,r4;\n")
-			_T("mad r5.xyz,r3.xyz,r0.wwww,r5;\n")
-			_T("//compute position\n")
-			_T("mov r4.w,c0.x\n")
-			_T("m4x4 oPos,r4,c2\n")
-			_T("// normalize normals\n")
-			_T("dp3 r5.w, r5, r5;\n")
-			_T("rsq r5.w, r5.w;\n")
-			_T("mul r5, r5, r5.w;\n")
-			_T("; Do the lighting calculation\n")
-			_T("dp3 r1.x, r5, c1      ; normal dot light\n")
-			_T("lit r1, r1\n")
-			_T("mul r0, r1.y, c8      ; Multiply with diffuse\n")
-			_T("add r0, r0, c7        ; Add in ambient\n")
-			_T("min oD0, r0, c0.x     ; clamp if > 1\n")
-			_T("mov oD1, c0.zzzz      ; output specular\n")
-			_T("; Copy texture coordinate\n")
-			_T("mov oT0, v4\n");
+		const char asm_shaders_3[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xxz; \n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
+			"//Set 3\n"
+			"mov a0.x,r1.z\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
 		
 		// Infl 4
-		const _TCHAR asm_shaders_4[] =
-			_T("vs.1.1\n")
-			_T("dcl_position v0;\n")
-			_T("dcl_blendweight v1;\n")
-			_T("dcl_blendindices v2;\n")
-			_T("dcl_normal v3;\n")
-			_T("dcl_texcoord0 v4;\n")
-			_T("// Compensate for lack of UBYTE4 on Geforce3\n")
-			_T("mul r1,v2.zyxw,c0.wwww\n")
-			_T("//mul r1,v2,c0.wwww\n")
-			_T("//first compute the last blending weight\n")
-			_T("dp3 r0.w,v1.xyz,c0.xxx;\n")
-			_T("add r0.w,-r0.w,c0.x\n")
-			_T("//Set 1\n")
-			_T("mov a0.x,r1.x\n")
-			_T("m4x3 r4.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r5.xyz,v3,c[a0.x + 9]; \n")
-			_T("//blend them\n")
-			_T("mul r4.xyz,r4.xyz,v1.xxxx\n")
-			_T("mul r5.xyz,r5.xyz,v1.xxxx\n")
-			_T("//Set 2\n")
-			_T("mov a0.x,r1.y\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,v1.yyyy,r4;\n")
-			_T("mad r5.xyz,r3.xyz,v1.yyyy,r5;\n")
-			_T("//Set 3\n")
-			_T("mov a0.x,r1.z\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,v1.zzzz,r4;\n")
-			_T("mad r5.xyz,r3.xyz,v1.zzzz,r5;\n")
-			_T("//Set 4\n")
-			_T("mov a0.x,r1.w\n")
-			_T("m4x3 r2.xyz,v0,c[a0.x + 9];\n")
-			_T("m3x3 r3.xyz,v3,c[a0.x + 9];\n")
-			_T("//add them in\n")
-			_T("mad r4.xyz,r2.xyz,r0.wwww,r4;\n")
-			_T("mad r5.xyz,r3.xyz,r0.wwww,r5;\n")
-			_T("//compute position\n")
-			_T("mov r4.w,c0.x\n")
-			_T("m4x4 oPos,r4,c2\n")
-			_T("// normalize normals\n")
-			_T("dp3 r5.w, r5, r5;\n")
-			_T("rsq r5.w, r5.w;\n")
-			_T("mul r5, r5, r5.w;\n")
-			_T("; Do the lighting calculation\n")
-			_T("dp3 r1.x, r5, c1      ; normal dot light\n")
-			_T("lit r1, r1\n")
-			_T("mul r0, r1.y, c8      ; Multiply with diffuse\n")
-			_T("add r0, r0, c7        ; Add in ambient\n")
-			_T("min oD0, r0, c0.x     ; clamp if > 1\n")
-			_T("mov oD1, c0.zzzz      ; output specular\n")
-			_T("; Copy texture coordinate\n")
-			_T("mov oT0, v4\n");
+		const char asm_shaders_4[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xxx;\n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
+			"//Set 3\n"
+			"mov a0.x,r1.z\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.zzzz,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.zzzz,r5;\n"
+			"//Set 4\n"
+			"mov a0.x,r1.w\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
 		
-		const _TCHAR *asm_shaders[] = {
+		const char *asm_shaders[] = {
 			asm_shaders_1,
 			asm_shaders_2,
 			asm_shaders_3,
@@ -1342,7 +1342,7 @@ namespace gctp { namespace graphic {
 		HRslt setUp()
 		{
 			if(owner_.brush()) brush_ = owner_.brush().get();
-			else brush_ = graphic::createOnDB<Brush>("skinnedmesh.fx");
+			else brush_ = graphic::createOnDB<Brush>(_T("skinnedmesh.fx"));
 
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;

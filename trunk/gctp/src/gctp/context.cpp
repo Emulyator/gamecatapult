@@ -8,7 +8,7 @@
 #include "common.h"
 #include <gctp/context.hpp>
 #include <gctp/serializer.hpp>
-#include <gctp/uri.hpp>
+#include <gctp/turi.hpp>
 #include <gctp/db.hpp>
 
 using namespace std;
@@ -61,14 +61,14 @@ namespace gctp {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Context::load(const char *name)
+	bool Context::load(const _TCHAR *name)
 	{
 		GCTP_ASSERT(current_ == this);
-		URI uri(name);
+		TURI uri(name);
 //#ifdef _WIN32
 //		uri.convertLower();
 //#endif
-		std::string ext = uri.extension();
+		std::basic_string<_TCHAR> ext = uri.extension();
 		RealizeMethod f = Extension::get(ext.c_str());
 		if(f) {
 			Ptr p = f(uri.raw().c_str());
@@ -78,13 +78,7 @@ namespace gctp {
 			}
 		}
 		else {
-#ifdef UNICODE
-			wchar_t _ext[256];
-			if(0 == MultiByteToWideChar(932, 0, ext.c_str(), -1, _ext, 256)) MultiByteToWideChar(CP_ACP, 0, ext.c_str(), -1, _ext, 256);
-			PRNN(_T("Context::load : Šg’£Žq'")<<_ext<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢"));
-#else
-			PRNN(_T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢"));
-#endif
+			PRNN(_T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)"));
 		}
 		return false;
 	}
@@ -95,7 +89,7 @@ namespace gctp {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::add(const Ptr ptr, const char *name)
+	Hndl Context::add(const Ptr ptr, const _TCHAR *name)
 	{
 		GCTP_ASSERT(current_ == this);
 		if(ptr) {
@@ -111,7 +105,7 @@ namespace gctp {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::create(const GCTP_TYPEINFO &typeinfo, const char *name)
+	Hndl Context::create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name)
 	{
 		GCTP_ASSERT(current_ == this);
 		Ptr ret = Factory::create(typeinfo);
@@ -128,7 +122,7 @@ namespace gctp {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::create(const char *classname, const char *name)
+	Hndl Context::create(const char *classname, const _TCHAR *name)
 	{
 		GCTP_ASSERT(current_ == this);
 		Ptr ret = Factory::create(classname);
@@ -151,7 +145,7 @@ namespace gctp {
 			}
 		}
 		else if(serializer.isWriting()) {
-			int size = ptrs_.size();
+			int size = (int)ptrs_.size();
 			serializer.ostream() << size;
 			for(PtrList::iterator i = ptrs_.begin(); i != ptrs_.end(); ++i) {
 				serializer << *i;
@@ -169,15 +163,25 @@ namespace gctp {
 	int Context::luaLoad(luapp::Stack &L)
 	{
 		/* (const char *fname) */
-		load(L[1].toCStr());
+#ifdef UNICODE
+		WCStr str = L[1].toCStr();
+		L << load(str.c_str());
+#else
+		L << load(L[1].toCStr());
+#endif
 		return 1;
 	}
 	
 	int Context::luaCreate(luapp::Stack &L)
 	{
 		/* ( const char *classname, const char *name) */
-		create(L[1].toCStr(), L[2].toCStr());
-		return 0;
+#ifdef UNICODE
+		WCStr str = L[2].toCStr();
+		L << (create(L[1].toCStr(), str.c_str()) ? true : false);
+#else
+		L << (create(L[1].toCStr(), L[2].toCStr()) ? true : false);
+#endif
+		return 1;
 	}
 
 	TUKI_IMPLEMENT_BEGIN_NS(gctp, Context)

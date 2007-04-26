@@ -73,7 +73,7 @@ namespace gctp { namespace audio {
 
 	Device* Device::current_;
 
-	Player Device::ready(const char *fname) {
+	Player Device::ready(const _TCHAR *fname) {
 		if(impl_) return Player(impl_->ready(fname));
 		return Player();
 	}

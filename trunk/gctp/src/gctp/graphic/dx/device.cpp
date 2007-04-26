@@ -166,14 +166,14 @@ namespace gctp { namespace graphic { namespace dx {
 		D3DDEVTYPE type		///< デバイスの種類
 	) {
 		if(!Adapter::api_ || adapters().size()==0) {
-			PRNN("システムが初期化されていません。graphic::initializeを呼び出してください。");
+			PRNN(_T("システムが初期化されていません。graphic::initializeを呼び出してください。"));
 			return CO_E_NOTINITIALIZED;
 		}
 		if(is_fs) {
 			if(mode >= adapters()[adpt].modes.size()) return E_FAIL;
-			PRNN("フルスクリーンでデバイス製作");
+			PRNN(_T("フルスクリーンでデバイス製作"));
 		}
-		else PRNN("ウィンドウモードでデバイス製作");
+		else PRNN(_T("ウィンドウモードでデバイス製作"));
 		HRslt ret;
 		D3DCAPS9 caps;
 		ret = Adapter::api_->GetDeviceCaps(adpt, type, &caps);
@@ -228,11 +228,11 @@ namespace gctp { namespace graphic { namespace dx {
 				}
 			}
 			if(ret) {
-				if(mstype != _mstype) PRNN("マルチサンプリングが受理されましたが、要求のサンプル数より落としました。");
-				if(fsaa_level_ != d3dpp.MultiSampleQuality) PRNN("マルチサンプリングが受理されましたが、要求のクォリティーより落としました。");
-				PRNN("マルチサンプリング:"<<d3dpp.MultiSampleType<<","<<d3dpp.MultiSampleQuality);
+				if(mstype != _mstype) PRNN(_T("マルチサンプリングが受理されましたが、要求のサンプル数より落としました。"));
+				if(fsaa_level_ != d3dpp.MultiSampleQuality) PRNN(_T("マルチサンプリングが受理されましたが、要求のクォリティーより落としました。"));
+				PRNN(_T("マルチサンプリング:")<<d3dpp.MultiSampleType<<","<<d3dpp.MultiSampleQuality);
 			}
-			else PRNN("マルチサンプリングが要求されましたが、デバイスが対応していないため、マルチサンプリングなしで製作します。");
+			else PRNN(_T("マルチサンプリングが要求されましたが、デバイスが対応していないため、マルチサンプリングなしで製作します。"));
 		}
 		if(ptr_) {
 			ret = ptr_->Reset(&d3dpp); PRNN("Reset!");
@@ -242,12 +242,12 @@ namespace gctp { namespace graphic { namespace dx {
 			if(is_allow_HVP_) ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_HARDWARE_VERTEXPROCESSING|additional_flag, &d3dpp, &ptr_ );
 			else ret = E_FAIL;
 			if(!ret) {
-				if(is_allow_HVP_) PRNN("ハードウェア頂点処理での製作失敗:"<<ret);
+				if(is_allow_HVP_) PRNN(_T("ハードウェア頂点処理での製作失敗:")<<ret);
 				if(is_allow_MVP_) ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_MIXED_VERTEXPROCESSING|additional_flag, &d3dpp, &ptr_ );
 				if(!ret) {
-					if(is_allow_MVP_) PRNN("ハードウェア・ソフトウェア混合頂点処理での製作失敗:"<<ret);
+					if(is_allow_MVP_) PRNN(_T("ハードウェア・ソフトウェア混合頂点処理での製作失敗:")<<ret);
 					ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING|additional_flag, &d3dpp, &ptr_ );
-					if(!ret) PRNN("ソフトウェア頂点処理での製作失敗:"<<ret);
+					if(!ret) PRNN(_T("ソフトウェア頂点処理での製作失敗:")<<ret);
 				}
 			}
 			light_num_ = 0;
@@ -272,11 +272,11 @@ namespace gctp { namespace graphic { namespace dx {
 		D3DDEVTYPE type		///< デバイスの種類
 	) {
 		if(!Adapter::api_ || adapters().size()==0) {
-			PRNN("システムが初期化されていません。graphic::initializeを呼び出してください。");
+			PRNN(_T("システムが初期化されていません。graphic::initializeを呼び出してください。"));
 			return CO_E_NOTINITIALIZED;
 		}
 		if(mode >= adapters()[adpt].modes.size()) return E_FAIL;
-		PRNN("フルスクリーンでデバイス製作");
+		PRNN(_T("フルスクリーンでデバイス製作"));
 		HRslt ret;
 		D3DCAPS9 caps;
 		ret = Adapter::api_->GetDeviceCaps(adpt, type, &caps);
@@ -290,7 +290,7 @@ namespace gctp { namespace graphic { namespace dx {
 			n = caps.NumberOfAdaptersInGroup;
 		}
 		else {
-			PRNN("マルチヘッドが要求されましたが、マルチヘッドアダプターでありません。");
+			PRNN(_T("マルチヘッドが要求されましたが、マルチヘッドアダプターでありません。"));
 			return E_FAIL;
 		}
 		const D3DDISPLAYMODE &d3ddm = adapters()[adpt].modes[mode];
@@ -331,11 +331,11 @@ namespace gctp { namespace graphic { namespace dx {
 				}
 			}
 			if(ret) {
-				if(mstype != _mstype) PRNN("マルチサンプリングが受理されましたが、要求のサンプル数より落としました。");
-				if(fsaa_level_ != d3dpp[0].MultiSampleQuality) PRNN("マルチサンプリングが受理されましたが、要求のクォリティーより落としました。");
-				PRNN("マルチサンプリング:"<<d3dpp[0].MultiSampleType<<","<<d3dpp[0].MultiSampleQuality);
+				if(mstype != _mstype) PRNN(_T("マルチサンプリングが受理されましたが、要求のサンプル数より落としました。"));
+				if(fsaa_level_ != d3dpp[0].MultiSampleQuality) PRNN(_T("マルチサンプリングが受理されましたが、要求のクォリティーより落としました。"));
+				PRNN(_T("マルチサンプリング:")<<d3dpp[0].MultiSampleType<<","<<d3dpp[0].MultiSampleQuality);
 			}
-			else PRNN("マルチサンプリングが要求されましたが、デバイスが対応していないため、マルチサンプリングなしで製作します。");
+			else PRNN(_T("マルチサンプリングが要求されましたが、デバイスが対応していないため、マルチサンプリングなしで製作します。"));
 		}
 		if(ptr_) {
 			ret = ptr_->Reset(d3dpp.get()); PRNN("Reset!");
@@ -345,12 +345,12 @@ namespace gctp { namespace graphic { namespace dx {
 			if(is_allow_HVP_) ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_HARDWARE_VERTEXPROCESSING|additional_flag, d3dpp.get(), &ptr_ );
 			else ret = E_FAIL;
 			if(!ret) {
-				if(is_allow_HVP_) PRNN("ハードウェア頂点処理での製作失敗:"<<ret);
+				if(is_allow_HVP_) PRNN(_T("ハードウェア頂点処理での製作失敗:")<<ret);
 				if(is_allow_MVP_) ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_MIXED_VERTEXPROCESSING|additional_flag, d3dpp.get(), &ptr_ );
 				if(!ret) {
-					if(is_allow_MVP_) PRNN("ハードウェア・ソフトウェア混合頂点処理での製作失敗:"<<ret);
+					if(is_allow_MVP_) PRNN(_T("ハードウェア・ソフトウェア混合頂点処理での製作失敗:")<<ret);
 					ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING|additional_flag, d3dpp.get(), &ptr_ );
-					if(!ret) PRNN("ソフトウェア頂点処理での製作失敗:"<<ret);
+					if(!ret) PRNN(_T("ソフトウェア頂点処理での製作失敗:")<<ret);
 				}
 			}
 			light_num_ = 0;
@@ -752,7 +752,7 @@ namespace gctp { namespace graphic { namespace dx {
 	 */
 	Pointer<View> Device::createView(uint adpt, HWND hwnd)
 	{
-		PRNN("追加スワップチェーン製作");
+		PRNN(_T("追加スワップチェーン製作"));
 		D3DPRESENT_PARAMETERS d3dpp;
 		ZeroMemory( &d3dpp, sizeof(d3dpp) );
 		d3dpp.hDeviceWindow = hwnd;
@@ -788,7 +788,7 @@ namespace gctp { namespace graphic { namespace dx {
 	 */
 	Pointer<View> Device::createView(uint adpt, uint idx)
 	{
-		PRNN("セカンダリスワップチェーン取得");
+		PRNN(_T("セカンダリスワップチェーン取得"));
 		Pointer<View> ret(new View);
 		HRslt hr;
 		if(ret) {

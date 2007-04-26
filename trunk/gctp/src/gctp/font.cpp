@@ -8,7 +8,7 @@
 #include "common.h"
 #include <gctp/types.hpp>
 #include <gctp/font.hpp>
-#include <gctp/csv.hpp>
+#include <gctp/tcsv.hpp>
 #include <gctp/dbgout.hpp>
 #include "SmartWin.h"
 
@@ -101,13 +101,17 @@ namespace gctp {
 	 * @date 2004/07/20 1:46:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	std::string Font::paramToString(const char *fontname, uint height, uint32_t style)
+	sw::tstring Font::paramToString(const _TCHAR *fontname, uint height, uint32_t style)
 	{
-		CSVRow csv;
+		CSVRowBase< _TCHAR, std::char_traits<_TCHAR> > csv;
 		csv.push_back(fontname);
-		csv.push_back(boost::lexical_cast<std::string>(height));
-		csv.push_back(boost::lexical_cast<std::string>(style));
+		csv.push_back(boost::lexical_cast<sw::tstring>(height));
+		csv.push_back(boost::lexical_cast<sw::tstring>(style));
+#ifdef _UNICODE
+		wstringstream ioss;
+#else
 		stringstream ioss;
+#endif
 		ioss << csv;
 		return ioss.str();
 	}
@@ -118,18 +122,18 @@ namespace gctp {
 	 * @date 2004/07/20 1:46:35
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Font::stringToParam(const char *param, std::string &fontname, uint &height, uint32_t &style)
+	bool Font::stringToParam(const _TCHAR *param, sw::tstring &fontname, uint &height, uint32_t &style)
 	{
-		stringstream ioss;
+		basic_stringstream<_TCHAR> ioss;
 		ioss << param;
-		CSVRow csv;
+		TCSVRow csv;
 		ioss >> csv;
 		if(csv.size() != 3) return false;
 		fontname = csv[0];
 		height = boost::lexical_cast<ulong>(csv[1]);
 		style = 0;
-		if(string::npos!=csv[2].find("BOLD")) style |= BOLD;
-		if(string::npos!=csv[2].find("ITALIC")) style |= ITALIC;
+		if(string::npos!=csv[2].find(_T("BOLD"))) style |= BOLD;
+		if(string::npos!=csv[2].find(_T("ITALIC"))) style |= ITALIC;
 		return true;
 	}
 

@@ -57,6 +57,7 @@ namespace gctp {
 		_Self& operator<<(std::streambuf* __buf);
 		_Self& operator<<(const char __x) { return write(&__x, sizeof(__x)); }
 		_Self& operator<<(const unsigned char __x) { return write((void *)&__x, sizeof(__x)); }
+		_Self& operator<<(const wchar_t __x) { return write(&__x, sizeof(__x)); }
 		_Self& operator<<(const int __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<<(const unsigned int __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<<(const short __x) { return write((void *)&__x, sizeof(__x)); }
@@ -71,6 +72,8 @@ namespace gctp {
 		_Self& operator<<(const double __x)	{ return write(&__x, sizeof(__x)); }
 		_Self& operator<<(const char *s)	{ return write(s, static_cast<std::streamsize>(strlen(s)))<<'\0'; }
 		_Self& operator<<(const std::string &s) { return write(s.c_str(), static_cast<std::streamsize>(strlen(s.c_str())))<<'\0'; }
+		_Self& operator<<(const wchar_t *s)	{ return write(s, static_cast<std::streamsize>(wcslen(s)*sizeof(wchar_t)))<<L'\0'; }
+		_Self& operator<<(const std::wstring &s) { return write(s.c_str(), static_cast<std::streamsize>(wcslen(s.c_str())*sizeof(wchar_t)))<<L'\0'; }
 		# ifndef _STLP_NO_LONG_DOUBLE
 		_Self& operator<<(long double __x) { return write(&__x, sizeof(__x)); }
 		# endif

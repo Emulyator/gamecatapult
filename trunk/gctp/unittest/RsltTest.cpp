@@ -37,7 +37,11 @@ public:
 	  HRslt hr;
 	  CPPUNIT_ASSERT(hr);
 	  hr = 0x88768686;
+#ifdef UNICODE
+	  std::wcout << hr << L"  ‚±‚±‚Í'Unknown : n/a'‚Æo‚ê‚Î³í" << std::endl;
+#else
 	  std::cout << hr << "  ‚±‚±‚Í'Unknown : n/a'‚Æo‚ê‚Î³í" << std::endl;
+#endif
 	  CPPUNIT_ASSERT(!hr);
 	  hr = 0;
 	  CPPUNIT_ASSERT(hr);

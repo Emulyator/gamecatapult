@@ -31,8 +31,8 @@ public:
 		HRslt hr = a_.open(handle());
 		if(!hr) GCTP_TRACE(hr);
 		a_.setCurrent();
-		p1_ = a_.ready("../media/pang.wav");
-		p2_ = a_.ready("../media/hugeraw.wav");
+		p1_ = a_.ready(_T("../../../media/pang.wav"));
+		p2_ = a_.ready(_T("../../../media/hugeraw.wav"));
 		p2_.play(true);
 //		ogg_.UseDirectSound(a_);
 //		ogg_.OpenOgg("media/ogg.ogg");

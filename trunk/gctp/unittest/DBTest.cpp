@@ -61,23 +61,23 @@ public:
 //CUPPA:decl=+
   void testSimpleCase() {
     //CPPUNIT_FAIL("no implementation");
-	db().insert("texture/01.bmp", Handle<FlyWeightA>(obja1));
-	db().insert("texture/02.bmp", Handle<FlyWeightA>(obja2));
-	db().insert("texture/03.bmp", Handle<FlyWeightB>(objb1));
-	db().insert("texture/04.bmp", Handle<FlyWeightB>(objb2));
-	CPPUNIT_ASSERT(db().find("texture/01.bmp"));
-	CPPUNIT_ASSERT(db().find("texture/02.bmp"));
-	CPPUNIT_ASSERT(db().find("texture/03.bmp"));
-	CPPUNIT_ASSERT(db().find("texture/04.bmp"));
+	db().insert(_T("texture/01.bmp"), Handle<FlyWeightA>(obja1));
+	db().insert(_T("texture/02.bmp"), Handle<FlyWeightA>(obja2));
+	db().insert(_T("texture/03.bmp"), Handle<FlyWeightB>(objb1));
+	db().insert(_T("texture/04.bmp"), Handle<FlyWeightB>(objb2));
+	CPPUNIT_ASSERT(db().find(_T("texture/01.bmp")));
+	CPPUNIT_ASSERT(db().find(_T("texture/02.bmp")));
+	CPPUNIT_ASSERT(db().find(_T("texture/03.bmp")));
+	CPPUNIT_ASSERT(db().find(_T("texture/04.bmp")));
 	
-	db().erase("texture/01.bmp");
-	db().erase("texture/02.bmp");
-	db().erase("texture/03.bmp");
-	db().erase("texture/04.bmp");
-	CPPUNIT_ASSERT(!db().find("texture/01.bmp"));
-	CPPUNIT_ASSERT(!db().find("texture/02.bmp"));
-	CPPUNIT_ASSERT(!db().find("texture/03.bmp"));
-	CPPUNIT_ASSERT(!db().find("texture/04.bmp"));
+	db().erase(_T("texture/01.bmp"));
+	db().erase(_T("texture/02.bmp"));
+	db().erase(_T("texture/03.bmp"));
+	db().erase(_T("texture/04.bmp"));
+	CPPUNIT_ASSERT(!db().find(_T("texture/01.bmp")));
+	CPPUNIT_ASSERT(!db().find(_T("texture/02.bmp")));
+	CPPUNIT_ASSERT(!db().find(_T("texture/03.bmp")));
+	CPPUNIT_ASSERT(!db().find(_T("texture/04.bmp")));
   }
 //CUPPA:decl=-
   CPPUNIT_TEST_SUITE(DBTest);

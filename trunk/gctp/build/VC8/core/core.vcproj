@@ -21,7 +21,7 @@
 			IntermediateDirectory="Debug"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -89,7 +89,7 @@
 			IntermediateDirectory="Release"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -312,6 +312,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\typemap.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\wstringmap.cpp"
 				>
 			</File>
 			<File
@@ -613,6 +617,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\tcstr.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\timer.hpp"
 				>
 			</File>
@@ -621,7 +629,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\tstringmap.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\tuki.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\turi.hpp"
 				>
 			</File>
 			<File
@@ -646,6 +662,18 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\vector.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\wcstr.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\wstringmap.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\wuri.hpp"
 				>
 			</File>
 			<File

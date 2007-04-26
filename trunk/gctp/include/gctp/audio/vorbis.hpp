@@ -22,10 +22,10 @@ namespace gctp {
 	class VorbisAcmDriver {
 	public:
 		VorbisAcmDriver() : hndl_(0), id_(0), drv_(0) {}
-		explicit VorbisAcmDriver(const char * driver_path) : hndl_(0), id_(0), drv_(0) { initialize(driver_path); }
+		explicit VorbisAcmDriver(const _TCHAR * driver_path) : hndl_(0), id_(0), drv_(0) { initialize(driver_path); }
 		~VorbisAcmDriver() { finalize(); }
 
-		bool initialize(const char * driver_path = "vorbis.acm")
+		bool initialize(const _TCHAR * driver_path = _T("vorbis.acm"))
 		{
 			// ローカルドライバとして追加
 			MMRESULT h;

@@ -53,7 +53,7 @@ namespace gctp { namespace scene {
 	class GraphFile : public Object, public PtrList {
 	public:
 		/// XFile‚Ì“Ç‚Ý‚±‚Ý
-		bool setUpFromX(const char *filename);
+		bool setUpFromX(const _TCHAR *filename);
 		
 	GCTP_DECLARE_CLASS;
 	};

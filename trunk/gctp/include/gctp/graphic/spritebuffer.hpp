@@ -119,7 +119,7 @@ namespace gctp { namespace graphic {
 		struct TLVertex;
 		struct LVertex;
 
-		HRslt setUp(const char *name);
+		HRslt setUp(const _TCHAR *name);
 		HRslt setUp(uint maxnum = default_maxnum_, bool is_TL = true);
 
 		SpriteBuffer &begin(bool do_filter = true);

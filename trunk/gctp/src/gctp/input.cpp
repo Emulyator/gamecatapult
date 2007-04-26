@@ -20,11 +20,7 @@ namespace gctp {
 
 	Input::DeviceList Input::devicies_;
 
-#ifdef UNICODE
-	std::wostream &operator<<(std::wostream &os, const Input::Device &device)
-#else
-	std::ostream &operator<<(std::ostream &os, const Input::Device &device)
-#endif
+	std::basic_ostream<_TCHAR> &operator<<(std::basic_ostream<_TCHAR> &os, const Input::Device &device)
 	{
 		os<<_T("name : ")<<device.tszInstanceName<<_T("   caption : ")<<device.tszProductName<<std::endl;
 		os<<_T("   デバイスタイプ:");

@@ -15,17 +15,6 @@
 #include <gctp/utils.hpp>
 #include <gctp/dbgout.hpp>
 
-#ifdef _MBCS
-#define isPrintChar(c) _ismbcprint(c)
-#define isSpaceChar(c) _ismbcspace(c)
-#elif defined _UNICODE
-#define isPrintChar(c) iswprint(c)
-#define isSpaceChar(c) iswspace(c)
-#else
-#define isPrintChar(c) isprint(c)
-#define isSpaceChar(c) isspace(c)
-#endif
-
 using namespace std;
 
 namespace gctp { namespace graphic {
@@ -214,7 +203,7 @@ namespace gctp { namespace graphic {
 #ifdef __GLYPH_OUTLINE_
 			cntx->dc.selectFont( font );
 			cntx->dc.setMapMode( MM_TEXT );
-			std::string str = charToStr(c);
+			std::basic_string<_TCHAR> str = charToStr(c);
 			TEXTMETRIC tm; // 現在のフォント情報
 			cntx->dc.getTextMetrics(&tm);
 			MAT2 mat2 = { { 0, 1 }, { 0, 0 }, { 0, 0 }, { 0, 1 } };
@@ -225,7 +214,7 @@ namespace gctp { namespace graphic {
 			// アウトラインをグレースケールで作成
 			cntx->dc.getGlyphOutline(c, GGO_GRAY4_BITMAP, &glyph, bufsize, (void *)buf, &mat2);
 
-			cntx->dc.getTextExtent(str.c_str(), str.length(), (SIZE *)&gsize);
+			cntx->dc.getTextExtent(str.c_str(), (int)str.length(), (SIZE *)&gsize);
 
 			int ggo_pitch = ( glyph.gmBlackBoxX + 3 ) & 0xfffc; // ダブルワード境界に整列
 			int ggo_xofs = glyph.gmptGlyphOrigin.x;
@@ -500,7 +489,7 @@ namespace gctp { namespace graphic {
 		uint x = 0;
 		uint y = 0;
 		SIZE gsize;
-		char str[2] = _T("x");
+		_TCHAR str[2] = _T("x");
 		Size2 tsize = size();
 		int default_line_height, line_height;
 		Texture::ScopedLock al(*this, 0);
@@ -650,7 +639,7 @@ namespace gctp { namespace graphic {
 		dc.setMapMode(MM_TEXT);
 		dc.setTextAlign(TA_TOP);
 		dc.selectFont(font.get());
-		char str[2] = _T(" ");
+		_TCHAR str[2] = _T(" ");
 		SIZE gsize;
 		int default_line_height, line_height;
 		uint char_width[128-32];
@@ -704,11 +693,11 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/17 6:08:30
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	void drawText(SpriteBuffer &spr, FontTexture &font, const Handle<Font> cfont, const Point2f &pos, Color32 color, const char *_text)
+	void drawText(SpriteBuffer &spr, FontTexture &font, const Handle<Font> cfont, const Point2f &pos, Color32 color, const _TCHAR *_text)
 	{
-		const char *text = _text;
+		const _TCHAR *text = _text;
 		uint line_height, default_line_height;
-		FontGlyph glyph = font.find(cfont, ' ');
+		FontGlyph glyph = font.find(cfont, _T(' '));
 		uint space_size = static_cast<uint>(glyph.size.x);
 		line_height = default_line_height = static_cast<uint>(glyph.size.y);
 		font.gabage();
@@ -771,15 +760,15 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/17 6:08:30
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Point2f getTextPos(const FontTexture &font, const Handle<Font> cfont, const char *text, uint idx)
+	Point2f getTextPos(const FontTexture &font, const Handle<Font> cfont, const _TCHAR *text, uint idx)
 	{
 		Point2f ret = {0, 0};
 		if(text) {
-			FontGlyph glyph = font.find(cfont, ' ');
+			FontGlyph glyph = font.find(cfont, _T(' '));
 			int space_size = static_cast<int>(glyph.size.x);
 			int line_height, default_line_height;
 			line_height = default_line_height = static_cast<uint>(glyph.size.y);
-			uint len = strlen(text);
+			std::size_t len = _tcslen(text);
 			while(*text && idx && idx <= len) {
 				int c, n;
 				n = getChar(c, text);

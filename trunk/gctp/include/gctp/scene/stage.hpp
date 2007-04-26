@@ -61,10 +61,10 @@ namespace gctp { namespace scene {
 		Stage();
 
 		/// DBに登録
-		bool insert(const Hndl hndl, const char *key);
+		bool insert(const Hndl hndl, const _TCHAR *key);
 
 		/// ファイルからセットアップ
-		virtual void setUp(const char *filename);
+		virtual void setUp(const _TCHAR *filename);
 
 		bool onUpdate(float delta);
 		/// 更新スロット
@@ -78,9 +78,9 @@ namespace gctp { namespace scene {
 		Stage &current() { return *current_; }
 
 		/// ノード追加
-		Hndl newNode(Context &context, const char *classname, const char *name = 0, const char *srcfilename = 0);
+		Hndl newNode(Context &context, const char *classname, const _TCHAR *name = 0, const _TCHAR *srcfilename = 0);
 		/// ノード追加
-		Hndl newNode(Context &context, const GCTP_TYPEINFO &typeinfo, const char *name = 0, const char *srcfilename = 0);
+		Hndl newNode(Context &context, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name = 0, const _TCHAR *srcfilename = 0);
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(Stage)

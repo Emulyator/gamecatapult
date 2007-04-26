@@ -57,7 +57,7 @@ namespace gctp { namespace audio {
 		/* @{ */
 		/** これらはトラックをその場で作る
 		 * @{ */
-		Player ready(const char *fname);
+		Player ready(const _TCHAR *fname);
 		Player ready(const Clip &clip, uint repeat = 0);
 		Player ready(int stance, const Clip &clip, uint repeat = 0);
 		/* @} */
@@ -153,7 +153,7 @@ namespace gctp { namespace audio {
 	/** @defgroup CurrentAudioDeviceOperation カレントに対する操作 */
 	/* @{*/
 	/// 指定ファイルから音声データを用意
-	inline Player ready(const char *fname) { return device().ready(fname); }
+	inline Player ready(const _TCHAR *fname) { return device().ready(fname); }
 	/* @}*/
 
 }} // namespace gctp

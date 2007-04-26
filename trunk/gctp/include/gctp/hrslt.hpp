@@ -16,6 +16,7 @@
 #include <d3dx9core.h>
 #include <iosfwd>
 #include <boost/detail/workaround.hpp>
+#include <tchar.h>
 
 // Ç∆ÇËÇ†Ç¶Ç∏ÅBÅBÅB
 #pragma warning(disable : 4996)
@@ -30,21 +31,12 @@ namespace gctp {
 	struct HRslt {
 		HRslt() : i(S_OK) {}
 		HRslt(const HRESULT &src) : i(src) {}
-#ifdef UNICODE
-		wchar_t *message(wchar_t *buf, std::size_t buflen) const {
-			wcsncpy(buf, DXGetErrorString9(i), buflen);
-			wcsncpy(buf, L" : ", buflen);
-			wcsncpy(buf, DXGetErrorDescription9(i), buflen);
+		_TCHAR *message(_TCHAR *buf, std::size_t buflen) const {
+			_tcsncpy(buf, DXGetErrorString9(i), buflen);
+			_tcsncpy(buf, _T(" : "), buflen);
+			_tcsncpy(buf, DXGetErrorDescription9(i), buflen);
 			return buf;
 		}
-#else
-		char *message(char *buf, std::size_t buflen) const {
-			strncpy(buf, DXGetErrorString9(i), buflen);
-			strncat(buf, " : ", buflen);
-			strncat(buf, DXGetErrorDescription9(i), buflen);
-			return buf;
-		}
-#endif
 
 #if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530) || \
 	( defined(_MSC_VER) && (_MSC_VER<=1400) )
@@ -99,7 +91,7 @@ namespace gctp {
 	template<class E, class T> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, HRslt const & hr)
 	{
 		E buf[256];
-		return os << hr.message(buf, sizeof(buf));
+		return os << hr.message(buf, 256);
 	}
 
 } //namespace gctp

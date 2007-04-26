@@ -15,6 +15,7 @@
 //#ifndef GCTP_NOTDEF_BOOST_FUNC
 //#include <boost/function.hpp>
 //#endif
+#include <tchar.h> // VC限定だな…
 
 namespace gctp {
 
@@ -27,8 +28,8 @@ namespace gctp {
 	 * @date 2004/02/08 11:17:49
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	typedef Ptr (*RealizeMethod)(const char *);
-	//typedef boost::function1<PointerBase, const char *> RealizeMethod;
+	typedef Ptr (*RealizeMethod)(const _TCHAR *);
+	//typedef boost::function1<PointerBase, const _TCHAR *> RealizeMethod;
 
 	/** リソースリアライザ登録クラス
 	 *
@@ -40,13 +41,13 @@ namespace gctp {
 	 */
 	class Extension {
 	public:
-		Extension(const char *extension, const RealizeMethod f);
-		//Extension(const char *extension, const RealizeMethod &f);
+		Extension(const _TCHAR *extension, const RealizeMethod f);
+		//Extension(const _TCHAR *extension, const RealizeMethod &f);
 		~Extension();
 		bool guard_for_unlink() { return true; }
-		static RealizeMethod get(const char *extension);
+		static RealizeMethod get(const _TCHAR *extension);
 	private:
-		const char *ext_;
+		const _TCHAR *ext_;
 	};
 //#endif
 
@@ -95,11 +96,11 @@ namespace gctp {
  * @date 2004/02/08 11:18:01
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#define GCTP_REGISTER_REALIZER(_E, _T)						\
-	static Ptr _T##_E##_realize(const char *name) {			\
-		return createOnDB<_T>(name);						\
+#define GCTP_REGISTER_REALIZER(_E, _C)						\
+	static Ptr _C##_E##_realize(const _TCHAR *name) {		\
+		return createOnDB<_C>(name);						\
 	}														\
-	static Extension _T##_E##_realizer(#_E, _T##_E##_realize)
+	static Extension _C##_E##_realizer(_T(#_E), _C##_E##_realize)
 
 /** 汎用リアライザ定義マクロ
  *
@@ -116,11 +117,11 @@ namespace gctp {
  * @date 2004/02/08 11:18:01
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#define GCTP_REGISTER_REALIZER2(_E, _T, _M)					\
-	static Ptr _T##_E##_realize(const char *name) {			\
-		return createOnDB<_T, _M>(name);					\
+#define GCTP_REGISTER_REALIZER2(_E, _C, _M)					\
+	static Ptr _C##_E##_realize(const _TCHAR *name) {		\
+		return createOnDB<_C, _M>(name);					\
 	}														\
-	static Extension _T##_E##_realizer(#_E, _T##_E##_realize)
+	static Extension _C##_E##_realizer(_T(#_E), _C##_E##_realize)
 
 /** 汎用リアライザ定義マクロ
  *
@@ -138,7 +139,7 @@ namespace gctp {
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #define GCTP_REGISTER_REALIZER_EX(_S, _E, _T)				\
-	static Ptr _T##_E##_realize(const char *name) {			\
+	static Ptr _T##_E##_realize(const _TCHAR *name) {		\
 		return createOnDB<_T>(name);						\
 	}														\
 	static Extension _T##_E##_realizer(_S, _T##_E##_realize)
@@ -161,7 +162,7 @@ namespace gctp {
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #define GCTP_REGISTER_REALIZER2_EX(_S, _E, _T, _M)			\
-	static Ptr _T##_E##_realize(const char *name) {			\
+	static Ptr _T##_E##_realize(const _TCHAR *name) {		\
 		return createOnDB<_T, _M>(name);					\
 	}														\
 	static Extension _T##_E##_realizer(_S, _T##_E##_realize)

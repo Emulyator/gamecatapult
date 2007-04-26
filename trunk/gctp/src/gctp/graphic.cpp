@@ -49,7 +49,7 @@ namespace gctp { namespace graphic {
 				view_ = impl_->createView(adpt, hwnd);
 				if(!view_) {
 					impl_ = 0;
-					PRNN("追加チェーン製作失敗");
+					PRNN(_T("追加チェーン製作失敗"));
 					return E_FAIL;
 				}
 			}
@@ -118,7 +118,7 @@ namespace gctp { namespace graphic {
 			if(view_) return S_OK;
 			else {
 				impl_ = 0;
-				PRNN("セカンダリチェーン取得失敗");
+				PRNN(_T("セカンダリチェーン取得失敗"));
 			}
 		}
 		return E_FAIL;

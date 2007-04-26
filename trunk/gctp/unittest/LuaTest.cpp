@@ -297,7 +297,7 @@ public:
 #ifdef __ee__
 #define PREFIX "host0:"
 #else
-#define PREFIX
+#define PREFIX "../../../unittest/"
 #endif
 	luapp::State lua(registers, PREFIX"account.lua");
 	Account *a = luapp::luna_cast<Account>(lua.global()["a"]);

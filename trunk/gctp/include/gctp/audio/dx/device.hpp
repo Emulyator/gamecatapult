@@ -52,7 +52,7 @@ namespace gctp { namespace audio { namespace dx {
 
 		HRslt getFormat(int &channel_num, int &freq, int &bitrate);
 
-		BufferPtr ready(const char *fname);
+		BufferPtr ready(const _TCHAR *fname);
 
 		void setVolume(float volume);
 		

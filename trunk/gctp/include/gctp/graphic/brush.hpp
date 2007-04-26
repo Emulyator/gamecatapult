@@ -18,7 +18,7 @@ namespace gctp { namespace graphic {
 	/// シェーダーリソースクラス
 	class Brush : public Rsrc {
 	public:
-		HRslt setUp(const char *fname);
+		HRslt setUp(const _TCHAR *fname);
 
 		HRslt restore();
 		void cleanUp();

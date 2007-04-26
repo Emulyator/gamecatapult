@@ -67,8 +67,8 @@ namespace gctp {
 		const char *p_;
 	};
 
-	template<class E, class T>
-	std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, LStr const & s)
+	template<class T>
+	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, LStr const & s)
 	{
 		return os << s.c_str();
 	}
@@ -87,6 +87,21 @@ namespace gctp {
 		class CStrImpl : public Object, public LStr {
 		public:
 			CStrImpl() : LStr(0), deletable_(false) {}
+			CStrImpl(const wchar_t *src) : LStr(0), deletable_(false)
+			{
+				size_t s = MB_CUR_MAX*(wcslen(src)+1);
+				p_ = (const char *)malloc(s);
+				if(p_) {
+					*(char *)p_ = '\0';
+					if(wcstombs((char *)p_, src, s)>0) {
+						deletable_ = true;
+					}
+					else {
+						free((void *)p_);
+						p_ = 0;
+					}
+				}
+			}
 			CStrImpl(const char *src) : LStr(strdup(src)), deletable_(true) {}
 			CStrImpl(const std::string &src) : LStr(strdup(src.c_str())), deletable_(true) {}
 			CStrImpl(const LStr &src) : LStr(strdup(src.c_str())), deletable_(true) {}
@@ -107,6 +122,7 @@ namespace gctp {
 			CStrImpl &operator=(const std::string &src) { clear(); p_ = strdup(src.c_str()); return *this; }
 			CStrImpl &operator=(const LStr &src) { clear(); p_ = strdup(src.c_str()); return *this; }
 			CStrImpl &operator=(const CStrImpl &src) { clear(); p_ = strdup(src.p_); return *this; }
+
 		private:
 			bool deletable_;
 		};
@@ -124,6 +140,8 @@ namespace gctp {
 	public:
 		/// デフォルトコンストラクタ
 		CStr() {}
+		/// wchar_t * から変換(MB->Unicode変換)
+		CStr(const wchar_t *src) : Pointer<detail::CStrImpl>(src ? new detail::CStrImpl(src) : 0) {}
 		/// char * から変換
 		CStr(const char *src) : Pointer<detail::CStrImpl>(src ? new detail::CStrImpl(src) : 0) {}
 		/// std::string から変換
@@ -194,17 +212,17 @@ namespace gctp {
 		}
 	};
 
-	template<class E, class T>
-	std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, CStr const & s)
+	template<class T>
+	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, CStr const & s)
 	{
 		if(s.c_str()) return os << s.c_str();
 		return os;
 	}
 
-	template<class E, class T>
-	std::basic_ostream<E, T> & operator>> (std::basic_ostream<E, T> & os, CStr const & s)
+	template<class T>
+	std::basic_ostream<char, T> & operator>> (std::basic_ostream<char, T> & os, CStr const & s)
 	{
-		std::basic_string<E, T> w;
+		std::basic_string<char, T> w;
 		os >> w; s = reinterpret_cast<const char*>(w.c_str());
 		return os;
 	}

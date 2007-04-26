@@ -48,9 +48,10 @@ public:
 //CUPPA:decl=+
   void testSaveAndRead() {
 	  ostrstream ss;
-	  ifstream ifs("../csvsac/test2.csv");
+	  ifstream ifs("../../../csvsac/test2.csv");
       CPPUNIT_ASSERT(ifs.is_open());
-	  CSVSAChunk::parse(ifs, ss);
+	  gctp::CSVSAChunk::parse(ifs, ss);
+	  CPPUNIT_ASSERT(ss.pcount() > 0);
 	  iffParseROPS(ss.str(), ss.pcount());
 	  Head *head = (Head *)(ss.str()+8);
 	  CPPUNIT_ASSERT(head->num == 11);

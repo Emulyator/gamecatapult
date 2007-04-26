@@ -39,7 +39,7 @@ namespace gctp { namespace audio { namespace dx {
 	};
 
 	BufferPtr newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus);
-	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const char *fname, bool global_focus);
+	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus);
 
 }}} // namespace gctp
 
