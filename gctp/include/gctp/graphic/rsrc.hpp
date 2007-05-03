@@ -12,20 +12,67 @@
 #include <gctp/object.hpp>
 #include <gctp/class.hpp>
 #include <gctp/hrslt.hpp>
+#ifdef GCTP_LITE
+# include <d3d8.h>
+# include <d3d8types.h>
+#else
+# include <d3d9.h>
+# include <d3d9types.h>
+#endif
 
 namespace gctp { namespace graphic {
 
 	namespace dx {
-		TYPEDEF_DXCOMPTR(IDirect3D9);
-		TYPEDEF_DXCOMPTR(IDirect3DDevice9);
-		TYPEDEF_DXCOMPTR(IDirect3DSwapChain9);
-		TYPEDEF_DXCOMPTR(IDirect3DStateBlock9);
+#ifdef GCTP_LITE
+		typedef IDirect3DDevice8 IDirect3DDevice;
+		typedef IDirect3DTexture8 IDirect3DTexture;
+		typedef IDirect3DBaseTexture8 IDirect3DBaseTexture;
+		typedef IDirect3DVertexBuffer8 IDirect3DVertexBuffer;
+		typedef IDirect3DIndexBuffer8 IDirect3DIndexBuffer;
 
-		TYPEDEF_DXCOMPTR(IDirect3DBaseTexture9);
-		TYPEDEF_DXCOMPTR(IDirect3DTexture9);
-		TYPEDEF_DXCOMPTR(IDirect3DVertexBuffer9);
-		TYPEDEF_DXCOMPTR(IDirect3DIndexBuffer9);
-		TYPEDEF_DXCOMPTR(IDirect3DSurface9);
+		typedef D3DCAPS8 D3DCAPS;
+		typedef D3DLIGHT8 D3DLIGHT;
+		typedef D3DVIEWPORT8 D3DVIEWPORT;
+		typedef D3DADAPTER_IDENTIFIER8 D3DADAPTER_IDENTIFIER;
+		typedef D3DMATERIAL8 D3DMATERIAL;
+
+		TYPEDEF_DXCOMPTREX(IDirect3D8, IDirect3DPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DDevice8, IDirect3DDevicePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DSwapChain8, IDirect3DSwapChainPtr);
+		
+		TYPEDEF_DXCOMPTREX(IDirect3DBaseTexture8, IDirect3DBaseTexturePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DTexture8, IDirect3DTexturePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DVertexBuffer8, IDirect3DVertexBufferPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DIndexBuffer8, IDirect3DIndexBufferPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DSurface8, IDirect3DSurfacePtr);
+#else
+		typedef IDirect3DDevice9 IDirect3DDevice;
+		typedef IDirect3DTexture9 IDirect3DTexture;
+		typedef IDirect3DBaseTexture9 IDirect3DBaseTexture;
+		typedef IDirect3DStateBlock9 IDirect3DStateBlock;
+		typedef IDirect3DVertexBuffer9 IDirect3DVertexBuffer;
+		typedef IDirect3DIndexBuffer9 IDirect3DIndexBuffer;
+
+		typedef D3DCAPS9 D3DCAPS;
+		typedef D3DLIGHT9 D3DLIGHT;
+		typedef D3DVIEWPORT9 D3DVIEWPORT;
+		typedef D3DADAPTER_IDENTIFIER9 D3DADAPTER_IDENTIFIER;
+		typedef D3DMATERIAL9 D3DMATERIAL;
+		typedef D3DVERTEXELEMENT9 D3DVERTEXELEMENT;
+
+		TYPEDEF_DXCOMPTREX(IDirect3D9, IDirect3DPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DDevice9, IDirect3DDevicePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DSwapChain9, IDirect3DSwapChainPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DStateBlock9, IDirect3DStateBlockPtr);
+
+		TYPEDEF_DXCOMPTREX(IDirect3DBaseTexture9, IDirect3DBaseTexturePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DTexture9, IDirect3DTexturePtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DVertexBuffer9, IDirect3DVertexBufferPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DIndexBuffer9, IDirect3DIndexBufferPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DSurface9, IDirect3DSurfacePtr);
+
+		TYPEDEF_DXCOMPTREX(IDirect3DVertexShader9, IDirect3DVertexShaderPtr);
+#endif
 	}
 
 	/** グラフィックデバイス自己管理リソース基本クラス

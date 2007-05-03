@@ -17,13 +17,13 @@ namespace gctp { namespace graphic { namespace dx {
 	//////////////////////
 	// StateBlock
 	//
-	HRslt StateBlock::setUp(IDirect3DDevice9Ptr dev, D3DSTATEBLOCKTYPE type)
+	HRslt StateBlock::setUp(IDirect3DDevicePtr dev, D3DSTATEBLOCKTYPE type)
 	{
 		type_ = type;
 		return dev->CreateStateBlock(type, &ptr_);
 	}
 
-	HRslt StateBlock::setUp(IDirect3DStateBlock9Ptr sb, D3DSTATEBLOCKTYPE type)
+	HRslt StateBlock::setUp(IDirect3DStateBlockPtr sb, D3DSTATEBLOCKTYPE type)
 	{
 		type_ = type;
 		ptr_ = sb;
@@ -37,13 +37,13 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt StateBlock::apply() const
 	{
-		if(!this || !ptr_ || ptr_ == (IDirect3DStateBlock9 *)-1) return E_FAIL;
+		if(!this || !ptr_ || ptr_ == (IDirect3DStateBlock *)-1) return E_FAIL;
 		return ptr_->Apply();
 	}
 
 	HRslt StateBlock::capture()
 	{
-		if(!this || !ptr_ || ptr_ == (IDirect3DStateBlock9 *)-1) return CO_E_NOTINITIALIZED;
+		if(!this || !ptr_ || ptr_ == (IDirect3DStateBlock *)-1) return CO_E_NOTINITIALIZED;
 		return ptr_->Capture();
 	}
 

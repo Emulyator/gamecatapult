@@ -16,10 +16,14 @@
 #include <iosfwd>               // for std::basic_ostream
 #include <gctp/def.hpp>
 
-#ifdef GCTP_USE_D3DXMATH
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
-#include <d3dx9.h>
+#include <assert.h>
+#ifdef GCTP_USE_D3DXMATH
+# include <d3dx9math.h>
+#else
+# include <cmath>
+# include <limits>
 #endif
 
 namespace gctp { namespace math {
@@ -214,11 +218,11 @@ namespace gctp { namespace math {
 		}
 		/// 4点での補間（エルミート、またはCatmull-Rom）
 		Vector4d &set4PInterpolation(const Vector4d& prev, const Vector4d& begin, const Vector4d& end, const Vector4d& next, _Type t) {
-	#ifdef GCTP_VECTOR_HERMITE
+#ifdef GCTP_VECTOR_HERMITE
 			return setHermite(begin, (begin-prev)/2, end, (next-end)/2, t);
-	#else
+#else
 			return setCatmullRom(prev, begin, end, next, t);
-	#endif
+#endif
 		}
 		// @}
 
@@ -232,8 +236,8 @@ namespace gctp { namespace math {
 			return &x;
 		}
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		operator const D3DXVECTOR4 &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -254,7 +258,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXVECTOR4 *>(this);
 		}
-		#endif
+#endif
 	};
 
 	// @{
@@ -292,13 +296,13 @@ namespace gctp { namespace math {
 		{
 			set(src);
 		}
-		#ifdef GCTP_USE_D3DXMATH
+#ifdef GCTP_USE_D3DXMATH
 		Vector4dC(const D3DXVECTOR4 &src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			set(src.x, src.y, src.z, src.w);
 		}
-		#endif
+#endif
 	};
 
 }} // namespace gctp

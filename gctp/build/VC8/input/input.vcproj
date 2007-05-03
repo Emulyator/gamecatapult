@@ -188,6 +188,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\common.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\input.hpp"
 				>
 			</File>

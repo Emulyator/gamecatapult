@@ -16,10 +16,13 @@
 #include <iosfwd>               // for std::basic_ostream
 #include <gctp/def.hpp>
 
-#ifdef GCTP_USE_D3DXMATH
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
-#include <d3dx9.h>
+#ifdef GCTP_USE_D3DXMATH
+# include <d3dx9math.h>
+#else
+# include <cmath>
+# include <limits>
 #endif
 
 namespace gctp { namespace math {
@@ -177,12 +180,14 @@ namespace gctp { namespace math {
 		}
 		/// エルミートスプライン
 		Vector3d &setHermite(const Vector3d &begin, const Vector3d &begintan, const Vector3d &end, const Vector3d &endtan, _Type t) {
-			BOOST_STATIC_ASSERT(0); // This is not implemented.
+			//BOOST_STATIC_ASSERT(0); // This is not implemented.
+			assert("not implemented");
 			return *this;
 		}
 		/// Catmull-Romスプライン
 		Vector3d &setCatmullRom(const Vector3d &prev, const Vector3d &begin, const Vector3d &end, const Vector3d &next, _Type t) {
-			BOOST_STATIC_ASSERT(0); // This is not implemented.
+			//BOOST_STATIC_ASSERT(0); // This is not implemented.
+			assert("not implemented");
 			return *this;
 		}
 
@@ -210,8 +215,8 @@ namespace gctp { namespace math {
 			return &x;
 		}
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		operator const D3DXVECTOR3 &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -232,6 +237,8 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXVECTOR3 *>(this);
 		}
+#endif
+#ifdef D3DVECTOR_DEFINED
 		operator const D3DVECTOR &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -252,7 +259,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DVECTOR *>(this);
 		}
-		#endif
+#endif
 	};
 
 	// @{
@@ -286,18 +293,21 @@ namespace gctp { namespace math {
 		{
 			set(src);
 		}
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		Vector3dC(const D3DXVECTOR3 & src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			set(src.x, src.y, src.z);
 		}
+#endif
+#ifdef D3DVECTOR_DEFINED
 		Vector3dC(const D3DVECTOR & src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			set(src.x, src.y, src.z);
 		}
-		#endif
+#endif
 	};
 
 }} // namespace gctp

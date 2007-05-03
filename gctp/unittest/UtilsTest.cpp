@@ -2,6 +2,11 @@
 #	pragma warning(disable:4786 4503 4290)
 #endif
 //CUPPA:include=+
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
+#include <windows.h>
+#endif
+
 #include <algorithm>
 #include <string>
 #include <gctp/allocmap.hpp>

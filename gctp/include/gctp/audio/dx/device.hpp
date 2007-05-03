@@ -10,6 +10,15 @@
 #include <gctp/def.hpp>
 #include <gctp/hrslt.hpp>
 #include <boost/shared_ptr.hpp>
+// SmartWinを使うと、ライブラリのリンク宣言が消えるので
+#pragma message("In gctp/audio/device.hpp")
+#pragma message("SmartWinを使うと、ライブラリのリンク宣言が消えるのでここで行っている")
+#pragma message("ほかの環境ではこれを書き換える必要があるかもしれない")
+#ifdef _DEBUG
+# pragma comment(lib, "libboost_thread-vc80-mt-sgd-1_33_1.lib")
+#else
+# pragma comment(lib, "libboost_thread-vc80-mt-s-1_33_1.lib")
+#endif
 #include <boost/thread/mutex.hpp>
 #include <gctp/com_ptr.hpp>
 #include <vector>

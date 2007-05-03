@@ -22,7 +22,7 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/15 4:33:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt VertexBuffer::_setUp(Type type, dx::FVF fvf, uint size, uint minsize)
+	HRslt VertexBuffer::setUpEx(Type type, dx::FVF fvf, uint size, uint minsize)
 	{
 		HRslt hr;
 		ulong usage = (type == DYNAMIC) ? D3DUSAGE_WRITEONLY|D3DUSAGE_DYNAMIC : 0;
@@ -47,7 +47,13 @@ namespace gctp { namespace graphic {
 	 */
 	HRslt VertexBuffer::setUp(Type type, dx::FVF fvf, uint num)
 	{
-		return _setUp(type, fvf, num*fvf.stride(), fvf.stride()*2);
+		HRslt ret;
+		ret = setUpEx(type, fvf, num*fvf.stride(), fvf.stride()*2);
+		if(!ret && type==DYNAMIC) {
+			GCTP_TRACE(_T("DYNAMICが指定されましたが、製作に失敗したのでSTATICで製作します"));
+			return setUpEx(STATIC, fvf, num*fvf.stride(), fvf.stride()*2);
+		}
+		return ret;
 	}
 
 	/** 非ＦＶＦ頂点バッファ制作
@@ -58,14 +64,20 @@ namespace gctp { namespace graphic {
 	 */
 	HRslt VertexBuffer::setUp(Type type, uint size)
 	{
-		return _setUp(type, 0, size, 32);
+		HRslt ret;
+		ret = setUpEx(type, 0, size, 32);
+		if(!ret && type==DYNAMIC) {
+			GCTP_TRACE(_T("DYNAMICが指定されましたが、製作に失敗したのでSTATICで製作します"));
+			return setUpEx(STATIC, 0, size, 32);
+		}
+		return ret;
 	}
 
 	HRslt VertexBuffer::restore()
 	{
 		if(type_==DYNAMIC) {
-			if(fvf_.val == 0) return _setUp(type_, 0, size_, 32);
-			else return _setUp(type_, fvf_, size_, fvf_.stride()*2);
+			if(fvf_.val == 0) return setUpEx(type_, 0, size_, 32);
+			else return setUpEx(type_, fvf_, size_, fvf_.stride()*2);
 		}
 		return S_OK;
 	}

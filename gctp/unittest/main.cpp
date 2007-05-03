@@ -22,11 +22,7 @@ static gctp::debuggeroutbuf<char> _sdbgout_buf;
 static std::basic_ostream<char> sdbgout(&_sdbgout_buf);		// デバッガアウトプットストリーム
 
 int main(int argc, char* argv[]) {
-  setlocale(LC_ALL, "");
-#if defined _MSC_VER && _MSC_VER == 1400
-  _setmode(_fileno(stdout), _O_BINARY); // ライブラリのバグのため
-  //_setmode(_fileno(stderr), _O_BINARY); // ライブラリのバグのため
-#endif
+  locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
   int format = 2;
   int target = 0;
   std::string xsl;
@@ -64,15 +60,27 @@ int main(int argc, char* argv[]) {
 }
 
 #ifdef _MSC_VER
-#pragma comment(lib, "Dxerr9.lib")
-#pragma comment(lib, "d3d9.lib")
-# ifdef _DEBUG
-#  pragma comment(lib, "d3dx9d.lib")
-#  pragma comment(lib, "luad.lib")
-#  pragma comment(lib, "cppunitd.lib")
+# ifdef GCTP_LITE
+#  pragma comment(lib, "Dxerr8.lib")
+#  pragma comment(lib, "d3d8.lib")
+#  ifdef _DEBUG
+#   pragma comment(lib, "luad.lib")
+#   pragma comment(lib, "cppunitd.lib")
+#  else
+#   pragma comment(lib, "lua.lib")
+#   pragma comment(lib, "cppunit.lib")
+#  endif
 # else
-#  pragma comment(lib, "d3dx9.lib")
-#  pragma comment(lib, "lua.lib")
-#  pragma comment(lib, "cppunit.lib")
+#  pragma comment(lib, "Dxerr9.lib")
+#  pragma comment(lib, "d3d9.lib")
+#  ifdef _DEBUG
+#   pragma comment(lib, "d3dx9d.lib")
+#   pragma comment(lib, "luad.lib")
+#   pragma comment(lib, "cppunitd.lib")
+#  else
+#   pragma comment(lib, "d3dx9.lib")
+#   pragma comment(lib, "lua.lib")
+#   pragma comment(lib, "cppunit.lib")
+#  endif
 # endif
 #endif

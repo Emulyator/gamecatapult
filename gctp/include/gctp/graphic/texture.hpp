@@ -24,15 +24,18 @@ namespace gctp { namespace graphic {
 			operator bool() { return buf ? true : false; }
 		};
 
+		Texture();
+
 		HRslt setUp(const _TCHAR *fname);
-		HRslt setUp(int _width, int _height, int _format);
+		HRslt setUp(const void *memory, std::size_t size);
+		HRslt setUp(int width, int height, int format, int miplevel = 1, bool dynamic = false);
 
-//		HRslt restore();
-//		void cleanUp();
+		HRslt restore();
+		void cleanUp();
 
-		operator IDirect3DTexture9 *() const { return ptr_; }
-		operator IDirect3DBaseTexture9 *() const { return ptr_; }
-		IDirect3DTexture9 *get() const { return ptr_; }
+		operator dx::IDirect3DTexture *() const { return ptr_; }
+		operator dx::IDirect3DBaseTexture *() const { return ptr_; }
+		dx::IDirect3DTexture *get() const { return ptr_; }
 
 		/// ÉJÉåÉìÉgÇ…ê›íË
 		HRslt setCurrent(uint index) const;
@@ -43,6 +46,7 @@ namespace gctp { namespace graphic {
 
 		Point2 size() const;
 		Point2 originalSize() const { return Point2C(org_width_, org_height_); }
+		bool isDynamic() { return dynamic_; }
 		
 		enum LockFlag {
 			DISCARD = D3DLOCK_DISCARD,
@@ -76,10 +80,11 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	protected:
-		TCStr name_;
 		int org_width_;
 		int org_height_;
-		dx::IDirect3DTexture9Ptr ptr_;
+		int org_format_;
+		bool dynamic_;
+		dx::IDirect3DTexturePtr ptr_;
 	};
 
 }} //namespace gctp

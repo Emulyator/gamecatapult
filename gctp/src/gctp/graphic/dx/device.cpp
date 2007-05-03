@@ -20,7 +20,7 @@ using namespace std;
 
 namespace gctp { namespace graphic { namespace dx {
 
-	IDirect3D9Ptr Adapter::api_;
+	IDirect3DPtr Adapter::api_;
 
 	void initialize(bool with_WHQL)
 	{
@@ -74,6 +74,7 @@ namespace gctp { namespace graphic { namespace dx {
 	bool Device::is_allow_REF_ = false;
 	bool Device::is_allow_HVP_ = false;
 	bool Device::is_allow_MVP_ = true;
+	bool Device::copy_when_swap_ = false;
 	int Device::interval_time_ = 0;
 
 	void Device::allowFSAA(FSAAType type, uint level)
@@ -107,13 +108,18 @@ namespace gctp { namespace graphic { namespace dx {
 		is_allow_MVP_ = yes;
 	}
 
+	void Device::setSwapMode(bool copy)
+	{
+		copy_when_swap_ = copy;
+	}
+
 	void Device::setIntervalTime(int time)
 	{
 		interval_time_ = time;
 	}
 
 	Point2 Device::getScreenSize() const {
-		IDirect3DSurface9Ptr sp;
+		IDirect3DSurfacePtr sp;
 		D3DSURFACE_DESC desc;
 		ptr_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &sp);
 		if(sp) {
@@ -123,8 +129,8 @@ namespace gctp { namespace graphic { namespace dx {
 		return Point2C(0, 0);
 	}
 
-	D3DVIEWPORT9 Device::getViewPort() const {
-		D3DVIEWPORT9 ret;
+	D3DVIEWPORT Device::getViewPort() const {
+		D3DVIEWPORT ret;
 		ptr_->GetViewport(&ret);
 		return ret;
 	}
@@ -175,7 +181,7 @@ namespace gctp { namespace graphic { namespace dx {
 		}
 		else PRNN(_T("ウィンドウモードでデバイス製作"));
 		HRslt ret;
-		D3DCAPS9 caps;
+		D3DCAPS caps;
 		ret = Adapter::api_->GetDeviceCaps(adpt, type, &caps);
 		if(!ret) return ret;
 		D3DPRESENT_PARAMETERS d3dpp;
@@ -188,7 +194,7 @@ namespace gctp { namespace graphic { namespace dx {
 			d3dpp.BackBufferFormat	= d3ddm.Format;
 			d3dpp.FullScreen_RefreshRateInHz = d3ddm.RefreshRate;
 			d3dpp.hDeviceWindow = h_device_wnd;
-			d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+			d3dpp.SwapEffect = copy_when_swap_ ? D3DSWAPEFFECT_COPY : D3DSWAPEFFECT_DISCARD;
 			switch(interval_time_) {
 			default:
 			case 0: d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; break;
@@ -204,7 +210,7 @@ namespace gctp { namespace graphic { namespace dx {
 		else {
 			d3dpp.Windowed = TRUE;
 			d3dpp.hDeviceWindow = h_device_wnd;
-			d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+			d3dpp.SwapEffect = copy_when_swap_ ? D3DSWAPEFFECT_COPY : D3DSWAPEFFECT_DISCARD;
 			if(interval_time_==0) d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 			else d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 			d3dpp.EnableAutoDepthStencil = (is_autodepthbuffer_)?TRUE:FALSE;
@@ -250,6 +256,7 @@ namespace gctp { namespace graphic { namespace dx {
 					if(!ret) PRNN(_T("ソフトウェア頂点処理での製作失敗:")<<ret);
 				}
 			}
+			if(ret) PRNN(_T("グラフィックデバイス製作成功"));
 			light_num_ = 0;
 		}
 		return ret;
@@ -300,7 +307,7 @@ namespace gctp { namespace graphic { namespace dx {
 			d3dpp[i].BackBufferFormat	= d3ddm.Format;
 			d3dpp[i].FullScreen_RefreshRateInHz = d3ddm.RefreshRate;
 			d3dpp[i].hDeviceWindow = (i==0 ? h_first_wnd : h_second_wnd);
-			d3dpp[i].SwapEffect = D3DSWAPEFFECT_DISCARD;
+			d3dpp[i].SwapEffect = copy_when_swap_ ? D3DSWAPEFFECT_COPY : D3DSWAPEFFECT_DISCARD;
 			switch(interval_time_) {
 			default:
 			case 0: d3dpp[i].PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; break;
@@ -353,6 +360,7 @@ namespace gctp { namespace graphic { namespace dx {
 					if(!ret) PRNN(_T("ソフトウェア頂点処理での製作失敗:")<<ret);
 				}
 			}
+			if(ret) PRNN(_T("グラフィックデバイス製作成功"));
 			light_num_ = 0;
 		}
 		return ret;
@@ -380,7 +388,7 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt Device::setCurrent() const
 	{
 		if( !this || !ptr_ ) return E_FAIL;
-		IDirect3DSurface9Ptr surf;
+		IDirect3DSurfacePtr surf;
 		HRslt hr = ptr_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &surf);
 		if(!hr) return hr;
 		return ptr_->SetRenderTarget(0, surf);
@@ -473,7 +481,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt Device::pushLight(const DirectionalLight &lgt)
 	{
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		ZeroMemory(&light, sizeof(light));
 		light.Type = D3DLIGHT_DIRECTIONAL;
 		light.Ambient = lgt.ambient;
@@ -485,7 +493,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt Device::pushLight(const PointLight &lgt)
 	{
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		ZeroMemory(&light, sizeof(light));
 		light.Type = D3DLIGHT_POINT;
 		light.Ambient = lgt.ambient;
@@ -501,7 +509,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt Device::pushLight(const SpotLight &lgt)
 	{
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		ZeroMemory(&light, sizeof(light));
 		light.Type = D3DLIGHT_SPOT;
 		light.Ambient = lgt.ambient;
@@ -555,7 +563,7 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt Device::getLight(uint no, DirectionalLight &lgt) const
 	{
 		HRslt hr;
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		hr = getLight(no, light);
 		if(hr) {
 			if(light.Type == D3DLIGHT_DIRECTIONAL) {
@@ -580,7 +588,7 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt Device::getLight(uint no, PointLight &lgt) const
 	{
 		HRslt hr;
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		hr = getLight(no, light);
 		if(hr) {
 			if(light.Type == D3DLIGHT_POINT) {
@@ -609,7 +617,7 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt Device::getLight(uint no, SpotLight &lgt) const
 	{
 		HRslt hr;
-		D3DLIGHT9 light;
+		D3DLIGHT light;
 		hr = getLight(no, light);
 		if(hr) {
 			if(light.Type == D3DLIGHT_SPOT) {
@@ -633,7 +641,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	void Device::setMaterial(const Material &mtrl)
 	{
-		D3DMATERIAL9 dxmtrl;
+		D3DMATERIAL dxmtrl;
 		dxmtrl.Diffuse  = mtrl.diffuse;
 		dxmtrl.Ambient  = mtrl.ambient;
 		dxmtrl.Specular = mtrl.specular;
@@ -689,7 +697,7 @@ namespace gctp { namespace graphic { namespace dx {
 	Pointer<StateBlock> Device::endRecord()
 	{
 		HRslt hr;
-		IDirect3DStateBlock9Ptr sb;
+		IDirect3DStateBlockPtr sb;
 		hr = ptr_->EndStateBlock(&sb);
 		if(hr) {
 			Pointer<StateBlock> ret(new StateBlock);
@@ -703,7 +711,7 @@ namespace gctp { namespace graphic { namespace dx {
 	Pointer<StateBlock> Device::createState(D3DSTATEBLOCKTYPE type)
 	{
 		HRslt hr;
-		IDirect3DStateBlock9Ptr sb;
+		IDirect3DStateBlockPtr sb;
 		hr = ptr_->CreateStateBlock(type, &sb);
 		if(hr) {
 			Pointer<StateBlock> ret(new StateBlock);
@@ -761,7 +769,7 @@ namespace gctp { namespace graphic { namespace dx {
 		d3dpp.EnableAutoDepthStencil = (is_autodepthbuffer_)?TRUE:FALSE;
 		d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
 		HRslt hr;
-		IDirect3DSwapChain9Ptr psc;
+		IDirect3DSwapChainPtr psc;
 		hr = ptr_->CreateAdditionalSwapChain(&d3dpp, &psc);
 		if(hr && psc) {
 			Pointer<View> ret(new View);

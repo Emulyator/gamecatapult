@@ -28,32 +28,18 @@
 #include <gctp/config.hpp>
 
 #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
+#include <windows.h>
+#define COM_NO_WINDOWS_H
+#include <objbase.h>
+#include <mmsystem.h>
 #include <tchar.h>
-
-/*#define _WIN32_IE	0x0550
-
-#include <atlbase.h>
-#include <atlapp.h>
-#if (_ATL_VER < 0x0700)
-extern CAppModule _Module;
-#define _AtlBaseModule _Module
-#endif
-#include <atlcom.h>
-#include <atlres.h>
-#include <atlwin.h>
-#include <atlctrls.h>
-#include <atlcrack.h>
-#include <atlmisc.h>
-#include <atlddx.h>*/
 
 #include <d3d9.h>
 #include <d3d9types.h>
 #define D3D_OVERLOADS
 #include <d3dx9.h>
-#include <dxfile.h>
-#include <dmusici.h>
-#define DIRECTINPUT_VERSION (0x0800)
-#include <dinput.h>
+#include <dsound.h>
+#include <dshow.h>
 
 #if (defined(WIN32) || defined(_WIN32)) && !defined(__WIN32__)
 // Platform SDKによってはこれがない場合がある？ Boost.Poolのmutexでこれがなくてこける場合がある

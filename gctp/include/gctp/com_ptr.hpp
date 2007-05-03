@@ -374,6 +374,17 @@ namespace gctp {
 
 /** COMポインタ宣言ヘルパーマクロ
  *
+ * <CODE>TYPEDEF_DXCOMPTR(IDirect3D8, IDirect3DPtr);</CODE>
+ *
+ * で IDirect3DPtr がtypedefされる。
+ * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+ * @date 2004/01/21 16:06:04
+ * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+ */
+#define TYPEDEF_DXCOMPTREX(_I, _Name)	typedef gctp::com_ptr<_I, &IID_##_I> _Name;
+
+/** COMポインタ宣言ヘルパーマクロ
+ *
  * <CODE>TYPEDEF_DXCOMPTR(IDirect3D8);</CODE>
  *
  * で IDirect3D8Ptr がtypedefされる。
@@ -381,6 +392,6 @@ namespace gctp {
  * @date 2004/01/21 16:06:04
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#define TYPEDEF_DXCOMPTR(_I)	typedef gctp::com_ptr<_I, &IID_##_I> _I##Ptr;
+#define TYPEDEF_DXCOMPTR(_I)	TYPEDEF_DXCOMPTREX(_I, _I##Ptr)
 
 #endif //_GCTP_COM_PTR_HPP_

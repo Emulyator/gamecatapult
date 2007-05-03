@@ -7,7 +7,6 @@
  * @date 2004/01/26 18:42:14
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <d3d9.h>
 #include <gctp/def.hpp>
 #include <gctp/hrslt.hpp>
 #include <gctp/graphic/rsrc.hpp>
@@ -25,8 +24,8 @@ namespace gctp { namespace graphic { namespace dx {
 	 */
 	class View : public Rsrc {
 	public:
-		HRslt setUp(IDirect3DSwapChain9Ptr ptr);
-		HRslt setUp(IDirect3DDevice9Ptr dev, uint i);
+		HRslt setUp(IDirect3DSwapChainPtr ptr);
+		HRslt setUp(IDirect3DDevicePtr dev, uint i);
 		
 		// ÉäÉ\Å[ÉXÇ∆ÇµÇƒÇÃÇ®ãŒÇﬂ
 		virtual void cleanUp();
@@ -38,8 +37,8 @@ namespace gctp { namespace graphic { namespace dx {
 		HRslt present() const;
 
 	private:
-		IDirect3DSwapChain9Ptr	ptr_;
-		IDirect3DDevice9Ptr		device_;
+		IDirect3DSwapChainPtr	ptr_;
+		IDirect3DDevicePtr		device_;
 		D3DPRESENT_PARAMETERS	pp_;
 		uint					idx_;
 	};

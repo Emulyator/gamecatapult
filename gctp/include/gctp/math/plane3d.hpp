@@ -16,12 +16,6 @@
 #include <iosfwd>               // for std::basic_ostream
 #include <gctp/math/vector3d.hpp>
 
-#ifdef GCTP_USE_D3DXMATH
-#include <boost/static_assert.hpp>
-#include <boost/type_traits.hpp>
-#include <d3dx9.h>
-#endif
-
 namespace gctp { namespace math {
 
 	/** 平面
@@ -87,8 +81,8 @@ namespace gctp { namespace math {
 			return rhs*lhs;
 		}
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		operator const D3DXPLANE &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -109,7 +103,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXPLANE *>(this);
 		}
-		#endif
+#endif
 	};
 	
 	/// 点と平面の距離
@@ -128,10 +122,10 @@ namespace gctp { namespace math {
 		Plane3dC(_Type a, _Type b, _Type c, _Type d) { set(a, b, c, d); }
 		Plane3dC(const Vector3d<_Type> &pos, const Vector3d<_Type> &vec) { set(pos, vec); }
 		Plane3dC(const Vector3d<_Type> &p1, const Vector3d<_Type> &p2, const Vector3d<_Type> &p3) { set(p1, p2, p3); }
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		Plane3dC(const D3DXPLANE &src) { set(src.a, src.b, src.c, src.d); }
-		#endif
+#endif
 	};
 
 }} // namespace gctp

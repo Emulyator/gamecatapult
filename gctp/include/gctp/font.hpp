@@ -13,7 +13,6 @@
  */
 #include <gctp/pointer.hpp>
 #include <boost/shared_ptr.hpp>
-#include "smartwin/smartstring.h"
 #include "smartwin/font.h"
 
 namespace gctp {
@@ -67,10 +66,10 @@ namespace gctp {
 		static uint cellsize(uint height);
 
 		/// パラメータからsetUpに渡す文字列パラメータを作る補助関数
-		static SmartWin::tstring paramToString(const _TCHAR *fontname, uint height, uint32_t style);
+		static SmartUtil::tstring paramToString(const _TCHAR *fontname, uint height, uint32_t style);
 
 		/// 文字列パラメータから、各パラメータに変換する補助関数
-		static bool stringToParam(const _TCHAR *param, SmartWin::tstring &fontname, uint &height, uint32_t &style);
+		static bool stringToParam(const _TCHAR *param, SmartUtil::tstring &fontname, uint &height, uint32_t &style);
 
 	private:
 		uint height_;

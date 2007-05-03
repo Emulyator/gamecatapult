@@ -9,10 +9,6 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 
-// まだ対応しきれない…
-// ユニコードバージョンでコンパイル
-//#define UNICODE
-
 // C++標準のRTTIを使用する
 #define GCTP_USE_STD_RTTI
 
@@ -29,7 +25,9 @@
 #define GCTP_ONCE
 
 // D3DX数学ライブラリを使う
-#define GCTP_USE_D3DXMATH
+#ifndef GCTP_LITE
+# define GCTP_USE_D3DXMATH
+#endif
 
 // 暗黙の座標系が右手系
 //#define GCTP_COORD_RH
@@ -61,7 +59,12 @@
 # define GCTP_DEBUG	1
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1310
+#ifdef _MSC_VER
+# ifndef NOMINMAX
+#  define NOMINMAX
+# endif
+# if _MSC_VER < 1310
+# endif
 #endif
 
 #ifdef GCTP_ONCE

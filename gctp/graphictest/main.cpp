@@ -7,7 +7,6 @@
  */
 #include "stdafx.h"
 
-#if 1
 #include <gctp/dbgout.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
@@ -17,6 +16,7 @@
 #include <gctp/font.hpp>
 #include <gctp/graphic/text.hpp>
 #include <gctp/graphic/fonttexture.hpp>
+#include <gctp/movie/player.hpp>
 #include <gctp/inputmethod.hpp>
 #include "SmartWin.h"
 
@@ -25,9 +25,14 @@ using namespace gctp::graphic;
 using namespace std;
 using namespace SmartWin;
 
+#define MOVIETEST
+//#define MOVIE_FOR_WINDOW
+
 class TestWindow : public WidgetFactory<WidgetWindow, TestWindow>
 {
+#ifndef GCTP_LITE
 	TYPEDEF_DXCOMPTR(ID3DXMesh);
+#endif
 	typedef TestWindow Self;
 
 public:
@@ -38,28 +43,39 @@ public:
 		HRslt hr;
 		if(is_fs) {
 			size_t mode_no = graphic::dx::adapters()[0].modes.size()-1;
-			createWindow();
-			ime_.setUp(handle());
 			for(size_t i = 0; i < graphic::dx::adapters()[0].modes.size(); i++) {
 				const D3DDISPLAYMODE &mode = graphic::dx::adapters()[0].modes[i];
-				if(mode.Width >= 640 && mode.Width >= 480 && mode.Format < D3DFMT_A16B16G16R16) {
+				if(mode.Width >= 800 && mode.Width >= 600 && mode.Format < D3DFMT_A16B16G16R16) {
 					mode_no = i;
 					break;
 				}
 			}
 			const D3DDISPLAYMODE &mode = graphic::dx::adapters()[0].modes[mode_no];
-			setBounds(0, 0, mode.Width, mode.Height);
-			setText( _T("Hello SmartWin") );    // Title
+			Seed seed = getDefaultSeed();
+			seed.location.pos.x = 0;
+			seed.location.pos.y = 0;
+			seed.location.size.x = mode.Width;
+			seed.location.size.y = mode.Height;
+			seed.style = 0;
+			seed.exStyle = 0;
+			seed.caption = _T("Hello GameCatapult");    // Title
+			createWindow(seed);
+			ime_.setUp(handle());
 			if(getParent()) hr = g_.open(handle(), getParent()->handle(), 0, (uint)mode_no);
 			else hr = g_.open(handle(), 0, (uint)mode_no);
-			::SetWindowLong(handle(), GWL_STYLE, 0);
-			::SetWindowLong(handle(), GWL_EXSTYLE, 0);
 			maximize();
 		}
 		else {
-			createWindow();
+			Seed seed = getDefaultSeed();
+			seed.caption = _T("Hello GameCatapult");    // Title
+			createWindow(seed);
+			SmartWin::Rectangle location = getBounds();
+			location.size.x = 800;
+			location.size.y = 600;
+			::RECT rc = location;
+			::AdjustWindowRectEx(&rc, seed.style, 0, seed.exStyle);
+			setBounds(SmartWin::Rectangle::FromRECT(rc));
 			ime_.setUp(handle());
-			setText( _T("Hello SmartWin") );    // Title
 			if(getParent()) hr = g_.open(handle(), getParent()->handle());
 			else hr = g_.open(handle());
 		}
@@ -70,7 +86,39 @@ public:
 		}
 		g_.setCurrent();
 
+#ifndef GCTP_LITE
+		//hr = D3DXCreateTeapot(device().impl().ptr(), &mesh_, NULL);
+		//if(!hr) PRNN(hr);
+#endif
+
+#ifdef MOVIETEST
+# ifdef MOVIE_FOR_WINDOW
+		hr = movie_.open(handle(), _T("movie.avi"));
+		if(!hr) {
+			hr = movie_.open(handle(), _T("movie.mpg"));
+			if(!hr) {
+				GCTP_TRACE(hr);
+				close();
+				return;
+			}
+		}
+# else
+		hr = movie_.openForTexture(_T("movie.avi"));
+		if(!hr) {
+			hr = movie_.openForTexture(_T("movie.mpg"));
+			if(!hr) {
+				GCTP_TRACE(hr);
+				close();
+				return;
+			}
+		}
+		tex_ = movie_.getTexture().lock();
+		if(tex_) graphic::device().db().insert(_T("../../../media/gctp.jpg"), tex_);
+# endif
+		movie_.play();
+#else
 		tex_ = graphic::createOnDB<Texture>(_T("../../../media/gctp.jpg"));
+#endif
 		spr_ = graphic::createOnDB<SpriteBuffer>(_T("spritebuffer"));
 		font_ = graphic::createOnDB<FontTexture>(_T("fonttexture"));
 		theta_ = 0; scale_ = 0; count_ = 0;
@@ -97,6 +145,9 @@ public:
 	void onTimer(const CommandPtr &p)
 	{
 		updateDisplay();
+#ifdef MOVIETEST
+		movie_.checkStatus();
+#endif
 		Command com( _T("Testing") );
 		createTimer(&Self::onTimer, 16, com);
 	}
@@ -132,6 +183,7 @@ public:
 	
 	void updateDisplay()
 	{
+#if !defined(MOVIETEST) || !defined(MOVIE_FOR_WINDOW)
 		if(g_.isOpen()) {
 			g_.setCurrent();
 
@@ -144,26 +196,29 @@ public:
 			begin();
 
 			SpriteDesc desc;
-			desc.setUp(*tex_);
-			desc.addOffset(Point2fC(0.5f, 0.5f));
-			spr_->begin(getViewPort().size(), *tex_).draw(desc).end();
+#ifdef MOVIETEST
+			desc = movie_.getDesc();
+#else
+			if(tex_) desc.setUp(*tex_);
+#endif
+			if(tex_) spr_->begin(getViewPort().size(), *tex_).draw(desc).end();
 
 			text_.out() << desc.pos[0] << "," << desc.pos[1] << "," << desc.pos[2] << "," << desc.pos[3] << endl;
-			ID3DXMeshPtr mesh;
-			HRslt hr = D3DXCreateTeapot(device().impl().ptr(), &mesh, NULL);
-			if(!hr) PRNN(hr);
-			setView(Matrix().setLookAt(VectorC(0,3,5), VectorC(0,0,0), VectorC(0,1,0)));
-			setProjection(Matrix().setFOV(g_pi/4, getViewPort().aspectRatio(), 1.0f, 100.0f));
-
-			if(mesh) mesh->DrawSubset(0);
-			else PRNN(_T("ティーポッドが無い。。。"));
-
+#ifndef GCTP_LITE
+			if(mesh_) {
+				setView(Matrix().setLookAt(VectorC(0,3,5), VectorC(0,0,0), VectorC(0,1,0)));
+				setProjection(Matrix().setFOV(g_pi/4, getViewPort().aspectRatio(), 1.0f, 100.0f));
+				mesh_->DrawSubset(0);
+			}
+#endif
 			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2fC(256, 8)).setColor(Color32(255,0,0))).end();
 			
-			spr_->begin(*tex_);
-			spr_->draw(SpriteDesc().setUp(*tex_).mult(Point2fC(tex_->originalSize())/2, Matrix2C(true).scale(scale_, scale_)*Matrix2C(true).rot(theta_)));
-			spr_->draw(SpriteDesc().setUp(*tex_).addOffset(Point2fC(scale_*100.0f, scale_*100.0f)));
-			spr_->end();
+			if(tex_) {
+				spr_->begin(*tex_);
+				spr_->draw(SpriteDesc(desc).mult(Point2fC(tex_->originalSize())/2, Matrix2C(true).scale(scale_*0.3f, scale_*0.3f)*Matrix2C(true).rot(theta_)));
+				spr_->draw(SpriteDesc(desc).addOffset(Point2fC(scale_*100.0f, scale_*100.0f)));
+				spr_->end();
+			}
 			theta_ += 1/180.0f*g_pi;
 			scale_ = fabsf(sinf(theta_))+0.5f;
 
@@ -211,14 +266,23 @@ public:
 			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << _T("変換");
 			text_.draw(*spr_, *font_);
 
-			end();
-			present();
+			HRslt hr = end();
+			if(!hr) GCTP_TRACE(hr);
+			hr = present();
+			if(!hr) GCTP_TRACE(hr);
 		}
+#endif
 	}
 
 private:
 	Device g_;
 
+#ifndef GCTP_LITE
+	ID3DXMeshPtr mesh_;
+#endif
+#ifdef MOVIETEST
+	movie::Player movie_;
+#endif
 	Pointer<SpriteBuffer> spr_;
 	Pointer<Texture> tex_;
 	Pointer<FontTexture> font_;
@@ -234,7 +298,17 @@ private:
 
 int SmartWinMain( Application & app )
 {
-	locale::global(locale("japanese"));
+	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
+	gctp::logfile.imbue(locale(locale::classic(), locale(""), LC_CTYPE));
+	// Initialize COM
+    CoInitialize(NULL);
+
+#ifdef MOVIETEST
+	allowStrictMultiThreadSafe(true); // ムービーは別スレッドでテクスチャに触るので
+	setIntervalTime(1);
+	//setSwapMode(true);
+	// もうこれデフォルトでよくね？
+#endif
 	initialize();
 
 	WidgetMessageBoxFree msgbox;
@@ -245,7 +319,9 @@ int SmartWinMain( Application & app )
 
 	TestWindow *test_window = new TestWindow;
 	test_window->setUp(retval == WidgetMessageBoxFree::RETBOX_YES);
-	return app.run();
+	int ret = app.run();
+    CoUninitialize();
+	return ret;
 }
 
 #ifdef _UNICODE
@@ -262,241 +338,27 @@ int SmartWinMain( Application & app )
 # endif
 #endif
 
+#ifdef GCTP_LITE
+# pragma comment(lib, "DxErr8.lib")
+# pragma comment(lib, "d3d8.lib")
+# pragma comment(lib, "ddraw.lib")
+# pragma comment(lib, "dxguid.lib")
 #else
-
-#include <gctp/dbgout.hpp>
-#include <time.h>
-#include <gctp/graphic.hpp>
-#include <gctp/graphic/dx/device.hpp>
-#include <sstream>
-#include <string>
-#include <gctp/inputbuffer.hpp>
-#include <gctp/graphic/spritebuffer.hpp>
-#include <gctp/graphic/texture.hpp>
-#include <boost/lexical_cast.hpp>
-#include <gctp/font.hpp>
-#include <gctp/graphic/text.hpp>
-#include <gctp/graphic/fonttexture.hpp>
-#include <locale.h>
-#include <gctp/inputmethod.hpp>
-
-using namespace gctp;
-using namespace gctp::graphic;
-using namespace std;
-
-class Window : public CWindowImpl<Window> {
-	TYPEDEF_DXCOMPTR(ID3DXMesh);
-	static int wndcnt;
-	Device g_;
-	UINT timer_;
-	int count_;
-	InputBuffer ibuf_;
-	Pointer<SpriteBuffer> spr_;
-	Pointer<Texture> tex_;
-	Pointer<FontTexture> font_;
-	//Pointer<Font> lucida_;
-	//Pointer<Font> msgothic_;
-	float theta_;
-	float scale_;
-	Text text_;
-	InputMethod ime_;
-
-public:
-	bool create()
-	{
-		RECT rc = {0, 0, 480, 320};
-		AdjustWindowRectEx(&rc, WS_OVERLAPPEDWINDOW, FALSE, WS_EX_OVERLAPPEDWINDOW);
-		if(Create(NULL, rc, "graphictest", WS_OVERLAPPEDWINDOW)) {
-			timer_ = SetTimer(1, 33);
-			CenterWindow();
-			ShowWindow(SW_SHOW);
-			UpdateWindow();
-
-			ime_.setUp(m_hWnd);
-
-			HRslt hr = g_.open(*this, GetParent());
-			if(!hr) {
-				GCTP_TRACE(hr);
-				return hr;
-			}
-			g_.setCurrent();
-
-			//InputMethod::setAlwaysOff(*this);
-			is_handling_ = true;
-			tex_ = graphic::createOnDB<Texture>("../media/gctp.jpg");
-			spr_ = graphic::createOnDB<SpriteBuffer>("spritebuffer");
-			font_ = graphic::createOnDB<FontTexture>("fonttexture");
-			//lucida_ = gctp::createOnDB<gctp::Font>("Lucida Console,10,BOLD");
-			//msgothic_ = gctp::createOnDB<gctp::Font>("MS ゴシック,11,NORMAL");
-			//PRNN("font : "<<msgothic_->cellsize());
-			theta_ = 0; scale_ = 0;
-
-			count_ = 0;
-			wndcnt++;
-			return true;
-		}
-		return false;
-	}
-
-private:
-	BEGIN_MSG_MAP_EX(Window)
-		MSG_WM_TIMER(onTimer)
-		MSG_WM_CHAR(onChar)
-		MSG_WM_KEYDOWN(onKeyDown)
-		MSG_WM_DESTROY(onDestroy)
-		MESSAGE_HANDLER_EX(WM_IME_CHAR, onIMEChar)
-		MESSAGE_HANDLER_EX(WM_IME_COMPOSITION, onIMEComposition)
-		MESSAGE_HANDLER_EX(WM_IME_NOTIFY, onIMENotify)
-	END_MSG_MAP()
-
-	void onTimer(UINT id, TIMERPROC /*proc*/)
-	{
-		if(g_.isOpen()) {
-			g_.setCurrent();
-
-			Matrix mat_world;
-			mat_world.rotY(count_/360.0f);
-			setWorld(mat_world);
-			count_++;
-
-			clear();
-			begin();
-
-			SpriteDesc desc;
-			desc.setUp(*tex_);
-			desc.addOffset(Point2f(0.5f, 0.5f));
-			spr_->begin(getViewPort().size(), *tex_).draw(desc).end();
-
-			text_.out() << desc.pos[0] << "," << desc.pos[1] << "," << desc.pos[2] << "," << desc.pos[3] << endl;
-			ID3DXMeshPtr mesh;
-			HRslt hr = D3DXCreateTeapot(device().impl().ptr(), &mesh, NULL);
-			if(!hr) PRNN(hr);
-			setView(Matrix().setLookAt(Vector(0,3,5), Vector(0,0,0), Vector(0,1,0)));
-			setProjection(Matrix().setFOV(g_pi/4, getViewPort().aspectRatio(), 1.0f, 100.0f));
-			//device().impl()->SetRenderState( D3DRS_CLIPPING, FALSE );
-			//device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
-			//device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
-
-			if(mesh) mesh->DrawSubset(0);
-			else PRNN(_T("ティーポッドが無い。。。"));
-
-			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2f(200, 8)).setColor(Color32(255,0,0))).end();
-			
-			spr_->begin(*tex_);
-			spr_->draw(SpriteDesc().setUp(*tex_).mult(tex_->originalSize()/2, Matrix2(true).scale(scale_, scale_)*Matrix2(true).rot(theta_)));
-			spr_->draw(SpriteDesc().setUp(*tex_).addOffset(Point2f(scale_*100.0f, scale_*100.0f)));
-			spr_->end();
-			theta_ += 1/180.0f*g_pi;
-			scale_ = fabsf(sinf(theta_))+0.5f;
-
-			//text_.setFont(msgothic_);
-			text_.setPos(10, 20).setColor(Color32(255, 0, 127)).out() << "現在の角度:" << theta_ << " & " << scale_;
-			text_.setPos(10, 40).out() << ibuf_.get();
-			Point2f cursor_pos = text_.getPos(*font_, (int)ibuf_.cursor()-(int)ibuf_.get().size());
-			if(ime_.isOpen()) ime_.setPos(Point2(cursor_pos));
-			if(ime_.isOpen() && !ime_.str().empty()) {
-				ime_.setPos(Point2(cursor_pos));
-				uint i;
-				for(i = 0; i < ime_.attrs().size(); i++) {
-					if(i == 0) text_.setBackColor(Color32(64, 64, 127));
-					if(ime_.attrs()[i] == ATTR_TARGET_CONVERTED || ime_.attrs()[i] == ATTR_TARGET_NOTCONVERTED) {
-						text_.setColor(Color32(255, 255, 127), i);
-					}
-					else text_.setColor(Color32(255, 127, 255), i);
-				}
-				text_.setBackColor(Color32(0, 0, 0, 0), i);
-				text_.setPos(cursor_pos.x, cursor_pos.y).out() << ime_.str();
-				text_.setColor(Color32(255, 127, 255));
-				cursor_pos = text_.getPos(*font_, (int)ime_.cursor()-(int)ime_.str().size());
-				text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << (isleadbyte(ime_.str().c_str()[ime_.cursor()]) ? "＿" : "_");
-			}
-			else text_.setPos(cursor_pos.x, cursor_pos.y+2).out() << (isleadbyte(ibuf_.cursorChar()) ? "＿" : "_");
-			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << "変換";
-			text_.draw(*spr_, *font_);
-
-			end();
-			present();
-		}
-	}
-
-	void onChar(TCHAR nChar, UINT nRepCnt, UINT nFlags)
-	{
-		ibuf_.input(nChar);
-	}
-
-	void onKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
-	{
-		ibuf_.inputKey(nChar);
-	}
-
-	// WM_DESTROYの処理
-	void onDestroy()
-	{
-		g_.close();
-		wndcnt--;
-		if(!wndcnt) ::PostQuitMessage(0);
-	}
-
-	LRESULT onIMEChar(UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		ibuf_.input(wParam);
-		return 0;
-	}
-
-	bool is_handling_;
-	LRESULT onIMEComposition(UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		if(!is_handling_) SetMsgHandled(FALSE);
-		else if(!ime_.onComposition(lParam)) SetMsgHandled(FALSE);
-		return 0;
-	}
-
-	LRESULT onIMENotify(UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		if(IMN_SETCANDIDATEPOS==wParam) SetMsgHandled(FALSE);
-		else if(IMN_SETCOMPOSITIONWINDOW==wParam) SetMsgHandled(FALSE);
-		else if(!ime_.onNotify(wParam)) SetMsgHandled(FALSE);
-		return 0;
-	}
-};
-
-int Window::wndcnt = 0;
-
-extern "C" int APIENTRY WinMain(HINSTANCE self, HINSTANCE /*prev*/, LPSTR cmdline, int /*cmdshow*/)
-{
-	setlocale(LC_ALL, "");
-	int ret = 1;
-	_Module.Init(NULL, self);
-	// メッセージループの設定
-	CMessageLoop loop;
-	_Module.AddMessageLoop(&loop);
-	initialize();
-	// メインウィンドウの作成と表示
-	Window wnd, altwnd;
-	if(wnd.create() /*&& altwnd.create()*/) {
-	//Window wnd;
-	//if(wnd.create()) {
-		// メッセージループ
-		ret = loop.Run();
-	}
-	else AtlMessageBox(NULL, "DirectX製作失敗");
-	// 終了処理
-	_Module.RemoveMessageLoop();
-	_Module.Term();
-	return ret;
-}
-
-CAppModule _Module;
-
-#endif
-
-#pragma comment(lib, "DxErr9.lib")
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "d3dxof.lib")
-#pragma comment(lib, "ddraw.lib")
-#pragma comment(lib, "dxguid.lib")
-#ifdef _DEBUG
-# pragma comment(lib, "d3dx9d.lib")
-#else
-# pragma comment(lib, "d3dx9.lib")
+# pragma comment(lib, "DxErr9.lib")
+# pragma comment(lib, "d3d9.lib")
+# pragma comment(lib, "d3dxof.lib")
+# pragma comment(lib, "ddraw.lib")
+# pragma comment(lib, "dxguid.lib")
+# pragma comment(lib, "winmm.lib")
+# ifdef _DEBUG
+#  pragma comment(lib, "d3dx9d.lib")
+#  ifdef MOVIETEST
+#   pragma comment(lib, "strmbasd.lib")
+#  endif
+# else
+#  pragma comment(lib, "d3dx9.lib")
+#  ifdef MOVIETEST
+#   pragma comment(lib, "strmbase.lib")
+#  endif
+# endif
 #endif

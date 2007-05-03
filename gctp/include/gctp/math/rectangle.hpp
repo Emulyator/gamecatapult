@@ -147,8 +147,8 @@ namespace gctp { namespace math {
 			return (united.height() < (height()+rc.height()) && united.width() < (width()+rc.width()));
 		}
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// Windowsサポート
+#ifdef WIN32
 		operator const RECT &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, unsigned long>::value));
@@ -169,7 +169,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, unsigned long>::value));
 			return reinterpret_cast<RECT *>(this);
 		}
-		#endif
+#endif
 	};
 
 	template<class E, class T, typename _Type> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, Rectangle<_Type> const & rc)

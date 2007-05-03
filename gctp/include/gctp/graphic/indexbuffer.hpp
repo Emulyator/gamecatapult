@@ -51,8 +51,8 @@ namespace gctp { namespace graphic {
 		HRslt setCurrent() const;
 		uint size() const;
 
-		operator IDirect3DIndexBuffer9 *() { return ptr_; }
-		IDirect3DIndexBuffer9 *getIB() { return ptr_; }
+		operator dx::IDirect3DIndexBuffer *() { return ptr_; }
+		dx::IDirect3DIndexBuffer *get() { return ptr_; }
 		
 		/// インデックスプリミティブ描画
 		HRslt draw(const VertexBuffer &vb, dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const;
@@ -79,7 +79,7 @@ namespace gctp { namespace graphic {
 		};
 
 	private:
-		dx::IDirect3DIndexBuffer9Ptr ptr_;
+		dx::IDirect3DIndexBufferPtr ptr_;
 		Type	type_;
 		Bits	bits_;
 		uint	num_;

@@ -20,12 +20,6 @@
 #include <gctp/math/vector4d.hpp>
 #include <gctp/math/plane3d.hpp>
 
-#ifdef GCTP_USE_D3DXMATH
-#include <boost/static_assert.hpp>
-#include <boost/type_traits.hpp>
-#include <d3dx9.h>
-#endif
-
 namespace gctp { namespace math {
 
 	/** 4x4行列クラス
@@ -256,9 +250,9 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			det = a0*b5-a1*b4+a2*b3+a3*b2-a4*b1+a5*b0;
 			//if( abs(det) <= FLT_EPSILON )
 			//if( abs(det) <= Math<_Type>::EPSILON )
-			if( abs(det) == 0 ) return;
+			if( abs(det) == 0 ) return *this;
 
-			_Type invdet = _Type(1)/def;
+			_Type invdet = _Type(1)/det;
 			Matrix4x4 tmp(*this);
 			_11 = (+ tmp._22*b5 - tmp._32*b4 + tmp._42*b3) * invdet;
 			_12 = (- tmp._12*b5 + tmp._32*b2 - tmp._42*b1) * invdet;
@@ -459,27 +453,27 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 
 		/// ベクトル変換（w=1として射影）
 		const Matrix4x4 &transform(Vector3d<_Type> &dst, const Vector3d<_Type> &src) const {
-			_Type invw = _Type(1)/(_41*_src.x+_42*_src.y+_43*_src.z+_44);
-			dst.x = (_11*_src.x+_12*_src.y+_13*_src.z+_14)*invw;
-			dst.x = (_21*_src.x+_22*_src.y+_23*_src.z+_24)*invw;
-			dst.x = (_31*_src.x+_32*_src.y+_33*_src.z+_34)*invw;
+			_Type invw = _Type(1)/(_41*src.x+_42*_src.y+_43*src.z+_44);
+			dst.x = (_11*src.x+_12*_src.y+_13*src.z+_14)*invw;
+			dst.x = (_21*src.x+_22*_src.y+_23*src.z+_24)*invw;
+			dst.x = (_31*src.x+_32*_src.y+_33*src.z+_34)*invw;
 			return *this;
 		}
 
 		/// ベクトル変換（w=0として射影）
 		Vector3d<_Type> transformVector(const Vector3d<_Type> &rhs) const {
 			return Vector3dC<_Type>(
-				_11*_src.x+_12*_src.y+_13*_src.z,
-				_21*_src.x+_22*_src.y+_23*_src.z,
-				_31*_src.x+_32*_src.y+_33*_src.z
+				_11*rhs.x+_12*rhs.y+_13*rhs.z,
+				_21*rhs.x+_22*rhs.y+_23*rhs.z,
+				_31*rhs.x+_32*rhs.y+_33*rhs.z
 			);
 		}
 
 		/// ベクトル変換（w=0として射影）
 		const Matrix4x4 &transformVector(Vector3d<_Type> &dst, const Vector3d<_Type> &src) const {
-			dst.x = _11*_src.x+_12*_src.y+_13*_src.z;
-			dst.y = _21*_src.x+_22*_src.y+_23*_src.z;
-			dst.z = _31*_src.x+_32*_src.y+_33*_src.z;
+			dst.x = _11*src.x+_12*src.y+_13*src.z;
+			dst.y = _21*src.x+_22*src.y+_23*src.z;
+			dst.z = _31*src.x+_32*src.y+_33*src.z;
 			return *this;
 		}
 
@@ -769,8 +763,8 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 				|| _41 != _Type(0) || _42 != _Type(0) || _43 != _Type(0);
 		}
 		
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		operator const D3DXMATRIX &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -791,6 +785,8 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXMATRIX *>(this);
 		}
+#endif
+#ifdef D3DMATRIX_DEFINED
 		operator const D3DMATRIX &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -811,7 +807,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DMATRIX *>(this);
 		}
-		#endif
+#endif
 	};
 
 	template<class E, class T, class _Type> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, Matrix4x4<_Type> const & m)
@@ -866,19 +862,21 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			);
 		}
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		Matrix4x4C(const D3DXMATRIX &src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			memcpy(this, &src, sizeof(*this));
 		}
+#endif
+#ifdef D3DMATRIX_DEFINED
 		Matrix4x4C(const D3DMATRIX &src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			memcpy(this, &src, sizeof(*this));
 		}
-		#endif
+#endif
 	};
 
 }} // namespace gctp

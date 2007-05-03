@@ -93,27 +93,31 @@ namespace gctp {
 			return rhs/lhs;
 		}
 
-		#ifdef GCTP_USE_D3DXMATH
-		Color(const D3DCOLORVALUE &src)
-		{
-			r = src.r; g = src.g; b = src.b; a = src.a;
-		}
+		operator float *() { return &r; }
+		operator const float *() const { return &r; }
+#ifdef GCTP_USE_D3DXMATH
 		Color(const D3DXCOLOR &src)
 		{
 			r = src.r; g = src.g; b = src.b; a = src.a;
 		}
-		operator float *() { return &r; }
-		operator const float *() const { return &r; }
-		operator D3DCOLOR() const;
 		operator D3DXCOLOR &() { return *reinterpret_cast<D3DXCOLOR *>(this); }
 		operator const D3DXCOLOR &() const { return *reinterpret_cast<const D3DXCOLOR *>(this); }
 		operator D3DXCOLOR *() { return reinterpret_cast<D3DXCOLOR *>(this); }
 		operator const D3DXCOLOR *() const { return reinterpret_cast<const D3DXCOLOR *>(this); }
+#endif
+#ifdef D3DCOLORVALUE_DEFINED
+		Color(const D3DCOLORVALUE &src)
+		{
+			r = src.r; g = src.g; b = src.b; a = src.a;
+		}
 		operator D3DCOLORVALUE &() { return *reinterpret_cast<D3DCOLORVALUE *>(this); }
 		operator const D3DCOLORVALUE &() const { return *reinterpret_cast<const D3DCOLORVALUE *>(this); }
 		operator D3DCOLORVALUE *() { return reinterpret_cast<D3DCOLORVALUE *>(this); }
 		operator const D3DCOLORVALUE *() const { return reinterpret_cast<const D3DCOLORVALUE *>(this); }
-		#endif
+#endif
+#ifdef D3DCOLOR_DEFINED
+		operator D3DCOLOR() const;
+#endif
 
 		void set(float r, float g, float b, float a = 1.0f)
 		{
@@ -227,10 +231,10 @@ namespace gctp {
 			return rhs/lhs;
 		}
 
-		#ifdef GCTP_USE_D3DXMATH
+#ifdef D3DCOLOR_DEFINED
 		Color32(const D3DCOLOR &src) : i32(src) {}
 		operator D3DCOLOR() const { return i32; }
-		#endif
+#endif
 
 		void set(uchar r, uchar g, uchar b, uchar a = 255)
 		{
@@ -336,7 +340,9 @@ namespace gctp {
 	{
 	}
 
+#ifdef D3DCOLOR_DEFINED
 	inline Color::operator D3DCOLOR() const { return Color32(*this); }
+#endif
 
 	inline void Color::set(const char *ccode)
 	{

@@ -7,7 +7,6 @@
  */
 #include "stdafx.h"
 
-#if 1
 #include "resource.h"
 #include <gctp/dbgout.hpp>
 #include <gctp/cmdline.hpp>
@@ -43,16 +42,21 @@ public:
 		sw::BitmapPtr bitmap_ = sw::BitmapPtr(new sw::Bitmap(bitmap_rc));
 		sw::Point screen = getDesktopSize();
 		sw::Point sz = bitmap_->getBitmapSize();
-		sw::CreationalStruct cs;
-		cs.style = WS_POPUP|WS_BORDER;
-		cs.exStyle = 0;
-		cs.rect = sw::Rectangle((screen.x-sz.x)/2, (screen.y-sz.y)/2, sz.x, sz.y);
-		createWindow(cs);
-		setText(title);
-		cs.style = SS_BITMAP | WS_VISIBLE;
-		cs.rect = sw::Rectangle(0, 0, sz.x, sz.y);
-		banner_ = createStatic(cs);
-		banner_->setBitmap(bitmap_);
+		{
+			Seed cs;
+			cs.style = WS_POPUP|WS_BORDER;
+			cs.exStyle = 0;
+			cs.location = sw::Rectangle((screen.x-sz.x)/2, (screen.y-sz.y)/2, sz.x, sz.y);
+			createWindow(cs);
+			setText(title);
+		}
+		{
+			WidgetStatic::Seed cs;
+			cs.style = SS_BITMAP | WS_VISIBLE;
+			cs.location = sw::Rectangle(0, 0, sz.x, sz.y);
+			banner_ = createStatic(cs);
+			banner_->setBitmap(bitmap_);
+		}
 		animateBlend( true, 500 );
 		animateBlend( true, 500 ); // 何で二度やらないと上手くいかない場合があるんだ？
 	}
@@ -118,7 +122,7 @@ public:
 		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
 
 		sw::Application::instance().setHeartBeatFunction(this);
-		game_thread_ = fork( sw::tstring(_T("GameThread")), &Self::runInThread );
+		game_thread_ = fork( SmartUtil::tstring(_T("GameThread")), &Self::runInThread );
 	}
 
 	bool reset()
@@ -308,7 +312,7 @@ protected:
 		}
 	}
 	
-	unsigned long runInThread( sw::tstring & message )
+	unsigned long runInThread( SmartUtil::tstring & message )
 	{
 		setCurrent();
 		g_.setCurrent();
@@ -359,7 +363,7 @@ private:
 };
 
 class StartupDialog
-	: public SmartWin::WidgetFactory<SmartWin::WidgetModalDialog, StartupDialog, SmartWin::ModalDialogWidget>
+	: public SmartWin::WidgetFactory<SmartWin::WidgetModalDialog, StartupDialog, SmartWin::MessageMapPolicyModalDialogWidget>
 {
 	typedef StartupDialog Self;
 
@@ -499,10 +503,7 @@ namespace {
 
 int SmartWinMain(Application & app)
 {
-	locale::global(locale("Japanese_Japan.932"));
-	PRNN(_wsetlocale(LC_CTYPE, 0));
-	PRNN((iswprint(L'ー')!=0?L"true":L"false"));
-	PRNN((_ismbcprint('ー')!=0?L"true":L"false"));
+	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
 	initialize(app.getAppHandle());
 	GameWindow *window = new GameWindow;
 	window->splash(_T("GameCatapult DEMO"), IDB_BITMAP1);
@@ -526,158 +527,6 @@ int SmartWinMain(Application & app)
 # else
 #  pragma comment(lib, "SmartWin.lib")
 # endif
-#endif
-
-#else
-#include <gctp/dbgout.hpp>
-#include <time.h>
-#include <gctp/wtl/splashscreen.hpp>
-#include "resource.h"
-#include <gctp/wtl/configdialog.hpp>
-#include <gctp/cmdline.hpp>
-#include <gctp/timer.hpp>
-#include <gctp/scene/graphfile.hpp>
-#include <gctp/graphic/dx/device.hpp>
-#include <gctp/input.hpp>
-#include <gctp/graphic/texture.hpp>
-#include <gctp/scene/camera.hpp>
-#include <locale.h>
-
-#define __THREAD
-
-#ifdef __THREAD
-#include <gctp/wtl/windowthread.hpp>
-#else
-#include <gctp/wtl/window.hpp>
-#endif
-
-using namespace gctp;
-using namespace std;
-
-CAppModule _Module;
-
-namespace {
-	void initialize(HINSTANCE hinst)
-	{
-		GCTP_USE_CLASS(scene::Camera);
-		GCTP_USE_CLASS(scene::GraphFile);
-		GCTP_USE_CLASS(graphic::Texture);
-
-		clock_t tick = clock();
-		wtl::SplashScreen splash(LoadBitmap(_Module.GetModuleInstance(), MAKEINTRESOURCE(IDB_BITMAP1)), NULL, _T("The Hello Program"));
-		CoInitialize(NULL);
-		Timer::initialize();
-//		graphic::allowHardwareVertexProcessing(true);
-#ifdef __THREAD
-		graphic::allowStrictMultiThreadSafe(true);
-#endif
-//		graphic::setIntervalTime(1);
-		graphic::initialize();
-		PRNN("列挙されたアダプタ");
-		for(graphic::dx::AdapterList::const_iterator i = graphic::dx::adapters().begin(); i != graphic::dx::adapters().end(); ++i) {
-			PRNN(*i);
-		}
-		Input::initialize(hinst);
-		PRNN("列挙された入力デバイス");
-		for(Input::DeviceList::const_iterator i = Input::devicies().begin(); i != Input::devicies().end(); ++i) {
-			PRNN(*i);
-		}
-		while((clock()-tick)/CLOCKS_PER_SEC < 1) {/* wait */}
-	}
-
-	bool configdialog(bool &is_fs, uint &mode)
-	{
-#ifdef DEBUG
-		wtl::ConfigDialog dlg(false);
-#else
-		wtl::ConfigDialog dlg(false);
-#endif
-		uint mode_num = graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes.size();
-		for(uint i = 0; i < mode_num; i++) {
-			const D3DDISPLAYMODE &mode = graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes[i];
-//			if(mode.Width==640 && mode.Height==480) {
-			if(mode.Width==800 && mode.Height==600) {
-				switch(mode.Format) {
-				case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-					dlg.addMode(i);
-					break;
-				case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
-				case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-					dlg.addMode(i);
-					break;
-				}
-			}
-		}
-		int ret = dlg.DoModal();
-		is_fs = dlg.is_fs_;
-		mode = dlg.mode_;
-		return (ret == IDOK)? true : false;
-	}
-
-} // anonymous namespace
-
-extern "C" int main(int argc, char *argv[]);
-#ifdef __THREAD
-// マルチスレッド型
-extern "C" int APIENTRY WinMain(HINSTANCE self, HINSTANCE /*prev*/, LPSTR cmdline, int /*cmdshow*/)
-{
-	setlocale(LC_ALL, "");
-	gctp::CmdLine arg(cmdline);
-	int ret = 1;
-	_Module.Init(NULL, self);
-	// メッセージループの設定
-	CMessageLoop loop;
-	_Module.AddMessageLoop(&loop);
-
-	// スプラッシュウィンドウを表示している間に、いろいろ列挙。
-	initialize(self);
-	// 起動オプションをユーザーに問い合わせ
-	bool is_fs; uint mode;
-	if(configdialog(is_fs, mode)) {
-		// メインウィンドウの作成と表示
-		wtl::GameWindowThreaded wnd(main, arg.argc(), arg.argv());
-		wnd.setResizable(true);
-		if(wnd.create(_T("The Hello Program"), is_fs, mode)) {
-			// メッセージループ
-			ret = loop.Run();
-		}
-		else AtlMessageBox(NULL, _T("DirectX製作失敗"));
-	}
-	// 終了処理
-	CoUninitialize();
-
-	_Module.RemoveMessageLoop();
-	_Module.Term();
-	return ret;
-}
-#else
-// シングルスレッド型
-extern "C" int APIENTRY WinMain(HINSTANCE self, HINSTANCE /*prev*/, LPSTR cmdline, int /*cmdshow*/)
-{
-	setlocale(LC_ALL, "");
-	gctp::CmdLine arg(cmdline);
-	int ret = 1;
-	_Module.Init(NULL, self);
-	// スプラッシュウィンドウを表示している間に、いろいろ列挙。
-	initialize(self);
-	// 起動オプションをユーザーに問い合わせ
-	bool is_fs; uint mode;
-	if(configdialog(is_fs, mode)) {
-		// メインウィンドウの作成と表示
-		wtl::GameWindow wnd;
-		wnd.setResizable(true);
-		if(wnd.create(_T("The Hello Program"), is_fs, mode)) {
-			ret = main(arg.argc(), arg.argv());
-		}
-		else AtlMessageBox(NULL, "DirectX製作失敗");
-	}
-	// 終了処理
-	CoUninitialize();
-	_Module.Term();
-	return ret;
-}
-#endif
-
 #endif
 
 #pragma comment(lib, "DxErr9.lib")
