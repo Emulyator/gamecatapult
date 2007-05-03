@@ -11,7 +11,11 @@
 #include "lzio.h"
 
 
+#ifdef LUA_MBCS
+#define FIRST_RESERVED	65537
+#else
 #define FIRST_RESERVED	257
+#endif
 
 /* maximum length of a reserved word */
 #define TOKEN_LEN	(sizeof("function")/sizeof(char))

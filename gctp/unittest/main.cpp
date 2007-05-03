@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <locale>
 #include <cppunit/ui/text/TestRunner.h>
 #include <cppunit/XmlOutputter.h>
 #include <cppunit/TextOutputter.h>
@@ -22,7 +23,7 @@ static gctp::debuggeroutbuf<char> _sdbgout_buf;
 static std::basic_ostream<char> sdbgout(&_sdbgout_buf);		// デバッガアウトプットストリーム
 
 int main(int argc, char* argv[]) {
-  locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
+  std::locale::global(std::locale(std::locale::classic(), std::locale(""), LC_CTYPE));
   int format = 2;
   int target = 0;
   std::string xsl;

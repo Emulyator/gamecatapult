@@ -128,8 +128,8 @@ public:
   void testStack() {
 	  //cout.imbue(locale(""));
 	  cout << "########test0 begin###########" << endl;
-	  cout << "‚È‚È‚µ" << endl;
-	  cout << "–¼–³‚µ" << endl;
+	  cout << _T("‚È‚È‚µ") << endl;
+	  cout << _T("–¼–³‚µ") << endl;
 	  cout << "######## test0 end ###########" << endl;
 	  cout << "######## test0 end ###########" << endl;
 	  cout << "######## test0 end ###########" << endl;
@@ -143,8 +143,8 @@ public:
 	  printf("–¼–³‚µ\n");
 	  printf("######## test1 end ###########\n");
 	  dbgout << "########test0 begin###########" << endl;
-	  dbgout << "‚È‚È‚µ" << endl;
-	  dbgout << "–¼–³‚µ" << endl;
+	  dbgout << _T("‚È‚È‚µ") << endl;
+	  dbgout << _T("–¼–³‚µ") << endl;
 	  dbgout << "######## test0 end ###########" << endl;
 
 	  luapp::State lua(true);
