@@ -2,7 +2,7 @@ uselib_io()
 uselib_table()
 uselib_string()
 
-function printf(...) io.write(string.format(unpack(arg))) end
+function printf(...) io.write(string.format(...)) end
 
 function Account:show()
   printf("Account balance = $%0.02f\n", self:balance())

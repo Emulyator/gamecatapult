@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 #define lua_c
 
@@ -371,6 +372,7 @@ static int pmain (lua_State *L) {
   return 0;
 }
 
+#include "windows.h"
 
 int main (int argc, char **argv) {
   int status;
@@ -379,6 +381,13 @@ int main (int argc, char **argv) {
   if (L == NULL) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
+  }
+  setlocale(LC_CTYPE, "");
+  {
+    char path[MAX_PATH];
+    GetCurrentDirectoryA(MAX_PATH, path);
+	printf(path);
+	printf("\n");
   }
   s.argc = argc;
   s.argv = argv;

@@ -28,7 +28,10 @@
 #define next(ls) (ls->current = zgetc(ls->z))
 
 
-
+#ifdef LUA_MBCS
+#define isalpha(c)  (isalpha(c) || c == '[' || c == 'Q')
+#define isalnum(c)  (isalnum(c) || c == '[' || c == 'Q')
+#endif
 
 #define currIsNewline(ls)	(ls->current == '\n' || ls->current == '\r')
 
@@ -49,6 +52,20 @@ const char *const luaX_tokens [] = {
 
 
 static void save (LexState *ls, int c) {
+#ifdef LUA_MBCS
+  Mbuffer *b = ls->buff;
+  if (b->n + (c > 255 ? 2 : 1) > b->buffsize) {
+    size_t newsize;
+    if (b->buffsize >= MAX_SIZET/2)
+      luaX_lexerror(ls, "lexical element too long", 0);
+    newsize = b->buffsize * 2;
+    luaZ_resizebuffer(ls->L, b, newsize);
+  }
+  if(c > 255) {
+    b->buffer[b->n++] = cast(char, (c>>8)&0xFF);
+  }
+  b->buffer[b->n++] = cast(char, c&0xFF);
+#else
   Mbuffer *b = ls->buff;
   if (b->n + 1 > b->buffsize) {
     size_t newsize;
@@ -58,6 +75,7 @@ static void save (LexState *ls, int c) {
     luaZ_resizebuffer(ls->L, b, newsize);
   }
   b->buffer[b->n++] = cast(char, c);
+#endif
 }
 
 
@@ -77,8 +95,18 @@ void luaX_init (lua_State *L) {
 
 const char *luaX_token2str (LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
+#ifdef LUA_MBCS
+    if (token > 255) {
+      char s[3];
+      s[0] = (token>>8)&255;
+      s[1] = token&255;
+      s[2] = 0;
+      return luaO_pushfstring(ls->L, "%s", s);
+    }
+#else
     lua_assert(token == cast(unsigned char, token));
-    return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token) :
+#endif
+	return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token) :
                               luaO_pushfstring(ls->L, "%c", token);
   }
   else

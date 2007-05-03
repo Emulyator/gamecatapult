@@ -17,6 +17,36 @@
 #include "lstate.h"
 #include "lzio.h"
 
+#ifdef LUA_MBCS
+#include <ctype.h>
+
+int zgetc(ZIO *z) {
+  if(z->isbin) return (((z)->n--)>0 ?  char2int(*(z)->p++) : luaZ_fill(z));
+  if((z->n--) > 0) {
+    if(isleadbyte(cast(unsigned char, *z->p))) {
+      if((z->n--) > 0) {
+        z->p+=2;
+        return char2int(*(z->p-2))<<8|char2int(*(z->p-1));
+      }
+      else {
+        unsigned char c = cast(unsigned char, *z->p);
+        /* for DBCS. If there is DBCS's first byte character in termination of read buffer,
+           Lua parser fail to read Double-byte Character. */
+        size_t size;
+        do {
+          const char *buff = z->reader(NULL, z->data, &size);
+          if (buff == NULL || size == 0) return EOZ;
+          z->n = size;
+          z->p = buff;
+        } while((z->n--) == 0);
+        return c<<8|char2int(*(z->p++));
+      }
+    }
+    else return char2int(*(z->p++));
+  }
+  else return luaZ_fill(z);
+}
+#endif
 
 int luaZ_fill (ZIO *z) {
   size_t size;
@@ -26,9 +56,15 @@ int luaZ_fill (ZIO *z) {
   buff = z->reader(L, z->data, &size);
   lua_lock(L);
   if (buff == NULL || size == 0) return EOZ;
+#ifdef LUA_MBCS
+  z->n = size;
+  z->p = buff;
+  return zgetc(z);
+#else
   z->n = size - 1;
   z->p = buff;
   return char2int(*(z->p++));
+#endif
 }
 
 
@@ -51,6 +87,9 @@ void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader, void *data) {
   z->data = data;
   z->n = 0;
   z->p = NULL;
+#ifdef LUA_MBCS
+  z->isbin = luaZ_lookahead(z) == LUA_SIGNATURE[0];
+#endif
 }
 
 

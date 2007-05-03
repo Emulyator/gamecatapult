@@ -19,7 +19,11 @@ typedef struct Zio ZIO;
 
 #define char2int(c)	cast(int, cast(unsigned char, (c)))
 
+#ifdef LUA_MBCS
+int zgetc(ZIO *z);
+#else
 #define zgetc(z)  (((z)->n--)>0 ?  char2int(*(z)->p++) : luaZ_fill(z))
+#endif
 
 typedef struct Mbuffer {
   char *buffer;
@@ -59,6 +63,9 @@ struct Zio {
   lua_Reader reader;
   void* data;			/* additional data */
   lua_State *L;			/* Lua state (for reader) */
+#ifdef LUA_MBCS
+  char isbin;
+#endif
 };
 
 
