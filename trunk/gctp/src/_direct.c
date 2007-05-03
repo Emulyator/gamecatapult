@@ -242,7 +242,7 @@ off_t ttelldir (DIR *d)
 }
 void tseekdir (DIR *d, off_t loc)
 {
-	seekdir(d);
+	seekdir(d, loc);
 }
 #endif
 #endif

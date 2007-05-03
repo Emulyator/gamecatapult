@@ -19,12 +19,6 @@
 #include <gctp/math/matrix4x4.hpp>
 #include <gctp/math/matrix3x3.hpp>
 
-#ifdef GCTP_USE_D3DXMATH
-#include <boost/static_assert.hpp>
-#include <boost/type_traits.hpp>
-#include <d3dx9.h>
-#endif
-
 namespace gctp { namespace math {
 
 	/** 四元数・クォータニオン
@@ -89,7 +83,7 @@ namespace gctp { namespace math {
 				z = (mat._21 - mat._12)*s;
 			}
 			else {
-				_Type maxm = max(max(mat._11, mat._22), mat._33);
+				_Type maxm = std::max(std::max(mat._11, mat._22), mat._33);
 				if(maxm == mat._11) {
 					s = sqrt(mat._11 - (mat._22 + mat._33) + _Type(1));
 					x = s*_Type(0.5);
@@ -203,6 +197,8 @@ namespace gctp { namespace math {
 			return *this *= _Type(1)/src;
 		}
 		
+		Quaternion operator + () const { return *this; }
+		Quaternion operator - () const { return Quaternion().set(-w, -x, -y, -z); }
 		Quaternion operator+(const Quaternion &rhs) const { return Quaternion(*this)+=rhs; }
 		Quaternion operator-(const Quaternion &rhs) const { return Quaternion(*this)-=rhs; }
 		Quaternion operator*(const Quaternion &rhs) const {
@@ -311,8 +307,8 @@ namespace gctp { namespace math {
 		}
 
 		/// 内積値を返す
-		_Type dot(const Quaternion &rhs) const {
-			return w*rhs.w + x*rhs.x + y*rhs.y + z*rhs.z;
+		static _Type dot(const Quaternion &lhs, const Quaternion &rhs) {
+			return lhs.w*rhs.w + lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
 		}
 
 		/// ノルムの二乗
@@ -321,7 +317,7 @@ namespace gctp { namespace math {
 		}
 		/// ノルム
 		_Type norm() const {
-			return sqrt(norm2);
+			return sqrt(norm2());
 		}
 
 		/// ベクトル変換
@@ -339,7 +335,7 @@ namespace gctp { namespace math {
 			@{ */
 		/// 球状線形補間した値をセット
 		Quaternion &setSlerp(const Quaternion &lhs, const Quaternion &rhs, _Type t) {
-			_Type qr = dot(lhs,rhs);
+			_Type qr = dot(lhs, rhs);
 			_Type ss = _Type(1) - qr * qr;
 
 			if(ss == _Type(0)) {
@@ -373,7 +369,7 @@ namespace gctp { namespace math {
 			c = (begin+end).norm() < (begin-end).norm() ? -end : end;
 			Quaternion q3 = (end+next).norm() < (end-next).norm() ? -next : next;
 			a = c * exp(-_Type(1)/_Type(4)*log(exp(begin)*c)+log(exp(begin)*q0));
-			b = c * exp(-_Type(1)/_Type(4)*log(exp(c)*q3)+log(exp(c)*q1));
+			b = c * exp(-_Type(1)/_Type(4)*log(exp(c)*q3)+log(exp(c)*begin));
 		}
 
 		/// スプライン値を取得
@@ -391,8 +387,8 @@ namespace gctp { namespace math {
 		}
 		/** @} */
 		
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		operator const D3DXQUATERNION &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -413,7 +409,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXQUATERNION *>(this);
 		}
-		#endif
+#endif
 	};
 
 	/// 自然対数を返す
@@ -449,8 +445,8 @@ namespace gctp { namespace math {
 		QuaternionC(_Type w, _Type x, _Type y, _Type z) { set( w, x, y, z ); }
 		QuaternionC(const Vector3d<_Type> &axis, _Type rad) { set(axis, rad); }
 
-		// D3DXライブラリサポート
-		#ifdef GCTP_USE_D3DXMATH
+// D3DXライブラリサポート
+#ifdef GCTP_USE_D3DXMATH
 		QuaternionC(const D3DXQUATERNION &src)
 		{
 			set(src.w, src.x, src.y, src.z);
@@ -475,7 +471,7 @@ namespace gctp { namespace math {
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
 			return reinterpret_cast<D3DXQUATERNION *>(this);
 		}
-		#endif
+#endif
 	};
 
 }} // namespace gctp::math

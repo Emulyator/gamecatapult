@@ -43,7 +43,8 @@ public:
 	q2.set(VectorC(1,1,0).normalize(), 30);
     //dbgout << q1 << std::endl;
     //dbgout << q2 << std::endl;
-#ifdef DIRECT3D_VERSION
+//#ifdef DIRECT3D_VERSION
+#ifdef _MSC_VER
 	q2.conjugate();
 #endif
     CPPUNIT_ASSERT_DOUBLES_EQUAL(q1.x, q2.x, 0.000001);

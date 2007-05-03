@@ -148,7 +148,7 @@ namespace gctp { namespace graphic {
 		is_TL_ = is_TL;
 		maxnum_ = maxnum;
 		hr = VertexBuffer::setUp(VertexBuffer::DYNAMIC, is_TL_?dx::FVF(FVF_TL):dx::FVF(FVF_L), maxnum*6);
-//		hr = VertexBuffer::setUp(VertexBuffer::DYNAMIC, fvf.stride()*maxnum*6);
+		//hr = VertexBuffer::setUp(VertexBuffer::DYNAMIC, fvf.stride()*maxnum*6);
 		// STREAMOFFSETが指定できるとは限らない。
 		// 結局、頂点オフセットのみでやるほうが安全で、その場合非ＦＶＦバッファは意味がない。
 		// GeForce3やRADEON7500など、比較的最近のハードでも、またチップセット内蔵系も対応していない

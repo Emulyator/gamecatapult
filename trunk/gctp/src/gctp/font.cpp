@@ -60,7 +60,7 @@ namespace gctp {
 	 */
 	HRslt Font::setUp(const _TCHAR *name)
 	{
-		sw::tstring fontname(name);
+		SmartUtil::tstring fontname(name);
 		uint height;
 		uint32_t style;
 		if(!stringToParam(name, fontname, height, style)) return E_INVALIDARG;
@@ -101,12 +101,12 @@ namespace gctp {
 	 * @date 2004/07/20 1:46:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	sw::tstring Font::paramToString(const _TCHAR *fontname, uint height, uint32_t style)
+	SmartUtil::tstring Font::paramToString(const _TCHAR *fontname, uint height, uint32_t style)
 	{
 		CSVRowBase< _TCHAR, std::char_traits<_TCHAR> > csv;
 		csv.push_back(fontname);
-		csv.push_back(boost::lexical_cast<sw::tstring>(height));
-		csv.push_back(boost::lexical_cast<sw::tstring>(style));
+		csv.push_back(boost::lexical_cast<SmartUtil::tstring>(height));
+		csv.push_back(boost::lexical_cast<SmartUtil::tstring>(style));
 #ifdef _UNICODE
 		wstringstream ioss;
 #else
@@ -122,7 +122,7 @@ namespace gctp {
 	 * @date 2004/07/20 1:46:35
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Font::stringToParam(const _TCHAR *param, sw::tstring &fontname, uint &height, uint32_t &style)
+	bool Font::stringToParam(const _TCHAR *param, SmartUtil::tstring &fontname, uint &height, uint32_t &style)
 	{
 		basic_stringstream<_TCHAR> ioss;
 		ioss << param;

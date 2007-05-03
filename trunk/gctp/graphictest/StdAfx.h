@@ -15,26 +15,30 @@
 #define _WIN32_IE 0x0550
 
 #include "SmartWin.h"
-/*#include <atlapp.h>
-extern CAppModule _Module;
-#if (_ATL_VER < 0x0700)
-#define _AtlBaseModule _Module
-#endif
-#include <atlcom.h>
-#include <atlres.h>
-#include <atlwin.h>
-#include <atlctrls.h>
-#include <atlcrack.h>
-#include <atlmisc.h>
-#include <atlddx.h>*/
+#define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
+#include <windows.h>
+#define COM_NO_WINDOWS_H
+#include <objbase.h>
+#include <mmsystem.h>
+#include <tchar.h>
 
-#include <d3d9.h>
-#include <d3d9types.h>
-#include <d3dx9.h>
-#include <dxfile.h>
-#include <dmusici.h>
-#define DIRECTINPUT_VERSION (0x0800)
-#include <dinput.h>
+#ifdef GCTP_LITE
+# include <d3d8.h>
+# include <d3d8types.h>
+# define DIRECTSOUND_VERSION (0x0800)
+# include <dsound.h>
+# define DIRECTINPUT_VERSION (0x0800)
+# include <dinput.h>
+#else
+# include <d3d9.h>
+# include <d3d9types.h>
+# define D3D_OVERLOADS
+# include <d3dx9.h>
+# include <dxfile.h>
+# include <dsound.h>
+# define DIRECTINPUT_VERSION (0x0800)
+# include <dinput.h>
+#endif
 
 #if defined(_DEBUG) && !defined(DEBUG)
 #define DEBUG	1

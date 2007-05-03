@@ -199,10 +199,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gctp\common.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\gctp\context.cpp"
 				>
 			</File>
@@ -378,6 +374,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\com_ptr.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\common.h"
 				>
 			</File>
 			<File
@@ -684,6 +684,78 @@
 				RelativePath="..\..\..\include\gctp\zfilter.hpp"
 				>
 			</File>
+			<Filter
+				Name="math"
+				>
+				<File
+					RelativePath="..\..\..\include\gctp\math\matrix2x2.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\matrix3x3.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\matrix4x3.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\matrix4x4.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\plane3d.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\quaternion.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\rectangle.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\vector2d.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\vector3d.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\math\vector4d.hpp"
+					>
+				</File>
+				<Filter
+					Name="d3d"
+					>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\matrix4x4.inl"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\plane3d.inl"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\quaternion.inl"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\vector2d.inl"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\vector3d.inl"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\include\gctp\math\d3d\vector4d.inl"
+						>
+					</File>
+				</Filter>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="リソース ファイル"

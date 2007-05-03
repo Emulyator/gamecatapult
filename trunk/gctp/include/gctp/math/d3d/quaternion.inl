@@ -53,8 +53,8 @@ namespace gctp { namespace math {
 	}
 
 	template<>
-	float Quaternion<float>::dot(const Quaternion<float> &rhs) const {
-		return D3DXQuaternionDot(*this, rhs);
+	float Quaternion<float>::dot(const Quaternion<float> &lhs, const Quaternion<float> &rhs) {
+		return D3DXQuaternionDot(lhs, rhs);
 	}
 
 	template<>

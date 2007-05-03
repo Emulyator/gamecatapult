@@ -10,8 +10,6 @@
 #include <gctp/def.hpp>
 #include <gctp/hrslt.hpp>
 #include <gctp/audio/dx/device.hpp>
-#include <gctp/com_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace gctp { namespace audio { namespace dx {
 

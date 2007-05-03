@@ -46,7 +46,7 @@ namespace gctp {
 		{
 			int ret = from.get();
 #ifdef _MBCS
-			if(std::isleadbyte(ret)) ret = ret<<8 | from.get();
+			if(::isleadbyte(ret)) ret = ret<<8 | from.get();
 #endif
 			return ret;
 		}

@@ -20,13 +20,11 @@
 #include <rmxfguid.h>
 
 using namespace std;
-using gctp::graphic::dx::IDirect3DDevice9Ptr;
-using gctp::graphic::dx::IDirect3DVertexBuffer9Ptr;
-using gctp::graphic::dx::IDirect3DIndexBuffer9Ptr;
+using gctp::graphic::dx::IDirect3DDevicePtr;
+using gctp::graphic::dx::IDirect3DVertexBufferPtr;
+using gctp::graphic::dx::IDirect3DIndexBufferPtr;
 
 namespace gctp { namespace graphic {
-
-	TYPEDEF_DXCOMPTR(IDirect3DVertexShader9);
 
 	/** モデル製作
 	 *
@@ -74,10 +72,10 @@ namespace gctp { namespace graphic {
 	{
 		if(src.mesh_) {
 			HRslt ret;
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			ret = src.mesh_->GetDevice(&dev);
 			if(!ret) return ret;
-			D3DVERTEXELEMENT9 declaration[MAX_FVF_DECL_SIZE];
+			dx::D3DVERTEXELEMENT declaration[MAX_FVF_DECL_SIZE];
 			ret = src.mesh_->GetDeclaration(declaration);
 			if(!ret) return ret;
 			ret = src.mesh_->CloneMesh(D3DXMESH_SYSTEMMEM, declaration, dev, &mesh_);
@@ -312,7 +310,7 @@ namespace gctp { namespace graphic {
 				if(!hr) GCTP_TRACE(hr);
 			}
 			else {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				mesh_->GetDevice(&dev);
 				dev->SetVertexShader(NULL);
 				dev->SetTransform(D3DTS_WORLD, mat);
@@ -377,7 +375,7 @@ namespace gctp { namespace graphic {
 				}
 			}
 			else {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				mesh_->GetDevice(&dev);
 				dev->SetVertexShader(NULL);
 				dev->SetTransform(D3DTS_WORLD, mat);
@@ -464,7 +462,7 @@ namespace gctp { namespace graphic {
 		HRslt setUp()
 		{
 			HRslt hr;
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = owner_.mesh()->GetDevice(&dev);
 			if(!hr) return hr;
 			hr = owner_.mesh()->CloneMeshFVF(D3DXMESH_MANAGED, owner_.mesh()->GetFVF(), dev, &mesh_);
@@ -499,7 +497,7 @@ namespace gctp { namespace graphic {
 		{
 			HRslt hr;
 			if(mesh_) {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				mesh_->GetDevice(&dev);
 
 				dev->SetVertexShader(NULL);
@@ -561,14 +559,14 @@ namespace gctp { namespace graphic {
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; attr_split_ = 0; attr_num_ = 0; max_face_infl_ = 0;
 			
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = owner_.mesh()->GetDevice(&dev);
 			if(!hr) return hr;
 			
 			// Make sure we get HW caps
 			hr = dev->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 			hr = owner_.skin()->ConvertToBlendedMesh(
@@ -633,14 +631,14 @@ namespace gctp { namespace graphic {
 		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
 		{
 			HRslt hr;
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = mesh_->GetDevice(&dev);
 			if(!hr) return hr;
 			
 			// Make sure we get HW caps
 			hr = dev->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 			
@@ -736,18 +734,18 @@ namespace gctp { namespace graphic {
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
 			
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = owner_.mesh()->GetDevice(&dev);
 			if(!hr) return hr;
 
 			// Make sure we get HW caps
 			hr = dev->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 			
-			IDirect3DIndexBuffer9Ptr ib;
+			IDirect3DIndexBufferPtr ib;
 			hr = owner_.mesh()->GetIndexBuffer(&ib);
 			if(!hr) return hr;
 			DWORD _max_face_infl;
@@ -803,7 +801,7 @@ namespace gctp { namespace graphic {
 		{
 			HRslt hr;
 			if(mesh_) {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
 
@@ -1092,7 +1090,7 @@ namespace gctp { namespace graphic {
 			// Make sure we get HW caps
 			hr = device().impl()->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = device().impl()->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 
@@ -1123,7 +1121,7 @@ namespace gctp { namespace graphic {
 			return hr;
 		}
 
-		IDirect3DVertexShader9Ptr shader_[4];
+		dx::IDirect3DVertexShaderPtr shader_[4];
 	};
 
 	/// 頂点シェーダー式スキンモデルクラス
@@ -1147,14 +1145,14 @@ namespace gctp { namespace graphic {
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
 			
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = owner_.mesh()->GetDevice(&dev);
 			if(!hr) return hr;
 
 			// Make sure we get HW caps
 			hr = dev->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 			
@@ -1208,8 +1206,8 @@ namespace gctp { namespace graphic {
 				if(hr) mesh_ = temp_mesh;
 			}
 			
-			D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
-			LPD3DVERTEXELEMENT9 pDeclCur;
+			dx::D3DVERTEXELEMENT pDecl[MAX_FVF_DECL_SIZE];
+			dx::D3DVERTEXELEMENT *pDeclCur;
 			hr = mesh_->GetDeclaration(pDecl);
 			if(!hr) return hr;
 
@@ -1245,7 +1243,7 @@ namespace gctp { namespace graphic {
 		{
 			HRslt hr;
 			if(mesh_ && vs_) {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
 
@@ -1347,14 +1345,14 @@ namespace gctp { namespace graphic {
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
 			
-			IDirect3DDevice9Ptr dev;
+			IDirect3DDevicePtr dev;
 			hr = owner_.mesh()->GetDevice(&dev);
 			if(!hr) return hr;
 
 			// Make sure we get HW caps
 			hr = dev->SetSoftwareVertexProcessing(FALSE);
 
-			D3DCAPS9 caps;
+			dx::D3DCAPS caps;
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 
@@ -1397,8 +1395,8 @@ namespace gctp { namespace graphic {
 				if(hr) mesh_ = temp_mesh;
 			}
 			
-			D3DVERTEXELEMENT9 pDecl[MAX_FVF_DECL_SIZE];
-			LPD3DVERTEXELEMENT9 pDeclCur;
+			dx::D3DVERTEXELEMENT pDecl[MAX_FVF_DECL_SIZE];
+			dx::D3DVERTEXELEMENT *pDeclCur;
 			hr = mesh_->GetDeclaration(pDecl);
 			if(!hr) return hr;
 
@@ -1436,7 +1434,7 @@ namespace gctp { namespace graphic {
 		{
 			HRslt hr;
 			if(mesh_ && brush_) {
-				IDirect3DDevice9Ptr dev;
+				IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
 
@@ -1603,7 +1601,7 @@ namespace gctp { namespace graphic {
 
 	namespace {
 
-		void setBlend(void *dst, const void *src, Real weight, D3DVERTEXELEMENT9 decl[MAX_FVF_DECL_SIZE], bool first)
+		void setBlend(void *dst, const void *src, Real weight, dx::D3DVERTEXELEMENT decl[MAX_FVF_DECL_SIZE], bool first)
 		{
 			for(int i = 0; i < MAX_FVF_DECL_SIZE; i++) {
 				if(i > 0 && decl[i].Offset == 0) break;
@@ -1671,7 +1669,7 @@ namespace gctp { namespace graphic {
 	{
 		MeshVertexLock _dst(mesh_);
 		if(_dst) {
-			D3DVERTEXELEMENT9 decl[MAX_FVF_DECL_SIZE];
+			dx::D3DVERTEXELEMENT decl[MAX_FVF_DECL_SIZE];
 			D3DXDeclaratorFromFVF(mesh_->GetFVF(), decl);
 			int highest = 0; Real highest_weight = Real(0);
 			for(int i = 0; i < num; i++) {

@@ -9,7 +9,6 @@
  *
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
-#include <d3d9.h>
 #include <gctp/types.hpp>
 #include <gctp/hrslt.hpp>
 #include <gctp/pointer.hpp>
@@ -26,15 +25,15 @@ namespace gctp { namespace graphic { namespace dx {
 	class StateBlock : public Object {
 	public:
 		StateBlock() {}
-		StateBlock(IDirect3DDevice9Ptr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL) { setUp(dev, type); }
-		StateBlock(IDirect3DStateBlock9Ptr sb, D3DSTATEBLOCKTYPE type) { setUp(sb, type); }
+		StateBlock(IDirect3DDevicePtr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL) { setUp(dev, type); }
+		StateBlock(IDirect3DStateBlockPtr sb, D3DSTATEBLOCKTYPE type) { setUp(sb, type); }
 		/// ステートブロックのハンドルを返す
-		IDirect3DStateBlock9Ptr get() const { return ptr_; }
+		IDirect3DStateBlockPtr get() const { return ptr_; }
 		/// ステートブロックのハンドルを返す
-		IDirect3DStateBlock9Ptr &get() { return ptr_; }
+		IDirect3DStateBlockPtr &get() { return ptr_; }
 		
-		HRslt setUp(IDirect3DDevice9Ptr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL);
-		HRslt setUp(IDirect3DStateBlock9Ptr sb, D3DSTATEBLOCKTYPE type);
+		HRslt setUp(IDirect3DDevicePtr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL);
+		HRslt setUp(IDirect3DStateBlockPtr sb, D3DSTATEBLOCKTYPE type);
 		void tearDown();
 		HRslt apply() const;
 		HRslt capture();
@@ -45,7 +44,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	private:
 		D3DSTATEBLOCKTYPE type_;
-		IDirect3DStateBlock9Ptr ptr_;
+		IDirect3DStateBlockPtr ptr_;
 	};
 
 	/** ステートブロックリソース

@@ -49,9 +49,9 @@ namespace gctp {
 #define GCTP_LOCATION	__FILE__<<_T("(")<<__LINE__<<_T(") : ")
 
 #if GCTP_DBGOUT & GCTP_LOGFILE
-# define PRN(_S)	(gctp::logfile<<_S, gctp::logfile.flush(), gctp::dbgout<<_S)
+# define PRN(_S)	(gctp::logfile<<_S, gctp::dbgout<<_S)
 # define PRNN(_S)	PRN(_S<<std::endl)
-# define LOG(_S)	(gctp::logfile << _S, gctp::logfile.flush())
+# define LOG(_S)	(gctp::logfile << _S)
 # define LOGN(_S)	LOG(_S<<std::endl)
 #elif GCTP_DBGOUT
 # define PRN(_S)		(gctp::dbgout << _S)

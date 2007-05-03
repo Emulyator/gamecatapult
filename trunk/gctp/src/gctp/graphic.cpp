@@ -411,4 +411,9 @@ namespace gctp { namespace graphic {
 		dx::Device::setIntervalTime(time);
 	}
 
+	void setSwapMode(bool copy)
+	{
+		dx::Device::setSwapMode(copy);
+	}
+
 }} // namespace gctp

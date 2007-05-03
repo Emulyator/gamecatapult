@@ -41,8 +41,14 @@ namespace gctp { namespace graphic { namespace dx {
 	 */
 	void initialize(bool with_WHQL = false /**< WHQLありでデバイス列挙するか？（デフォルトfalse） */);
 
+#ifdef GCTP_LITE
+	typedef D3DADAPTER_IDENTIFIER8 D3DADAPTER_IDENTIFIER;
+#else
+	typedef D3DADAPTER_IDENTIFIER9 D3DADAPTER_IDENTIFIER;
+#endif
+
 	/// グラフィックアダプタ情報クラス
-	class Adapter : public D3DADAPTER_IDENTIFIER9 {
+	class Adapter : public D3DADAPTER_IDENTIFIER {
 	public:
 		typedef std::vector<Adapter> AdapterList;
 		std::vector<D3DDISPLAYMODE>	modes;
@@ -51,7 +57,7 @@ namespace gctp { namespace graphic { namespace dx {
 	private:
 		friend class Device;
 		void set(UINT adpt, bool with_WHQL=false);
-		static IDirect3D9Ptr api_;
+		static IDirect3DPtr api_;
 		static AdapterList adapters_;	///< デバイス列挙情報
 	};
 
@@ -162,6 +168,21 @@ namespace gctp { namespace graphic { namespace dx {
 		 */
 		static void setIntervalTime(int time);
 
+		/** スワップエフェクトの設定
+		 *
+		 * デフォルトでfalse(D3DSWAPEFFECT_DISCARD)
+		 *
+		 * trueにするとD3DSWAPEFFECT_COPYを使用する。
+		 *
+		 * openする前にこれを呼び出す必要がある。
+		 *
+		 * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
+		 * @date 2003/01/04 20:24:41
+		 *
+		 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
+		 */
+		static void setSwapMode(bool copy);
+
 		Device();
 		~Device();
 
@@ -210,10 +231,10 @@ namespace gctp { namespace graphic { namespace dx {
 			return parameters.hFocusWindow;
 		}
 
-		IDirect3DDevice9Ptr ptr() const { return ptr_; }
+		IDirect3DDevicePtr ptr() const { return ptr_; }
 
 	private:
-		IDirect3DDevice9Ptr ptr_;				///< デバイスのハンドル
+		IDirect3DDevicePtr ptr_;				///< デバイスのハンドル
 
 		static uint fsaa_level_;
 		static FSAAType fsaa_;
@@ -223,14 +244,15 @@ namespace gctp { namespace graphic { namespace dx {
 		static bool is_allow_REF_;				///< リファレンスドライバも試すか？
 		static bool is_allow_HVP_;				///< ハードウェア頂点処理を試すか？
 		static bool is_allow_MVP_;				///< ハードウェア・ソフトウェア混合頂点処理を試すか？
+		static bool copy_when_swap_;			///< 更新モード
 		static int interval_time_;				///< 更新レート
 
 	public:
-		IDirect3DDevice9 *operator->() const {
+		IDirect3DDevice *operator->() const {
 			if(this) return ptr_;
 			return NULL;
 		}
-		operator IDirect3DDevice9 *() const {
+		operator IDirect3DDevice *() const {
 			if(this) return ptr_;
 			return NULL;
 		}
@@ -297,10 +319,10 @@ namespace gctp { namespace graphic { namespace dx {
 		Point2 getScreenSize() const;
 
 		/// ビューポートを取得
-		D3DVIEWPORT9 getViewPort() const;
+		D3DVIEWPORT getViewPort() const;
 
 		/// ビューポートを設定
-		HRslt setViewPort(const D3DVIEWPORT9 &vp);
+		HRslt setViewPort(const D3DVIEWPORT &vp);
 
 		/// クリアするときの色を設定
 		void setClearColor(const Color &cc);
@@ -317,7 +339,7 @@ namespace gctp { namespace graphic { namespace dx {
 		/// グローバルアンビエントライトを取得
 		const Color &getAmbient() const { return ambient_light_; }
 		/// ライトを追加
-		HRslt pushLight(const D3DLIGHT9 &lgt);
+		HRslt pushLight(const D3DLIGHT &lgt);
 		/// ライトを追加
 		HRslt pushLight(const DirectionalLight &lgt);
 		/// ライトを追加
@@ -329,7 +351,7 @@ namespace gctp { namespace graphic { namespace dx {
 		/// ライトを全消去
 		void clearLight();
 		/// ライトを取得
-		HRslt getLight(uint no, D3DLIGHT9 &lgt) const;
+		HRslt getLight(uint no, D3DLIGHT &lgt) const;
 		/// ライトを取得
 		HRslt getLight(uint no, DirectionalLight &lgt) const;
 		/// ライトを取得
@@ -371,7 +393,7 @@ namespace gctp { namespace graphic { namespace dx {
 		class StateStack : public std::vector< StateBlock > {
 		public:
 			StateStack() {}
-			HRslt push(IDirect3DDevice9Ptr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL) {
+			HRslt push(IDirect3DDevicePtr dev, D3DSTATEBLOCKTYPE type = D3DSBT_ALL) {
 				resize(size()+1);
 				if(!back() && !back().setUp(dev, type)) return E_FAIL;
 				return back().capture();

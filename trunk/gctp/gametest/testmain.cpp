@@ -26,6 +26,12 @@
 #include <gctp/scene/graphfile.hpp>
 //#include <ode/ode.h>
 
+#define MOVIETEST
+
+#ifdef MOVIETEST
+# include <gctp/movie/player.hpp>
+#endif
+
 #if 0
 
 class Game : public gctp::Object {
@@ -276,13 +282,21 @@ extern "C" int main(int argc, char *argv[])
 	const char *mesh_mode = "Vertex Shader";
 	HRslt hr;
 
+	CoInitialize(0);
+
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
 
 	audio::Player bgm = audio::ready(_T("../../../media/hugeraw.wav"));
 	bgm.play(true);
 	audio::Player se = audio::ready(_T("../../../media/pang.wav"));
-
+#ifdef MOVIETEST
+	movie::Player movie;
+	hr = movie.openForTexture(_T("../graphictest/onegoshu_trial.mpg"));
+	if(!hr) GCTP_TRACE(hr);
+	hr = movie.play();
+	if(!hr) GCTP_TRACE(hr);
+#endif
 	graphic::Text text;
 
 	graphic::ParticleBuffer pbuf;
@@ -457,7 +471,7 @@ extern "C" int main(int argc, char *argv[])
 
 			stage->onDraw();
 
-			/*graphic::LineParticleDesc pdesc;
+			graphic::LineParticleDesc pdesc;
 			Vector pos[2];
 			pos[0] = VectorC(0.5f, 0.5f, 1.0f);
 			pos[1] = VectorC(1.5f, 1.5f, 1.0f);
@@ -468,10 +482,11 @@ extern "C" int main(int argc, char *argv[])
 			pdesc.setColor(Color32(255, 255, 255));
 			pdesc.setHilight(Color32(0, 0, 0));
 			graphic::setWorld(MatrixC(true));
-			pbuf.begin(*ptex);
+#ifdef MOVIETEST
+			pbuf.begin(*movie.getTexture());
 			pbuf.draw(pdesc);
-			pbuf.end();*/
-
+			pbuf.end();
+#endif
 			text.setPos(10, 10).setColor(Color32(200, 200, 127)).setFixedPitch(true, 14).out()
 				<< "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl
 				<< "FPS:" << app().fps.latestave << endl << endl
@@ -500,6 +515,17 @@ extern "C" int main(int argc, char *argv[])
 			app().present();
 		}
 	}
+	CoUninitialize();
 	return 0;
 }
+#endif
+
+#ifdef _DEBUG
+# ifdef MOVIETEST
+#  pragma comment(lib, "strmbasd.lib")
+# endif
+#else
+# ifdef MOVIETEST
+#  pragma comment(lib, "strmbase.lib")
+# endif
 #endif

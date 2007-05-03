@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="audio"
-	ProjectGUID="{AFE10A19-B27D-44A9-BBD5-DB636227E5A4}"
+	Name="movie"
+	ProjectGUID="{E8041C75-EB76-4A8C-B23A-CFCFB0F4E566}"
+	RootNamespace="movie"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -16,10 +17,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,12 +41,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_ATL_NOLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				ForceConformanceInForLoopScope="true"
-				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="common.h"
 				WarningLevel="3"
@@ -64,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_audio_d.lib"
+				OutputFile="$(SolutionDir)../../lib/vc8/gctp_movie_d.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -84,11 +82,11 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -107,12 +105,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/O2 /Ob1"
 				AdditionalIncludeDirectories="../../../include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_ATL_NOLIB"
 				RuntimeLibrary="0"
-				ForceConformanceInForLoopScope="true"
-				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="common.h"
 				WarningLevel="3"
@@ -130,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_audio.lib"
+				OutputFile="$(SolutionDir)../../lib/vc8/gctp_movie.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -154,19 +149,11 @@
 	<Files>
 		<Filter
 			Name="ソース ファイル"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\gctp\audio.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gctp\audio\clip.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gctp\audio\player.cpp"
+				RelativePath="..\..\..\src\gctp\movie\player.cpp"
 				>
 			</File>
 			<File
@@ -189,23 +176,18 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="..\..\..\src\gctp\audio\track.cpp"
-				>
-			</File>
 			<Filter
 				Name="dx"
 				>
 				<File
-					RelativePath="..\..\..\src\gctp\audio\dx\buffer.cpp"
+					RelativePath="..\..\..\src\gctp\movie\dx\playerimpl.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
+							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -213,52 +195,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\src\gctp\audio\dx\device.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\src\gctp\audio\dx\wavfile.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
+							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;"
 						/>
 					</FileConfiguration>
 				</File>
@@ -270,52 +207,32 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\include\gctp\audio.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\audio\clip.hpp"
-				>
-			</File>
-			<File
 				RelativePath=".\common.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\audio\player.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\audio\track.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\audio\vorbis.hpp"
+				RelativePath="..\..\..\include\gctp\movie\player.hpp"
 				>
 			</File>
 			<Filter
-				Name="dx"
+				Name="ｄｘ"
 				>
 				<File
-					RelativePath="..\..\..\include\gctp\audio\dx\buffer.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\include\gctp\audio\dx\device.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\include\gctp\audio\dx\wavfile.hpp"
+					RelativePath="..\..\..\include\gctp\movie\dx\player.hpp"
 					>
 				</File>
 			</Filter>
 		</Filter>
 		<Filter
 			Name="リソース ファイル"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\ReadMe.txt"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -57,8 +57,8 @@ namespace gctp { namespace graphic {
 		/// バッファの未使用領域の頂点数
 		uint freenum() const;
 
-		operator IDirect3DVertexBuffer9 *() { return ptr_; }
-		IDirect3DVertexBuffer9 *getVB() { return ptr_; }
+		operator dx::IDirect3DVertexBuffer *() { return ptr_; }
+		dx::IDirect3DVertexBuffer *get() { return ptr_; }
 		
 		/** スコープから抜けるとアンロックする
 		 *
@@ -81,9 +81,9 @@ namespace gctp { namespace graphic {
 		};
 
 	private:
-		HRslt _setUp(Type type, dx::FVF fvf, uint size, uint minsize);
+		HRslt setUpEx(Type type, dx::FVF fvf, uint size, uint minsize);
 
-		dx::IDirect3DVertexBuffer9Ptr ptr_;
+		dx::IDirect3DVertexBufferPtr ptr_;
 		Type	type_;
 		dx::FVF	fvf_;
 		uint	size_;

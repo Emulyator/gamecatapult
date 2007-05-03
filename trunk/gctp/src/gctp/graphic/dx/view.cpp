@@ -13,7 +13,7 @@ using namespace std;
 
 namespace gctp { namespace graphic { namespace dx {
 
-	HRslt View::setUp(IDirect3DSwapChain9Ptr ptr)
+	HRslt View::setUp(IDirect3DSwapChainPtr ptr)
 	{
 		ptr_ = ptr;
 		ptr_->GetDevice(&device_);
@@ -22,7 +22,7 @@ namespace gctp { namespace graphic { namespace dx {
 		return S_OK;
 	}
 
-	HRslt View::setUp(IDirect3DDevice9Ptr dev, uint i)
+	HRslt View::setUp(IDirect3DDevicePtr dev, uint i)
 	{
 		device_ = dev;
 		idx_ = i;
@@ -44,7 +44,7 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt View::setCurrent() const
 	{
 		if( !this || !ptr_ || !device_ ) return E_FAIL;
-		IDirect3DSurface9Ptr surf;
+		IDirect3DSurfacePtr surf;
 		HRslt hr = ptr_->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf);
 		if(!hr) return hr;
 		return device_->SetRenderTarget(0, surf);

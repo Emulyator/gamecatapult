@@ -235,14 +235,68 @@
 				<File
 					RelativePath="..\..\..\src\gctp\graphic\dx\device.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\..\src\gctp\graphic\dx\stateblock.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\..\src\gctp\graphic\dx\view.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\dx\"
+							XMLDocumentationFileName="$(IntDir)\dx\"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 		</Filter>
@@ -253,6 +307,10 @@
 			>
 			<File
 				RelativePath="..\..\..\include\gctp\graphic\brush.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\common.h"
 				>
 			</File>
 			<File

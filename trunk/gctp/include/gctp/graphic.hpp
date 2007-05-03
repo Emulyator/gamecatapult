@@ -626,6 +626,21 @@ namespace gctp { namespace graphic {
 	 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
 	 */
 	void setIntervalTime(int time);
+
+	/** スワップエフェクトの設定
+	 *
+	 * デフォルトでfalse(D3DSWAPEFFECT_DISCARD)
+	 *
+	 * trueにするとD3DSWAPEFFECT_COPYを使用する。
+	 *
+	 * openする前にこれを呼び出す必要がある。
+	 *
+	 * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
+	 * @date 2003/01/04 20:24:41
+	 *
+	 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
+	 */
+	void setSwapMode(bool copy);
 	/* @} */
 
 	/** グラフィックリソース用汎用リアライザテンプレート
