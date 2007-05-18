@@ -24,8 +24,20 @@ namespace gctp {
 		/** 弱参照のためのスタブ
 		 */
 		class Stub {
-		public:
-			Stub() : p_(0), refcount_(0) {}
+			friend Object;
+			friend Hndl;
+
+			Stub(Object *p) : refcount_(1), p_(p), mutex_(0)
+			{
+				p_->stub_ = this;
+				synchronize(p_->mutex_ ? true : false);
+			}
+			Stub(const Stub &src); // not implement
+			~Stub()
+			{
+				if(p_) p_->stub_ = 0;
+				if(mutex_) delete mutex_;
+			}
 
 			Object *p() { return p_; }
 			
@@ -33,20 +45,30 @@ namespace gctp {
 
 			void addRef() const
 			{
+				Object::AutoLock al(mutex_);
 				refcount_++;
 			}
 
 			bool decRef() const
 			{
+				Object::AutoLock al(mutex_);
 				refcount_--;
 				return refcount_==0;
 			}
 
-		private:
-			friend Object;
-			friend Hndl;
-			Object *p_;
+			void synchronize(bool yes)
+			{
+				if(yes && !mutex_) {
+					mutex_ = new Mutex;
+				}
+				if(!yes && mutex_) {
+					delete mutex_; mutex_ = 0;
+				}
+			}
+
 			mutable uint refcount_;
+			Object *p_;
+			Mutex *mutex_;
 		};
 	}
 
@@ -54,7 +76,7 @@ namespace gctp {
 	 *
 	 * 型抹消の手段としてvoidポインター的に使う。
 	 *
-	 * @note MT-UNSAFE
+	 * @note MT-UNSAFE(gctp::Objectに対してsychronizeを呼び出せばOK)
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/26 22:37:31
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -188,8 +210,8 @@ namespace gctp {
 		}
 
 	protected:
-		void addRef() const { if(p_->refcount_ < (uint)-1) p_->refcount_++; }
-		bool decRef() const { if(0 < p_->refcount_ && p_->refcount_ < (uint)-1 && --p_->refcount_ == 0) return true; return false; }
+		void addRef() const { Object::AutoLock al(p_->mutex_); if(p_->refcount_ < (uint)-1) p_->refcount_++; }
+		bool decRef() const { Object::AutoLock al(p_->mutex_); if(0 < p_->refcount_ && p_->refcount_ < (uint)-1 && --p_->refcount_ == 0) return true; return false; }
 		Object *p_;
 	};
 
@@ -231,10 +253,10 @@ namespace gctp {
 
 	/** 参照カウンタポインタークラステンプレート
 	 *
-	 * boostのintrusive_ptrからのぱくり
+	 * パフォーマンス上の都合から、排他制御はもっと高次の部分で行ってもらう設計を要求する。
 	 *
-	 * パフォーマンス上の都合から、排他制御はもっと高次の部分で行ってもらう設計を要求する。\n
-	 * それが嫌なら、gctp::Pointer/gctp::Handleを使わずboost::shared_ptr/boost::weak_ptrを使ったほうがいいと思う。
+	 * 具体的には、必要なときにgctp::Objectに対してsychronize(true)を呼び出す。\n
+	 * （デフォルトでは排他制御をしない）
 	 *
 	 * @code
 	 * class Foo : public Object {...};
@@ -244,7 +266,7 @@ namespace gctp {
 	 * @endcode
 	 *
 	 * Copyright (c) 2001, 2002 Peter Dimov
-	 * @note MT-UNSAFE
+	 * @note MT-UNSAFE(gctp::Objectに対してsychronizeを呼び出せばOK)
 	 */
 	template<class T>
 	class Pointer : public Ptr {
@@ -426,7 +448,7 @@ namespace gctp {
 	 *
 	 * 型抹消の手段としてvoidポインター的に使う。
 	 *
-	 * @note MT-UNSAFE
+	 * @note MT-UNSAFE(gctp::Objectに対してsychronizeを呼び出せばOK)
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/28 19:20:01
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -608,12 +630,7 @@ namespace gctp {
 		{
 			if(p) {
 				stub_ = p->stub_;
-				if(!stub_) {
-					stub_ = new detail::Stub();
-					p->stub_ = stub_;
-					stub_->p_ = p;
-					stub_->addRef();
-				}
+				if(!stub_) stub_ = new detail::Stub(p);
 				stub_->addRef();
 			}
 		}
@@ -661,7 +678,8 @@ namespace gctp {
 	 * 参照数を上げずにオブジェクトを補足し、指しているオブジェクトが解体されていたら、NULLを返す。
 	 *
 	 * パフォーマンス上の都合から、排他制御はもっと高次の部分で行ってもらう設計を要求する。\n
-	 * それが嫌なら、gctp::Pointer/gctp::Handleを使わずboost::shared_ptr/boost::weak_ptrを使ったほうがいいと思う。
+	 * synchronizeをしても、lockするようにしないとダメなんだが…\n
+	 * やはりlockしないとポインターを取り出せないようにすべきか
 	 *
 	 * @code
 	 * class Foo : public Object {...};
@@ -677,7 +695,7 @@ namespace gctp {
 	 *
 	 * Copyright (c) 2001, 2002 Peter Dimov
 	 *
-	 * @note MT-UNSAFE
+	 * @note MT-UNSAFE(gctp::Objectに対してsychronizeを呼び出せばOK)
 	 */
 	template<class T>
 	class Handle : public Hndl {
@@ -702,13 +720,6 @@ namespace gctp {
 		}
 
 		Handle(Handle const & rhs): Hndl(rhs) {}
-
-		Handle & operator=(Handle const & rhs)
-		{
-			stub_ = const_cast<detail::Stub *>(rhs.stub());
-			if(stub_) stub_ ->addRef();
-			return *this;
-		}
 		
 		Handle & operator=(T *rhs)
 		{

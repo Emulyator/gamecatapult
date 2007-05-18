@@ -24,7 +24,7 @@ using namespace gctp;
 		typedef Handle<ContextTestFoo> Hndl;
 		typedef Pointer<ContextTestFoo> Ptr;
 		ContextTestFoo() : data(123) {}
-		bool setUp(const std::basic_string<_TCHAR> &name)
+		bool setUp(BufferPtr)
 		{
 			return true;
 		}
@@ -71,17 +71,18 @@ public:
 	  TURI uri(_T("test/leaf.ext"));
 	  RealizeMethod f = Extension::get(uri.extension().c_str());
 	  CPPUNIT_ASSERT(f);
-	  ContextTestFoo::Ptr p = f(uri.raw().c_str());
+	  ContextTestFoo::Ptr p = f(BufferPtr());
 	  CPPUNIT_ASSERT(p);
   }
   void testContext() {
+	  Context root;
 	  {
-		  Context context;
-		  context.load(_T("test/context.ext"));
-		  ContextTestFoo::Hndl h = db()[_T("test/context.ext")];
+		  Context mycontext;
+		  mycontext.load(_T("test/context.ext"));
+		  ContextTestFoo::Hndl h = context()[_T("test/context.ext")];
 		  CPPUNIT_ASSERT(h);
 	  }
-	  ContextTestFoo::Hndl h = db()[_T("test/context.ext")];
+	  ContextTestFoo::Hndl h = context()[_T("test/context.ext")];
 	  CPPUNIT_ASSERT(!h);
   }
 //CUPPA:decl=-

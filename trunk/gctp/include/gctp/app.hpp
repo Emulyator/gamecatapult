@@ -18,7 +18,7 @@
 #include <gctp/signal.hpp>
 #include <gctp/types.hpp>
 #ifdef _MT
-#include <boost/thread/mutex.hpp>
+#include <gctp/mutex.hpp>
 #endif
 
 namespace gctp {
@@ -73,7 +73,7 @@ namespace gctp {
 		typedef std::deque<Event> QType;
 		QType q_;
 #ifdef _MT
-		boost::mutex monitor_;
+		Mutex monitor_;
 #endif
 	};
 
@@ -170,6 +170,7 @@ namespace gctp {
 		virtual bool canContinue();
 		virtual bool canDraw();
 		virtual void present();
+		virtual HWND getHandle() const = 0;
 		virtual void showCursor(bool yes) = 0;
 		virtual void holdCursor(bool yes) = 0;
 
@@ -187,7 +188,7 @@ namespace gctp {
 		/// 更新シグナル
 		Signal1<false, float /*delta*/> update_signal;
 		/// 描画シグナル
-		Signal0<false> draw_signal;
+		Signal1<false, float /*delta*/> draw_signal;
 
 		/// 実行
 		int run();

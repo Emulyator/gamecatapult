@@ -1,0 +1,123 @@
+#ifndef _GCTP_FILESERVER_HPP_
+#define _GCTP_FILESERVER_HPP_
+#include <gctp/config.hpp>
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
+/** @file
+ * GameCatapultファイルサーバークラス
+ *
+ * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+ * @date 2004/02/05 15:59:05
+ * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+ */
+#include <gctp/pointerlist.hpp>
+#include <gctp/buffer.hpp>
+#include <gctp/tcstr.hpp>
+
+namespace gctp {
+
+	class AsyncBuffer;
+	typedef Pointer<AsyncBuffer> AsyncBufferPtr;
+	typedef Handle<AsyncBuffer> AsyncBufferHndl;
+
+	/** アーカイブのマウント、非同期読み込みサービスを提供するクラス
+	 *
+	 * ネイティブファイルシステム、gar、zipをマウントできる
+	 *
+@code
+	AyncBufferPtr file;
+	if(!fileserver().busy()) file = fileserver().getFileAsync(fname); // リクエスト追加
+	if(file.isReady()) {
+		// リアライザ呼び出し
+		f(file);
+	}
+@endcode
+	 * @author SAM (T&GG, Org.) <sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2002/12/31 16:49:24
+	 *
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class FileServer : public Object {
+	public:
+		/// アーカイブの種別を示す定数
+		enum ArchiveType {
+			AUTO, ///< 自動認識
+			NATIVE, ///< ネイティブのファイルシステム（単にフォルダを指定するだけ）
+			GAR, ///< garアーカイブ
+			ZIP, ///< zipアーカイブ
+		};
+
+		/// アーカイブをマウントする
+		bool mount(const _TCHAR *path, ArchiveType type = AUTO);
+		/// アーカイブをアンマウントする
+		bool unmount(const _TCHAR *path);
+		/// 検索優先度の設定
+		void setPriority(const _TCHAR *archive_name, int priority);
+		/// 検索優先度の取得
+		int getPriority(const _TCHAR *archive_name);
+
+		/// ファイルを同期読み込みしたファイル全体の内容を返す
+		BufferPtr getFile(const _TCHAR *name);
+		/// ファイルを非同期読み込みしたファイル全体の内容を返す
+		AsyncBufferPtr getFileAsync(const _TCHAR *name);
+
+		/// 非同期読み込みを受け入れ不可能か？
+		bool busy();
+
+		void service();
+
+		static FileServer &getInstance();
+
+		class Volume;
+		~FileServer();
+
+	private:
+		class Thread; // 外に出してもいいかな…
+		FileServer();
+		FileServer(FileServer &); // not implement
+		PointerList<Volume> volume_list_;
+		PointerList<AsyncBuffer> req_list_;
+		Thread *thread_;
+	};
+
+	/// FileServerを取得
+	inline FileServer &fileserver()
+	{
+		return FileServer::getInstance();
+	}
+
+	/** 非同期読み込みの内容を提供するバッファクラス
+	 *
+	 * getFileAsyncは読み込み先のメモリだけを確保し、まだ内容の埋まっていない
+	 * AsyncBufferを即座に返す。
+	 * 
+	 * これを受け取った側は、isReadyメンバを呼び出すことで、読み込みが完了したことを知ることが出来る。
+	 *
+	 * ユーザーはいつでもバッファにアクセスできるが、isReadyがtrueを返すまでは完全な内容では無い。
+	 *
+	 * FileServerだけが、readyフラグをたてることが出来る。
+	 * @author SAM (T&GG, Org.) <sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2002/12/31 16:49:24
+	 *
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class AsyncBuffer : public Buffer {
+	public:
+		bool isReady()
+		{
+			if(is_ready_) synchronize(false);
+			return is_ready_;
+		}
+	protected:
+		AsyncBuffer() : is_ready_(false)
+		{
+			synchronize(true);
+		}
+		friend FileServer;
+		bool is_ready_;
+	};
+
+} // namespace gctp
+
+#endif //_GCTP_FILESERVER_HPP_

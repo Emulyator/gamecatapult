@@ -1,6 +1,6 @@
-uselib_io()
-uselib_table()
-uselib_string()
+register 'io'
+register 'table'
+register 'string'
 
 function printf(...) io.write(string.format(...)) end
 

@@ -36,7 +36,7 @@ namespace gctp { namespace scene {
 	void Entity::setUp(const _TCHAR *filename)
 	{
 		if(filename) {
-			Pointer<GraphFile> file = db()[filename].lock();
+			Pointer<GraphFile> file = context()[filename].lock();
 			if(file) {
 				Pointer<Motion> pmtn;
 				Pointer<Body> pbody;
@@ -142,7 +142,9 @@ namespace gctp { namespace scene {
 	
 	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
-		if(srcfilename) context.load(srcfilename);
+		if(srcfilename) {
+			if(!context.load(srcfilename)) return Handle<Entity>();
+		}
 		Pointer<Entity> ret = context.create(classname).lock();
 		if(ret) {
 			if(srcfilename) ret->setUp(srcfilename);

@@ -25,6 +25,7 @@ namespace gctp { namespace graphic {
 	namespace dx {
 #ifdef GCTP_LITE
 		typedef IDirect3DDevice8 IDirect3DDevice;
+		typedef IDirect3DSurface8 IDirect3DSurface;
 		typedef IDirect3DTexture8 IDirect3DTexture;
 		typedef IDirect3DBaseTexture8 IDirect3DBaseTexture;
 		typedef IDirect3DVertexBuffer8 IDirect3DVertexBuffer;
@@ -47,6 +48,7 @@ namespace gctp { namespace graphic {
 		TYPEDEF_DXCOMPTREX(IDirect3DSurface8, IDirect3DSurfacePtr);
 #else
 		typedef IDirect3DDevice9 IDirect3DDevice;
+		typedef IDirect3DSurface9 IDirect3DSurface;
 		typedef IDirect3DTexture9 IDirect3DTexture;
 		typedef IDirect3DBaseTexture9 IDirect3DBaseTexture;
 		typedef IDirect3DStateBlock9 IDirect3DStateBlock;

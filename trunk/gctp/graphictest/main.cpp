@@ -25,7 +25,7 @@ using namespace gctp::graphic;
 using namespace std;
 using namespace SmartWin;
 
-#define MOVIETEST
+//#define MOVIETEST
 //#define MOVIE_FOR_WINDOW
 
 class TestWindow : public WidgetFactory<WidgetWindow, TestWindow>
@@ -113,23 +113,27 @@ public:
 			}
 		}
 		tex_ = movie_.getTexture().lock();
-		if(tex_) graphic::device().db().insert(_T("../../../media/gctp.jpg"), tex_);
 # endif
 		movie_.play();
 #else
-		tex_ = graphic::createOnDB<Texture>(_T("../../../media/gctp.jpg"));
+		tex_ = new Texture;
+		tex_->setUp(_T("../../../media/gctp.jpg"));
 #endif
-		spr_ = graphic::createOnDB<SpriteBuffer>(_T("spritebuffer"));
-		font_ = graphic::createOnDB<FontTexture>(_T("fonttexture"));
+		font_ = new gctp::Font;
+		font_->setUp(_T(",10,BOLD|FIXEDPITCH"));
+		spr_ = new SpriteBuffer;
+		spr_->setUp();
+		fonttex_ = new FontTexture;
+		fonttex_->setUp();
 		theta_ = 0; scale_ = 0; count_ = 0;
 
 		updateDisplay();
 
 		// handlers
 		onSized( &Self::doOnResized );
-		onKeyPressed( &Self::doOnKeyPressed );
 		onMouseMove( &Self::doOnMouseMove );
-		onRaw( &Self::doOnChar, Message(WM_CHAR) );
+		onChar( &Self::doOnChar );
+		onKeyPressed( &Self::doOnKeyPressed );
 		onRaw( &Self::doOnIMEChar, Message(WM_IME_CHAR) );
 		onRaw( &Self::doOnIMENotify, Message(WM_IME_NOTIFY) );
 
@@ -163,10 +167,10 @@ public:
 		return ibuf_.inputKey(key);
 	}
 
-	HRESULT doOnChar(LPARAM lParam, WPARAM wParam)
+	bool doOnChar(int input_char)
 	{
-		ibuf_.input(wParam);
-		return 0;
+		ibuf_.input(input_char);
+		return true;
 	}
 
 	HRESULT doOnIMEChar(LPARAM lParam, WPARAM wParam)
@@ -194,6 +198,8 @@ public:
 
 			clear();
 			begin();
+			text_.reset();
+			text_.setFont(font_);
 
 			SpriteDesc desc;
 #ifdef MOVIETEST
@@ -211,7 +217,7 @@ public:
 				mesh_->DrawSubset(0);
 			}
 #endif
-			spr_->begin(*font_).draw(SpriteDesc().setUp(*font_).addOffset(Point2fC(256, 8)).setColor(Color32(255,0,0))).end();
+			spr_->begin(*fonttex_).draw(SpriteDesc().setUp(*fonttex_).addOffset(Point2fC(256, 8)).setColor(Color32(255,0,0))).end();
 			
 			if(tex_) {
 				spr_->begin(*tex_);
@@ -228,15 +234,12 @@ public:
 			text_.setPos(160, 20).out() << scale_;
 			text_.setPos(10, 40).out() << "mouse (" << mouse_pos_.x << ", " << mouse_pos_.y << ")";
 			text_.setPos(10, 60).out() << ibuf_.get();
-			Point2f cursor_pos = text_.getPos(*font_, (int)ibuf_.cursor()-(int)ibuf_.get().size());
+			Point2f cursor_pos = text_.getPos(*fonttex_, (int)ibuf_.cursor()-(int)ibuf_.get().size());
 			if(ime_.isOpen()) {
 				ime_.setPos(Point2C(cursor_pos));
-				Handle<gctp::Font> default_font = gctp::db()[_T("defaultfont")];
-				if(default_font) {
-					LOGFONT logfont;
-					default_font->getLogFont(logfont);
-					ime_.setFont(logfont);
-				}
+				LOGFONT logfont;
+				font_->getLogFont(logfont);
+				ime_.setFont(logfont);
 			}
 #if 0
 			if(ime_.isOpen() && !ime_.str().empty()) {
@@ -264,7 +267,7 @@ public:
 # endif
 #endif
 			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << _T("•ÏŠ·");
-			text_.draw(*spr_, *font_);
+			text_.draw(*spr_, *fonttex_);
 
 			HRslt hr = end();
 			if(!hr) GCTP_TRACE(hr);
@@ -283,9 +286,10 @@ private:
 #ifdef MOVIETEST
 	movie::Player movie_;
 #endif
+	Pointer<gctp::Font> font_;
 	Pointer<SpriteBuffer> spr_;
 	Pointer<Texture> tex_;
-	Pointer<FontTexture> font_;
+	Pointer<FontTexture> fonttex_;
 
 	float theta_;
 	float scale_;

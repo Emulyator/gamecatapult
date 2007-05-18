@@ -12,7 +12,6 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/pointer.hpp>
-#include <boost/shared_ptr.hpp>
 #include "smartwin/font.h"
 
 namespace gctp {
@@ -32,6 +31,7 @@ namespace gctp {
 			ITALIC = 1<<1		/**< ŽÎ‘Ì*/,
 			UNDERLINE = 1<<2	/**< ‰ºü*/,
 			STRIKEOUT = 1<<3	/**< ‘Å‚¿Á‚µü*/,
+			FIXEDPITCH = 1<<4	/**< ŒÅ’èƒsƒbƒ`*/,
 			_FORCE_DWORD_ = 0x7FFFFFFF,
 		};
 		

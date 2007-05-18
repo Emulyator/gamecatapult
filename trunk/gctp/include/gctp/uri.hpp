@@ -162,7 +162,7 @@ namespace gctp {
 	template<class E, class T>
 	std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, URI const & uri)
 	{
-		return os << uri.raw();
+		return os << uri.raw().c_str();
 	}
 
 } //namespace gctp

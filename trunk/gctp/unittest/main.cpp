@@ -17,6 +17,7 @@
 #endif
 #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
 #include <windows.h>
+#include <gctp/dbgout.hpp>
 #include <gctp/dbgoutbuf.hpp>
 
 static gctp::debuggeroutbuf<char> _sdbgout_buf;
@@ -24,6 +25,7 @@ static std::basic_ostream<char> sdbgout(&_sdbgout_buf);		// デバッガアウトプット
 
 int main(int argc, char* argv[]) {
   std::locale::global(std::locale(std::locale::classic(), std::locale(""), LC_CTYPE));
+  gctp::logfile.imbue(std::locale(std::locale::classic(), std::locale(""), LC_CTYPE));
   int format = 2;
   int target = 0;
   std::string xsl;

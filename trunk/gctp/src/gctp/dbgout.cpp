@@ -8,6 +8,7 @@
 #include "common.h"
 #include <gctp/dbgout.hpp>
 #include <gctp/dbgoutbuf.hpp>
+#include <mbctype.h>
 
 using namespace std;
 
@@ -16,6 +17,7 @@ namespace gctp {
 	template<>
 	debuggeroutbuf<char>::int_type debuggeroutbuf<char>::overflow(debuggeroutbuf<char>::int_type ch)
 	{
+		if(ch == traits_type::eof()) traits_type::eof();
 		*epptr() = ch;
 		// SJIS?
 		if(-1 == _ismbstrail((const unsigned char *)pbase(), (const unsigned char *)epptr())) {
@@ -38,17 +40,18 @@ namespace gctp {
 			sync();
 			sputc(ch);
 		}
-		return ch;
+		return traits_type::not_eof(ch);
 	}
 
 	template<>
 	debuggeroutbuf<wchar_t>::int_type debuggeroutbuf<wchar_t>::overflow(debuggeroutbuf<wchar_t>::int_type ch)
 	{
+		if(ch == traits_type::eof()) traits_type::eof();
 		*epptr() = ch;
 		*epptr() = L'\0';
 		sync();
 		sputc(ch);
-		return ch;
+		return traits_type::not_eof(ch);
 	}
 
 	template<>

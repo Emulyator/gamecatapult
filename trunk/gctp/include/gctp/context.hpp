@@ -13,8 +13,10 @@
  */
 #include <gctp/pointerlist.hpp>
 #include <gctp/extension.hpp>
+#include <gctp/db.hpp>
+#include <gctp/class.hpp>
 #include <gctp/tuki.hpp>
-#include <tchar.h> // VC限定だな…
+#include <tchar.h>
 
 namespace gctp {
 
@@ -61,13 +63,23 @@ namespace gctp {
 		/// コンテキストを閉じる
 		void close();
 
-		/** ロード要求
+		/** コンテンツロード
 		 *
+		 * @return 読み込んで構築済みのオブジェクト。失敗した場合はヌルハンドルが返る。
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		bool load(const _TCHAR *name);
+		Hndl load(const _TCHAR *name);
+
+		/** ロード要求
+		 *
+		 * @return リクエストが成功したか？
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		bool loadAsync(const _TCHAR *name);
 
 		/** オブジェクト登録
 		 *
@@ -92,6 +104,20 @@ namespace gctp {
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
 		Hndl create(const char *classname, const _TCHAR *name = 0);
+
+		/** オブジェクト検索
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl find(const _TCHAR *name);
+
+		/// オブジェクト検索
+		Hndl operator[](const _TCHAR *name)
+		{
+			return find(name);
+		}
 
 		/// シーケンスの先頭を返す
 		PtrList::iterator begin()
@@ -121,21 +147,28 @@ namespace gctp {
 	public:
 		// luapp
 		bool setUp(luapp::Stack &L);
-		int luaLoad(luapp::Stack &L);
-		int luaCreate(luapp::Stack &L);
+		int load(luapp::Stack &L);
+		int create(luapp::Stack &L);
+		int find(luapp::Stack &L);
+
 	TUKI_DECLARE(Context)
 
 		friend Context &context();
 	private:
 		bool is_open_;
 		PtrList ptrs_;
+		DB db_;
 		Context *prev_;
 
 		static Context *current_;
 	};
 
 	/// カレントコンテキスト
-	inline Context &context() { return *Context::current_; }
+	inline Context &context()
+	{
+		GCTP_ASSERT(Context::current_);
+		return *Context::current_;
+	}
 
 } // namespace gctp
 

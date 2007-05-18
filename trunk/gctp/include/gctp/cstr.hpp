@@ -89,16 +89,19 @@ namespace gctp {
 			CStrImpl() : LStr(0), deletable_(false) {}
 			CStrImpl(const wchar_t *src) : LStr(0), deletable_(false)
 			{
-				size_t s = MB_CUR_MAX*(wcslen(src)+1);
-				p_ = (const char *)malloc(s);
-				if(p_) {
-					*(char *)p_ = '\0';
-					if(wcstombs((char *)p_, src, s)>0) {
-						deletable_ = true;
-					}
-					else {
-						free((void *)p_);
-						p_ = 0;
+				size_t s = wcstombs(0, src, 0);
+				if(s >= 0 && s != (size_t)-1) {
+					p_ = (const char *)malloc(s+1);
+					if(p_) {
+						size_t ws = wcstombs((char *)p_, src, s);
+						if(ws >= 0 && ws != (size_t)-1) {
+							((char *)p_)[s] = '\0';
+							deletable_ = true;
+						}
+						else {
+							free((void *)p_);
+							p_ = 0;
+						}
 					}
 				}
 			}

@@ -10,6 +10,7 @@
 #include <gctp/object.hpp>
 #include <gctp/pointer.hpp>
 #include <gctp/property.hpp>
+#include <gctp/mutex.hpp>
 
 using namespace std;
 
@@ -32,6 +33,19 @@ namespace gctp {
 			if(stub_->decRef()) delete stub_;
 			else stub_->p_ = 0;
 		}
+		if(mutex_) delete mutex_;
+		// Object‚ÌíœŒã‚É‚ÍAStub‚Ìsynchronize‚ð‰ðœ‚·‚éŽè’i‚Í–³‚¢c
+	}
+	
+	void Object::synchronize(bool yes)
+	{
+		if(yes && !mutex_) {
+			mutex_ = new Mutex;
+		}
+		if(!yes && mutex_) {
+			delete mutex_; mutex_ = 0;
+		}
+		if(stub_) stub_->synchronize(yes);
 	}
 
 #ifdef GCTP_USE_PROPERTY

@@ -6,13 +6,12 @@
 #include <gctp/bfstream.hpp>
 #endif
 #include <gctp/bbstream.hpp>
-#define _GCTP_ZFILTER_HPP_
 #include <gctp/zfilter.hpp>
 #include <gctp/archive.hpp>
 //CUPPA:include=-
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestAssert.h>
-#undef GCTP_USE_ZLIB
+//#undef GCTP_USE_ZLIB
 
 //CUPPA:namespace=+
 namespace util {
@@ -121,15 +120,17 @@ public:
 		"圧縮ストリームテストあああああああああああああああああああああああああああああああああああああああああああああああ";
 	// 圧縮
     {
-		obfstream ofs("bzfiltertest");
-		CPPUNIT_ASSERT(ofs.is_open());
-        gctp::obzfilter ozf(ofs);
+		std::filebuf ofb;
+		ofb.open("bzfiltertest", std::ios::out|std::ios::binary);
+		CPPUNIT_ASSERT(ofb.is_open());
+		basic_zfilter<16, char> ozf(&ofb);
+		obstream ofs(&ozf);
 
-		ozf << test;
+		ofs << test;
     }
 
 	{
-		File f("bzfiltertest");
+		File f(_T("bzfiltertest"));
 		CPPUNIT_ASSERT((unsigned)f.length()<(strlen(test)+12));
 		std::string str;
 		f >> str;
@@ -138,12 +139,14 @@ public:
 
     // 伸長
     {
-		ibfstream ifs("bzfiltertest");
-		CPPUNIT_ASSERT(ifs.is_open());
-        gctp::ibzfilter izf(ifs);
+		std::filebuf ifb;
+		ifb.open("bzfiltertest", std::ios::in|std::ios::binary);
+		CPPUNIT_ASSERT(ifb.is_open());
+        basic_zfilter<16, char> izf(&ifb);
+		ibstream ifs(&izf);
 
 		std::string str;
-		izf >> str;
+		ifs >> str;
 		CPPUNIT_ASSERT(str == test);
     }
   }

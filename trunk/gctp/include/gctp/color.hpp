@@ -318,6 +318,7 @@ namespace gctp {
 					i32 = 0x00FFFF;
 				}
 			}
+			a = 255;
 		}
 
 		Color32 &setLerp(const Color32 &lhs, const Color32 &rhs, float t)

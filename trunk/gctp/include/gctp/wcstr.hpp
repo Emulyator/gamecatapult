@@ -90,19 +90,20 @@ namespace gctp {
 			WCStrImpl(const char *src) : WLStr(0), deletable_(false)
 			{
 				size_t s = strlen(src);
-				p_ = (const wchar_t *)malloc(sizeof(wchar_t)*(s+1));
-				if(p_) {
-					/*
-					if(mbtowc((wchar_t *)p_, src, s)>0) {
-						deletable_ = true;
+				size_t ws = mbstowcs(0, src, s);
+				if(ws >= 0 && ws != (size_t)-1) {
+					p_ = (const wchar_t *)malloc(sizeof(wchar_t)*(ws+1));
+					if(p_) {
+						size_t ts = mbstowcs((wchar_t *)p_, src, s);
+						if(ts >= 0 && ts != (size_t)-1) {
+							((wchar_t *)p_)[ws] = L'\0';
+							deletable_ = true;
+						}
+						else {
+							free((void *)p_);
+							p_ = 0;
+						}
 					}
-					else {
-						free((void *)p_);
-						p_ = 0;
-					}
-					*/
-					for(size_t i = 0; i < s; i++) ((wchar_t *)p_)[i] = (wchar_t)(src[i]);
-					((wchar_t *)p_)[s] = L'\0';
 				}
 			}
 			WCStrImpl(const wchar_t *src) : WLStr(wcsdup(src)), deletable_(true) {}

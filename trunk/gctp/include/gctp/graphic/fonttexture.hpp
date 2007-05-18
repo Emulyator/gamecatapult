@@ -56,6 +56,8 @@ namespace gctp { namespace graphic {
 
 	/** 使用する文字のみをレンダリングしてキャッシュするフォントテクスチャ
 	 *
+	 * SpriteBufferを使って文字を表示するときに使用する。
+	 *
 	 * 最大テクスチャサイズが1024以下であれば最大テクスチャサイズを、そうでなければ
 	 * 1024*1024で制作し、テクスチャを縦横64分割し、1bitフラグで空きを領域管理する。
 	 * 1024では16*16が最少領域、512*512では8*8、256では4*4になる。一枚で最大4096文字種を格納できる計算。
@@ -65,7 +67,6 @@ namespace gctp { namespace graphic {
 	 * テクスチャのサイズまではレンダできていいわけだが、それだと１文字で１テククチャ消費されてしまうので、
 	 * 上限レベルを設定できる。（現在は固定で3。1024のとき、192ドット)。
 	 *
-	 * @todo 領域を使いまわせるようにする（今は溜め込む一方）
 	 * @todo 実寸でレンダできない場合は、拡大表示するようにする
 	 * @todo 文字サイズの上限を可変に
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -132,7 +133,7 @@ namespace gctp { namespace graphic {
 	private:
 		HRslt setUpAscii(detail::AsciiAttr &attr, const Font &font, ulong width, ulong height, int ofsx = 0, int ofsy = 0);
 		int alloc(int level);
-		std::auto_ptr<detail::DrawContext> cntx_;
+		Pointer<detail::DrawContext> cntx_;
 		boost::scoped_ptr<detail::FontTextureDetail> detail_;
 		//float scale_;
 	};

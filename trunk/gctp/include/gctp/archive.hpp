@@ -14,138 +14,11 @@
 #include <gctp/iobstream.hpp>
 #include <gctp/buffer.hpp>
 #include <gctp/tcstr.hpp>
+#include <gctp/file.hpp>
 #include <map>
 #include <list>
-#include <tchar.h> // VC限定だな…
 
 namespace gctp {
-	
-	/** アーカイブ用ファイルバッファクラス
-	 *
-	 * STLPortにはファイル記述子、またはファイルポインタを取得する非標準のメンバ関数があるが、非標準なので(VC付属のSTLには無い)、
-	 * 自前で用意する。
-	 * truncateの実装のためにファイル記述子の取得が出来ないと困る。
-	 * @author SAM (T&GG, Org.) <sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2002/12/31 16:49:24
-	 *
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class FileBuf : public std::streambuf {
-	public:
-		enum Mode {NEW, READ, WRITE};
-		FileBuf(bool tmp = false) : fd_(-1) { if(tmp) open(); }
-		explicit FileBuf(const _TCHAR *fname, Mode mode = READ) : fd_(-1)
-		{ open(fname, mode); }
-		virtual ~FileBuf() { sync(); close(); }
-		bool is_open() const
-		{ return (fd_!=-1)?true:false; }
-		Mode mode()
-		{ return mode_; }
-		void open(const _TCHAR *fname, Mode mode = READ);
-		void open();
-		void close();
-
-		int fd() const { return fd_; }
-
-	protected:
-		virtual std::streampos seekoff(std::streamoff off, std::ios::seek_dir dir, std::ios_base::openmode mode = std::ios::in | std::ios::out);
-		virtual std::streampos seekpos(std::streampos pos, std::ios_base::openmode mode = std::ios::in | std::ios::out);
-
-		virtual std::streamsize xsgetn(char_type *s, std::streamsize n);
-		virtual std::streamsize xsputn(const char_type *s, std::streamsize n);
-
-		virtual int_type overflow( int_type nChar = std::char_traits<char>::eof() );
-		virtual int_type uflow();
-		virtual int_type underflow();
-		virtual int_type pbackfail( int_type nChar = std::char_traits<char>::eof() );
-		virtual int_type sync();
-
-	private:
-		int fd_;
-		Mode mode_;
-	};
-
-	/** アーカイブ用ファイルストリームクラス
-	 *
-	 * まだmove_buf_size_のsetter、getterを用意していない。スレッドセーフにするには、
-	 * moveblock、<< File 中にロックしなきゃいけないから。
-	 *
-	 * fstreamなどと比べて文字列の扱いが違う。読み取り時は改行までではなくヌル文字まで、
-	 * 書き込み時はヌル文字も書き込む(fstreamはヌル文字は書かない)。
-	 * @author SAM (T&GG, Org.) <sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2002/12/31 16:49:24
-	 *
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class File : public iobstream {
-	public:
-		enum {DEFAULT_MOVE_BUF_SIZE = 1024*1024};
-		enum Mode {NEW, READ, WRITE};
-		enum {BEG, CUR, END};
-		File(bool tmp = false) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) { if(tmp) open(); }
-		explicit File(const _TCHAR *fname, Mode mode = READ) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE)
-		{ open(fname, mode); }
-		virtual ~File() {flush(); close();}
-		bool is_open() const
-		{return _M_buf.is_open();}
-		Mode mode()
-		{return (Mode)_M_buf.mode();}
-		void open(const _TCHAR *fname, Mode mode = READ)
-		{ _M_buf.open(fname, (FileBuf::Mode)mode); }
-		void open()
-		{ _M_buf.open(); }
-		void close()
-		{ _M_buf.close(); }
-
-		/// 読み込み
-		File &read(void *d, int n);
-		/// 書き込み
-		File &write(const void *s, int n);
-		/// ファイル長
-		int length() const;
-		/// 終端に達したか？
-		bool eof() const;
-
-		/// シーク
-		File &seek(std::streamoff off, std::ios::seek_dir dir = std::ios::beg);
-		/// ポインタ位置問い合わせ
-		std::streamoff tell() const;
-
-		/// バッファフラッシュ
-		File &flush();
-		/// サイズ変更
-		File &truncate(int newsize);
-		/// サイズ変更（相対指定）
-		File &relativeTruncate(int addsize);
-		/// obstreamに指定位置から指定サイズ分書き込み
-		File &extract(obstream &dst, long pos, long size);
-		/// ostreamに指定位置から指定サイズ分書き込み
-		File &extract(std::ostream &dst, long pos, long size);
-		/// 指定位置を読み込んでBufferで返す
-		Buffer load(long pos = -1, long size = -1);
-		/// ブロック移動
-		File &moveBlock(int dst_pos, int src_pos, int size);
-		/// 空白挿入
-		File &insert(int ins_pos, int size);
-		/// 削除
-		File &remove(int rmv_pos, int size);
-
-	private:
-		FileBuf _M_buf;
-
-		const File &operator=(const File &src);
-		File(const File &src);
-		int move_buf_size_;
-# ifdef __ee__
-		CStr filename_;
-# endif
-	};
-
-	inline obstream &operator<<(obstream &lhs, File &rhs)
-	{
-		rhs.extract(lhs, 0, rhs.length());
-		return lhs;
-	}
 
 	/** アーカイブ内のファイル情報
 	 *
@@ -209,11 +82,11 @@ namespace gctp {
 		/// 読み込み
 		Archive &read(void *dst, const int size);
 		/// 内部ファイルをBufferで返す
-		Buffer load(const _TCHAR *fn);
+		BufferPtr load(const _TCHAR *fn);
 		/// 内部ファイルをBufferで返す
-		Buffer load(const ArchiveEntry *entry);
+		BufferPtr load(const ArchiveEntry *entry);
 		/// 指定サイズ読み込んでBufferで返す
-		Buffer load(const int size);
+		BufferPtr load(const int size);
 		/// 索引をコンソールに出力
 		void printIndex(std::basic_ostream<_TCHAR> &os);
 		

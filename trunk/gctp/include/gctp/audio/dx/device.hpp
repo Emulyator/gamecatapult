@@ -8,18 +8,9 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/def.hpp>
+#include <gctp/pointer.hpp>
 #include <gctp/hrslt.hpp>
-#include <boost/shared_ptr.hpp>
-// SmartWinを使うと、ライブラリのリンク宣言が消えるので
-#pragma message("In gctp/audio/device.hpp")
-#pragma message("SmartWinを使うと、ライブラリのリンク宣言が消えるのでここで行っている")
-#pragma message("ほかの環境ではこれを書き換える必要があるかもしれない")
-#ifdef _DEBUG
-# pragma comment(lib, "libboost_thread-vc80-mt-sgd-1_33_1.lib")
-#else
-# pragma comment(lib, "libboost_thread-vc80-mt-s-1_33_1.lib")
-#endif
-#include <boost/thread/mutex.hpp>
+#include <gctp/mutex.hpp>
 #include <gctp/com_ptr.hpp>
 #include <vector>
 
@@ -30,8 +21,6 @@ namespace gctp { namespace audio { namespace dx {
 
 	class WavFile;
 	class Buffer;
-	typedef boost::shared_ptr<Buffer> BufferPtr;
-	typedef boost::weak_ptr<Buffer> BufferHandle;
 
 	TYPEDEF_DXCOMPTR(IDirectSound8);
 
@@ -61,7 +50,7 @@ namespace gctp { namespace audio { namespace dx {
 
 		HRslt getFormat(int &channel_num, int &freq, int &bitrate);
 
-		BufferPtr ready(const _TCHAR *fname);
+		Pointer<Buffer> ready(const _TCHAR *fname);
 
 		void setVolume(float volume);
 		
@@ -75,16 +64,15 @@ namespace gctp { namespace audio { namespace dx {
 
 		IDirectSound8Ptr ptr() { return ptr_; }
 	private:
-		void add(BufferHandle buffer);
+		void add(Handle<Buffer> buffer);
 		/// 通知イベント監視スレッドの処理
 		static DWORD WINAPI handleEvents( void *param );
 
-		typedef boost::mutex::scoped_lock Lock;
 		DWORD  notify_thread_id_;
 		HANDLE notify_thread_;
-		boost::mutex monitor_;
+		Mutex monitor_;
 
-		typedef std::vector<BufferHandle> BufferList;
+		typedef std::vector< Handle<Buffer> > BufferList;
 		BufferList buffers_;
 
 		float volume_;	///< トラックボリューム

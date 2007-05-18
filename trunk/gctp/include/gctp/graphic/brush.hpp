@@ -10,6 +10,7 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/class.hpp>
+#include <gctp/buffwd.hpp> // for BufferPtr
 
 namespace gctp { namespace graphic {
 
@@ -19,6 +20,7 @@ namespace gctp { namespace graphic {
 	class Brush : public Rsrc {
 	public:
 		HRslt setUp(const _TCHAR *fname);
+		HRslt setUp(BufferPtr buffer);
 
 		HRslt restore();
 		void cleanUp();

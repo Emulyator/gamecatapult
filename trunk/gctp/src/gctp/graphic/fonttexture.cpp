@@ -39,7 +39,10 @@ namespace gctp { namespace graphic {
 			int c;
 			Figure(Handle<Font> _font, int _c) : font(_font), c(_c) {}
 			bool operator == (const Figure &rhs) const { return font == rhs.font && c == rhs.c; }
-			bool operator < (const Figure &rhs) const { return font < rhs.font || c < rhs.c; }
+			bool operator < (const Figure &rhs) const {
+				if(font == rhs.font) return c < rhs.c;
+				return font < rhs.font;
+			}
 		};
 		struct Attr {
 			int idx;
@@ -154,7 +157,7 @@ namespace gctp { namespace graphic {
 		};
 #endif
 
-		class DrawContext {
+		class DrawContext : public Object {
 		public:
 			DC dc;
 			Texture::ScopedLock tex;
@@ -230,7 +233,11 @@ namespace gctp { namespace graphic {
 					for(int dx = 0; dx < bitmapsize; dx++ ) {
 						if(ggo_xofs <= dx && dx < ggo_width) {
 							alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
-							if(alpha) dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+							if(alpha) {
+								dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+								//alpha = (alpha-1)&0xf;
+								//dst[(y+dy)*tsize.y+(x+dx)] = (alpha << 12) | (alpha << 8) | (alpha << 4) | alpha;
+							}
 							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 						}
 						else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
@@ -266,8 +273,8 @@ namespace gctp { namespace graphic {
 
 	HRslt FontTexture::setUp()
 	{
-		HRslt hr = Texture::setUp(1024, 1024, D3DFMT_A4R4G4B4);
-		//HRslt hr = Texture::setUp(256, 256, D3DFMT_A4R4G4B4);
+		HRslt hr = Texture::setUp(Texture::NORMAL, 1024, 1024, D3DFMT_A4R4G4B4);
+		//HRslt hr = Texture::setUp(Texture::NORMAL, 256, 256, D3DFMT_A4R4G4B4);
 		if(!hr) return hr;
 		if(cellSize() > 0) return hr;
 		else return E_FAIL;
@@ -385,7 +392,7 @@ namespace gctp { namespace graphic {
 
 	void FontTexture::begin()
 	{
-		cntx_ = std::auto_ptr<detail::DrawContext>(new detail::DrawContext(*this));
+		cntx_ = new detail::DrawContext(*this);
 	}
 
 	/** 事前にbeginが呼び出されている必要がある
@@ -456,7 +463,7 @@ namespace gctp { namespace graphic {
 
 	void FontTexture::end()
 	{
-		cntx_ = std::auto_ptr<detail::DrawContext>();
+		cntx_ = 0;
 	}
 
 	void FontTexture::clear()
@@ -486,8 +493,6 @@ namespace gctp { namespace graphic {
 		MAT2 mat2 = { { 0, 1 }, { 0, 0 }, { 0, 0 }, { 0, 1 } };
 		GLYPHMETRICS glyph;
 
-		uint x = 0;
-		uint y = 0;
 		SIZE gsize;
 		_TCHAR str[2] = _T("x");
 		Size2 tsize = size();
@@ -497,6 +502,7 @@ namespace gctp { namespace graphic {
 		uint8_t alpha; // 4-bit measure of pixel intensity
 		attr.max_width = 0;
 
+		uint x = ofsx, y = ofsy;
 		for( char c=32; c<127; c++ ) {
 			ulong bufsize = dc.getGlyphOutline( c, GGO_GRAY4_BITMAP, &glyph, 0, NULL, &mat2 );
 			uint8_t *buf = new uint8_t[bufsize]; // 実際にバッファに取得
@@ -515,14 +521,14 @@ namespace gctp { namespace graphic {
 			if(c == 32) default_line_height = line_height = gsize.cy+1;
 			if(attr.max_width < gsize.cx) attr.max_width = gsize.cx;
 			if(line_height < gsize.cy+1) line_height = gsize.cy+1;
-			if( (int)(x+gsize.cx+1) > width ) {
-				x  = 0; y += line_height; line_height = default_line_height;
+			if( (int)((x-ofsx)+gsize.cx+1) > width ) {
+				x  = ofsx; y += line_height; line_height = default_line_height;
 			}
 
-			attr.tex_coords[c-32].left   = ((float)x+ofsx)/tsize.x;
-			attr.tex_coords[c-32].top    = ((float)y+ofsx)/tsize.y;
-			attr.tex_coords[c-32].right  = ((float)(x+ofsx+gsize.cx))/tsize.x;
-			attr.tex_coords[c-32].bottom = ((float)(y+ofsx+gsize.cy))/tsize.y;
+			attr.tex_coords[c-32].left   = ((float)x)/tsize.x;
+			attr.tex_coords[c-32].top    = ((float)y)/tsize.y;
+			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx))/tsize.x;
+			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy))/tsize.y;
 			
 			for(int dy = 0; dy < gsize.cy; dy++) {
 				if(ggo_yofs <= dy && dy < ggo_height) {
@@ -530,7 +536,11 @@ namespace gctp { namespace graphic {
 						if(ggo_xofs <= dx && dx < ggo_width) {
 							alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
 							if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-							else if(alpha) dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+							else if(alpha) {
+								dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+								//alpha = (alpha-1)&0xf;
+								//dst[(y+dy)*tsize.y+(x+dx)] = (alpha << 12) | (alpha << 8) | (alpha << 4) | alpha;
+							}
 							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 						}
 						else {
@@ -684,7 +694,6 @@ namespace gctp { namespace graphic {
 		};
 
 	}
-
 	
 	/** 文字表示
 	 *

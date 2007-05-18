@@ -19,6 +19,7 @@
 #include <gctp/scene/motion.hpp>
 #include <gctp/extension.hpp>
 #include <gctp/context.hpp>
+#include <gctp/buffer.hpp>
 #include <gctp/dbgout.hpp>
 #include <gctp/turi.hpp>
 #include <rmxfguid.h>
@@ -123,10 +124,10 @@ namespace gctp { namespace scene {
 #ifdef UNICODE
 						WCStr fname = _mtrls[i].pTextureFilename;
 						context().load(fname.c_str());
-						model.mtrls[i].tex = graphic::db()[fname.c_str()];
+						model.mtrls[i].tex = context()[fname.c_str()];
 #else
 						context().load(_mtrls[i].pTextureFilename);
-						model.mtrls[i].tex = graphic::db()[_mtrls[i].pTextureFilename];
+						model.mtrls[i].tex = context()[_mtrls[i].pTextureFilename];
 #endif
 					}
 				}
@@ -137,10 +138,10 @@ namespace gctp { namespace scene {
 #ifdef UNICODE
 						WCStr fname = effect->pEffectFilename;
 						context().load(fname.c_str());
-						Handle<graphic::Brush> brush = graphic::db()[fname.c_str()];
+						Handle<graphic::Brush> brush = context()[fname.c_str()];
 #else
 						context().load(effect->pEffectFilename);
-						Handle<graphic::Brush> brush = graphic::db()[effect->pEffectFilename];
+						Handle<graphic::Brush> brush = context()[effect->pEffectFilename];
 #endif
 						if(brush) {
 							model.setBrush(brush);
@@ -403,7 +404,6 @@ namespace gctp { namespace scene {
 		/** XFileの読みこみ
 		 */
 		HRslt loadX(
-			const _TCHAR *filename, /**< ファイル名 */
 			GraphFile &self, /**< 対象のXfileオブジェクト*/
 			XFileReadingWork &work,
 			const XData &cur, /**< カレントの位置を示すXDataオブジェクト */
@@ -481,7 +481,7 @@ namespace gctp { namespace scene {
 					}
 				}
 				
-				for(uint i = 0; i < cur.size(); i++) loadX(filename, self, work, cur[i], body, cnode);
+				for(uint i = 0; i < cur.size(); i++) loadX(self, work, cur[i], body, cnode);
 				//PRNN("TID_D3DRMFrame end");
 			}
 			else {
@@ -556,7 +556,7 @@ namespace gctp { namespace scene {
 	 *
 	 * @return エラー値
 	 */
-	bool GraphFile::setUpFromX(const _TCHAR *fn/**< ファイル名 */)
+	bool GraphFile::setUpFromX(const _TCHAR *fn)
 	{
 		HRslt hr;
 		XFileReader file;
@@ -576,7 +576,7 @@ namespace gctp { namespace scene {
 			hr = file.open(fn);
 		}
 		if(hr) {
-			PRN("Begin read Xfile : "<<fn<<endl);
+			PRNN(_T("Begin read Xfile : ")<<fn);
 			TURI _fn = fn;
 			XFileReadingWork work;
 			work.ticks_per_sec = 30;
@@ -584,26 +584,50 @@ namespace gctp { namespace scene {
 			::GetCurrentDirectory(MAX_PATH, cur_dir);
 			::SetCurrentDirectory(_fn.path().c_str());
 			for(uint i = 0; i < file.size(); i++) {
-				hr = loadX(fn, *this, work, file[i]);
+				hr = loadX(*this, work, file[i]);
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(fn, *this, work, file[i]);
+					hr = loadX(*this, work, file[i]);
 				}
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(fn, *this, work, file[i]);
+					hr = loadX(*this, work, file[i]);
 				}
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(fn, *this, work, file[i]);
+					hr = loadX(*this, work, file[i]);
 				}
 				if(!hr) break;
 			}
 			::SetCurrentDirectory(cur_dir);
-			PRN(_T("End read Xfile : ")<<fn<<endl);
+			PRNN(_T("End read Xfile : ")<<fn);
 			if(!hr) GCTP_TRACE(hr);
 		}
 		else PRNN("Xfile "<<fn<<" : "<<hr);
+		return hr;
+	}
+
+	/** メモリ上のXファイルからシーンファイルリソースを生成する。
+	 *
+	 * @return エラー値
+	 */
+	bool GraphFile::setUpFromX(BufferPtr buffer)
+	{
+		HRslt hr;
+		XFileReader file;
+		hr = file.open(buffer->buf(), buffer->size());
+		if(hr) {
+			PRNN(_T("Begin read Xfile"));
+			XFileReadingWork work;
+			work.ticks_per_sec = 30;
+			for(uint i = 0; i < file.size(); i++) {
+				hr = loadX(*this, work, file[i]);
+				if(!hr) break;
+			}
+			PRNN(_T("End read Xfile"));
+			if(!hr) GCTP_TRACE(hr);
+		}
+		else PRNN("Xfile error : "<<hr);
 		return hr;
 	}
 

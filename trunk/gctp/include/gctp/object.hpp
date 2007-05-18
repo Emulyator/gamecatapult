@@ -13,6 +13,7 @@
  */
 #include <gctp/typeinfo.hpp>
 #include <gctp/def.hpp>
+#include <gctp/mutex.hpp>
 #include <memory>
 
 namespace gctp {
@@ -105,9 +106,31 @@ namespace gctp {
 	class Object {
 	public:
 		/// 参照カウンタの値
-		uint count() const { return refcount_; }
+		uint count() const { AutoLock al(mutex_); return refcount_; }
 		/// 共有されていないか？(trueなら参照カウンタが１)
-		bool unique() const { return (refcount_==1)? true : false; }
+		bool unique() const { AutoLock al(mutex_); return (refcount_==1)? true : false; }
+
+		/** 非同期処理への対応をon/off
+		 *
+		 * 通常オフ。
+		 *
+		 * これがオンだと、そのオブジェクトは参照カウンタの上下、Stubの参照カウンタの上下
+		 * の際に排他制御をするようになり、マルチスレッドの状況下でも安全にPointer/Handleを
+		 * 運用できるようになる。
+		 *
+		 * 複数のスレッドから参照される期間が過ぎたのなら、効率のためにも再びオフにするとよい。
+		 *
+		 * またObject派生オブジェクトをコピーした場合、同期処理属性も引き継がれる。\n
+		 * synchronizeを呼び出したことが無いオブジェクトでもコピー元で呼び出されていた場合
+		 * Mutexオブジェクトが製作される点に注意。
+		 *
+		 * @param yes 排他制御を行うか？
+		 * @return 以前の設定値
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/12/03 14:49:11
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		void synchronize(bool yes);
 
 		/** Pointer確保を抑止
 		 *
@@ -175,17 +198,20 @@ namespace gctp {
 # endif
 	protected:
 		/// デフォルトコンストラクタ
-		Object() : refcount_(0), stub_(0), deleter_(0)
+		Object() : refcount_(0), stub_(0), deleter_(0), mutex_(0)
 # ifdef GCTP_USE_DYNAMIC_PROPERTY
 			, dynamic_property_(0)
 # endif
 		{}
 		/// Objectの各メンバはインスタンス毎に独立なのでコピーさせない
-		Object(const Object &) : refcount_(0), stub_(0), deleter_(0)
+		Object(const Object &src) : refcount_(0), stub_(0), deleter_(0), mutex_(0)
 # ifdef GCTP_USE_DYNAMIC_PROPERTY
 			, dynamic_property_(0)
 # endif
-		{}
+		{
+			// ただし同期処理属性だけは引き継ぐ
+			if(src.mutex_) synchronize(true);
+		}
 		virtual ~Object();
 
 		/** 標準のメモリ確保関数
@@ -209,10 +235,19 @@ namespace gctp {
 	private:
 		friend class Ptr;
 		friend class Hndl;
+		friend class detail::Stub;
 		friend class AbstractDeleter;
 		mutable uint refcount_;
 		mutable detail::Stub *stub_;
 		AbstractDeleter *deleter_;
+		class AutoLock {
+		public:
+			AutoLock(Mutex *mutex) : mutex_(mutex) { if(mutex_) mutex_->lock(); }
+			~AutoLock() { if(mutex_) mutex_->unlock(); }
+		private:
+			Mutex *mutex_;
+		};
+		mutable Mutex *mutex_;
 # ifdef GCTP_USE_DYNAMIC_PROPERTY
 		class DynamicPropertyMap *dynamic_property_;
 # endif

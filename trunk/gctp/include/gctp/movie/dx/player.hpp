@@ -1,0 +1,60 @@
+#ifndef _GCTP_MOVIE_DX_PLAYER_HPP_
+#define _GCTP_MOVIE_DX_PLAYER_HPP_
+/** @file
+ * GameCatapult DirectShowクラスヘッダファイル
+ *
+ * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+ * @date 2004/01/25 19:35:25
+ * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+ */
+#include <gctp/def.hpp>
+#include <gctp/hrslt.hpp>
+#include <gctp/pointer.hpp>
+
+namespace gctp { namespace graphic {
+	class Texture;
+}}
+
+namespace gctp { namespace movie { namespace dx {
+
+	TYPEDEF_DXCOMPTR(IGraphBuilder);
+	TYPEDEF_DXCOMPTR(IMediaControl);
+	TYPEDEF_DXCOMPTR(IMediaPosition);
+	TYPEDEF_DXCOMPTR(IMediaEventEx);
+	TYPEDEF_DXCOMPTR(IBaseFilter);
+
+	/** DirectShowラッパークラス
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/19 19:29:37
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class Player : public Object {
+	public:
+		~Player();
+
+		HRslt openForTexture(const _TCHAR *name, bool audio_on = true);
+		HRslt open(HWND hwnd, const _TCHAR *name, bool audio_on = true);
+
+		bool isPlaying();
+		HRslt play(bool loop);
+		HRslt stop();
+
+		HRslt checkStatus();
+
+		Handle<graphic::Texture> getTexture();
+
+		int width();
+		int height();
+
+	private:
+		IGraphBuilderPtr graph_builder_;
+		IMediaControlPtr media_control_;
+		IMediaPositionPtr media_position_;
+		IMediaEventExPtr media_event_;
+		IBaseFilterPtr renderer_;
+	};
+
+}}} // namespace gctp
+
+#endif //_GCTP_MOVIE_DX_PLAYER_HPP_

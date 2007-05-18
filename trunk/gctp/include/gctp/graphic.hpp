@@ -239,6 +239,7 @@ namespace gctp { namespace graphic {
 
 		/** リソースデータベース
 		 *
+		 * いつかなくす
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/01/28 15:20:16
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -247,6 +248,7 @@ namespace gctp { namespace graphic {
 
 		/** リソースデータベース
 		 *
+		 * いつかなくす
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/01/28 15:20:16
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -460,22 +462,12 @@ namespace gctp { namespace graphic {
 //		return device().popState();
 //	}
 
-	/** リソースデータベース
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/28 15:20:16
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	inline DB &db()
-	{
-		return device().db();
-	}
-
 	/** データベースに登録しつつ製作
 	 *
 	 * すでにデータベースにあるならそれを返し、そうで無かったら新規製作しＤＢに登録する、という
 	 * 操作のテンプレート
 	 *
+	 * いつかなくす
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/07/16 14:03:54
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -483,50 +475,23 @@ namespace gctp { namespace graphic {
 	template<class _T>
 	Pointer<_T> createOnDB(const _TCHAR *name)
 	{
-		Handle<_T> h = device().db()[name];
-		if(h) return h.get();
-		else {
-			Pointer<_T> ret = new _T;
-			if(ret) {
-				if(ret->setUp(name)) {
-					PRNN(_T("リソース")<<name<<_T("を制作"));
-					h = ret;
-					device().db().insert(name, h);
-					return ret;
+		if(name) {
+			Handle<_T> h = device().db()[name];
+			if(h) return h.get();
+			else {
+				Pointer<_T> ret = new _T;
+				if(ret) {
+					if(ret->setUp(name)) {
+						PRNN(_T("リソース'")<<name<<_T("'を製作"));
+						h = ret;
+						device().db().insert(name, h);
+						return ret;
+					}
 				}
+				PRNN(_T("リソース'")<<name<<_T("'の制作に失敗"));
 			}
-			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
 		}
-		return 0;
-	}
-
-	/** データベースに登録しつつ製作
-	 *
-	 * すでにデータベースにあるならそれを返し、そうで無かったら新規製作しＤＢに登録する、という
-	 * 操作のテンプレート
-	 *
-	 * DB登録名とsetUpに渡す文字列を別々に指定できる
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/16 14:03:54
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	template<class _T>
-	Pointer<_T> createOnDB(const _TCHAR *name, const _TCHAR *setup)
-	{
-		Handle<_T> h = device().db()[name];
-		if(h) return h.lock();
-		else {
-			Pointer<_T> ret = new _T;
-			if(ret) {
-				if(ret->setUp(setup)) {
-					PRNN(_T("リソース")<<name<<_T("を制作"));
-					h = ret;
-					device().db().insert(name, h);
-					return ret;
-				}
-			}
-			PRNN(_T("リソース")<<name<<_T("の制作に失敗"));
-		}
+		else PRNN(_T("リソースの製作に失敗。名前を指定してください"));
 		return 0;
 	}
 	/*@}*/
@@ -642,29 +607,6 @@ namespace gctp { namespace graphic {
 	 */
 	void setSwapMode(bool copy);
 	/* @} */
-
-	/** グラフィックリソース用汎用リアライザテンプレート
-	 *
-	 * グラフィックリソースＤＢに登録するのであれば、const char *nameを受け取るsetUpメンバ関数を
-	 * 用意して、Extention txt_realizer("txt", graphic::Realizer<Text>()); としてやればよい
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/26 0:20:36
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	template<class _T>
-	class Realizer {
-	public:
-		Ptr operator()(const char *name) {
-			Handle<_T> h = db()[name];
-			if(h) return Ptr();
-			Pointer<_T> ret = Object::create(typeid(_T));
-			if(ret && ret->setUp(name)) {
-				db().insert(Hndl(ret.get()), name);
-			}
-			return ret;
-		}
-	};
 
 }} // namespace gctp
 

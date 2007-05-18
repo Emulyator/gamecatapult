@@ -53,6 +53,7 @@ namespace gctp {
 		}
 		_Self& read(void* __s, std::streamsize __n) {
 			_M_gcount = rdbuf()->sgetn(reinterpret_cast<char *>(__s), __n);
+			if(__n > 0 && _M_gcount == 0) setstate(std::ios_base::eofbit);
 			return *this;
 		}
 		std::streamsize gcount() const { return _M_gcount; }
@@ -89,11 +90,11 @@ namespace gctp {
 		_Self& operator>>(float &__x)	{ return read(&__x, sizeof(__x)); }
 		_Self& operator>>(double &__x)	{ return read(&__x, sizeof(__x)); }
 		_Self& operator>>(std::string &s) {
-			s = ""; for(char c = getchar(); good() && c != '\0'; c = getchar()) s += c;
+			s = ""; for(char c = getchar(); good() && !eof() && c != '\0'; c = getchar()) s += c;
 			return *this;
 		}
 		_Self& operator>>(std::wstring &s) {
-			s = L""; for(wchar_t c = getwchar(); good() && c != L'\0'; c = getwchar()) s += c;
+			s = L""; for(wchar_t c = getwchar(); good() && !eof() && c != L'\0' && c != traits_type::eof(); c = getwchar()) s += c;
 			return *this;
 		}
 		# ifndef _STLP_NO_LONG_DOUBLE

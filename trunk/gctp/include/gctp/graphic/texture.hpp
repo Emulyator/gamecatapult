@@ -24,11 +24,19 @@ namespace gctp { namespace graphic {
 			operator bool() { return buf ? true : false; }
 		};
 
+		enum Type {
+			NONE, // ñ¢èâä˙âªÇÇ†ÇÁÇÌÇ∑ÅBsetUpÇ…éwíËÇµÇƒÇÕÇ¢ÇØÇ»Ç¢
+			NORMAL,
+			WORK,
+			RENDERTARGET,
+			OFFSCREEN,
+		};
+
 		Texture();
 
 		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(const void *memory, std::size_t size);
-		HRslt setUp(int width, int height, int format, int miplevel = 1, bool dynamic = false);
+		HRslt setUp(Type type, int width, int height, int format, int miplevel = 1);
 
 		HRslt restore();
 		void cleanUp();
@@ -46,7 +54,7 @@ namespace gctp { namespace graphic {
 
 		Point2 size() const;
 		Point2 originalSize() const { return Point2C(org_width_, org_height_); }
-		bool isDynamic() { return dynamic_; }
+		bool isDynamic() { return type_ == WORK; }
 		
 		enum LockFlag {
 			DISCARD = D3DLOCK_DISCARD,
@@ -83,7 +91,8 @@ namespace gctp { namespace graphic {
 		int org_width_;
 		int org_height_;
 		int org_format_;
-		bool dynamic_;
+		int org_miplevel_;
+		Type type_;
 		dx::IDirect3DTexturePtr ptr_;
 	};
 

@@ -10,13 +10,9 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 #include <gctp/def.hpp>
-#include <boost/shared_ptr.hpp>
+#include <gctp/audio/clip.hpp>
 
 namespace gctp { namespace audio {
-	namespace dx{
-		class Buffer;
-		class WavFile;
-	}
 
 	/** 再生ハンドルクラス
 	 *
@@ -27,7 +23,7 @@ namespace gctp { namespace audio {
 	class Player {
 	public:
 		Player() {}
-		Player(boost::shared_ptr<dx::Buffer> ptr);
+		Player(ClipPtr clip);
 
 		bool play(bool loop = false);
 		bool isPlaying();
@@ -35,7 +31,7 @@ namespace gctp { namespace audio {
 		void release();
 		void reset();
 	private:
-		boost::shared_ptr<dx::Buffer> ptr_;
+		ClipPtr clip_;
 	};
 
 }} // namespace gctp

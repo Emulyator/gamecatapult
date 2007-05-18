@@ -17,10 +17,9 @@
 #include <boost/scoped_ptr.hpp>
 
 namespace gctp { namespace audio {
-	namespace dx{
+
+	namespace dx {
 		class Device;
-		class Buffer;
-		class WavFile;
 	}
 
 	/** オーディオデバイスクラス
@@ -110,13 +109,13 @@ namespace gctp { namespace audio {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(name)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース'")<<name<<_T("'を製作"));
 					h = ret;
 					device().insert(h, name);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース'")<<name<<_T("'の製作に失敗"));
 		}
 		return Pointer<_T>();
 	}
@@ -139,13 +138,13 @@ namespace gctp { namespace audio {
 			Pointer<_T> ret = new _T;
 			if(ret) {
 				if(ret->setUp(setup)) {
-					PRNN("リソース"<<name<<"を制作");
+					PRNN(_T("リソース'")<<name_T(<<"'を製作"));
 					h = ret;
 					device().insert(h, name);
 					return ret;
 				}
 			}
-			PRNN("リソース"<<name<<"の制作に失敗");
+			PRNN(_T("リソース'")<<name<<_T("'の製作に失敗"));
 		}
 		return Pointer<_T>();
 	}

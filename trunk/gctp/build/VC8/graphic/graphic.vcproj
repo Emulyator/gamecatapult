@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="graphic"
 	ProjectGUID="{9D0A430D-BC72-4803-9DC8-00A62689F5BB}"
+	RootNamespace="graphic"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -16,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="..\..\..\lib\vc8"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
@@ -64,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_graphic_d.lib"
+				OutputFile="$(OutDir)\gctp_$(ProjectName)_d.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -84,8 +85,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="..\..\..\lib\vc8"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
@@ -130,7 +131,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_graphic.lib"
+				OutputFile="$(OutDir)\gctp_$(ProjectName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -187,6 +188,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\graphic\particlebuffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\graphic\rendertarget.cpp"
 				>
 			</File>
 			<File
@@ -339,6 +344,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\graphic\particlebuffer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\graphic\rendertarget.hpp"
 				>
 			</File>
 			<File

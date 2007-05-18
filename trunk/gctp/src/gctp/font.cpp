@@ -44,7 +44,7 @@ namespace gctp {
 			, (style & UNDERLINE) ? true : false
 			, (style & STRIKEOUT) ? true : false
 			, 0, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS
-			, ANTIALIASED_QUALITY, VARIABLE_PITCH/*FF_DONTCARE Ç«Ç¡ÇøÇ™Ç¢Ç¢ÇÒÇæÅH*/));
+			, ANTIALIASED_QUALITY, (style & FIXEDPITCH) ? FIXED_PITCH : VARIABLE_PITCH));
 		return font_ ? S_OK : E_FAIL;
 	}
 
@@ -77,7 +77,7 @@ namespace gctp {
 	{
 		HDC hdc = ::CreateCompatibleDC(0);
 		::SetMapMode(hdc, MM_TEXT);
-		uint ret = ::MulDiv(height, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		uint ret = ::MulDiv(height, ::GetDeviceCaps(hdc, LOGPIXELSY), 72);
 		::DeleteDC(hdc);
 		return ret;
 	}
@@ -134,6 +134,9 @@ namespace gctp {
 		style = 0;
 		if(string::npos!=csv[2].find(_T("BOLD"))) style |= BOLD;
 		if(string::npos!=csv[2].find(_T("ITALIC"))) style |= ITALIC;
+		if(string::npos!=csv[2].find(_T("UNDERLINE"))) style |= UNDERLINE;
+		if(string::npos!=csv[2].find(_T("STRIKEOUT"))) style |= STRIKEOUT;
+		if(string::npos!=csv[2].find(_T("FIXEDPITCH"))) style |= FIXEDPITCH;
 		return true;
 	}
 

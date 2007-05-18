@@ -11,7 +11,7 @@
  * @date 2004/01/29 18:28:35
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <gctp/pointer.hpp>
+#include <gctp/buffwd.hpp>
 #include <gctp/obstream.hpp>
 #include <gctp/class.hpp>
 #include <string>

@@ -21,7 +21,7 @@ namespace gctp {
 		class FontTexture;
 		class FontTextureSet;
 		namespace detail {
-			class TextDetail;
+			class TextImpl;
 		}
 	}
 }
@@ -40,12 +40,10 @@ namespace gctp { namespace graphic {
 		Text();
 		~Text();
 
-		/// スプライトバッファとフォントテクスチャを自動で取得
-		HRslt draw() const;
 		/// 使用するスプライトバッファとフォントテクスチャを指定して描画
-		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTexture &font) const;
-
-		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTextureSet &font) const;
+		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTexture &fonttex) const;
+		/// 使用するスプライトバッファとフォントテクスチャセットを指定して描画
+		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTextureSet &fonttex) const;
 
 		Text &setPos(float x, float y, int ofs = 0);
 		Text &setClumpPos(float x, float y, int ofs = 0);
@@ -53,10 +51,10 @@ namespace gctp { namespace graphic {
 		Text &setColor(Color32 color, int ofs = 0);
 		Text &setBackColor(Color32 color, int ofs = 0);
 		Text &setFont(const Handle<Font> &font, int ofs = 0);
-		Text &setFixedPitch(bool yes, int pitch = 0, int ofs = 0);
 
-		Point2f getPos(graphic::FontTexture &font, int ofs = 0);
-		Point2f getPos(int ofs = 0);
+		Point2f getPos(graphic::FontTexture &fonttex, int ofs = 0);
+		Point2f getPos(graphic::FontTextureSet &fonttex, int ofs = 0);
+		void reset();
 
 		std::basic_ostream<_TCHAR> &out();
 
@@ -64,7 +62,8 @@ namespace gctp { namespace graphic {
 
 	private:
 		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &font, Point2f *lastpos, int ofs) const;
-		boost::scoped_ptr<detail::TextDetail> detail_;
+		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTextureSet &font, Point2f *lastpos, int ofs) const;
+		boost::scoped_ptr<detail::TextImpl> impl_;
 	};
 
 }} //namespace gctp::graphic

@@ -383,12 +383,6 @@ int main (int argc, char **argv) {
     return EXIT_FAILURE;
   }
   setlocale(LC_CTYPE, "");
-  {
-    char path[MAX_PATH];
-    GetCurrentDirectoryA(MAX_PATH, path);
-	printf(path);
-	printf("\n");
-  }
   s.argc = argc;
   s.argv = argv;
   status = lua_cpcall(L, &pmain, &s);
@@ -396,4 +390,3 @@ int main (int argc, char **argv) {
   lua_close(L);
   return (status || s.status) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-

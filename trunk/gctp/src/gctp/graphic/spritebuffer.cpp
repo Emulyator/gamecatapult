@@ -283,6 +283,7 @@ namespace gctp { namespace graphic {
 	SpriteBuffer &SpriteBuffer::end()
 	{
 		draw();
+		rewind();
 		// Restore the modified renderstates
 		sb_->unSet();
 		return *this;

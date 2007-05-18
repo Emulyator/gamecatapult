@@ -16,6 +16,7 @@
  */
 #include <map>
 #include <gctp/cstr.hpp>
+#include <boost/static_assert.hpp>
 
 namespace gctp {
 
@@ -38,6 +39,7 @@ namespace gctp {
 	 */
 	template<class _T>
 	class StaticStringMap : public StaticStringMapBase {
+		BOOST_STATIC_ASSERT(sizeof(_T) <= sizeof(void *));
 	public:
 		void put(const char *key, _T val)
 		{
@@ -72,6 +74,7 @@ namespace gctp {
 	 */
 	template<class _T>
 	class StringMap : public StringMapBase {
+		BOOST_STATIC_ASSERT(sizeof(_T) <= sizeof(void *));
 	public:
 		void put(const char *key, _T val)
 		{

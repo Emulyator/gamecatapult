@@ -8,29 +8,17 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/def.hpp>
-#include <gctp/hrslt.hpp>
-#include <gctp/class.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <gctp/pointer.hpp>
 
 namespace gctp { namespace audio {
-	namespace dx{
-		class WavFile;
+
+	namespace dx {
+		class Buffer;
 	}
 
-	/** オーディオクリップクラス
-	 *
-	 * ウェーブファイルと楽曲情報(ループポイントや自然に切り替え可能なポイント、BPM)
-	 */
-	class Clip : public Object {
-	public:
-		Clip();
-		~Clip();
-		HRslt setUp(const char *name);
-		void tearDown();
-		GCTP_DECLARE_FACTORY;
-	private:
-		boost::scoped_ptr<dx::WavFile> wav_;
-	};
+	typedef dx::Buffer Clip;
+	typedef Pointer<dx::Buffer> ClipPtr;
+	typedef Handle<dx::Buffer> ClipHndl;
 
 }} // namespace gctp
 
