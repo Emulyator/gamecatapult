@@ -2,9 +2,11 @@
 #include <gctp/dbgout.hpp>
 #include <gctp/app.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/fileserver.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/audio.hpp>
 #include <gctp/context.hpp>
+#include <gctp/font.hpp>
 #include <gctp/input.hpp>
 #include <gctp/color.hpp>
 #include <gctp/skeleton.hpp>
@@ -26,7 +28,7 @@
 #include <gctp/scene/graphfile.hpp>
 //#include <ode/ode.h>
 
-#define MOVIETEST
+//#define MOVIETEST
 
 #ifdef MOVIETEST
 # include <gctp/movie/player.hpp>
@@ -283,6 +285,8 @@ extern "C" int main(int argc, char *argv[])
 	HRslt hr;
 
 	CoInitialize(0);
+	fileserver().mount(_T("../../../media"));
+	Context context;
 
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
@@ -297,15 +301,22 @@ extern "C" int main(int argc, char *argv[])
 	hr = movie.play();
 	if(!hr) GCTP_TRACE(hr);
 #endif
+	// ルートスクリプト実行
 	graphic::Text text;
 
+	graphic::SpriteBuffer spr;
+	spr.setUp();
+	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // どうすっかな。。。
+	fonttex->setUp();
+	Pointer<Font> font = new gctp::Font;
+	font->setUp(_T(",10,BOLD|FIXEDPITCH"));
+	Pointer<Font> font2 = new gctp::Font;
+	font2->setUp(_T(",12,NORMAL"));
 	graphic::ParticleBuffer pbuf;
 	pbuf.setUp();
-	Pointer<graphic::Texture> ptex = createOnDB<graphic::Texture>(_T("../../../media/BitmapSet4.bmp")/*_T("particle.bmp")*/);
-
-	// ルートスクリプト実行
-	Context context;
-	context.load(_T("../../../media/Reflect.tga"));
+	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
+	context.load(_T("Reflect.tga"));
+	Pointer<graphic::Texture> ptex = context[_T("BitmapSet4.bmp")].lock();
 	Pointer<scene::Stage> stage = context.create("gctp.Stage").lock();
 	if(stage) {
 		Pointer<scene::Camera> camera = stage->newNode(context, "gctp.Camera", _T("camera")).lock();
@@ -319,7 +330,7 @@ extern "C" int main(int argc, char *argv[])
 			camera->node()->val.getLCM().position() = VectorC(0.0f, 0.5f, -2.0f);
 		}
 		Pointer<scene::Entity> entity;
-		entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("../../../media/gradriel.x")).lock();
+		entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
 		if(entity) {
 			//entity->skeleton().setPosType(MotionChannel::LINEAR);
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
@@ -333,10 +344,10 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/wire_test.x")).lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("wire_test.x")).lock();
 
 		for(int i = 0; i < 20; i++) {
-			entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gradriel.x")).lock();
+			entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gradriel.x")).lock();
 			if(entity) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
 				entity->mixer().tracks()[0].setLoop(true);
@@ -345,7 +356,7 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gctp_gun.x")).lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
 		if(entity) {
 			if(entity->mixer().isExist(0)) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
@@ -357,7 +368,7 @@ extern "C" int main(int argc, char *argv[])
 			//entity->do_loop_ = true;
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/gctp_base.x")).lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
 		if(entity) {
 			if(entity->mixer().isExist(0)) {
 				entity->mixer().tracks()[0].setWeight(1.0f);
@@ -368,8 +379,8 @@ extern "C" int main(int argc, char *argv[])
 			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 		}
 
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/cell.x")).lock();
-		//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("../../../media/room1.x")).lock();
+		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("cell.x")).lock();
+		//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("room1.x")).lock();
 
 		{
 			graphic::setAmbient(Color(0.5f,0.5f,0.5f));
@@ -487,15 +498,18 @@ extern "C" int main(int argc, char *argv[])
 			pbuf.draw(pdesc);
 			pbuf.end();
 #endif
-			text.setPos(10, 10).setColor(Color32(200, 200, 127)).setFixedPitch(true, 14).out()
+			text.reset();
+			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
 				<< "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl
-				<< "FPS:" << app().fps.latestave << endl << endl
+				<< "FPS:" << app().fps.latestave << endl << endl;
+			if(chr) text.out()
 				<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
 				<< "	" << chr->mixer().tracks()[0].keytime() << endl
 				<< "track 1 " << chr->mixer().tracks()[1].weight() << endl
 				<< "	" << chr->mixer().tracks()[1].keytime() << endl
 				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
-				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl
+				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
+			text.out()
 				<< _T("ヨー  :") << qcam->yaw_ << endl
 				<< _T("ピッチ:") << qcam->pitch_ << endl
 				<< _T("速度  :") << qcam->speed_ << endl
@@ -504,12 +518,12 @@ extern "C" int main(int argc, char *argv[])
 				<< _T("モード: ") << mesh_mode << endl << endl
 				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
 
-			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).setFixedPitch(true).out() << app().profile();
+			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
 
-			if(qcam->enable()) text.setFixedPitch(false).setClumpPos(10, -20).setColor(Color32(200, 127, 200)).out()
+			if(qcam->enable()) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setClumpPos(10, -20).setColor(Color32(200, 127, 200)).out()
 				<< _T("ウォークスルー中");
 
-			text.draw();
+			text.draw(spr, *fonttex);
 
 			graphic::end();
 			app().present();
@@ -521,10 +535,12 @@ extern "C" int main(int argc, char *argv[])
 #endif
 
 #ifdef _DEBUG
+# pragma comment(lib, "zlibd.lib")
 # ifdef MOVIETEST
 #  pragma comment(lib, "strmbasd.lib")
 # endif
 #else
+# pragma comment(lib, "zlib.lib")
 # ifdef MOVIETEST
 #  pragma comment(lib, "strmbase.lib")
 # endif

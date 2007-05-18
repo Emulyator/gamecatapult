@@ -14,6 +14,7 @@
 #include <gctp/object.hpp>
 #include <gctp/matrix.hpp>
 #include <gctp/color.hpp>
+#include <gctp/handlelist.hpp>
 #include <gctp/graphic/dx/stateblock.hpp>
 #include <gctp/graphic/dx/view.hpp>
 #include <iosfwd>
@@ -233,6 +234,9 @@ namespace gctp { namespace graphic { namespace dx {
 
 		IDirect3DDevicePtr ptr() const { return ptr_; }
 
+		/// カラーフォーマット検証
+		HRslt checkFormat(DWORD usage, D3DRESOURCETYPE rtype, D3DFORMAT format);
+
 	private:
 		IDirect3DDevicePtr ptr_;				///< デバイスのハンドル
 
@@ -385,7 +389,7 @@ namespace gctp { namespace graphic { namespace dx {
 		HCURSOR cursor_backup_; // マウスカーソルのバックアップ
 		Color ambient_light_;
 		uint light_num_;
-		typedef std::vector< Handle<Rsrc> > RsrcList;
+		typedef HandleList<Rsrc> RsrcList;
 		RsrcList rsrcs_;
 #if 0
 		// これ、役に立たねえ
@@ -478,6 +482,7 @@ namespace gctp { namespace graphic { namespace dx {
 		case_n_PRINT_FORMAT(D3DFMT_A32B32G32R32F        );
 		case_n_PRINT_FORMAT(D3DFMT_CxV8U8               );
 #undef case_n_PRINT_FORMAT
+		default: os << "D3DFMT?:" << (int)fmt;
 		}
 		return os;
 	}

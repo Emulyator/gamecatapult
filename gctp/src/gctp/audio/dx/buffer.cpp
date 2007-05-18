@@ -188,7 +188,6 @@ namespace gctp { namespace audio { namespace dx {
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
 		class StreamingBuffer : public StaticBuffer {
-			typedef boost::mutex::scoped_lock Lock;
 			enum {
 #ifdef GCTP_AUDIO_USE_TIMER
 				NOTIFY_PERSEC = Device::NOTIFY_PERSEC,
@@ -272,7 +271,7 @@ namespace gctp { namespace audio { namespace dx {
 
 			/// Notificationに対する処理
 			HRslt onNotified() {
-				Lock al(monitor_);
+				ScopedLock al(monitor_);
 				if( !ptr_ || !wav_.isOpen() ) return CO_E_NOTINITIALIZED;
 				HRslt hr;
 				if( !( hr = restore() ) ) return DXTRACE_ERR( TEXT("restore"), hr.i );
@@ -339,7 +338,7 @@ namespace gctp { namespace audio { namespace dx {
 				if(!ptr_ || !wav_.isOpen() ) return CO_E_NOTINITIALIZED;
 
 				HRslt hr;
-				Lock al(monitor_);
+				ScopedLock al(monitor_);
 				glast_ = llast_ = 0; in_coda_ = false;
 				wav_.rewind();
 				if( !( hr = load(wav_) ) ) return DXTRACE_ERR( TEXT("load"), hr.i );
@@ -402,7 +401,7 @@ namespace gctp { namespace audio { namespace dx {
 #endif
 			bool in_coda_;			///< ウェーブの最後に達したか？
 			bool do_loop_;			///< ループ再生するか？
-			boost::mutex monitor_;
+			Mutex monitor_;
 		};
 	}
 
@@ -412,11 +411,11 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:43:00
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	BufferPtr newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus)
+	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus)
 	{
-		StaticBuffer *buffer = new StaticBuffer;
+		Pointer<StaticBuffer> buffer = new StaticBuffer;
 		buffer->setUp(device, wav, global_focus);
-		return BufferPtr(buffer);
+		return buffer;
 	}
 
 	/** ストリーミングバッファを製作して返す
@@ -425,11 +424,11 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:43:00
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus)
+	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus)
 	{
-		StreamingBuffer *buffer = new StreamingBuffer;
+		Pointer<StreamingBuffer> buffer = new StreamingBuffer;
 		buffer->setUp(device, fname, global_focus);
-		return BufferPtr(buffer);
+		return buffer;
 	}
 
 }}} // namespace gctp

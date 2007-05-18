@@ -19,7 +19,7 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/19 19:29:37
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Buffer {
+	class Buffer : public Object {
 	public:
 		virtual ~Buffer();
 
@@ -36,8 +36,8 @@ namespace gctp { namespace audio { namespace dx {
 		virtual void cleanUp() = 0;
 	};
 
-	BufferPtr newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus);
-	BufferPtr newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus);
+	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus);
+	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus);
 
 }}} // namespace gctp
 

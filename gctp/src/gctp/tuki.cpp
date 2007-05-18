@@ -8,6 +8,7 @@
 #include "common.h"
 #include <gctp/tuki.hpp>
 #include <gctp/stringmap.hpp>
+#include <gctp/typemap.hpp>
 #include <gctp/dbgout.hpp>
 #include <gctp/serializer.hpp>
 #include <gctp/bfstream.hpp>
@@ -21,10 +22,16 @@ namespace gctp {
 
 		typedef void (*RegisterFunc)(lua_State *);
 		typedef StaticStringMap<RegisterFunc> TukiMap;
+		typedef TypeMap<const char *> TukiTypeMap;
 		
 		static TukiMap &registry()
 		{
 			static TukiMap registry;
+			return registry;
+		}
+		static TukiTypeMap &typeRegistry()
+		{
+			static TukiTypeMap registry;
 			return registry;
 		}
 
@@ -141,9 +148,10 @@ namespace gctp {
 		return lhs;
 	}
 
-	TukiRegister::TukiRegister(const char *luaname, void (*register_func)(lua_State *L))
+	TukiRegister::TukiRegister(const char *luaname, const GCTP_TYPEINFO &type, void (*register_func)(lua_State *L))
 	{
 		registry().put(luaname, register_func);
+		typeRegistry().put(type, luaname);
 	}
 
 	void TukiRegister::useTuki()
@@ -167,10 +175,46 @@ namespace gctp {
 		}
 	}
 
+	void TukiRegister::registerIt(lua_State *l, const GCTP_TYPEINFO &type)
+	{
+		const char *luaname = typeRegistry().get(type);
+		if(luaname) {
+			RegisterFunc f = registry().get(luaname);
+			if(f) f(l);
+		}
+	}
+
+	/// 型不明の状態から、Luaにさらす
+	int TukiRegister::newUserData(lua_State *l, Ptr pobj)
+	{
+		if(pobj) {
+			const char *luaname = typeRegistry().get(GCTP_TYPEID(*pobj));
+			if(luaname) {
+				struct UserdataType { Ptr pT; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
+				if(ud) {
+					ud->pT = pobj;  // store pointer to object in userdata
+					luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
+					lua_setmetatable(l, -2);
+					return 1;  // userdata containing pointer to T object
+				}
+			}
+		}
+		return 0;
+	}
+
 	int TukiRegister::luaRegister(lua_State *l)
 	{
 		luapp::Stack L(l);
-		registerIt(l, L[1].toCStr());
+		const char *name = L[1].toCStr();
+		/*if(LStr("coroutine") == name) luaopen_base(l); // 現在分かれて無いので。将来的には分かれるんじゃないかな
+		else*/ if(LStr("table") == name) luaopen_table(l);
+		else if(LStr("string") == name) luaopen_string(l);
+		else if(LStr("math") == name) luaopen_math(l);
+		else if(LStr("debug") == name) luaopen_debug(l);
+		else if(LStr("io") == name) luaopen_io(l);
+		else if(LStr("os") == name) luaopen_os(l);
+		else if(LStr("package") == name) luaopen_package(l);
+		else registerIt(l, name);
 		return 0;
 	}
 

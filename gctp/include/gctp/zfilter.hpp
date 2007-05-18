@@ -7,138 +7,159 @@
 /** @file
  * zlibファイルバッファ・ストリームフィルタークラスヘッダファイル
  *
- * 平山直行氏によるVAFX内の、zlibファイルバッファクラスが元になっています。\n
- * http://www.jah.ne.jp/~naoyuki/Writings/ExtIos.html
- *
  * ランダムアクセスには対応していないので、seekしてはいけない。
  * 
- * i/ostreamから構成するインターフェースも残すが、やっぱzstreambufはstreambufを内部でポイントし、
- * ストリームバッファへのフィルタにすべきだなぁ。
  @code
 	// 圧縮
     {
         std::ifstream ifs("test.txt",std::ios::binary);
 
-        std::ofstream ofs("test.out",std::ios::binary|std::ios::trunc);
-        gctp::ozfilter ozf(ofs);
+        std::filebuf ofs;
+		ofs.open("test.out",std::ios::out|std::ios::binary|std::ios::trunc);
+        gctp::zfilter ozf(ofs,std::ios::out);
+        std::ostream ofs(ozf);
 
         int c;
         while((c=ifs.get())!=EOF){
-            ozf << (char)c;
+            ofs << (char)c;
         }
     }
 
     // 伸長
     {
-        std::ifstream ifs("test.out",std::ios::binary);
-        gctp::izfilter izf(ifs);
+        std::filebuf ifs;
+		ifs.open("test.out",std::ios::in|std::ios::binary);
+        gctp::zfilter izf(ifs,std::ios::in);
+        std::ifstream ifs(izf);
 
         for(;;){
             std::vector<char> v(128);
-            izf.read(v.begin(),v.size());
-            if(izf.gcount()==0){
+            ifs.read(v.begin(),v.size());
+            if(ifs.gcount()==0){
                 break;
             }
-            std::cout << std::string(v.begin(),izf.gcount());
+            std::cout << std::string(v.begin(),ifs.gcount());
         }
     }
  @endcode
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/02/09 23:00:42
  *
- * Copyright (C) 1999 Naoyuki Hirayama. All rights reserved. 
+ * このクラスは平山直之氏の記事を参考にかかれました。\n
+ * http://www.jah.ne.jp/~naoyuki/Writings/ExtIos.html
  *
- * modified by S.A.M.\n
- * Copyright (C) 2005 SAM (T&GG, Org.). All rights reserved.
+ * C) 1999 Naoyuki Hirayama. All rights reserved.
  */
 #ifdef GCTP_USE_ZLIB
-#include "zlib.h"
 #include <ios> // for std::iostream
 #include <vector> // for in/deflate buffer
+//#include <gctp/dbgout.hpp>
 
 namespace gctp {
 
-	class ibstream;
-	class obstream;
-
-	/// zlibのエラーを投げる例外クラス
-	class zlib_exception : public std::runtime_error {
+	struct ZStreamImpl;
+	class ZStream {
 	public:
-		zlib_exception(const char* s) : std::runtime_error(s) {}
-		~zlib_exception() {}
+		enum Status {
+			STATUS_OK,
+			STATUS_END,
+		};
+		enum FlushMode {
+			FLUSHMODE_NONE,
+			FLUSHMODE_FINISH,
+		};
+		ZStream();
+		ZStream(const ZStream &); // not implement
+		~ZStream();
+		bool open(bool infrate);
+		void close();
+		Status process();
+		void setInput(unsigned char *p, unsigned int s);
+		void setOutput(unsigned char *p, unsigned int s);
+		void setFlushMode(FlushMode mode);
+		FlushMode getFlushMode();
+		unsigned int inputAvail();
+		unsigned int outputAvail();
+	private:
+		ZStreamImpl *impl_;
 	};
 
-	/// zlibフィルターのストリームバッファベースクラス
-	template< class Ch, class Tr=std::char_traits<Ch> >
-	class basic_zfilterbuf : public std::basic_streambuf<Ch,Tr> {
+	/// zlibのストリームバッファフィルタークラス
+	template< int Buf_Size, class Ch, class Tr=std::char_traits<Ch> >
+	class basic_zfilter : public std::basic_streambuf<Ch,Tr> {
 	public:
-		enum { BUFFER_SIZE = 4096 };
-		typedef std::basic_streambuf<Ch,Tr> superclass;
+		enum { BUFFER_SIZE = Buf_Size };
+		typedef std::basic_streambuf<Ch,Tr> Super;
 
 	public:
-		basic_zfilterbuf(superclass *buf, bool do_write = false) : do_write_(do_write)
+		basic_zfilter *open(Super *streambuf, std::ios::open_mode mode = std::ios::in|std::ios::out)
 		{
-			buf_= buf;
-			if(do_write_) setp(sbuffer_, sbuffer_+BUFFER_SIZE);
-			else setg(dbuffer_, dbuffer_+BUFFER_SIZE, dbuffer_+BUFFER_SIZE);
-
-			// zlib 初期化
-			zs_.zalloc	= Z_NULL;
-			zs_.zfree	= Z_NULL;
-			zs_.opaque	= Z_NULL;
-			zs.next_in	= Z_NULL;
-			zs.avail_in	= 0;
-			if(do_write_) {
-				if(deflateInit(&zs_, Z_DEFAULT_COMPRESSION) != Z_OK) {
-					throw zlib_exception(zs_.msg);
-				}
+			mode_ = mode;
+			deflated_.resize(BUFFER_SIZE);
+			if(mode_ & std::ios::in) {
+				if(!inflate_stream_.open(true)) return 0;
 			}
-			else {
-				if(inflateInit(&zs_)!=Z_OK){
-					throw zlib_exception(zs_.msg);
-				}
+			if(mode_ & std::ios::out) {
+				if(!deflate_stream_.open(false)) return 0;
 			}
-			flush_		= Z_NO_FLUSH;
-		}
-		~basic_zfilterbuf()
-		{
-			oflush = Z_FINISH;
-			iflush = Z_FINISH;
-			sync();
-
-			if(out!=NULL){
-				if(deflateEnd(&zs)!=Z_OK){
-					throw zlib_exception(zs.msg);
-				}
-			}
-			if(in!=NULL){
-				if(inflateEnd(&zs)!=Z_OK){
-					throw zlib_exception(zs.msg);
-				}
-			}
-		}
-
-		bool open(std::ios::openmode mode)
-		{
-		}
-
-	protected:
-		std::basic_streambuf<Ch,Tr>* setbuf(Ch* b,int s)
-		{
-			if(out!=NULL){
-				sbuffer.resize(0);
-				setp(b,b+s);
-			} 
-			if(in!=NULL){
-				dbuffer.resize(0);
-				setg(b,b,b+s);
-			}
-			buffer	= b;
-			size	= s;
+			
+			setbuf(0, BUFFER_SIZE);
+			streambuf_ = streambuf;
 			return this;
 		}
 
-		int_type overflow(int_type c=Tr::eof())
+		void close()
+		{
+			inflate_stream_.setFlushMode(ZStream::FLUSHMODE_FINISH);
+			deflate_stream_.setFlushMode(ZStream::FLUSHMODE_FINISH);
+			sync();
+
+			if(mode_ & std::ios::in){
+				inflate_stream_.close();
+			}
+			if(mode_ & std::ios::out){
+				deflate_stream_.close();
+			}
+			streambuf_ = 0;
+			raw_.resize(0);
+			deflated_.resize(0);
+		}
+
+		bool is_open()
+		{
+			return streambuf_ ? true : false;
+		}
+
+		basic_zfilter(Super *streambuf, std::ios::open_mode mode = std::ios::in|std::ios::out) : Super(), buffer_(0)
+		{
+			open(streambuf, mode);
+		}
+
+		~basic_zfilter()
+		{
+			close();
+		}
+
+	protected:
+		virtual std::basic_streambuf<Ch,Tr> *setbuf(Ch *b, std::streamsize s)
+		{
+			if(buffer_) sync();
+			if(b) {
+				buffer_	= b;
+				size_ = s;
+				raw_.resize(0);
+			}
+			else {
+				raw_.resize(s);
+				buffer_	= &raw_.front();
+				size_ = s;
+			}
+			if(mode_ & std::ios::in) setg(buffer_,buffer_+size_,buffer_+size_);
+			if(mode_ & std::ios::out) setp(buffer_,buffer_+size_);
+			return this;
+		}
+
+		virtual int_type overflow(int_type c=Tr::eof())
 		{
 			compress();
 			if(c!=Tr::eof()) {
@@ -150,10 +171,10 @@ namespace gctp {
 			}
 		}
 
-		int_type underflow(void)
+		virtual int_type underflow()
 		{
 			if(egptr()<=gptr()) {
-				if(iflush==Z_FINISH) {
+				if(inflate_stream_.getFlushMode()==ZStream::FLUSHMODE_FINISH) {
 					return Tr::eof();
 				}
 				decompress();
@@ -164,149 +185,104 @@ namespace gctp {
 			return Tr::to_int_type(*gptr());
 		}
 
-		int sync(void)
+		virtual int sync()
 		{
-			if(in!=NULL){
-			}
-			if(out!=NULL){
+			if(mode_ & std::ios::out){
 				compress();
+				//if(pptr() > buffer_) compress();
 			}
 			return 0;
 		}
 
-	protected:
-		void compress(void)
+		virtual pos_type seekoff(off_type type, std::ios_base::seekdir dir, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out)
 		{
-			zs.next_in	=(unsigned char*)buffer;
-			zs.avail_in	=pptr()-buffer;
-			zs.next_out	=(unsigned char*)&dbuffer.front();
-			zs.avail_out=dbuffer.size();
+			// アタッチしているストリームへの操作とみなす
+			return streambuf_->pubseekoff(type, dir, mode);
+		}
 
-			for(;;){
-				int status = deflate(&zs, oflush); 
-				if(status==Z_STREAM_END) {
+		virtual pos_type seekpos(pos_type type, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out)
+		{
+			// アタッチしているストリームへの操作とみなす
+			return streambuf_->pubseekpos(type, mode);
+		}
+
+		virtual void imbue(const std::locale &loc)
+		{
+			// アタッチしているストリームへの操作とみなす
+			streambuf_->pubimbue(loc);
+		}
+
+		void compress()
+		{
+			ZStream &zs = deflate_stream_;
+			zs.setInput((unsigned char *)buffer_, (unsigned int)((pptr()-buffer_)*sizeof(Ch)));
+			zs.setOutput((unsigned char *)&deflated_.front(), (unsigned int)(deflated_.size()*sizeof(Ch)));
+			for(;;) {
+				if(ZStream::STATUS_END == zs.process()) {
 					// 完了
-					out->write(&dbuffer.front(),dbuffer.size()-zs.avail_out);
+					streambuf_->sputn(&deflated_.front(), (std::streamsize)(deflated_.size()-zs.outputAvail()/sizeof(Ch)));
+					//PRNN(deflated_.size() << ",0 " << zs.outputAvail());
 					return;
 				}
-				if(status!=Z_OK) {
-					throw zlib_exception(zs.msg);
-				}
-				if(zs.avail_in==0) {
-					// 入力バッファが尽きた
-					out->write(&dbuffer.front(),dbuffer.size()-zs.avail_out);
-					setp(buffer,buffer+size);
-					return;
-				}
-				if(zs.avail_out==0) {
+				if(zs.outputAvail()==0) {
 					// 出力バッファが尽きた
-					out->write(&dbuffer.front(),dbuffer.size());
-					zs.next_out	=(unsigned char*)&dbuffer.front();
-					zs.avail_out=dbuffer.size();
+					streambuf_->sputn(&deflated_.front(), (std::streamsize)deflated_.size());
+					//PRNN(deflated_.size() << ",2 " << zs.outputAvail());
+					zs.setOutput((unsigned char*)&deflated_.front(), (unsigned int)(deflated_.size()*sizeof(Ch)));
+					continue;
+				}
+				if(zs.inputAvail()==0) {
+					// 入力バッファが尽きた
+					streambuf_->sputn(&deflated_.front(), (std::streamsize)(deflated_.size()-zs.outputAvail()/sizeof(Ch)));
+					//PRNN(deflated_.size() << ",1 " << zs.outputAvail());
+					setp(buffer_, buffer_+size_);
+					return;
 				}
 			}
 		}
 
-		void decompress(void)
+		void decompress()
 		{
-			zs.next_out	=(unsigned char*)buffer;
-			zs.avail_out=size;
+			ZStream &zs = inflate_stream_;
+			zs.setOutput((unsigned char*)buffer_, size_*sizeof(Ch));
 
 			for(;;){
-				if(zs.avail_in==0){
+				if(zs.inputAvail() == 0){
 					// 入力バッファが尽きた
-					in->read(&*sbuffer.begin(),sbuffer.size());
-					zs.next_in	=(unsigned char*)&*sbuffer.begin();
-					zs.avail_in	=in->gcount();
-					if(zs.avail_in==0){
-						iflush=Z_FINISH;
+					zs.setInput((unsigned char*)&deflated_.front(), (unsigned int)(streambuf_->sgetn(&deflated_.front(), deflated_.size())*sizeof(Ch)));
+					if(zs.inputAvail() == 0){
+						zs.setFlushMode(ZStream::FLUSHMODE_FINISH);
 					}
 				}
-				if(zs.avail_out==0){
+				if(zs.outputAvail() == 0){
 					// 出力バッファが尽きた
-					setg(buffer,buffer,buffer+size);
+					setg(buffer_, buffer_, buffer_+size_);
 					return;
 				}
-				int status = inflate(&zs, iflush); 
-				if(status==Z_STREAM_END){
+				if(ZStream::STATUS_END==zs.process()){
 					// 完了
-					setg(buffer,buffer,buffer+size-zs.avail_out);
+					setg(buffer_, buffer_, buffer_+size_-zs.outputAvail());
 					return;
-				}
-				if(status!=Z_OK){
-					throw zlib_exception(zs.msg);
 				}
 			}
 		}
 
 	private:
-		superclass	*buf_;
+		Super *streambuf_;
+		std::ios::open_mode mode_;
+		
+		Ch *buffer_;
+		std::streamsize size_;
 
-		Ch			sbuffer[BUFFER_SIZE];
-		Ch			dbuffer[BUFFER_SIZE];
+		std::vector<Ch> raw_;
+		std::vector<Ch> deflated_;
 
-		z_stream	in_zs_;
-		z_stream	out_zs_;
-	};
-	
-	template< class Ch, class Tr=std::char_traits<Ch> >
-	class basic_zfilterbuf : public basic_zfilterbuf_base<std::basic_ostream<Ch,Tr>,std::basic_istream<Ch,Tr>,Ch,Tr> {
-	public:
-		basic_zfilterbuf(std::basic_ostream<Ch,Tr>& os) : basic_zfilterbuf_base(os) {}
-		basic_zfilterbuf(std::basic_istream<Ch,Tr>& is) : basic_zfilterbuf_base(is) {}
+		ZStream inflate_stream_;
+		ZStream deflate_stream_;
 	};
 
-	typedef basic_zfilterbuf_base<obstream,ibstream,char> bzfilterbuf;
-
-	/// 非圧縮→圧縮
-	template< class OutputStream, class InputStream, class Ch, class Tr=std::char_traits<Ch> >
-	class basic_ozfilter_base : public OutputStream {
-	public:
-		basic_ozfilter_base(OutputStream& os)
-			: OutputStream(new basic_zfilterbuf_base<OutputStream,InputStream,Ch,Tr>(os))
-		{
-		}
-
-		~basic_ozfilter_base(void)
-		{
-			flush();
-			delete rdbuf();
-		}
-	};
-
-	template< class Ch, class Tr=std::char_traits<Ch> >
-	class basic_ozfilter: public basic_ozfilter_base<std::basic_ostream<Ch,Tr>,std::basic_istream<Ch,Tr>,Ch,Tr> {
-	public:
-		basic_ozfilter(std::basic_ostream<Ch,Tr>& os) : basic_ozfilter_base(os) {}
-	};
-
-	/// 圧縮→非圧縮
-	template< class OutputStream, class InputStream, class Ch, class Tr=std::char_traits<Ch> >
-	class basic_izfilter_base : public InputStream {
-	public:
-		basic_izfilter_base(InputStream& is)
-			: InputStream(new basic_zfilterbuf_base<OutputStream,InputStream,Ch,Tr>(is))
-		{
-		}
-
-		~basic_izfilter_base(void)
-		{
-			delete rdbuf();
-		}
-	};
-
-	template< class Ch, class Tr=std::char_traits<Ch> >
-	class basic_izfilter: public basic_izfilter_base<std::basic_ostream<Ch,Tr>,std::basic_istream<Ch,Tr>,Ch,Tr> {
-	public:
-		basic_izfilter(std::basic_istream<Ch,Tr>& os) : basic_izfilter_base(os) {}
-	};
-
-	typedef basic_ozfilter<char> ozfilter;
-	typedef basic_izfilter<char> izfilter;
-	typedef basic_ozfilter<wchar_t> wozfilter;
-	typedef basic_izfilter<wchar_t> wizfilter;
-	typedef basic_ozfilter_base<obstream,ibstream,char> obzfilter;
-	typedef basic_izfilter_base<obstream,ibstream,char> ibzfilter;
+	typedef basic_zfilter<1024*4, char> zfilter;
+	typedef basic_zfilter<1024*2, wchar_t> wzfilter; // wchar_tは動かないかも
 }
 #endif // GCTP_USE_ZLIB
 

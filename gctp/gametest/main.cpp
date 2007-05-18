@@ -21,7 +21,7 @@
 
 extern "C" int main(int argc, char *argv[]);
 
-class GameWindow 
+class GameWindow
 	: public gctp::GameApp
 	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, GameWindow>
 	, public SmartWin::HeartBeat
@@ -34,7 +34,8 @@ class GameWindow
 public:
 	GameWindow()
 		: is_fs_(false), mode_(0), is_closing_(false), device_ok_(true)
-		, cursor_(NULL), is_cursor_visible_(false), do_hold_cursor_(false), do_close_(false)
+		, cursor_(::LoadCursor(NULL, IDC_ARROW)), is_cursor_visible_(true), do_hold_cursor_(false), do_close_(false), can_change_mode_(true)
+		, is_suspending_(false), req_suspend_(false)
 	{}
 
 	void splash(const _TCHAR *title, DWORD bitmap_rc)
@@ -64,28 +65,35 @@ public:
 	void setUp(bool is_fs, gctp::uint mode_no)
 	{
 		banner_->setVisible(false);
-		sw::Point screen = getDesktopSize();
-		const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_no];
 		gctp::HRslt hr;
+		const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_no];
+		{
+			style_backup_ = WS_OVERLAPPED|WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+			exstyle_backup_ = 0;
+			sw::Point screen = getDesktopSize();
+			RECT rc = {0, 0, mode.Width, mode.Height};
+			::AdjustWindowRectEx(&rc, style_backup_, FALSE, exstyle_backup_);
+			DWORD width = rc.right-rc.left;
+			DWORD height = rc.bottom-rc.top;
+			location_backup_ = sw::Rectangle((screen.x-width)/2, (screen.y-height)/2, width, height);
+		}
 		if(is_fs) {
-			setBounds((screen.x-mode.Width)/2, (screen.y-mode.Height)/2, mode.Width, mode.Height);
-			if(getParent()) hr = g_.open(handle(), getParent()->handle(), 0, mode_no);
-			else hr = g_.open(handle(), 0, mode_no);
 			::SetWindowLong(handle(), GWL_STYLE, 0);
 			::SetWindowLong(handle(), GWL_EXSTYLE, 0);
+			setBounds(0, 0, mode.Width, mode.Height);
+			if(getParent()) hr = g_.open(handle(), getParent()->handle(), 0, mode_no);
+			else hr = g_.open(handle(), 0, mode_no);
 			maximize();
 		}
 		else {
-			RECT rc = {0, 0, mode.Width, mode.Height};
-			::AdjustWindowRectEx(&rc, WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, 0);
-			DWORD width = rc.right-rc.left;
-			DWORD height = rc.bottom-rc.top;
-			addRemoveStyle(WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, true);
-			setBounds((screen.x-width)/2, (screen.y-height)/2, width, height);
+			::SetWindowLong(handle(), GWL_STYLE, style_backup_);
+			::SetWindowLong(handle(), GWL_EXSTYLE, exstyle_backup_);
+			setBounds(location_backup_);
 			if(getParent()) hr = g_.open(handle(), getParent()->handle());
 			else hr = g_.open(handle());
 		}
 		is_fs_ = is_fs;
+		mode_ = mode_no;
 		if(!hr) {
 			GCTP_TRACE(hr);
 			close();
@@ -111,15 +119,19 @@ public:
 
 		// handlers
 		onClosing( &Self::doOnClosing );
-		//onSized( &Self::doOnResized );
+		onSized( &Self::doOnResized );
 		onLeftMouseUp( &Self::doOnLeftMouseUp );
 		onLeftMouseDown( &Self::doOnLeftMouseDown );
 		onMiddleMouseUp( &Self::doOnMiddleMouseUp );
 		onMiddleMouseDown( &Self::doOnMiddleMouseDown );
 		onRightMouseUp( &Self::doOnRightMouseUp );
 		onRightMouseDown( &Self::doOnRightMouseDown );
+		onLeftMouseDblClick( &Self::doOnLeftMouseDblClick );
+		onRightMouseDblClick( &Self::doOnRightMouseDblClick );
 		onMouseMove( &Self::doOnMouseMove );
+		onKeyPressed( &Self::doOnKeyPressed );
 		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
+		onRaw( &Self::doOnSysChar, sw::Message(WM_SYSCHAR) );
 
 		sw::Application::instance().setHeartBeatFunction(this);
 		game_thread_ = fork( SmartUtil::tstring(_T("GameThread")), &Self::runInThread );
@@ -142,8 +154,18 @@ public:
 		return hr;
 	}
 
+	virtual HWND getHandle() const
+	{
+		return handle();
+	}
+
 	virtual bool canContinue()
 	{
+		if(req_suspend_) {
+			req_suspend_ = false;
+			is_suspending_ = true;
+			while(is_suspending_) ::Sleep(10);
+		}
 		if(!is_closing_ && g_.isOpen() && GameApp::canContinue()) {
 			g_.setCurrent();
 			a_.setCurrent();
@@ -179,8 +201,8 @@ public:
 		::Sleep(0); // yield
 	}
 
-	void showCursor(bool yes) { is_cursor_visible_ = yes; }
-	void holdCursor(bool yes) { do_hold_cursor_ = yes; }
+	virtual void showCursor(bool yes) { is_cursor_visible_ = yes; }
+	virtual void holdCursor(bool yes) { do_hold_cursor_ = yes; }
 
 protected:
 	bool doOnClosing()
@@ -206,9 +228,22 @@ protected:
 			if(is_cursor_visible_) {
 				if(cursor_) ::SetCursor(cursor_);
 			}
-			else ::SetCursor(NULL);
+			else {
+				::SetCursor(NULL);
+			}
 		}
-		return 0;
+		return S_OK;
+	}
+
+	bool doOnKeyPressed(int key)
+	{
+		return false;
+	}
+
+	HRESULT doOnSysChar(LPARAM lparam, WPARAM vkey)
+	{
+		if(vkey == VK_RETURN && can_change_mode_) toggleFullscreen();
+		return S_OK;
 	}
 
 	void doOnLeftMouseDown(const sw::MouseEventResult &mouse)
@@ -216,8 +251,8 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
@@ -230,8 +265,8 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
@@ -244,8 +279,8 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
@@ -258,8 +293,8 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
@@ -272,8 +307,8 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
@@ -286,13 +321,41 @@ protected:
 		gctp::uint8_t opt = 0;
 		switch(mouse.ButtonPressed) {
 			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::LB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
 		}
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
 		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
+	}
+
+	void doOnLeftMouseDblClick(const sw::MouseEventResult &mouse)
+	{
+		gctp::uint8_t opt = 0;
+		switch(mouse.ButtonPressed) {
+			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
+		}
+		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
+		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
+		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
+		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
+	}
+
+	void doOnRightMouseDblClick(const sw::MouseEventResult &mouse)
+	{
+		gctp::uint8_t opt = 0;
+		switch(mouse.ButtonPressed) {
+			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
+			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
+			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
+		}
+		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
+		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
+		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
+		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
 	}
 
 	void doOnMouseMove(const sw::MouseEventResult &mouse)
@@ -311,19 +374,56 @@ protected:
 			}
 		}
 	}
-	
-	unsigned long runInThread( SmartUtil::tstring & message )
-	{
-		setCurrent();
-		g_.setCurrent();
-		a_.setCurrent();
-		i_.setCurrent();
-		gctp::CmdLine arg(sw::Application::instance().getCommandLine().getParamsRaw());
-		unsigned long ret = (unsigned long)main(arg.argc(), arg.argv());
-		if(!is_closing_) do_close_ = true;
-		return ret;
-	}
 
+	// ウィンドウモードとＦＳの切り替え
+	void toggleFullscreen()
+	{
+		if(!is_closing_) {
+			PRNN("###########toggleFullscreen");
+			req_suspend_ = true;
+			is_suspending_ = false;
+			for(int i = 0; i < 50; i++) {
+				if(is_suspending_) break;
+				::Sleep(100);
+			}
+			if(!is_suspending_) {
+				req_suspend_ = false;
+				is_suspending_ = false;
+				PRNN("Game Thread do not response.");
+				return;
+			}
+			//game_thread_.suspend();
+			g_.cleanUp();
+			if(is_fs_) {
+				restore();
+			}
+			else {
+				location_backup_ = getBounds();
+				style_backup_ = ::GetWindowLong(handle(), GWL_STYLE);
+				exstyle_backup_ = ::GetWindowLong(handle(), GWL_EXSTYLE);
+				const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_];
+				setBounds(0, 0, mode.Width, mode.Height, false);
+				::SetWindowLong(handle(), GWL_STYLE, 0);
+				::SetWindowLong(handle(), GWL_EXSTYLE, 0);
+			}
+			is_fs_ = !is_fs_;
+			if(reset()) {
+				if(is_fs_) {
+					maximize();
+				}
+				else {
+					::SetWindowLong(handle(), GWL_STYLE, style_backup_);
+					::SetWindowLong(handle(), GWL_EXSTYLE, exstyle_backup_);
+					setBounds(location_backup_);
+				}
+				g_.restore();
+				PRNN("toggle done! "<<((is_fs_)?"true":"false"));
+				is_suspending_ = false;
+				//game_thread_.resume();
+			}
+		}
+	}
+	
 	virtual void tick()
 	{
 		if(!is_closing_) {
@@ -346,6 +446,18 @@ protected:
 		}
 	}
 
+	unsigned long runInThread( SmartUtil::tstring & message )
+	{
+		setCurrent();
+		g_.setCurrent();
+		a_.setCurrent();
+		i_.setCurrent();
+		gctp::CmdLine arg(sw::Application::instance().getCommandLine().getParamsRaw());
+		unsigned long ret = (unsigned long)main(arg.argc(), arg.argv());
+		if(!is_closing_) do_close_ = true;
+		return ret;
+	}
+
 private:
 	gctp::graphic::Device g_;
 	gctp::audio::Device a_;
@@ -360,6 +472,12 @@ private:
 	bool is_closing_;
 	bool do_close_;
 	bool device_ok_;
+	bool can_change_mode_;
+	bool is_suspending_;
+	bool req_suspend_;
+	SmartWin::Rectangle location_backup_;
+	DWORD style_backup_;
+	DWORD exstyle_backup_;
 };
 
 class StartupDialog

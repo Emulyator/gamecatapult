@@ -242,7 +242,7 @@ namespace gctp { namespace graphic { namespace dx {
 		}
 		if(ptr_) {
 			ret = ptr_->Reset(&d3dpp); PRNN("Reset!");
-			if( !ret ) PRNN(ret);
+			if( !ret ) GCTP_TRACE(ret);
 		}
 		else {
 			if(is_allow_HVP_) ret = Adapter::api_->CreateDevice( adpt, type, h_focus_wnd, D3DCREATE_HARDWARE_VERTEXPROCESSING|additional_flag, &d3dpp, &ptr_ );
@@ -258,6 +258,11 @@ namespace gctp { namespace graphic { namespace dx {
 			}
 			if(ret) PRNN(_T("グラフィックデバイス製作成功"));
 			light_num_ = 0;
+		}
+		{
+			D3DDISPLAYMODE dm;
+			ptr_->GetDisplayMode(0, &dm);
+			PRNN(_T("現在のディスプレイモード : Format = ")<<dm.Format);
 		}
 		return ret;
 	}
@@ -446,16 +451,25 @@ namespace gctp { namespace graphic { namespace dx {
 			//if(p) {
 			if(*i) {
 				HRslt hr = (*i)->restore();
-				if(!hr) PRNN(hr);
+				if(!hr) GCTP_TRACE(hr);
 				++i;
 			}
 			else i = rsrcs_.erase(i);
 		}
 	}
 
+	HRslt Device::checkFormat(DWORD usage, D3DRESOURCETYPE rtype, D3DFORMAT format)
+	{
+		D3DDEVICE_CREATION_PARAMETERS parameters;
+		ptr_->GetCreationParameters(&parameters);
+		D3DDISPLAYMODE dm;
+		ptr_->GetDisplayMode(0, &dm);
+		return Adapter::api_->CheckDeviceFormat(parameters.AdapterOrdinal, parameters.DeviceType, dm.Format, usage, rtype, format);
+	}
+
 	uint Device::maxLightNum() const
 	{
-		D3DCAPS9 caps;
+		D3DCAPS caps;
 		if(ptr_ && SUCCEEDED(ptr_->GetDeviceCaps(&caps))) return caps.MaxActiveLights;
 		return 0;
 	}

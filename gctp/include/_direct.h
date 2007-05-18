@@ -1,17 +1,9 @@
 #ifndef __DIRENT_H
 #define __DIRENT_H
-/* Posix dirent.h for WIN32.
-
-   Copyright 2001 Red Hat, Inc.
-
-   This software is a copyrighted work licensed under the terms of the
-   Cygwin license.  Please consult the file "CYGWIN_LICENSE" for
-   details. */
-
-/* Including this file should not require any Windows headers.  */
 
 #include <windows.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 /// ディレクトリエントリー構造体
 struct dirent

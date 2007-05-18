@@ -1,9 +1,6 @@
 /** @file
  * GameCatapult DirectX Audioクラス
  *
- * Pointer/Handleでなくshared_ptr/weak_ptrなのはスレッドで触りまくるから、なんだけど、
- * パフォーマンス的に問題あるかも。
- *
  * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
  * @date 2001/8/6
  *
@@ -16,7 +13,6 @@
 #ifdef GCTP_AUDIO_USE_TIMER
 #include <gctp/timer.hpp>
 #endif
-#include <boost/weak_ptr.hpp>
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -44,11 +40,11 @@ namespace gctp { namespace audio { namespace dx {
 
 	HRslt Device::open(HWND hwnd, DWORD coop_mode, bool global_focus) {
 		global_focus_ = global_focus;
-		HRslt hr = DirectSoundCreate8(NULL, &ptr_, NULL);
+		HRslt hr = ::DirectSoundCreate8(NULL, &ptr_, NULL);
 		if(hr && ptr_) {
 			hr = ptr_->SetCooperativeLevel(hwnd, coop_mode);
 			if(hr) {
-				notify_thread_ = CreateThread( NULL, 0, handleEvents, this, 0, &notify_thread_id_ );
+				notify_thread_ = ::CreateThread( NULL, 0, handleEvents, this, 0, &notify_thread_id_ );
 				PRNN(_T("オーディオスレッド製作 : ") << notify_thread_id_);
 			}
 			else ptr_ = 0;
@@ -59,9 +55,9 @@ namespace gctp { namespace audio { namespace dx {
 	void Device::close()
 	{
 		if(notify_thread_) {
-			PostThreadMessage( notify_thread_id_, WM_QUIT, 0, 0 );
-			WaitForSingleObject( notify_thread_, INFINITE );
-			CloseHandle( notify_thread_ );
+			::PostThreadMessage( notify_thread_id_, WM_QUIT, 0, 0 );
+			::WaitForSingleObject( notify_thread_, INFINITE );
+			::CloseHandle( notify_thread_ );
 			notify_thread_ = NULL;
 		}
 		cleanUp();
@@ -70,12 +66,12 @@ namespace gctp { namespace audio { namespace dx {
 	}
 
 	void Device::setVolume(float volume) {
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 		volume_ = volume;
 	}
 	
 	float Device::volume() {
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 		return volume_;
 	}
 	
@@ -144,17 +140,17 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:44:56
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	BufferPtr Device::ready(const _TCHAR *fname) {
-		BufferPtr ret;
+	Pointer<Buffer> Device::ready(const _TCHAR *fname) {
+		Pointer<Buffer> ret;
 		dx::WavFile wav;
 		if(wav.open(fname)) {
 			if(wav.size() < allow_streaming_threshold_) {
 				ret = newStaticBuffer(ptr_, wav, global_focus_);
-				add(BufferHandle(ret));
+				add(Handle<Buffer>(ret));
 			}
 			else {
 				ret = newStreamingBuffer(ptr_, fname, global_focus_);
-				add(BufferHandle(ret));
+				add(Handle<Buffer>(ret));
 			}
 		}
 		else {
@@ -163,11 +159,11 @@ namespace gctp { namespace audio { namespace dx {
 		return ret;
 	}
 
-	void Device::add(BufferHandle addee) {
-		Lock al(monitor_);
-		BufferPtr _addee = addee.lock();
+	void Device::add(Handle<Buffer> addee) {
+		ScopedLock al(monitor_);
+		Pointer<Buffer> _addee = addee.lock();
 		for(BufferList::iterator i = buffers_.begin(); i != buffers_.end();) {
-			BufferPtr _i = i->lock();
+			Pointer<Buffer> _i = i->lock();
 			if(!_i) i = buffers_.erase(i);
 			else {
 				if(_i.get() == _addee.get()) return;
@@ -175,13 +171,14 @@ namespace gctp { namespace audio { namespace dx {
 			}
 		}
 		buffers_.push_back(addee);
+		if(addee) addee->synchronize(true);
 	}
 
 	/// デバイス消失時のリソース解放
 	void Device::cleanUp() {
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 		for(BufferList::iterator i = buffers_.begin(); i != buffers_.end();) {
-			BufferPtr _i = i->lock();
+			Pointer<Buffer> _i = i->lock();
 			if(!_i) i = buffers_.erase(i);
 			else {
 				_i->cleanUp();
@@ -210,9 +207,9 @@ namespace gctp { namespace audio { namespace dx {
 			if(!done) {
 				for(;;) {
 					if(start-Timer::time() > 1000/NOTIFY_PERSEC) {
-						Lock al(device->monitor_);
+						ScopedLock al(device->monitor_);
 						for(BufferList::iterator i = device->buffers_.begin(); i != device->buffers_.end();) {
-							BufferPtr ptr = i->lock();
+							Pointer<Buffer> ptr = i->lock();
 							if(ptr) {
 								if(ptr->isPlaying()) {
 									if( !( hr = ptr->onNotified() ) ) {
@@ -241,7 +238,7 @@ namespace gctp { namespace audio { namespace dx {
 		Device *device = reinterpret_cast<Device *>(param);
 		MSG msg;
 		vector<HANDLE> events;
-		vector<BufferPtr> bufs;
+		vector< Pointer<Buffer> > bufs;
 		DWORD result;
 		
 		bool done = false;
@@ -249,7 +246,7 @@ namespace gctp { namespace audio { namespace dx {
 			{
 				Lock al(device->monitor_);
 				for(BufferList::iterator i = device->buffers_.begin(); i != device->buffers_.end();) {
-					BufferPtr ptr = i->lock();
+					Pointer<Buffer> ptr = i->lock();
 					if(ptr) {
 						if(ptr->event()) {
 							bufs.push_back(ptr);

@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="..\..\..\lib\vc8"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_core_d.lib"
+				OutputFile="$(OutDir)\gctp_$(ProjectName)_d.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -85,8 +85,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="..\..\..\lib\vc8"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
@@ -131,7 +131,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(SolutionDir)../../lib/vc8/gctp_core.lib"
+				OutputFile="$(OutDir)\gctp_$(ProjectName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -227,6 +227,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\file.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\fileserver.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\font.cpp"
 				>
 			</File>
@@ -316,6 +324,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\xfile.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\zfilter.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\zipfile.cpp"
 				>
 			</File>
 		</Filter>
@@ -434,6 +450,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\fiber.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\file.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\fileserver.hpp"
 				>
 			</File>
 			<File
@@ -682,6 +706,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\zfilter.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\zipfile.hpp"
 				>
 			</File>
 			<Filter

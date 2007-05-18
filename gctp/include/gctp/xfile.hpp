@@ -16,6 +16,7 @@
 #include <gctp/dbgout.hpp>
 #include <gctp/cstr.hpp>
 #include <gctp/com_ptr.hpp>
+#include <tchar.h>
 
 namespace gctp {
 	TYPEDEF_DXCOMPTR(ID3DXFile);
@@ -302,12 +303,10 @@ namespace gctp {
 		XFileReader(XFileEnv &env, const _TCHAR* fn) { open(env, fn); }
 		
 		// ファイルオープン
-		HRslt open(XFileEnv &env, const char *fn);
-		HRslt open(const char *fn);
-#ifdef UNICODE
-		HRslt open(XFileEnv &env, const wchar_t *fn);
-		HRslt open(const wchar_t *fn);
-#endif
+		HRslt open(XFileEnv &env, const _TCHAR *fn);
+		HRslt open(XFileEnv &env, const void *memory, size_t size);
+		HRslt open(const _TCHAR *fn);
+		HRslt open(const void *memory, size_t size);
 
 		bool isOpen() { return (*this) ? true : false; }
 		
@@ -483,11 +482,11 @@ namespace gctp {
 			COMPRESSEDBINARY,
 		};
 		XFileWriter() {}
-		XFileWriter(XFileEnv &env, const char* fn, Option option = TEXT) { open(env, fn, option); }
+		XFileWriter(XFileEnv &env, const _TCHAR *fn, Option option = TEXT) { open(env, fn, option); }
 		~XFileWriter() { close(); }
 		
 		// ファイルオープン
-		HRslt open(XFileEnv &env, const char *fn, Option option = TEXT);
+		HRslt open(XFileEnv &env, const _TCHAR *fn, Option option = TEXT);
 
 		bool isOpen() { return (*this) ? true : false; }
 		

@@ -125,7 +125,7 @@ namespace gctp { namespace scene {
 		// 不要なので止めよう
 		// その代わり、EntityにXFileを渡すと1ツリーを要求する、複数あると２個目は無視、という退行仕様に
 		if(filename) {
-			Pointer<GraphFile> file = db()[filename].lock();
+			Pointer<GraphFile> file = context()[filename].lock();
 			if(file) {
 				Pointer<Light> plight;
 				Pointer<Body> pbody;
@@ -153,7 +153,7 @@ namespace gctp { namespace scene {
 	bool Stage::onUpdate(float delta)
 	{
 #ifdef _MT
-		boost::mutex::scoped_lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		return doOnUpdate(delta);
 	}
@@ -183,7 +183,7 @@ namespace gctp { namespace scene {
 	bool Stage::onDraw() const
 	{
 #ifdef _MT
-		boost::mutex::scoped_lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		return doOnDraw();
 	}

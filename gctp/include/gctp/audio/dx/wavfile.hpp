@@ -9,8 +9,8 @@
  */
 #include <gctp/def.hpp>
 #include <gctp/hrslt.hpp>
+#include <gctp/tcstr.hpp>
 #include <mmsystem.h>
-#include <boost/thread.hpp>
 
 namespace gctp { namespace audio { namespace dx {
 
@@ -55,7 +55,7 @@ namespace gctp { namespace audio { namespace dx {
 		HRslt writeMMIO(const WAVEFORMATEX *src);
 
 	private:
-		std::basic_string<_TCHAR> fname_;
+		TCStr                     fname_;
 		WAVEFORMATEX              *wfx_;        // Pointer to WAVEFORMATEX structure
 		HMMIO                     hmmio_;       // MM I/O handle for the WAVE
 		MMCKINFO                  ck_;          // Multimedia RIFF chunk

@@ -11,6 +11,7 @@
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/graphic/brush.hpp>
 #include <gctp/extension.hpp>
+#include <gctp/buffer.hpp>
 #include <gctp/dxcomptrs.hpp>
 #include <gctp/dbgout.hpp>
 
@@ -177,6 +178,35 @@ namespace gctp { namespace graphic {
 						GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
 					}
 				}
+			}
+		}
+		if(hr) {
+			D3DXHANDLE tech;
+			hr = ptr_->FindNextValidTechnique(NULL, &tech);
+			if(hr) {
+				ptr_->SetTechnique(tech);
+				return hr;
+			}
+		}
+		GCTP_TRACE(hr);
+		return hr;
+	}
+
+	/// メモリ内シェーダーファイルから読みこみ
+	HRslt Brush::setUp(BufferPtr buffer)
+	{
+		DWORD dwShaderFlags = 0;
+#ifdef GCTP_DEBUG
+		dwShaderFlags |= D3DXSHADER_DEBUG|D3DXSHADER_SKIPVALIDATION;
+//		dwShaderFlags |= D3DXSHADER_FORCE_VS_SOFTWARE_NOOPT;
+//		dwShaderFlags |= D3DXSHADER_FORCE_PS_SOFTWARE_NOOPT;
+#endif
+		HRslt hr;
+		{
+			ID3DXBufferPtr err;
+			hr = D3DXCreateEffect( device().impl(), buffer->buf(), (UINT)buffer->size(), NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
+			if(!hr && err) {
+				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
 		if(hr) {

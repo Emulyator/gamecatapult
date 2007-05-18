@@ -18,7 +18,7 @@
 #include <lua.hpp>
 
 #include <gctp/pointer.hpp>
-#include <gctp/class.hpp>
+#include <gctp/typeinfo.hpp>
 #include <boost/tokenizer.hpp>
 
 #ifdef _MSC_VER
@@ -43,9 +43,11 @@ namespace gctp {
 			const char *name;
 			lua_CFunction func;
 		};
-		TukiRegister(const char *luaname, void (*register_func)(lua_State *L));
+		TukiRegister(const char *luaname, const GCTP_TYPEINFO &type, void (*register_func)(lua_State *L));
 		void useTuki();
 		static void registerIt(lua_State *l, const char *name);
+		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
+		static int newUserData(lua_State *l, Ptr pobj);
 		static int luaRegister(lua_State *L);
 		static int luaTableDump(lua_State *L);
 		static int luaTableLoad(lua_State *L);
@@ -77,13 +79,6 @@ namespace gctp {
 		void operator()(lua_State *lua) const
 		{
 			luaopen_base(lua);
-			lua_register(lua, "uselib_package", luaopen_package);
-			lua_register(lua, "uselib_table", luaopen_table);
-			lua_register(lua, "uselib_io", luaopen_io);
-			lua_register(lua, "uselib_os", luaopen_os);
-			lua_register(lua, "uselib_string", luaopen_string);
-			lua_register(lua, "uselib_math", luaopen_math);
-			lua_register(lua, "uselib_debug", luaopen_debug);
 			TukiRegister::registerMe(lua);
 		}
 	};
@@ -152,11 +147,11 @@ namespace gctp {
 		 * @endcode
 		 */
 		static int newUserData(lua_State *L, Ptr pobj) {
-			Pointer<T> p = pobj;  // call constructor for T objects
+			Pointer<T> p = pobj;
 			if(p) {
 				UserData *ud = new(lua_newuserdata(L, sizeof(UserData))) UserData;
 				if(ud) {
-					memset(ud, 0, sizeof(UserData));
+					memset(ud, 0, sizeof(UserData)); // 配置new使っているなら、これやら無いほうがいいんじゃ？
 					ud->pT = p;  // store pointer to object in userdata
 					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
 					lua_setmetatable(L, -2);
@@ -309,7 +304,7 @@ namespace gctp {
 
 #define TUKI_IMPLEMENT_BEGIN_EX(name, T)										\
 	const char *T::lua_name__ = name;											\
-	gctp::TukiRegister T::lua_reg__(T::lua_name__, gctp::Tuki<T>::registerMe);	\
+	gctp::TukiRegister T::lua_reg__(T::lua_name__, GCTP_TYPEID(T), gctp::Tuki<T>::registerMe);	\
 	gctp::Tuki<T>::Method T::lua_methods__[] = {
 
 #define TUKI_IMPLEMENT_BEGIN(T)	TUKI_IMPLEMENT_BEGIN_EX(#T, T)

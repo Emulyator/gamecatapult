@@ -139,7 +139,7 @@ namespace gctp { namespace audio { namespace dx {
 		if(flags_ & MEMORY) {
 			if(isOpen()) {
 				close();
-				fname_.resize(0);
+				fname_.clear();
 			}
 			SAFE_FREE(wfx_);
 		}

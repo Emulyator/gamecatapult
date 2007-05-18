@@ -157,7 +157,7 @@ namespace luapp {
 		}
 
 		/// ƒRƒ‹[ƒ`ƒ“(lua_State *)‚É•ÏŠ·
-		lua_State *toThread() const
+		lua_State *toCoroutine() const
 		{
 			EvalAndPop _eval_(*this);
 			return lua_tothread(lua_, _eval_.index());
@@ -280,6 +280,12 @@ namespace luapp {
 			EvalAndPop _eval_(*this);
 			return (lua_islightuserdata(lua_, _eval_.index()))?true:false;
 		}
+
+		inline bool isCoroutine() const
+		{
+			EvalAndPop _eval_(*this);
+			return (lua_isthread(lua_, _eval_.index()))?true:false;
+		}
 		/*@}*/
 
 		/// •¶š—ñ‚Ì’·‚³‚ğæ“¾
@@ -334,7 +340,7 @@ namespace luapp {
 		case BOOLEAN: os << (v.toBoolean() ? "true" : "false"); break;
 		case STRING: os << v.toCStr(); break;
 		case FUNCTION: os << "FUNCTION:" << (void *)v.toCFunction(); break;
-		case THREAD: os << "THREAD:" << (void *)v.toThread(); break;
+		case THREAD: os << "THREAD:" << (void *)v.toCoroutine(); break;
 		case USERDATA: case LIGHTUSERDATA: os << "USERDATA:" << v.toUserData(); break;
 		}
 		return os;
@@ -793,7 +799,7 @@ namespace luapp {
 		case BOOLEAN: boolean = value.toBoolean(); break;
 		case NUMBER: number = value.toNumber(); break;
 		case STRING: string = value.toCStr(); break;
-		case THREAD: thread = value.toThread(); break;;
+		case THREAD: thread = value.toCoroutine(); break;;
 		case LIGHTUSERDATA: userdata = value.toUserData(); break;
 		case FUNCTION:
 			if(value.isCFunction()) {

@@ -14,7 +14,7 @@
 #include <gctp/signal.hpp>
 #include <gctp/tuki.hpp>
 #ifdef _MT
-#include <boost/thread/mutex.hpp>
+#include <gctp/mutex.hpp>
 #endif
 
 namespace gctp {
@@ -94,7 +94,7 @@ namespace gctp { namespace scene {
 
 	private:
 #ifdef _MT
-		mutable boost::mutex monitor_;
+		mutable Mutex monitor_;
 #endif
 		mutable Stage* backup_current_;
 		GCTP_TLS static Stage* current_;

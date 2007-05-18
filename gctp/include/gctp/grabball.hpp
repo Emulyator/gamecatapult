@@ -12,7 +12,7 @@
  * Copyright (C) 2001 SAM (T&GG, Org.). All rights reserved.
  */
 #ifdef _MT
-#include <boost/thread/mutex.hpp>
+#include <gctp/mutex.hpp>
 #endif
 #include <float.h>
 #include <gctp/types.hpp>
@@ -32,8 +32,7 @@ namespace gctp {
 	class GrabBall
 	{
 #ifdef _MT
-		typedef boost::mutex::scoped_lock Lock;
-		boost::mutex	monitor_;
+		Mutex	monitor_;
 #endif
 	public:
 		/// Windowsメッセージの処理
@@ -49,43 +48,43 @@ namespace gctp {
 		
 		const Quat &rot() {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			return rot_;
 		}
 		void setRot(const Quat &src) {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			rot_ = src;
 		}
 		const Quat &rotDelta() {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			return rot_delta_;
 		}
 		const Vector &trans() {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			return trs_;
 		}
 		void setTrans(const Vector &src) {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			trs_ = src;
 		}
 		const Vector &transDelta() {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			return trs_delta_;
 		}
 		bool isBeingDragged() {
 #ifdef _MT
-			Lock al(monitor_);
+			ScopedLock al(monitor_);
 #endif
 			return on_drag_;
 		}

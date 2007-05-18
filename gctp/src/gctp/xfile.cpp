@@ -11,7 +11,6 @@
 #include <gctp/xfile.hpp>
 #include <gctp/uri.hpp>
 #ifdef UNICODE
-#include <gctp/wcstr.hpp>
 #include <gctp/wuri.hpp>
 #endif
 #include <rmxfguid.h>
@@ -63,19 +62,23 @@ namespace gctp {
 		return *this;
 	}
 
-	HRslt XFileReader::open(XFileEnv &env, const char *fn)
+	HRslt XFileReader::open(XFileEnv &env, const _TCHAR *fn)
 	{
 		if(env) {
 			HRslt hr;
 			// Create enum object.
-			hr = env->CreateEnumObject((LPVOID)fn, DXFILELOAD_FROMFILE, &(*this));
-			if(!hr) {
-				std::string base = URI(fn).basename();
 #ifdef UNICODE
-				PRNN(L"Win32リソース検索 " << WURI(WCStr(fn).c_str()).basename());
+			hr = env->CreateEnumObject((LPVOID)fn, D3DXF_FILELOAD_FROMWFILE, &(*this));
 #else
-				PRNN("Win32リソース検索 " << base);
+			hr = env->CreateEnumObject((LPVOID)fn, D3DXF_FILELOAD_FROMFILE, &(*this));
 #endif
+			if(!hr) {
+#ifdef UNICODE
+				std::string base = CStr(WURI(fn).basename().c_str()).c_str();
+#else
+				std::string base = URI(fn).basename();
+#endif
+				PRNN(_T("Win32リソース検索 ") << base);
 /*				HRSRC rc = FindResource(NULL, "PEDITUIX", "XFILE");
 				if(rc) {
 					HGLOBAL gl = LoadResource(NULL, rc);
@@ -103,7 +106,20 @@ namespace gctp {
 		return S_OK;
 	}
 
-	HRslt XFileReader::open(const char *fn)
+	HRslt XFileReader::open(XFileEnv &env, const void *memory, size_t size)
+	{
+		if(env) {
+			HRslt hr;
+			// Create enum object.
+			D3DXF_FILELOADMEMORY arg = { const_cast<void *>(memory), (DWORD)size };
+			hr = env->CreateEnumObject(&arg, D3DXF_FILELOAD_FROMMEMORY, &(*this));
+			return hr;
+		}
+		else return E_FAIL;
+		return S_OK;
+	}
+
+	HRslt XFileReader::open(const _TCHAR *fn)
 	{
 		HRslt hr;
 		XFileEnv env;
@@ -111,36 +127,34 @@ namespace gctp {
 		hr = env.registerDefaultTemplate();
 		if(!hr) return hr;
 		return open(env, fn);
+	}
+
+	HRslt XFileReader::open(const void *memory, size_t size)
+	{
+		HRslt hr;
+		XFileEnv env;
+		// Register templates for d3drm.
+		hr = env.registerDefaultTemplate();
+		if(!hr) return hr;
+		return open(env, memory, size);
 	}
 
 #ifdef UNICODE
-	HRslt XFileReader::open(XFileEnv &env, const wchar_t *fn)
-	{
-		return open(env, CStr(fn).c_str());
-	}
-
-	HRslt XFileReader::open(const wchar_t *fn)
-	{
-		HRslt hr;
-		XFileEnv env;
-		// Register templates for d3drm.
-		hr = env.registerDefaultTemplate();
-		if(!hr) return hr;
-		return open(env, fn);
-	}
+# define FILESAVEOPTION D3DXF_FILESAVE_TOWFILE
+#else
+# define FILESAVEOPTION D3DXF_FILESAVE_TOFILE
 #endif
-
 	// ファイルオープン
-	HRslt XFileWriter::open(XFileEnv &env, const char *fn, Option option)
+	HRslt XFileWriter::open(XFileEnv &env, const _TCHAR *fn, Option option)
 	{
 		if(env) {
 			HRslt hr;
 			// Create enum object.
 			switch(option) {
-			case TEXT: hr = env->CreateSaveObject(fn, D3DXF_FILESAVE_TOFILE, DXFILEFORMAT_TEXT, &(*this)); break;
-			case COMPRESSEDTEXT: hr = env->CreateSaveObject(fn, D3DXF_FILESAVE_TOFILE, DXFILEFORMAT_TEXT|DXFILEFORMAT_COMPRESSED, &(*this)); break;
-			case BINARY: hr = env->CreateSaveObject(fn, D3DXF_FILESAVE_TOFILE, DXFILEFORMAT_BINARY, &(*this)); break;
-			case COMPRESSEDBINARY: hr = env->CreateSaveObject(fn, D3DXF_FILESAVE_TOFILE, DXFILEFORMAT_BINARY|DXFILEFORMAT_COMPRESSED, &(*this)); break;
+			case TEXT: hr = env->CreateSaveObject(fn, FILESAVEOPTION, DXFILEFORMAT_TEXT, &(*this)); break;
+			case COMPRESSEDTEXT: hr = env->CreateSaveObject(fn, FILESAVEOPTION, DXFILEFORMAT_TEXT|DXFILEFORMAT_COMPRESSED, &(*this)); break;
+			case BINARY: hr = env->CreateSaveObject(fn, FILESAVEOPTION, DXFILEFORMAT_BINARY, &(*this)); break;
+			case COMPRESSEDBINARY: hr = env->CreateSaveObject(fn, FILESAVEOPTION, DXFILEFORMAT_BINARY|DXFILEFORMAT_COMPRESSED, &(*this)); break;
 			default: return E_INVALIDARG;
 			}
 			if(!hr) return hr;

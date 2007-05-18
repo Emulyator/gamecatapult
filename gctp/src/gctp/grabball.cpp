@@ -25,7 +25,7 @@ namespace gctp {
 	void GrabBall::reset()
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		down_ = rot_ = rot_delta_ = QuatC(true);
 		vec_down_ = trs_ = trs_delta_ = VectorC(0,0,0);
@@ -39,7 +39,7 @@ namespace gctp {
 	void GrabBall::setWindow( int w, int h )
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		// Set ArcBall info
 		width_  = w;
@@ -84,7 +84,7 @@ namespace gctp {
 	void GrabBall::resetMove(const Point2 &mouse_pos)
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		old_mouse_pos_ = mouse_pos;
 	}
@@ -96,7 +96,7 @@ namespace gctp {
 	void GrabBall::move(const Point2 &mouse_pos, bool dolly)
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		// Normalize based on size of window and bounding sphere radius
 		float delta_x = ( old_mouse_pos_.x-mouse_pos.x ) * radius2_ / width_;
@@ -126,7 +126,7 @@ namespace gctp {
 	void GrabBall::startRot(const Point2 &mouse_pos)
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		on_drag_ = true;
 		vec_down_ = getVectorFromScreen(mouse_pos);
@@ -140,7 +140,7 @@ namespace gctp {
 	void GrabBall::rot(const Point2 &mouse_pos)
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		if( on_drag_ ) {
 			rot_ = Quat::smallestArc(vec_down_, getVectorFromScreen(mouse_pos))*down_;
@@ -154,7 +154,7 @@ namespace gctp {
 	void GrabBall::endRot()
 	{
 #ifdef _MT
-		Lock al(monitor_);
+		ScopedLock al(monitor_);
 #endif
 		on_drag_ = false;
 	}

@@ -13,7 +13,6 @@
  */
 
 #include <streambuf>
-#include <mbctype.h>
 
 namespace gctp {
 
@@ -25,24 +24,17 @@ namespace gctp {
 		};
 	public:
 		debuggeroutbuf() : std::basic_streambuf<_CharType>() {
-			setbuf(__buf, BUF_LEN-1);
 			__buf[BUF_LEN-1] = (_CharType)'\0';
+			setp(__buf, __buf+(BUF_LEN-1));
 		}
 		~debuggeroutbuf() {
 			if(pptr() != pbase()) sync();
 		}
 	protected:
-		std::basic_streambuf<_CharType> *setbuf(_CharType *s, std::streamsize n) {
-			if(s && n) {
-				setp(s, s+n);
-				return this;
-			}
-			return 0;
-		}
 		int sync() {
 			output();
-			setbuf(__buf, BUF_LEN-1);
-			return std::basic_streambuf<_CharType>::sync();
+			setp(__buf, __buf+(BUF_LEN-1));
+			return 0;
 		}
 		virtual int_type overflow(int_type ch);
 		void output();

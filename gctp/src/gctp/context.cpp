@@ -8,6 +8,7 @@
 #include "common.h"
 #include <gctp/context.hpp>
 #include <gctp/serializer.hpp>
+#include <gctp/fileserver.hpp>
 #include <gctp/turi.hpp>
 #include <gctp/db.hpp>
 
@@ -61,24 +62,80 @@ namespace gctp {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Context::load(const _TCHAR *name)
+	Hndl Context::load(const _TCHAR *name)
 	{
-		GCTP_ASSERT(current_ == this);
-		TURI uri(name);
+		//GCTP_ASSERT(current_ == this); これ必要か？
+		if(name) {
+			Hndl h = find(name);
+			if(h) {
+				//ptrs_.push_back(h.lock());
+				// どうすべきか…
+				// 多重で確保する可能性があるから、追加しない、のほうでいいか
+				return h;
+			}
+			TURI uri(name);
 //#ifdef _WIN32
-//		uri.convertLower();
+//			uri.convertLower();
 //#endif
-		std::basic_string<_TCHAR> ext = uri.extension();
-		RealizeMethod f = Extension::get(ext.c_str());
-		if(f) {
-			Ptr p = f(uri.raw().c_str());
-			if(p) {
-				ptrs_.push_back(p);
-				return true;
+			std::basic_string<_TCHAR> ext = uri.extension();
+			RealizeMethod f = Extension::get(ext.c_str());
+			if(f) {
+				BufferPtr file = fileserver().getFile(uri.raw().c_str());
+				if(file) {
+					Ptr p = f(file);
+					if(p) {
+						ptrs_.push_back(p);
+						db_.insert(name, p);
+						return p;
+					}
+				}
+			}
+			else {
+				PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
 			}
 		}
-		else {
-			PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
+		return Hndl();
+	}
+
+	/** 要求されたリソースのロードをリクエスト
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	bool Context::loadAsync(const _TCHAR *name)
+	{
+		//GCTP_ASSERT(current_ == this); これ必要か？
+		if(name) {
+			Hndl h = find(name);
+			if(h) {
+				//ptrs_.push_back(h.lock());
+				// どうすべきか…
+				// 多重で確保する可能性があるから、追加しない、のほうでいいか
+				return true;
+			}
+			TURI uri(name);
+//#ifdef _WIN32
+//			uri.convertLower();
+//#endif
+			std::basic_string<_TCHAR> ext = uri.extension();
+			RealizeMethod f = Extension::get(ext.c_str());
+			if(f) {
+				if(!fileserver().busy()) {
+					AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
+					if(file) {
+						// リアライザとともにどっかに保持
+						// isReadyがtrueになったときに呼び出す
+						ptrs_.push_back(file);
+						db_.insert(name, file); // これでいいんじゃないか？
+						// で、後で差し替える
+						// ...いやダメかも
+					}
+				}
+			}
+			else {
+				PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
+			}
 		}
 		return false;
 	}
@@ -94,7 +151,7 @@ namespace gctp {
 		GCTP_ASSERT(current_ == this);
 		if(ptr) {
 			ptrs_.push_back(ptr);
-			if(name) db().insert(name, ptr);
+			if(name) db_.insert(name, ptr);
 		}
 		return ptr;
 	}
@@ -111,7 +168,7 @@ namespace gctp {
 		Ptr ret = Factory::create(typeinfo);
 		if(ret) {
 			ptrs_.push_back(ret);
-			if(name) db().insert(name, ret);
+			if(name) db_.insert(name, ret);
 		}
 		return ret;
 	}
@@ -128,9 +185,19 @@ namespace gctp {
 		Ptr ret = Factory::create(classname);
 		if(ret) {
 			ptrs_.push_back(ret);
-			if(name) db().insert(name, ret);
+			if(name) db_.insert(name, ret);
 		}
 		return ret;
+	}
+
+	Hndl Context::find(const _TCHAR *name)
+	{
+		if(name) {
+			Hndl ret = db_[name];
+			if(ret) return ret;
+			if(prev_) return prev_->find(name);
+		}
+		return Hndl();
 	}
 
 	void Context::serialize(Serializer &serializer)
@@ -160,7 +227,7 @@ namespace gctp {
 		return true;
 	}
 
-	int Context::luaLoad(luapp::Stack &L)
+	int Context::load(luapp::Stack &L)
 	{
 		/* (const char *fname) */
 #ifdef UNICODE
@@ -172,7 +239,7 @@ namespace gctp {
 		return 1;
 	}
 	
-	int Context::luaCreate(luapp::Stack &L)
+	int Context::create(luapp::Stack &L)
 	{
 		/* ( const char *classname, const char *name) */
 #ifdef UNICODE
@@ -184,9 +251,25 @@ namespace gctp {
 		return 1;
 	}
 
+	int Context::find(luapp::Stack &L)
+	{
+#ifdef UNICODE
+		WCStr str = L[1].toCStr();
+		Hndl ret = find(str.c_str());
+#else
+		Hndl ret = find(L[1].toCStr());
+#endif
+		if(ret) {
+			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
+			return gctp::TukiRegister::newUserData(L, ret.lock());
+		}
+		return 0;
+	}
+
 	TUKI_IMPLEMENT_BEGIN_NS(gctp, Context)
-		TUKI_METHOD_EX(Context, "load", luaLoad)
-		TUKI_METHOD_EX(Context, "create", luaCreate)
+		TUKI_METHOD(Context, load)
+		TUKI_METHOD(Context, create)
+		TUKI_METHOD(Context, find)
 	TUKI_IMPLEMENT_END(Context)
 
 } // namespace gctp

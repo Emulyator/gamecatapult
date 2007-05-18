@@ -8,6 +8,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/class.hpp>
+#include <gctp/buffwd.hpp> // for BufferPtr
 #include <gctp/pointerlist.hpp>
 #include <gctp/dxcomptrs.hpp>
 #include <map>
@@ -43,7 +44,7 @@ namespace gctp { namespace scene {
 
 	/** シーングラフファイル読み込み
 	 *
-	 * ファイルを読みこんで、内部のデータをリソースとして登録していく。<BR>
+	 * ファイルを読みこんで、内部のデータをリソースとして登録していく。\n
 	 * 登録されたリソースはこのファイルリソースによって所有され、
 	 * このリソースの開放によって、読みこんだリソースを開放する。
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -53,7 +54,9 @@ namespace gctp { namespace scene {
 	class GraphFile : public Object, public PtrList {
 	public:
 		/// XFileの読みこみ
-		bool setUpFromX(const _TCHAR *filename);
+		bool setUpFromX(const _TCHAR *fn);
+		/// XFileの読みこみ
+		bool setUpFromX(BufferPtr buffer);
 		
 	GCTP_DECLARE_CLASS;
 	};

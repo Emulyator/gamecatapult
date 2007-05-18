@@ -11,7 +11,7 @@
 #include <gctp/app.hpp>
 #include <gctp/graphic.hpp>
 #ifdef _MT
-#include <boost/thread/mutex.hpp>
+#include <gctp/mutex.hpp>
 #endif
 
 namespace gctp {
@@ -19,7 +19,7 @@ namespace gctp {
 	void Events::post(const Event &event)
 	{
 #ifdef _MT
-		boost::mutex::scoped_lock _al(monitor_);
+		ScopedLock _al(monitor_);
 #endif
 		q_.push_back(event);
 	}
@@ -27,7 +27,7 @@ namespace gctp {
 	void Events::flush()
 	{
 #ifdef _MT
-		boost::mutex::scoped_lock _al(monitor_);
+		ScopedLock _al(monitor_);
 #endif
 		for(QType::iterator i = q_.begin(); i != q_.end(); ++i) {
 			event_signal(*i);
@@ -218,10 +218,9 @@ namespace gctp {
 
 #ifdef _MT
 	namespace {
-		typedef boost::mutex::scoped_lock Lock;
-		boost::mutex monitor;
+		Mutex monitor;
 	}
-# define MONITOR	Lock __al(monitor)
+# define MONITOR	ScopedLock __al(monitor)
 #else
 # define MONITOR
 #endif
@@ -289,7 +288,7 @@ namespace gctp {
 				graphic::clear();
 				graphic::begin();
 
-				app().draw();
+				app().draw(lap);
 
 				graphic::end();
 				app().present();
@@ -307,7 +306,7 @@ namespace gctp {
 				graphic::clear();
 				graphic::begin();
 
-				draw_signal();
+				draw_signal(lap);
 
 				graphic::end();
 				present();
