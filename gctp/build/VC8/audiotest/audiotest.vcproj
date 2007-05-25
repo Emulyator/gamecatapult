@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib"
+				AdditionalDependencies="winmm.lib zlibd.lib liboggd.lib libvorbisfiled.lib libvorbisd.lib"
 				OutputFile="$(OutDir)/audiotest.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -143,7 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib"
+				AdditionalDependencies="winmm.lib zlib.lib libogg.lib libvorbisfile.lib libvorbis.lib"
 				OutputFile="$(OutDir)/audiotest.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"

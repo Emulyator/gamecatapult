@@ -14,6 +14,7 @@
 #include <gctp/hrslt.hpp>
 #include <gctp/audio/player.hpp>
 #include <gctp/audio/clip.hpp>
+#include <gctp/audio/track.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace gctp { namespace audio {

@@ -125,6 +125,9 @@ namespace gctp { namespace graphic {
 		/// アスキー文字が収まる最少の幅を計算
 		static uint getSmallestWidth(const Font &font, uint unit);
 
+		/// 袋文字、影文字のときの輪郭色。標準で黒
+		static void setShadowColor(Color32 bkcolor);
+
 		/// 領域のガベージ
 		void gabage();
 

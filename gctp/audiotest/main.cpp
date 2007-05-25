@@ -8,7 +8,8 @@
 #include <gctp/dbgout.hpp>
 #include <time.h>
 #include <gctp/audio.hpp>
-#include <gctp/audio/vorbis.hpp>
+//#include <gctp/audio/vorbisacm.hpp>
+#include <gctp/fileserver.hpp>
 
 using namespace gctp;
 using namespace gctp::audio;
@@ -30,12 +31,11 @@ public:
 		HRslt hr = a_.open(handle());
 		if(!hr) GCTP_TRACE(hr);
 		a_.setCurrent();
-		p1_ = a_.ready(_T("../../../media/pang.wav"));
-		p2_ = a_.ready(_T("../../../media/hugeraw.wav"));
+		fileserver().mount(_T("../../../media"));
+		p1_ = a_.ready(_T("pang.wav"));
+		p2_ = a_.ready(_T("hugeraw.wav"));
+		//p2_ = a_.ready(_T("JM5.ogg"));
 		p2_.play(true);
-//		ogg_.UseDirectSound(a_);
-//		ogg_.OpenOgg("media/ogg.ogg");
-//		ogg_.Play(0, true);
 
 		// handlers
 		onLeftMouseUp( &Self::doOnLButtonUp );
@@ -66,15 +66,14 @@ private:
 
 	Player p1_;
 	Player p2_;
-//	OggPlayer ogg_;
 };
 
 int SmartWinMain( Application & app )
 {
 	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
 	// OggVorbisÝ’è
-	VorbisAcmDriver vorbis;
-	vorbis.initialize();
+	//VorbisAcmDriver vorbis;
+	//vorbis.initialize();
 	TestWindow *test_window = new TestWindow;
 	test_window->setUp();
 	return app.run();

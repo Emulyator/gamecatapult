@@ -40,7 +40,7 @@ namespace gctp { namespace movie {
 		HRslt openForTexture(const _TCHAR *name, bool audio_on = true);
 		HRslt open(HWND hwnd, const _TCHAR *name, bool audio_on = true);
 
-		bool play(bool loop = false);
+		bool play(int loop = 1);
 		bool isPlaying();
 		void stop();
 		void release();

@@ -32,7 +32,7 @@ namespace gctp { namespace graphic {
 			OFFSCREEN,
 		};
 
-		Texture();
+		Texture(bool no_scaling = false);
 
 		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(const void *memory, std::size_t size);
@@ -54,8 +54,10 @@ namespace gctp { namespace graphic {
 
 		Point2 size() const;
 		Point2 originalSize() const { return Point2C(org_width_, org_height_); }
-		bool isDynamic() { return type_ == WORK; }
-		
+		bool isDynamic() const { return type_ == WORK; }
+		/// 実際に確保したテクスチャ領域全体に拡大していないか？（デフォルトfalse）
+		bool noScaling() const { return no_scaling_; }
+
 		enum LockFlag {
 			DISCARD = D3DLOCK_DISCARD,
 			NO_DIRTY_UPDATE = D3DLOCK_NO_DIRTY_UPDATE,
@@ -88,6 +90,7 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	protected:
+		bool no_scaling_;
 		int org_width_;
 		int org_height_;
 		int org_format_;

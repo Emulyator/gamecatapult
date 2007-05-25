@@ -13,6 +13,7 @@
 #include <gctp/graphic/fonttexture.hpp>
 #include <gctp/font.hpp>
 #include <sstream>
+#include <set>
 #include <gctp/utils.hpp>
 #include <gctp/dbgout.hpp>
 
@@ -70,18 +71,113 @@ namespace gctp { namespace graphic {
 			AttrMap attrs_;
 		};
 
+		class ForbiddenCharSet {
+		public:
+			ForbiddenCharSet()
+			{
+				to_linetop_.insert(_T(','));
+				to_linetop_.insert(_T(')'));
+				to_linetop_.insert(_T(']'));
+				to_linetop_.insert(_T('｝'));
+				to_linetop_.insert(_T('〕'));
+				to_linetop_.insert(_T('〉'));
+				to_linetop_.insert(_T('》'));
+				to_linetop_.insert(_T('」'));
+				to_linetop_.insert(_T('』'));
+				to_linetop_.insert(_T('】'));				
+				to_linetop_.insert(_T('’'));
+				to_linetop_.insert(_T('ヽ'));
+				to_linetop_.insert(_T('ヾ'));
+				to_linetop_.insert(_T('ー'));
+				to_linetop_.insert(_T('ァ'));
+				to_linetop_.insert(_T('ィ'));
+				to_linetop_.insert(_T('ゥ'));
+				to_linetop_.insert(_T('ェ'));
+				to_linetop_.insert(_T('ォ'));
+				to_linetop_.insert(_T('ッ'));
+				to_linetop_.insert(_T('ャ'));
+				to_linetop_.insert(_T('ュ'));
+				to_linetop_.insert(_T('ョ'));
+				to_linetop_.insert(_T('ヮ'));
+				to_linetop_.insert(_T('ヵ'));
+				to_linetop_.insert(_T('ヶ'));
+				to_linetop_.insert(_T('ぁ'));
+				to_linetop_.insert(_T('ぃ'));
+				to_linetop_.insert(_T('ぅ'));
+				to_linetop_.insert(_T('ぇ'));
+				to_linetop_.insert(_T('ぉ'));
+				to_linetop_.insert(_T('っ'));
+				to_linetop_.insert(_T('ゃ'));
+				to_linetop_.insert(_T('ゅ'));
+				to_linetop_.insert(_T('ょ'));
+				to_linetop_.insert(_T('ゎ'));
+				to_linetop_.insert(_T('々'));
+				to_linetop_.insert(_T('‐'));
+				to_linetop_.insert(_T('?'));
+				to_linetop_.insert(_T('!'));
+				to_linetop_.insert(_T('？'));
+				to_linetop_.insert(_T('！'));
+				to_linetop_.insert(_T('・'));
+				to_linetop_.insert(_T(':'));
+				to_linetop_.insert(_T(';'));
+				to_linetop_.insert(_T('、'));
+				to_linetop_.insert(_T('。'));
+				to_linetop_.insert(_T('.'));
+
+				to_lineend_.insert(_T('('));
+				to_lineend_.insert(_T('['));
+				to_lineend_.insert(_T('｛'));
+				to_lineend_.insert(_T('〔'));
+				to_lineend_.insert(_T('〈'));
+				to_lineend_.insert(_T('《'));
+				to_lineend_.insert(_T('「'));
+				to_lineend_.insert(_T('『'));
+				to_lineend_.insert(_T('【'));
+				to_lineend_.insert(_T('‘'));
+
+				to_separate_.insert(_T('…'));
+				to_separate_.insert(_T('‥'));
+				to_separate_.insert(_T('―'));
+				to_separate_.insert(_T('─'));
+			}
+
+			bool toLineTop(_TCHAR c) const
+			{
+				return to_linetop_.find(c) != to_linetop_.end();
+			}
+			bool toLineEnd(_TCHAR c) const
+			{
+				return to_lineend_.find(c) != to_lineend_.end();
+			}
+			bool toSeparate(_TCHAR c) const
+			{
+				return to_separate_.find(c) != to_separate_.end();
+			}
+
+		private:
+			std::set<_TCHAR> to_linetop_;
+			std::set<_TCHAR> to_lineend_;
+			std::set<_TCHAR> to_separate_;
+		};
+
+		const ForbiddenCharSet &forbidden()
+		{
+			static ForbiddenCharSet ret;
+			return ret;
+		}
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Text, Object);
 	
 	using namespace detail;
 
-	Text::Text() : impl_(new TextImpl)
+	Text::Text() : impl_(new TextImpl), clip_(0,0,0,0), layout_(0,0,0,0)
 	{
 	}
 
 	Text::~Text()
 	{
+		//TextImplを公開していないので、空のデストラクタを宣言しないと使用側でTextImplの削除法がわからないといわれる
 	}
 
 	Text &Text::setPos(float x, float y, int ofs) {
@@ -104,32 +200,33 @@ namespace gctp { namespace graphic {
 		return *this;
 	}
 
-	Text &Text::setClumpPos(float x, float y, int ofs)
-	{
-		D3DVIEWPORT9 vp = graphic::device().impl().getViewPort();
-		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(x>0?x:vp.Width+x, y>0?y:vp.Height+y)));
-		return *this;
-	}
-
-	Text &Text::setCenterdPos(float x, float y, int ofs)
-	{
-		D3DVIEWPORT9 vp = graphic::device().impl().getViewPort();
-		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(vp.Width/2+x, vp.Height/2+y)));
-		return *this;
-	}
-
 	std::basic_ostream<_TCHAR> &Text::out() { return impl_->os; }
 
 	HRslt Text::draw(graphic::SpriteBuffer &spr, graphic::FontTexture &fonttex) const
 	{
-		return proccess(&spr, fonttex, NULL, 0);
+		return proccess(&spr, fonttex, NULL, NULL, 0);
+	}
+
+	HRslt Text::draw(SpriteDescVector &descvec, FontTexture &fonttex) const
+	{
+		return proccess(NULL, fonttex, &descvec, NULL, 0);
 	}
 
 	Point2f Text::getPos(graphic::FontTexture &fonttex, int ofs)
 	{
 		Point2f ret;
-		proccess(NULL, fonttex, &ret, ofs);
+		proccess(NULL, fonttex, NULL, &ret, ofs);
 		return ret;
+	}
+
+	void Text::setClip(const Rect &rc)
+	{
+		clip_ = rc;
+	}
+
+	void Text::setLayoutRectangle(const Rect &rc)
+	{
+		layout_ = rc;
 	}
 
 	/// 書き込みバッファを巻き戻す
@@ -139,7 +236,7 @@ namespace gctp { namespace graphic {
 		impl_->attrs_.clear();
 	}
 
-	HRslt Text::proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &fonttex, Point2f *lastpos, int ofs) const
+	HRslt Text::proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &fonttex, SpriteDescVector *descvec, Point2f *lastpos, int ofs) const
 	{
 		basic_string<_TCHAR>::size_type i = 0, size = impl_->os.tellp(), len = impl_->os.str().length();
 		if(size > len) {
@@ -157,6 +254,7 @@ namespace gctp { namespace graphic {
 		while( i < size ) {
 			int c, n;
 			n = getChar(c, text);
+			if(n == 0) break;
 			for(AttrMap::iterator attri = impl_->attrs_.lower_bound(i); attri != impl_->attrs_.upper_bound(i+ios::pos_type(n-1)); attri++) {
 				if(attri->second.type == Attr::FONT) {
 					font = attri->second.font.get();
@@ -166,6 +264,7 @@ namespace gctp { namespace graphic {
 					if(!glyph) fonttex.cacheAscii(font);
 				}
 			}
+
 			if( _istascii(c) ) {
 				if(!fonttex.isCached(font, c)) fonttex.cacheAscii(font);
 			}
@@ -179,6 +278,7 @@ namespace gctp { namespace graphic {
 		while( i < size ) {
 			int c, n;
 			n = getChar(c, text);
+			if(n == 0) break;
 			for(AttrMap::iterator attri = impl_->attrs_.lower_bound(i); attri != impl_->attrs_.upper_bound(i+ios::pos_type(n-1)); attri++) {
 				if(attri->second.type == Attr::FONT) {
 					font = attri->second.font.get();
@@ -202,17 +302,53 @@ namespace gctp { namespace graphic {
 		i = 0;
 		font = 0;
 		text = str.c_str();
+		//const _TCHAR *linetop_text = text;
+		//int linetop_i = i; // まだ利用して無いので…
 		// 描画開始
-		if(spr) spr->begin(fonttex, false);
-		float left = 0, x = 0, y = 0; Color32 color(0, 0, 0), backcolor(0, 0, 0, 0);
+		bool setvp = false;
+		ViewPort vp_bu;
+		if(clip_.width() > 0 || clip_.height() > 0) {
+			setvp = true;
+			if(spr) {
+				Point2 screen = getScreenSize();
+				vp_bu = getViewPort();
+				ViewPort vp;
+				vp.min_z = 0;
+				vp.max_z = 1;
+				if(clip_.width() > 0) {
+					vp.x = clip_.left;
+					vp.width = clip_.width();
+				}
+				else {
+					vp.x = 0;
+					vp.width = screen.x;
+				}
+				if(clip_.height() > 0) {
+					vp.y = clip_.top;
+					vp.height = clip_.height();
+				}
+				else {
+					vp.y = 0;
+					vp.height = screen.y;
+				}
+				setViewPort(vp);
+			}
+		}
+		if(spr)	spr->begin(fonttex, false);
+		int prev_c = 0, now_disp_count = 0;
+		float x = (float)layout_.left, y = (float)layout_.top;
+		Color32 color(0, 0, 0), backcolor(0, 0, 0, 0);
 		uint line_height = 0, default_line_height = 0, space_size = 0;
+		bool loopback = false;
 		while( i <= size ) {
 			int c, n;
 			if(i < size) n = getChar(c, text);
 			else n = 1;
+			if(n == 0) break;
 			for(AttrMap::iterator attri = impl_->attrs_.lower_bound(i); attri != impl_->attrs_.upper_bound(i+ios::pos_type(n-1)); attri++) {
 				if(attri->second.type == Attr::POSITION) {
-					left = x = attri->second.pos.x; y = attri->second.pos.y;
+					x = layout_.left+attri->second.pos.x; y = layout_.top+attri->second.pos.y;
+					prev_c = 0;
 				}
 				else if(attri->second.type == Attr::COLOR) {
 					color = attri->second.color;
@@ -236,45 +372,79 @@ namespace gctp { namespace graphic {
 			text += n;
 			i += n;
 
-			if( c == _T('\n') || c == _T('\r') ) {
-				x = left; y += line_height; line_height = default_line_height;
+			if(c == _T('\n') || c == _T('\r') ) {
+				if(!loopback) {
+					x = (float)layout_.left; y += line_height; line_height = default_line_height;
+				}
+				loopback = false;
+				prev_c = c;
 				continue;
 			}
 			else if( c == _T('\t') ) {
-				x = left+graphic::toTabbed(x-left, space_size*4);
+				x = layout_.left+toTabbed(x-layout_.left, space_size*4);
+				prev_c = c;
 				continue;
 			}
+			loopback = false;
 			if(isPrintChar(c)) {
 				if(font) {
 					glyph = fonttex.find(font, c);
 					if(glyph) {
 						if(line_height < glyph.size.y) line_height = static_cast<uint>(glyph.size.y);
-						if(spr) {
+						if(layout_.width() > 0) {
+							// 折り返し処理
+							if(x > layout_.right+font->maxWidth()
+							|| (x+glyph.size.x > layout_.right && !forbidden().toLineEnd((_TCHAR)prev_c) && !forbidden().toLineTop((_TCHAR)c) && !(forbidden().toSeparate((_TCHAR)c)&&prev_c==c))
+							|| (forbidden().toLineEnd((_TCHAR)c) && x+glyph.size.x+font->maxWidth() > layout_.right)) {
+								x = (float)layout_.left; y += line_height;
+								loopback = true;
+							}
+						}
+						if(spr || descvec) {
 							if(backcolor.a != 0) {
 								graphic::FontGlyph _glyph = fonttex.find(font, ' ');
-								if(_glyph) {
+								if(_glyph && (!setvp || clip_.isHit(RectC((uint_t)x, (uint_t)y, (uint_t)(x+glyph.size.x), (uint_t)(y+line_height))))) {
 									graphic::SpriteDesc desc;
-									desc.setPos(RectfC(x-1.5f, y-0.5f, x+glyph.size.x-0.5f+1, y+line_height-0.5f));
+									desc.setPos(RectfC(x, y, x+glyph.size.x, y+line_height));
 									desc.setUV(_glyph.uv);
 									desc.setColor(backcolor);
 									desc.setHilight(Color32(0,0,0));
-									spr->draw(desc);
+									if(spr) spr->draw(desc);
+									if(descvec) descvec->descs.push_back(desc);
 								}
 							}
-							if(!isSpaceChar(c)) {
+							if(!isSpaceChar(c) && (!setvp || clip_.isHit(RectC((uint_t)x, (uint_t)y, (uint_t)(x+glyph.size.x), (uint_t)(y+line_height))))) {
+								if(font->exStyle()!=Font::EX_NONE) {
+									// 影文字袋文字のときの特別処理
+									if((c == _T('―') // 全角ダッシュ
+										|| c == _T('─') // 罫線
+										|| c == _T('…') // ３点リーダ
+										) && prev_c == c)
+									{
+										// 連続していた場合、後続は左１ドットを削る
+										glyph.size.x -= 1;
+										glyph.uv.left += 1.0f/fonttex.size().x;
+										x -= 1;
+									}
+								}
 								graphic::SpriteDesc desc;
-								desc.setPos(RectfC(x-0.5f, y-0.5f, x+glyph.size.x-0.5f, y+glyph.size.y-0.5f));
+								desc.setPos(RectfC(x, y, x+glyph.size.x, y+glyph.size.y));
 								desc.setUV(glyph.uv);
 								desc.setColor(color);
 								desc.setHilight(Color32(0,0,0));
-								spr->draw(desc);
+								if(spr) spr->draw(desc);
+								if(descvec) descvec->descs.push_back(desc);
 							}
 						}
 					}
 					x += glyph.size.x;
+					if(loopback) {
+						 line_height = default_line_height;
+					}
 				}
 				else PRNN(_T("フォントが設定されていません！"));
 			}
+			prev_c = c;
 		}
 		if(lastpos) {
 			lastpos->x = x;
@@ -282,6 +452,9 @@ namespace gctp { namespace graphic {
 		}
 		if(spr) {
 			spr->end();
+			if(setvp) {
+				setViewPort(vp_bu);
+			}
 		}
 		return S_OK;
 	}

@@ -1,5 +1,5 @@
-#ifndef _GCTP_AUDIO_VORBIS_HPP_
-#define _GCTP_AUDIO_VORBIS_HPP_
+#ifndef _GCTP_AUDIO_VORBISACM_HPP_
+#define _GCTP_AUDIO_VORBISACM_HPP_
 /** @file
  * VorbisAcmDriverクラスヘッダファイル
  *
@@ -61,4 +61,4 @@ namespace gctp { namespace audio {
 
 }} // namespace gctp
 
-#endif //_GCTP_AUDIO_VORBIS_HPP_
+#endif //_GCTP_AUDIO_VORBISACM_HPP_

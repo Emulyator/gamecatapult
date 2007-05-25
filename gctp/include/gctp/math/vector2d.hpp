@@ -19,11 +19,10 @@
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 #include <assert.h>
+#include <cmath>
+#include <limits>
 #ifdef GCTP_USE_D3DXMATH
 # include <d3dx9math.h>
-#else
-# include <cmath>
-# include <limits>
 #endif
 
 namespace gctp { namespace math {

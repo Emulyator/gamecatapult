@@ -24,7 +24,7 @@ namespace gctp {
 		bool open(const _TCHAR *zipname);
 		void close();
 		bool seekFile(const _TCHAR *fname);
-		int getFileSize();
+		int getFileSize() const;
 		int openFile();
 		void closeFile();
 		int readFile(void *b, size_t s);

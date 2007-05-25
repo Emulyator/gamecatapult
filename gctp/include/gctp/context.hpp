@@ -89,6 +89,47 @@ namespace gctp {
 		 */
 		Hndl add(const Ptr ptr, const _TCHAR *name = 0);
 
+		/// オブジェクト登録
+		template<class T>
+		Handle<T> create(const _TCHAR *name = 0)
+		{
+			if(name) {
+				Hndl h = find(name);
+				if(h) return h;
+			}
+			Pointer<T> p = new T;
+			if(p) return add(p, name);
+			return 0;
+		}
+		/// オブジェクト登録
+		template<class T>
+		Handle<T> createAndSetUp(const _TCHAR *name = 0)
+		{
+			if(name) {
+				Hndl h = find(name);
+				if(h) return h;
+			}
+			Pointer<T> p = new T;
+			if(p) {
+				if(p->setUp()) return add(p, name);
+			}
+			return 0;
+		}
+		/// オブジェクト登録
+		template<class T>
+		Handle<T> createAndSetUpEx(const _TCHAR *name = 0)
+		{
+			if(name) {
+				Hndl h = find(name);
+				if(h) return h;
+			}
+			Pointer<T> p = new T;
+			if(p) {
+				if(p->setUp(name)) return add(p, name);
+			}
+			return 0;
+		}
+
 		/** オブジェクト製作
 		 *
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>

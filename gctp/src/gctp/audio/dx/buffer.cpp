@@ -7,7 +7,7 @@
  */
 #include "common.h"
 #include <gctp/audio/dx/buffer.hpp>
-#include <gctp/audio/dx/wavfile.hpp>
+#include <gctp/audio/clip.hpp>
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -61,7 +61,7 @@ namespace gctp { namespace audio { namespace dx {
 				return hr;
 			}
 
-			HRslt setUp(IDirectSound8Ptr device, WavFile &wav, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, Clip &clip, bool global_focus) {
 				if( !device ) return CO_E_NOTINITIALIZED;
 				DSBUFFERDESC dsbd;
  
@@ -69,8 +69,8 @@ namespace gctp { namespace audio { namespace dx {
 				memset(&dsbd, 0, sizeof(DSBUFFERDESC));
 				dsbd.dwSize = sizeof(DSBUFFERDESC);
 				dsbd.dwFlags = DSBCAPS_LOCDEFER | DSBCAPS_CTRLPAN | DSBCAPS_CTRLVOLUME;
-				buffersize_ = dsbd.dwBufferBytes = wav.size();
-				dsbd.lpwfxFormat = const_cast<WAVEFORMATEX *>(wav.format());
+				buffersize_ = dsbd.dwBufferBytes = (DWORD)clip.size();
+				dsbd.lpwfxFormat = const_cast<WAVEFORMATEX *>(clip.format());
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
  
 				// バッファを作成する。
@@ -78,31 +78,31 @@ namespace gctp { namespace audio { namespace dx {
 				HRslt hr = device->CreateSoundBuffer(&dsbd, &ptr, NULL);
 				if(!hr) return hr;
 				else ptr_ = ptr;
-				return load(wav);
+				return load(clip);
 			}
 
-			HRslt load(WavFile &wav) {
+			HRslt load(Clip &clip) {
 				HRslt hr;
 				void *buf = NULL;
 				ulong bufsize = 0;
 				size_t readsize = 0;
 
 				if(!ptr_) return CO_E_NOTINITIALIZED;
-				if(!wav.isOpen()) return E_INVALIDARG;
+				if(!clip.isOpen()) return E_INVALIDARG;
 
 				hr = restore();
 				if(!hr) return DXTRACE_ERR(TEXT("restore"), hr.i);
 
 				// Lock the buffer down
-				hr = ptr_->Lock(0, buffersize_, &buf, &bufsize, NULL, NULL, 0L );
+				hr = ptr_->Lock(0, (DWORD)buffersize_, &buf, &bufsize, NULL, NULL, 0L );
 				if(!hr) return DXTRACE_ERR(TEXT("Lock"), hr.i);
 
-				wav.rewind();
+				clip.rewind();
 
-				hr = wav.read(buf, bufsize, &readsize);
+				hr = clip.read(buf, bufsize, &readsize);
 				if(!hr) return DXTRACE_ERR(TEXT("Read"), hr.i);
 				if( readsize < bufsize ) // 空白埋め
-					memset((uint8_t *)buf + readsize, wav.format()->wBitsPerSample == 8 ? 128 : 0, bufsize - readsize);
+					memset((uint8_t *)buf + readsize, clip.format()->wBitsPerSample == 8 ? 128 : 0, bufsize - readsize);
 				// Unlock the buffer, we don't need it anymore.
 				ptr_->Unlock(buf, bufsize, NULL, 0);
 				return S_OK;
@@ -118,10 +118,10 @@ namespace gctp { namespace audio { namespace dx {
 				return false;
 			}
 
-			virtual HRslt play(bool loop) {
+			virtual HRslt play(int times) {
 				if(!ptr_) return CO_E_NOTINITIALIZED;
 				HRslt hr;
-				hr = ptr_->Play(0, 0, loop ? DSBPLAY_LOOPING : 0);
+				hr = ptr_->Play(0, 0, times == 0 ? DSBPLAY_LOOPING : 0);
 				if(!hr) GCTP_TRACE(hr);
 				return hr;
 			}
@@ -203,7 +203,7 @@ namespace gctp { namespace audio { namespace dx {
 #ifndef GCTP_AUDIO_USE_TIMER
 				notified_event_(NULL),
 #endif
-				in_coda_(false), do_loop_(false)
+				in_coda_(false), times_(1), count_(0)
 			{
 			}
 
@@ -214,15 +214,17 @@ namespace gctp { namespace audio { namespace dx {
 			}
 #endif
 
-			HRslt setUp(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus) {
 				HRslt hr;
 
 				if( !device ) return CO_E_NOTINITIALIZED;
-				if( fname == NULL) return E_INVALIDARG;
-				if( !( hr = wav_.open(fname) ) ) return hr;
+				if( !clip || !clip->isOpen() ) return E_INVALIDARG;
+
+				clip->synchronize(true);
+				clip_ = clip;
 
 				// Figure out how big the DSound buffer should be
-				buffersize_ = wav_.format()->nSamplesPerSec * NOTIFY_BUF_LEN_SEC * wav_.format()->nBlockAlign;
+				buffersize_ = clip->format()->nSamplesPerSec * NOTIFY_BUF_LEN_SEC * clip->format()->nBlockAlign;
 
 				DSBUFFERDESC dsbd;
 				ZeroMemory( &dsbd, sizeof(DSBUFFERDESC) );
@@ -232,9 +234,9 @@ namespace gctp { namespace audio { namespace dx {
 									   | DSBCAPS_CTRLPOSITIONNOTIFY
 #endif
 									   /*| DSBCAPS_GETCURRENTPOSITION2*/; // 正確な再生カーソルなどいるだろうか？
-				dsbd.dwBufferBytes   = buffersize_;
+				dsbd.dwBufferBytes   = (DWORD)buffersize_;
 				//dsbd.guid3DAlgorithm = guid3DAlgorithm;
-				dsbd.lpwfxFormat     = const_cast<WAVEFORMATEX *>(wav_.format());
+				dsbd.lpwfxFormat     = const_cast<WAVEFORMATEX *>(clip->format());
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
 
 				IDirectSoundBufferPtr ptr;
@@ -265,14 +267,15 @@ namespace gctp { namespace audio { namespace dx {
 					return DXTRACE_ERR( TEXT("SetNotificationPositions"), hr.i );
 				}
 #endif
-				glast_ = buffersize_;
-				return load(wav_);
+				glast_ = (ulong)buffersize_;
+				return load(*clip_);
 			}
 
 			/// Notificationに対する処理
 			HRslt onNotified() {
 				ScopedLock al(monitor_);
-				if( !ptr_ || !wav_.isOpen() ) return CO_E_NOTINITIALIZED;
+				Pointer<Clip> clip = clip_.lock();
+				if( !ptr_ || !clip || !clip->isOpen() ) return CO_E_NOTINITIALIZED;
 				HRslt hr;
 				if( !( hr = restore() ) ) return DXTRACE_ERR( TEXT("restore"), hr.i );
 
@@ -283,22 +286,22 @@ namespace gctp { namespace audio { namespace dx {
 				
 				// なんか他の割り込みに反応してしまうことがあるようなので、本当に更新する必要があるのか
 				// 確かめる
-				ulong notify_size = buffersize_/NOTIFY_COUNT/wav_.format()->nBlockAlign*wav_.format()->nBlockAlign; ///< １回のonNotifiedで処理されるはずのサイズ
+				ulong notify_size = (ulong)buffersize_/NOTIFY_COUNT/clip->format()->nBlockAlign*clip->format()->nBlockAlign; ///< １回のonNotifiedで処理されるはずのサイズ
 				ulong size, maxsize, current, writebegin; // 現在の再生カーソル位置
 				if( !( hr = ptr_->GetCurrentPosition( &current, &writebegin ) ) ) {
 					DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
 					return S_FALSE;
 				}
 				if( current <= writebegin ) {
-					maxsize = (buffersize_-writebegin+current)/wav_.format()->nBlockAlign*wav_.format()->nBlockAlign;
+					maxsize = (ulong)(buffersize_-writebegin+current)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
 					if(current <= llast_ && llast_ < writebegin) llast_ = writebegin;
 				}
 				else {
-					maxsize = (current-writebegin)/wav_.format()->nBlockAlign*wav_.format()->nBlockAlign;
+					maxsize = (ulong)(current-writebegin)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
 					if(current <= llast_ || llast_ < writebegin) llast_ = writebegin;
 				}
-				if( current < llast_ ) size = (buffersize_-llast_+current)/wav_.format()->nBlockAlign*wav_.format()->nBlockAlign;
-				else size = (current-llast_)/wav_.format()->nBlockAlign*wav_.format()->nBlockAlign;
+				if( current < llast_ ) size = (ulong)(buffersize_-llast_+current)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
+				else size = (current-llast_)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
 				if(size < notify_size) {
 					//PRNN("通知サイズに達してないのに来た？ : " << /*notified_event_ << "," << */wav_.fname() << "(" << size << "/" << notify_size << ")");
 					return S_FALSE; // 通知サイズに達してないのに来た？
@@ -330,29 +333,34 @@ namespace gctp { namespace audio { namespace dx {
 				if(llast_ >= buffersize_) llast_ = llast_ % buffersize_;
 				ptr_->Unlock( buf1, buf1size, buf2, buf2size );
 
-				if(in_coda_ && glast_ >= wav_.size()) ptr_->Stop();
+				//if(in_coda_ && last_written_ glast_ >= clip->size()) ptr_->Stop();
+				if(in_coda_ && current >= last_written_) ptr_->Stop();
 				return S_OK;
 			}
 
-			HRslt rewind() {
-				if(!ptr_ || !wav_.isOpen() ) return CO_E_NOTINITIALIZED;
+			HRslt rewind()
+			{
+				Pointer<Clip> clip = clip_.lock();
+				if( !ptr_ || !clip || !clip->isOpen() ) return CO_E_NOTINITIALIZED;
 
 				HRslt hr;
 				ScopedLock al(monitor_);
 				glast_ = llast_ = 0; in_coda_ = false;
-				wav_.rewind();
-				if( !( hr = load(wav_) ) ) return DXTRACE_ERR( TEXT("load"), hr.i );
+				clip->rewind();
+				if( !( hr = load(*clip) ) ) return DXTRACE_ERR( TEXT("load"), hr.i );
 				return ptr_->SetCurrentPosition(0);
 			}
 
-			virtual HRslt play(bool loop) {
+			virtual HRslt play(int times)
+			{
 				if(!ptr_) return CO_E_NOTINITIALIZED;
 				HRslt hr;
 				if(in_coda_) {
 					hr = rewind();
 					if(!hr) GCTP_TRACE(hr);
 				}
-				do_loop_ = loop;
+				times_ = times;
+				count_ = 0;
 				hr = ptr_->Play(0, 0, DSBPLAY_LOOPING);
 				if(!hr) GCTP_TRACE(hr);
 				return hr;
@@ -365,42 +373,57 @@ namespace gctp { namespace audio { namespace dx {
 		protected:
 			HRslt fill(void *buf, ulong size)
 			{
+				Pointer<Clip> clip = clip_.lock();
+				if( !ptr_ || !clip || !clip->isOpen() ) return CO_E_NOTINITIALIZED;
 				HRslt hr;
 				size_t written_size;
 				// Fill the DirectSound buffer with wav data
-				if( !( hr = wav_.read( buf, size, &written_size ) ) ) return DXTRACE_ERR( TEXT("Read"), hr.i );
+				if( !( hr = clip->read( buf, size, &written_size ) ) ) return DXTRACE_ERR( TEXT("Read"), hr.i );
 				if( written_size < size ) {
-					if( do_loop_ ) {
-						DWORD total_read = written_size;
+					count_++;
+					if( times_ == 0 || count_ < times_ ) {
+						DWORD total_read = (DWORD)written_size;
 						while( total_read < size ) {
-							if( !( hr = wav_.rewind() ) )
-								return DXTRACE_ERR( TEXT("WavFile::rewind"), hr.i );
-							if( !( hr = wav_.read( (BYTE*)buf + total_read, size - total_read, &written_size ) ) )
-								return DXTRACE_ERR( TEXT("WavFile::read"), hr.i );
-							total_read += written_size;
+							if( !( hr = clip->rewind() ) )
+								return DXTRACE_ERR( TEXT("Clip::rewind"), hr.i );
+							if( !( hr = clip->read( (BYTE*)buf + total_read, size - total_read, &written_size ) ) )
+								return DXTRACE_ERR( TEXT("Clip::read"), hr.i );
+							total_read += (DWORD)written_size;
 						}
 					}
 					else {
 						fillWithSilence( (BYTE*)buf + written_size, size - written_size );
+						if( !( hr = ptr_->GetCurrentPosition( NULL, &last_written_ ) ) ) {
+							DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
+							return S_FALSE;
+						}
+						last_written_ += written_size;
 						in_coda_ = true;
 					}
 				}
 				return S_OK;
 			}
+
 			void fillWithSilence(void *buf, ulong size)
 			{
-				memset( buf, wav_.format()->wBitsPerSample == 8 ? 128 : 0, size);
+				if( !ptr_ ) return;
+				WAVEFORMATEX format;
+				format.wBitsPerSample = 0;
+				ptr_->GetFormat(&format, sizeof(WAVEFORMATEX), 0);
+				memset( buf, format.wBitsPerSample == 8 ? 128 : 0, size);
 			}
 
-			WavFile wav_;
+			Handle<Clip> clip_;
 			ulong glast_;			///< ストリーム全体での処理済位置(バッファ終端のグローバル位置を示す。ストリーム全体での再生カーソル位置はglast_+abs((current-llast_)%buffersize_)で求まる)
 			ulong llast_;			///< バッファローカルでの処理済位置
 
 #ifndef GCTP_AUDIO_USE_TIMER
 			HANDLE notified_event_;	///< 通知イベントのハンドル
 #endif
+			ulong last_written_;	///< 最後にウェーブを書き込んだバッファ位置(in_coda_がtrueになってからのみ有効)
 			bool in_coda_;			///< ウェーブの最後に達したか？
-			bool do_loop_;			///< ループ再生するか？
+			int times_;				///< 再生回数設定(0は無限)
+			int count_;				///< 再生カウント
 			Mutex monitor_;
 		};
 	}
@@ -411,11 +434,17 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:43:00
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus)
+	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
 	{
-		Pointer<StaticBuffer> buffer = new StaticBuffer;
-		buffer->setUp(device, wav, global_focus);
-		return buffer;
+		if(clip) {
+			Pointer<StaticBuffer> buffer = new StaticBuffer;
+			if(buffer) {
+				HRslt hr = buffer->setUp(device, *clip, global_focus);
+				if(hr) return buffer;
+				else GCTP_TRACE(hr);
+			}
+		}
+		return 0;
 	}
 
 	/** ストリーミングバッファを製作して返す
@@ -424,11 +453,17 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:43:00
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus)
+	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
 	{
-		Pointer<StreamingBuffer> buffer = new StreamingBuffer;
-		buffer->setUp(device, fname, global_focus);
-		return buffer;
+		if(clip) {
+			Pointer<StreamingBuffer> buffer = new StreamingBuffer;
+			if(buffer) {
+				HRslt hr = buffer->setUp(device, clip, global_focus);
+				if(hr) return buffer;
+				else GCTP_TRACE(hr);
+			}
+		}
+		return 0;
 	}
 
 }}} // namespace gctp

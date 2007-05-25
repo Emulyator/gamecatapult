@@ -1412,12 +1412,12 @@ namespace {
 		file_in_zip_read_info_s* pfile_in_zip_read_info;
 		uLong offset_local_extrafield;  /* offset of the local extra field */
 		uInt  size_local_extrafield;    /* size of the local extra field */
-	#    ifndef NOUNCRYPT
+#       ifndef NOUNCRYPT
 		char source[12];
-	#    else
+#       else
 		if (password != NULL)
 			return UNZ_PARAMERROR;
-	#    endif
+#       endif
 
 		if (file==NULL)
 			return UNZ_PARAMERROR;
@@ -1518,7 +1518,7 @@ namespace {
 
 		s->pfile_in_zip_read = pfile_in_zip_read_info;
 
-	#    ifndef NOUNCRYPT
+#       ifndef NOUNCRYPT
 		if (password != NULL)
 		{
 			int i;
@@ -1538,7 +1538,7 @@ namespace {
 			s->pfile_in_zip_read->pos_in_zipfile+=12;
 			s->encrypted=1;
 		}
-	#    endif
+#       endif
 
 
 		return UNZ_OK;
@@ -1631,7 +1631,7 @@ namespace {
 					return UNZ_ERRNO;
 
 
-	#            ifndef NOUNCRYPT
+#               ifndef NOUNCRYPT
 				if(s->encrypted)
 				{
 					uInt i;
@@ -1640,7 +1640,7 @@ namespace {
 						  zdecode(s->keys,s->pcrc_32_tab,
 								  pfile_in_zip_read_info->read_buffer[i]);
 				}
-	#            endif
+#               endif
 
 
 				pfile_in_zip_read_info->pos_in_zipfile += uReadThis;
@@ -1978,7 +1978,7 @@ namespace gctp {
 		}
 
 		/// カレントのファイルの、展開後のサイズを取得
-		int getFileSize()
+		int getFileSize() const
 		{
 			unz_file_info file_info;
 			if(unzGetCurrentFileInfo(zip_, &file_info, 0, 0, 0, 0, 0, 0)!=UNZ_OK) {
@@ -2044,7 +2044,7 @@ namespace gctp {
 		return impl_->seekFile(fname);
 	}
 	
-	int ZipFile::getFileSize()
+	int ZipFile::getFileSize() const
 	{
 		return impl_->getFileSize();
 	}
