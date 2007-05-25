@@ -9,19 +9,222 @@
 #include <gctp/movie/dx/player.hpp>
 #include <gctp/dbgout.hpp>
 #include <gctp/com_ptr.hpp>
+#include <gctp/fileserver.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/texture.hpp>
 #include <streams.h>
+#include <asyncio.h>
+#include <asyncrdr.h>
 
-#define REGISTER_FILTERGRAPH
+//#define REGISTER_FILTERGRAPH
 
 using namespace std;
 
 namespace gctp { namespace movie { namespace dx {
 
 	namespace {
+		TYPEDEF_DXCOMPTR(IFilterGraph);
 		TYPEDEF_DXCOMPTR(IPin);
+
+		class ArchiveStream : public CAsyncStream
+		{
+		public:
+			ArchiveStream(AbstractFilePtr ptr) :
+				fileptr_(ptr),
+				m_llLength(ptr->size()),
+				m_llPosition(0)
+			{
+			}
+
+			HRESULT SetPointer(LONGLONG llPos)
+			{
+				if (llPos < 0 || llPos > m_llLength) {
+					//PRNN(_T("????"));
+					return S_FALSE;
+				}
+				else {
+					if(llPos < m_llPosition) {
+						//PRNN(_T("巻き戻しだ"));
+						fileptr_->seek(llPos);
+					}
+					if(llPos > m_llPosition) {
+						//PRNN(_T("先送りだ"));
+						fileptr_->seek(llPos);
+					}
+					m_llPosition = llPos;
+					return S_OK;
+				}
+			}
+
+			HRESULT Read(PBYTE pbBuffer,
+						 DWORD dwBytesToRead,
+						 BOOL bAlign,
+						 LPDWORD pdwBytesRead)
+			{
+				CAutoLock lck(&m_csLock);
+				if(m_llLength <= m_llPosition) {
+					PRNN(_T("なぬ？"));
+					return S_FALSE;
+				}
+				DWORD dwReadLength;
+				if(m_llPosition + dwBytesToRead > m_llLength) {
+					dwReadLength = (DWORD)(m_llLength - m_llPosition);
+				}
+				else {
+					dwReadLength = dwBytesToRead;
+				}
+
+				fileptr_->read(pbBuffer, dwReadLength);
+				m_llPosition += dwReadLength;
+				*pdwBytesRead = dwReadLength;
+				return S_OK;
+			}
+
+			LONGLONG Size(LONGLONG *pSizeAvailable)
+			{
+				*pSizeAvailable = max<long long>(m_llLength - m_llPosition, 0);
+				return m_llLength;
+			}
+
+			DWORD Alignment()
+			{
+				return 1;
+			}
+
+			void Lock()
+			{
+				m_csLock.Lock();
+			}
+
+			void Unlock()
+			{
+				m_csLock.Unlock();
+			}
+
+		private:
+			AbstractFilePtr fileptr_;
+			CCritSec       m_csLock;
+			const LONGLONG m_llLength;
+			LONGLONG       m_llPosition;
+		};
+
+		class ArchiveReader : public CAsyncReader
+		{
+		public:
+			//  We're not going to be CoCreate'd so we don't need registration
+			//  stuff etc
+			STDMETHODIMP Register()
+			{
+				return S_OK;
+			}
+
+			STDMETHODIMP Unregister()
+			{
+				return S_OK;
+			}
+
+			ArchiveReader(ArchiveStream *pStream, CMediaType *pmt, HRESULT *phr) :
+				CAsyncReader(NAME("Archive Reader\0"), NULL, pStream, phr)
+			{
+				m_mt = *pmt;
+			}
+		};
+
+		class ArchiveMediaFile : public Object {
+		public:
+			static bool needThis(const TCHAR *path)
+			{
+				DWORD attr = ::GetFileAttributes(path);
+				if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+					// 生ファイルだ
+					return false;
+				}
+				return true;
+			}
+
+			ArchiveMediaFile() : archive_stream_(0), archive_reader_(0)
+			{
+				media_type_.majortype = MEDIATYPE_Stream;
+			}
+
+			HRslt open(const _TCHAR *path)
+			{
+				/*  Find the extension */
+				int len = lstrlen(path);
+				const _TCHAR *lpType;
+				if(len >= 4 && path[len - 4] == TEXT('.')) {
+					lpType = path + len - 3;
+				}
+				else {
+					PRNN(_T("Invalid file extension"));
+					return E_INVALIDARG;
+				}
+
+				/* Set subtype based on file extension */
+				if(lstrcmpi(lpType, TEXT("mpg")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_MPEG1System;
+				}
+				else if(lstrcmpi(lpType, TEXT("mpa")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_MPEG1Audio;
+				}
+				else if(lstrcmpi(lpType, TEXT("mpv")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_MPEG1Video;
+				}
+				else if(lstrcmpi(lpType, TEXT("dat")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_MPEG1VideoCD;
+				}
+				else if(lstrcmpi(lpType, TEXT("avi")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_Avi;
+				}
+				else if(lstrcmpi(lpType, TEXT("mov")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_QTMovie;
+				}
+				else if(lstrcmpi(lpType, TEXT("wav")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_WAVE;
+				}
+				else if(lstrcmpi(lpType, TEXT("mp3")) == 0) {
+					media_type_.subtype = MEDIASUBTYPE_MPEG1Audio;
+				}
+				else {
+					PRNN(_T("Unknown file type: ")<<lpType);
+					return E_INVALIDARG;
+				}
+
+				AbstractFilePtr file_ = fileserver().getFileInterface(path);
+				if(!file_) {
+					PRNN(_T("Can't open file: ")<<path);
+					return E_INVALIDARG;
+				}
+
+				archive_stream_ = new ArchiveStream(file_);
+				HRslt hr;
+				archive_reader_ = new ArchiveReader(archive_stream_, &media_type_, &hr.i);
+				if(!hr || archive_reader_ == NULL) {
+					file_ = 0;
+					if(archive_reader_) delete archive_reader_;
+					if(archive_stream_) delete archive_stream_;
+					archive_reader_ = 0;
+					archive_stream_ = 0;
+					PRNN(_T("Could not create filter - ")<<hr);
+					return hr;
+				}
+
+				//  Make sure we don't accidentally go away!
+				archive_reader_->AddRef();
+				return hr;
+			}
+
+			~ArchiveMediaFile()
+			{
+				if(archive_reader_) archive_reader_->Release();
+				if(archive_stream_) delete archive_stream_;
+			}
+
+			CMediaType media_type_;
+			ArchiveStream *archive_stream_;
+			ArchiveReader *archive_reader_;
+		};
 
 		struct __declspec(uuid("{a2a0ae27-9397-47be-bf20-a12ec2a709a5}")) CLSID_TextureRenderer;
 
@@ -473,6 +676,7 @@ namespace gctp { namespace movie { namespace dx {
 	{
 		HRslt hr;
 
+		hwnd_ = 0;
 		// Create the filter graph
 		if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
 			return hr;
@@ -507,32 +711,54 @@ namespace gctp { namespace movie { namespace dx {
 		USES_CONVERSION;
 		(void)StringCchCopyW(wFileName, NUMELMS(wFileName), T2W((_TCHAR *)path));
 
-		IBaseFilterPtr pFSrc; // Source Filter
-		// Add the source filter to the graph.
-		hr = graph_builder_->AddSourceFilter(wFileName, L"SOURCE", &pFSrc);
-
-		// If the media file was not found, inform the user.
-		if(hr == VFW_E_NOT_FOUND) {
-			//Msg(TEXT("Could not add source filter to graph!  (hr==VFW_E_NOT_FOUND)\r\n\r\n")
-			//	TEXT("This sample reads a media file from your windows directory.\r\n")
-			//	TEXT("This file is missing from this machine."));
-			GCTP_TRACE(_T("\n")
-			           _T("\tCould not add source filter to graph!  (hr==VFW_E_NOT_FOUND)\n\n")
-			           _T("\tThis sample reads a media file from your windows directory.\n")
-			           _T("\tThis file is missing from this machine."));
-			return hr;
-		}
-		else if(!hr) {
-			//Msg(TEXT("Could not add source filter to graph!  hr=0x%x"), hr);
-			GCTP_TRACE(_T("Could not add source filter to graph! : ") << hr);
-			return hr;
-		}
-
 		IPinPtr pFSrcPinOut;    // Source Filter Output Pin
-		if (!(hr = pFSrc->FindPin(L"Output", &pFSrcPinOut))) {
-			//Msg(TEXT("Could not find output pin!  hr=0x%x"), hr);
-			GCTP_TRACE(_T("Could not find output pin! : ") << hr);
-			return hr;
+		if(ArchiveMediaFile::needThis(path)) {
+			PRNN(_T("アーカイブ内メディアファイルをストリーム"));
+			ArchiveMediaFile *archive_source = new ArchiveMediaFile;
+			if(archive_source) archive_source_ = archive_source;
+			if(hr = archive_source->open(path)) {
+				hr = graph_builder_->AddFilter(archive_source->archive_reader_, 0);
+				if(!hr) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
+				if(!(hr = archive_source->archive_reader_->FindPin(L"Output", &pFSrcPinOut))) {
+					//Msg(TEXT("Could not find output pin!  hr=0x%x"), hr);
+					GCTP_TRACE(_T("Could not find output pin! : ") << hr);
+					return hr;
+				}
+			}
+			else {
+				archive_source_ = 0;
+			}
+		}
+		if(!archive_source_) {
+			IBaseFilterPtr pFSrc; // Source Filter
+			// Add the source filter to the graph.
+			hr = graph_builder_->AddSourceFilter(wFileName, L"SOURCE", &pFSrc);
+
+			// If the media file was not found, inform the user.
+			if(hr == VFW_E_NOT_FOUND) {
+				//Msg(TEXT("Could not add source filter to graph!  (hr==VFW_E_NOT_FOUND)\r\n\r\n")
+				//	TEXT("This sample reads a media file from your windows directory.\r\n")
+				//	TEXT("This file is missing from this machine."));
+				GCTP_TRACE(_T("\n")
+						   _T("\tCould not add source filter to graph!  (hr==VFW_E_NOT_FOUND)\n\n")
+						   _T("\tThis sample reads a media file from your windows directory.\n")
+						   _T("\tThis file is missing from this machine."));
+				return hr;
+			}
+			else if(!hr) {
+				//Msg(TEXT("Could not add source filter to graph!  hr=0x%x"), hr);
+				GCTP_TRACE(_T("Could not add source filter to graph! : ") << hr);
+				return hr;
+			}
+
+			if (!(hr = pFSrc->FindPin(L"Output", &pFSrcPinOut))) {
+				//Msg(TEXT("Could not find output pin!  hr=0x%x"), hr);
+				GCTP_TRACE(_T("Could not find output pin! : ") << hr);
+				return hr;
+			}
 		}
 
 		if(audio_on) {
@@ -596,23 +822,52 @@ namespace gctp { namespace movie { namespace dx {
 		WCHAR wFile[MAX_PATH];
 		HRslt hr;
 
-		if(!path)
-			return E_POINTER;
+		if(!path) return E_POINTER;
 
 		// Convert filename to wide character string
 		wcsncpy(wFile, T2W((LPTSTR)path), NUMELMS(wFile)-1);
 		wFile[MAX_PATH-1] = 0;
 
+		IFilterGraphPtr filter_graph;
+		hr = ::CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IFilterGraph, (void **)&filter_graph);
+		//if(!(hr = filter_graph.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
+		//	return hr;
+		if(!hr) return hr;
+		
+		hwnd_ = 0;
 		// Get the interface for DirectShow's GraphBuilder
 		//if(!(hr = ::CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void **)&graph_builder_))
 		//	return hr;
-		if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
-			return hr;
+		graph_builder_ = filter_graph;
+		//if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
+		//	return hr;
 
 		if(hr) {
+			if(ArchiveMediaFile::needThis(path)) {
+				PRNN(_T("アーカイブ内メディアファイルをストリーム"));
+				ArchiveMediaFile *archive_source = new ArchiveMediaFile;
+				if(archive_source) archive_source_ = archive_source;
+				if(archive_source->open(path)) {
+					hr = filter_graph->AddFilter(archive_source->archive_reader_, 0);
+					if(!hr) {
+						GCTP_TRACE(hr);
+						return hr;
+					}
+					hr = graph_builder_->Render(archive_source->archive_reader_->GetPin(0));
+					if(!hr) {
+						GCTP_TRACE(hr);
+						return hr;
+					}
+				}
+				else {
+					archive_source_ = 0;
+				}
+			}
 			// Have the graph builder construct its the appropriate graph automatically
-			if(!(hr = graph_builder_->RenderFile(wFile, NULL)))
-				return hr;
+			if(!archive_source_) {
+				if(!(hr = graph_builder_->RenderFile(wFile, NULL)))
+					return hr;
+			}
 
 			// QueryInterface for DirectShow interfaces
 			if(!(hr = graph_builder_.QueryInterface(&media_control_)))
@@ -664,15 +919,12 @@ namespace gctp { namespace movie { namespace dx {
 					// of a supported format.
 					//
 					if(hr == E_NOINTERFACE) {
-						visible = FALSE;
+						video_window = 0;
 					}
 					else {
 						//Msg(TEXT("Failed(%08lx) in pVW->get_Visible()!\r\n"), hr);
 						GCTP_TRACE(hr);
 					}
-				}
-				if(!visible) {
-					video_window = 0;
 				}
 			}
 			if(video_window) { // 映像がある
@@ -681,6 +933,14 @@ namespace gctp { namespace movie { namespace dx {
 					return hr;
 				}
 				if(!(hr = video_window->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN))) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
+				if(!(hr = video_window->put_Top(0))) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
+				if(!(hr = video_window->put_Left(0))) {
 					GCTP_TRACE(hr);
 					return hr;
 				}
@@ -697,6 +957,7 @@ namespace gctp { namespace movie { namespace dx {
 				//g_bFullscreen = FALSE;
 				//g_PlaybackRate = 1.0;
 				//UpdateMainTitle();
+				hwnd_ = hwnd;
 			}
 
 			if(audio_on) {
@@ -717,7 +978,6 @@ namespace gctp { namespace movie { namespace dx {
 			//JIF(pMC->Run());
 
 			//g_psCurrent=Running;
-			//::SetFocus(hwnd); // Playのあとこれが必要？（２ｋとかＭＥとかは。ＸＰは大丈夫みたい）
 		}
 
 		return hr;
@@ -731,7 +991,7 @@ namespace gctp { namespace movie { namespace dx {
 	 */
 	bool Player::isPlaying()
 	{
-		return false;
+		return loop_count_ < loop_;
 	}
 
 	/** 再生
@@ -740,7 +1000,7 @@ namespace gctp { namespace movie { namespace dx {
 	 * @date 2004/01/25 19:24:21
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Player::play(bool loop)
+	HRslt Player::play(int loop)
 	{
 		HRslt hr;
 		// Start the graph running;
@@ -749,6 +1009,10 @@ namespace gctp { namespace movie { namespace dx {
 			GCTP_TRACE(_T("Could not run the DirectShow graph! : "<<hr));
 			return hr;
 		}
+		
+		loop_count_ = 0;
+		loop_ = loop;
+		invalidate_timer_ = timeGetTime();
 		return hr;
 	}
 
@@ -767,6 +1031,7 @@ namespace gctp { namespace movie { namespace dx {
 			GCTP_TRACE(_T("Could not run the DirectShow graph! : "<<hr));
 			return hr;
 		}
+		loop_count_ = loop_ = 1;
 		return hr;
 	}
 
@@ -788,17 +1053,30 @@ namespace gctp { namespace movie { namespace dx {
 		LONG_PTR lParam1, lParam2;
 		HRslt hr;
 
-		if (!media_event_)
+		if (!media_event_) {
+			loop_count_ = loop_ = 1;
 			return hr;
+		}
+
+		if(isPlaying() && hwnd_) {
+			DWORD now = timeGetTime();
+			if(now - invalidate_timer_ > 100) {
+				invalidate_timer_ = now;
+				::InvalidateRect(hwnd_, 0, FALSE);
+				// これが結局一番簡単だった…
+			}
+		}
 
 		// Check for completion events
 		hr = media_event_->GetEvent(&lEventCode, &lParam1, &lParam2, 0);
 		if(hr) {
 			// If we have reached the end of the media file, reset to beginning
 			if (EC_COMPLETE == lEventCode) {
-				hr = media_position_->put_CurrentPosition(0);
+				if(loop_ > 0) loop_count_++;
+				if(loop_ == 0 || loop_count_ < loop_) {
+					hr = media_position_->put_CurrentPosition(0);
+				}
 			}
-
 			// Free any memory associated with this event
 			hr = media_event_->FreeEventParams(lEventCode, lParam1, lParam2);
 		}

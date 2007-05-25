@@ -158,14 +158,16 @@ namespace gctp {
 
 	File& File::seek(std::streamoff off, std::ios::seek_dir dir)
 	{
-		seekp(off, dir);
+		//seekp(off, dir);
+		_lseek(_M_buf.fd(), off, dir);
 		if(eof()) setstate(std::ios::eofbit);
 		return *this;
 	}
 
 	std::streamoff File::tell() const
 	{
-		return const_cast<File *>(this)->tellp();
+		return _tell(_M_buf.fd());
+		//return const_cast<File *>(this)->tellp();
 	}
 
 	File &File::truncate(int newsize)

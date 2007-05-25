@@ -48,6 +48,12 @@ namespace gctp {
 	const Real g_root2 = 1.41421356f;
 	inline Real toDeg(Real rad) { return rad/g_pi*180.0f; }
 	inline Real toRad(Real deg) { return deg/180.0f*g_pi; }
+
+	template<typename _Type>
+	inline _Type abs(_Type x)
+	{
+		return x > 0 ? x : -x;
+	}
 } // namespace gctp
 
 #define GCTP_TLS	__declspec( thread )

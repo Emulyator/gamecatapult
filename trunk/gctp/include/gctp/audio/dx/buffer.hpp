@@ -7,9 +7,11 @@
  * @date 2004/01/25 19:35:25
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <gctp/def.hpp>
-#include <gctp/hrslt.hpp>
 #include <gctp/audio/dx/device.hpp>
+
+namespace gctp { namespace audio {
+	class Clip;
+}}
 
 namespace gctp { namespace audio { namespace dx {
 
@@ -24,7 +26,7 @@ namespace gctp { namespace audio { namespace dx {
 		virtual ~Buffer();
 
 		virtual bool isPlaying() = 0;
-		virtual HRslt play(bool loop) = 0;
+		virtual HRslt play(int times) = 0;
 		virtual HRslt stop() = 0;
 		virtual HRslt rewind() = 0;
 		virtual HRslt onNotified() = 0;
@@ -36,8 +38,8 @@ namespace gctp { namespace audio { namespace dx {
 		virtual void cleanUp() = 0;
 	};
 
-	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, WavFile &wav, bool global_focus);
-	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, const _TCHAR *fname, bool global_focus);
+	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
+	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
 
 }}} // namespace gctp
 

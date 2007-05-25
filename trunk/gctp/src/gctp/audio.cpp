@@ -74,7 +74,15 @@ namespace gctp { namespace audio {
 	Device* Device::current_;
 
 	Player Device::ready(const _TCHAR *fname) {
-		if(impl_) return Player(impl_->ready(fname));
+		if(impl_) {
+			Pointer<Clip> clip = new Clip;
+			if(clip && clip->open(fname)) {
+				return Player(impl_->ready(clip), clip);
+			}
+			else {
+				GCTP_TRACE(_T("指定のファイルを読み込めませんでした :")<<fname);
+			}
+		}
 		return Player();
 	}
 

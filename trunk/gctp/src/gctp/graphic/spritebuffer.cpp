@@ -24,7 +24,14 @@ namespace gctp { namespace graphic {
 	{
 		Size2 size = tex.originalSize();
 		setPos(RectC(0, 0, size.x, size.y));
-		setUV(RectfC(0, 0, 1, 1));
+		if(!tex.noScaling()) {
+			size = tex.size();
+			setUV(RectfC(0.5f/size.x, 0.5f/size.y, 1+0.5f/size.x, 1+0.5f/size.y));
+		}
+		else {
+			Size2 texsize = tex.size();
+			setUV(RectfC(0.5f/texsize.x, 0.5f/texsize.y, (size.x+0.5f)/texsize.x, (size.y+0.5f)/texsize.y));
+		}
 		setColor(Color32(255, 255, 255));
 		setHilight(Color32(0, 0, 0));
 		return *this;
@@ -257,10 +264,20 @@ namespace gctp { namespace graphic {
 		return *this;
 	}
 
-	SpriteBuffer &SpriteBuffer::begin(const Texture &tex, bool do_filter)
+	SpriteBuffer &SpriteBuffer::begin(const Texture &tex, bool do_filter, AddressMode addressmode)
 	{
 		begin(do_filter);
 		tex.setCurrent(0);
+		switch(addressmode) {
+		case ADDRESS_WRAP:
+			device().impl()->SetSamplerState( 0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP );
+			device().impl()->SetSamplerState( 0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP );
+			break;
+		case ADDRESS_CLAMP:
+			device().impl()->SetSamplerState( 0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP );
+			device().impl()->SetSamplerState( 0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP );
+			break;
+		}
 		return *this;
 	}
 

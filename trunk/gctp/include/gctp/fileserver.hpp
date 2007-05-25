@@ -21,6 +21,16 @@ namespace gctp {
 	typedef Pointer<AsyncBuffer> AsyncBufferPtr;
 	typedef Handle<AsyncBuffer> AsyncBufferHndl;
 
+	/// 抽象ファイルインターフェース
+	class AbstractFile : public Object {
+	public:
+		virtual ~AbstractFile();
+		virtual int size() const = 0;
+		virtual int seek(int pos) = 0;
+		virtual int read(void *s, size_t size) = 0;
+	};
+	typedef Pointer<AbstractFile> AbstractFilePtr;
+
 	/** アーカイブのマウント、非同期読み込みサービスを提供するクラス
 	 *
 	 * ネイティブファイルシステム、gar、zipをマウントできる
@@ -61,6 +71,8 @@ namespace gctp {
 		BufferPtr getFile(const _TCHAR *name);
 		/// ファイルを非同期読み込みしたファイル全体の内容を返す
 		AsyncBufferPtr getFileAsync(const _TCHAR *name);
+		/// ファイル読み込みインターフェースを返す
+		AbstractFilePtr getFileInterface(const _TCHAR *name);
 
 		/// 非同期読み込みを受け入れ不可能か？
 		bool busy();

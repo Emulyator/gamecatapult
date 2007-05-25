@@ -9,23 +9,22 @@
  *
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
-#include <gctp/object.hpp>
-#include <gctp/hrslt.hpp>
+#include <gctp/pointer.hpp>
 
 namespace gctp { namespace audio {
 
+	namespace dx {
+		class Buffer;
+	}
+
 	/** オーディオトラッククラス
 	 *
-	 * ボイスのグループ。同時再生なのか今なっているどれかの音を消して再生するのか、
-	 * ボリュームの一括変更…などを行うためのインターフェース
-	 *
+	 * 今のところdx::Bufferのシノニム
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/19 19:29:37
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Track : public Object {
-		Track();
-	};
+	typedef dx::Buffer Track;
 
 }} // namespace gctp
 

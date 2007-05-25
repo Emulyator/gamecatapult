@@ -18,12 +18,17 @@
 using namespace std;
 
 namespace gctp {
+	
+	AbstractFile::~AbstractFile()
+	{
+	}
 
 	class FileServer::Volume : public Object {
 	public:
 		Volume(const _TCHAR *volume_name) : name_(volume_name), priority_(0) {}
 		virtual int find(const _TCHAR *fname) = 0;
 		virtual int read(const _TCHAR *fname, Buffer &buffer) = 0;
+		virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname) = 0;
 
 		static bool compare(const Pointer<Volume> &lhs, const Pointer<Volume> &rhs)
 		{
@@ -43,7 +48,7 @@ namespace gctp {
 			static bool isExist(const _TCHAR *volume_name)
 			{
 				DWORD attr = ::GetFileAttributes(volume_name);
-				if(attr != -1 && attr | FILE_ATTRIBUTE_DIRECTORY) {
+				if(attr != -1 && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 					return true;
 				}
 				return false;
@@ -72,89 +77,204 @@ namespace gctp {
 				}
 				return -1;
 			}
+
+			class NativeFSFile : public AbstractFile {
+			public:
+				virtual int size() const
+				{
+					return file_.length();
+				}
+				virtual int seek(int pos)
+				{
+					file_.seek(pos);
+					return file_.tell();
+				}
+				virtual int read(void *p, size_t s)
+				{
+					std::streamoff n = file_.tell();
+					file_.read(p, (int)s);
+					return file_.tell()-n;
+				}
+				File file_;
+			};
+			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
+			{
+				Pointer<NativeFSFile> ret = new NativeFSFile;
+				std::basic_stringstream<_TCHAR> str;
+				str << name_.c_str() << "/" << fname;
+				ret->file_.open(str.str().c_str());
+				if(!ret->file_.is_open()) ret = 0;
+				return ret;
+			}
 		};
 
 		// gar
 		class Gar : public FileServer::Volume {
 		public:
-			static bool isExist(const _TCHAR *volume_name)
+			static bool isExistEx(const _TCHAR *volume_name, std::basic_string<_TCHAR> &filename, std::basic_string<_TCHAR> &currentdir)
 			{
-				DWORD attr = ::GetFileAttributes(volume_name);
-				if(attr != -1 && !(attr | FILE_ATTRIBUTE_DIRECTORY)) {
-					return true;
+				TURI volume_uri(volume_name);
+				std::basic_string<_TCHAR> ext = volume_uri.extension();
+				if(ext.empty()) {
+					std::basic_stringstream<_TCHAR> str;
+					str << volume_name << ".gar";
+					DWORD attr = ::GetFileAttributes(str.str().c_str());
+					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+						filename = str.str();
+						return true;
+					}
 				}
-				std::basic_stringstream<_TCHAR> str;
-				str << volume_name << ".gar";
-				attr = ::GetFileAttributes(str.str().c_str());
-				if(attr != -1 && !(attr | FILE_ATTRIBUTE_DIRECTORY)) {
-					return true;
+				else if(ext == _T("gar")) {
+					DWORD attr = ::GetFileAttributes(volume_name);
+					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+						filename = volume_name;
+						return true;
+					}
+				}
+				std::basic_string<_TCHAR> path = volume_uri.path();
+				if(!path.empty()) {
+					if(currentdir.empty()) currentdir = TURI(volume_name).leaf() + _T("/");
+					else currentdir = TURI(volume_name).leaf() + _T("/") + currentdir;
+					return isExistEx(path.c_str(), filename, currentdir);
 				}
 				return false;
 			}
+			static bool isExist(const _TCHAR *volume_name)
+			{
+				std::basic_string<_TCHAR> filename;
+				std::basic_string<_TCHAR> currentdir;
+				return isExistEx(volume_name, filename, currentdir);
+			}
 			Gar(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
 			{
-				gar_.open(volume_name);
-				if(!gar_.is_open()) {
-					std::basic_stringstream<_TCHAR> str;
-					str << volume_name << ".gar";
-					gar_.open(str.str().c_str());
+				if(isExistEx(volume_name, filename_, currentdir_)) {
+					PRNN("gar volume_name "<<volume_name);
+					PRNN("gar filename "<<filename_);
+					PRNN("gar currentdir "<<currentdir_);
+					gar_.open(filename_.c_str());
 				}
 			}
 			virtual int find(const _TCHAR *fname)
 			{
-				ArchiveEntry *entry = gar_.get(fname);
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				ArchiveEntry *entry = gar_.get(filename.c_str());
 				if(entry) return entry->size;
 				return -1;
 			}
 			virtual int read(const _TCHAR *fname, Buffer &buffer)
 			{
-				ArchiveEntry *entry = gar_.get(fname);
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				ArchiveEntry *entry = gar_.get(filename.c_str());
 				if(entry) {
 					gar_.read(buffer.buf(), entry);
 					return entry->size;
 				}
 				return -1;
 			}
+
+			class GarFile : public AbstractFile {
+			public:
+				virtual int size() const
+				{
+					return entry_.size;
+				}
+				virtual int seek(int pos)
+				{
+					file_.seek(std::min<std::streamoff>(entry_.pos+entry_.size, entry_.pos + pos));
+					return file_.tell();
+				}
+				virtual int read(void *p, size_t s)
+				{
+					std::streamoff n = file_.tell();
+					std::streamoff end = (std::streamoff)(entry_.pos+entry_.size);
+					s = std::min<size_t>(std::max<std::streamoff>(end-n,0),s);
+					if(s > 0) {
+						file_.read(p, (int)s);
+					}
+					return (int)s;
+				}
+				ArchiveEntry entry_;
+				File file_;
+			};
+			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
+			{
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				ArchiveEntry *entry = gar_.get(filename.c_str());
+				if(!entry) return 0;
+				Pointer<GarFile> ret = new GarFile;
+				ret->file_.open(filename_.c_str());
+				if(!ret->file_.is_open()) ret = 0;
+				else {
+					ret->entry_ = *entry;
+					ret->file_.seek(entry->pos);
+				}
+				return ret;
+			}
 		private:
 			Archive gar_;
+			std::basic_string<_TCHAR> filename_;
+			std::basic_string<_TCHAR> currentdir_;
 		};
 
 #ifdef GCTP_USE_ZLIB
 		// zip
 		class Zip : public FileServer::Volume {
 		public:
-			static bool isExist(const _TCHAR *volume_name)
+			static bool isExistEx(const _TCHAR *volume_name, std::basic_string<_TCHAR> &filename, std::basic_string<_TCHAR> &currentdir)
 			{
-				DWORD attr = ::GetFileAttributes(volume_name);
-				if(attr != -1 && !(attr | FILE_ATTRIBUTE_DIRECTORY)) {
-					return true;
+				TURI volume_uri(volume_name);
+				std::basic_string<_TCHAR> ext = volume_uri.extension();
+				if(ext.empty()) {
+					std::basic_stringstream<_TCHAR> str;
+					str << volume_name << ".zip";
+					DWORD attr = ::GetFileAttributes(str.str().c_str());
+					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+						filename = str.str();
+						return true;
+					}
 				}
-				std::basic_stringstream<_TCHAR> str;
-				str << volume_name << ".zip";
-				attr = ::GetFileAttributes(str.str().c_str());
-				if(attr != -1 && !(attr | FILE_ATTRIBUTE_DIRECTORY)) {
-					return true;
+				else if(ext == _T("zip")) {
+					DWORD attr = ::GetFileAttributes(volume_name);
+					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+						filename = volume_name;
+						return true;
+					}
+				}
+				std::basic_string<_TCHAR> path = volume_uri.path();
+				if(!path.empty()) {
+					if(currentdir.empty()) currentdir = TURI(volume_name).leaf() + _T("/");
+					else currentdir = TURI(volume_name).leaf() + _T("/") + currentdir;
+					return isExistEx(path.c_str(), filename, currentdir);
 				}
 				return false;
 			}
+			static bool isExist(const _TCHAR *volume_name)
+			{
+				std::basic_string<_TCHAR> filename;
+				std::basic_string<_TCHAR> currentdir;
+				return isExistEx(volume_name, filename, currentdir);
+			}
 			Zip(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
 			{
-				if(!zip_.open(volume_name)) {
-					std::basic_stringstream<_TCHAR> str;
-					str << volume_name << ".zip";
-					zip_.open(str.str().c_str());
+				if(isExistEx(volume_name, filename_, currentdir_)) {
+					PRNN("zip volume_name "<<volume_name);
+					PRNN("zip filename "<<filename_);
+					PRNN("zip currentdir "<<currentdir_);
+					zip_.open(filename_.c_str());
 				}
 			}
 			virtual int find(const _TCHAR *fname)
 			{
-				if(zip_.seekFile(fname)) {
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				if(zip_.seekFile(filename.c_str())) {
 					return zip_.getFileSize();
 				}
 				return -1;
 			}
 			virtual int read(const _TCHAR *fname, Buffer &buffer)
 			{
-				if(zip_.seekFile(fname)) {
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				if(zip_.seekFile(filename.c_str())) {
 					zip_.openFile();
 					int ret = zip_.readFile(buffer.buf(), zip_.getFileSize());
 					zip_.closeFile();
@@ -162,8 +282,64 @@ namespace gctp {
 				}
 				return -1;
 			}
+
+			class ZipFileI : public AbstractFile {
+			public:
+				virtual ~ZipFileI()
+				{
+					zip_.closeFile();
+				}
+				virtual int size() const
+				{
+					return zip_.getFileSize();
+				}
+				virtual int seek(int pos)
+				{
+					if(pos < position_) {
+						zip_.closeFile();
+						zip_.seekFile(filename_.c_str());
+						zip_.openFile();
+						position_ = 0;
+					}
+					while(pos > position_) {
+						static const int bufsize = 1024*4;
+						static char buf[bufsize];
+						read(buf, std::min(bufsize, pos-position_));
+					}
+					return position_;
+				}
+				virtual int read(void *p, size_t s)
+				{
+					int ret = zip_.readFile(p, s);
+					position_ += ret;
+					return ret;
+				}
+
+				bool open(const _TCHAR *arcname, const _TCHAR *fname)
+				{
+					if(!zip_.open(arcname)) return false;
+					if(!zip_.seekFile(fname)) return false;
+					filename_ = fname;
+					zip_.openFile();
+					position_ = 0;
+					return true;
+				}
+				ZipFile zip_;
+				int position_;
+				std::basic_string<_TCHAR> filename_;
+			};
+			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
+			{
+				std::basic_string<_TCHAR> filename = currentdir_+fname;
+				if(!zip_.seekFile(filename.c_str())) return 0;
+				Pointer<ZipFileI> ret = new ZipFileI;
+				if(!ret->open(filename_.c_str(), filename.c_str())) return 0;
+				return ret;
+			}
 		private:
 			ZipFile zip_;
+			std::basic_string<_TCHAR> filename_;
+			std::basic_string<_TCHAR> currentdir_;
 		};
 #endif // GCTP_USE_ZLIB
 
@@ -224,20 +400,24 @@ namespace gctp {
 		switch(type) {
 		case NATIVE:
 			volume_list_.push_back(new NativeFS(path));
+			PRNN(_T("アーカイブ'")<<path<<_T("'をネイティブFSとしてマウント。"));
 			break;
 		case GAR:
 			volume_list_.push_back(new Gar(path));
+			PRNN(_T("アーカイブ'")<<path<<_T("'をGameCatapultアーカイブとしてマウント。"));
 			break;
 #ifdef GCTP_USE_ZLIB
 		case ZIP:
 			volume_list_.push_back(new Zip(path));
+			PRNN(_T("アーカイブ'")<<path<<_T("'をZIPアーカイブとしてマウント。"));
 			break;
 #endif // GCTP_USE_ZLIB
 		default:
+			GCTP_TRACE(_T("アーカイブ'")<<path<<_T("'のマウントが要求されましたが、失敗しました。"));
 			return false;
 		}
 		stable_sort(volume_list_.begin(), volume_list_.end(), Volume::compare);
-		return false;
+		return true;
 	}
 	
 	bool FileServer::unmount(const _TCHAR *path)
@@ -296,6 +476,20 @@ namespace gctp {
 		if(!thread_) thread_ = new Thread(this);
 		GCTP_TRACE(_T("要求されたファイル'")<<name<<_T("'はマウントされているボリュームの中に見つかりませんでした。"));
 		return AsyncBufferPtr();
+	}
+
+	AbstractFilePtr FileServer::getFileInterface(const _TCHAR *name)
+	{
+		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
+			if(*i) {
+				int s = (*i)->find(name);
+				if(s >= 0) {
+					return (*i)->createAbstractFile(name);
+				}
+			}
+		}
+		GCTP_TRACE(_T("要求されたファイル'")<<name<<_T("'はマウントされているボリュームの中に見つかりませんでした。"));
+		return AbstractFilePtr();
 	}
 
 	void FileServer::service()

@@ -166,6 +166,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\audio\oggvorbis.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\audio\player.cpp"
 				>
 			</File>
@@ -282,6 +286,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\audio\oggvorbis.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\audio\player.hpp"
 				>
 			</File>
@@ -290,7 +298,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\audio\vorbis.hpp"
+				RelativePath="..\..\..\include\gctp\audio\vorbisacm.hpp"
 				>
 			</File>
 			<Filter

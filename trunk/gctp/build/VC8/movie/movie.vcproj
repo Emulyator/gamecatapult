@@ -187,7 +187,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;"
+							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;;&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\Filters\Async\Include&quot;"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -195,7 +195,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;"
+							AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\BaseClasses&quot;;&quot;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Samples\Multimedia\DirectShow\Filters\Async\Include&quot;"
 						/>
 					</FileConfiguration>
 				</File>
@@ -215,7 +215,7 @@
 				>
 			</File>
 			<Filter
-				Name="‚„‚˜"
+				Name="dx"
 				>
 				<File
 					RelativePath="..\..\..\include\gctp\movie\dx\player.hpp"

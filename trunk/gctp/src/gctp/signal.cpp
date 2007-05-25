@@ -17,7 +17,8 @@ namespace gctp {
 		struct Compare {
 			bool operator()(const Handle<Slot> &lhs, const Handle<Slot> &rhs)
 			{
-				return !rhs || (lhs && (lhs->priority() > rhs->priority()));
+				if(lhs && rhs) return lhs->priority() > rhs->priority();
+				return lhs > rhs;
 			}
 		};
 

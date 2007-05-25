@@ -29,6 +29,9 @@ namespace gctp {
 		uint          height   /**< サイズ*/,
 		uint32_t      style    /**< スタイル(BOLD,ITALIC)*/
 	) {
+		if(style & OUTLINE) exstyle_ = EX_OUTLINE;
+		else if(style & SHADOW) exstyle_ = EX_SHADOW;
+		else exstyle_ = EX_NONE;
 		height_ = height;
 		// 論理サイズに変換。論理デバイスでの縦のピクセル/インチ でかけてデフォルトのdpiである72で割ってやると、
 		// インチでの高さの値が出てくる、と。-にすると、文字セルの高さから内部レディング
@@ -92,6 +95,9 @@ namespace gctp {
 		::TEXTMETRIC tm; // 現在のフォント情報
 		::GetTextMetrics(hdc, &tm);
 		::DeleteDC(hdc);
+		// 影文字、袋文字の場合の補正
+		if(exstyle_ == EX_OUTLINE) tm.tmMaxCharWidth += 2;
+		else if(exstyle_ == EX_SHADOW) tm.tmMaxCharWidth += 1;
 		return tm.tmMaxCharWidth;
 	}
 
@@ -137,6 +143,8 @@ namespace gctp {
 		if(string::npos!=csv[2].find(_T("UNDERLINE"))) style |= UNDERLINE;
 		if(string::npos!=csv[2].find(_T("STRIKEOUT"))) style |= STRIKEOUT;
 		if(string::npos!=csv[2].find(_T("FIXEDPITCH"))) style |= FIXEDPITCH;
+		if(string::npos!=csv[2].find(_T("SHADOW"))) style |= SHADOW;
+		if(string::npos!=csv[2].find(_T("OUTLINE"))) style |= OUTLINE;
 		return true;
 	}
 

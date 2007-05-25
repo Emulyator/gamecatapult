@@ -126,11 +126,11 @@ namespace gctp { namespace math {
 			return (left != rhs.left || top != rhs.top || right != rhs.right || bottom != rhs.bottom);
 		}
 
-		_Type height() const { return abs(bottom-top); }
-		_Type width() const { return abs(right-left); }
+		_Type height() const { return bottom>top ? bottom-top : top-bottom; }
+		_Type width() const { return right>left ? right-left : left-right; }
 		Rectangle &regularize() {
-			if(left>right) { (std::swap)(left, right); }
-			if(top>bottom) { (std::swap)(top, bottom); }
+			if(left>right) { std::swap<_Type>(left, right); }
+			if(top>bottom) { std::swap<_Type>(top, bottom); }
 			return *this;
 		}
 		Rectangle regular() const {

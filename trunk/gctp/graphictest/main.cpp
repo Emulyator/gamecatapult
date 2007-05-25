@@ -114,7 +114,7 @@ public:
 		}
 		tex_ = movie_.getTexture().lock();
 # endif
-		movie_.play();
+		movie_.play(0);
 #else
 		tex_ = new Texture;
 		tex_->setUp(_T("../../../media/gctp.jpg"));
@@ -358,11 +358,13 @@ int SmartWinMain( Application & app )
 #  pragma comment(lib, "d3dx9d.lib")
 #  ifdef MOVIETEST
 #   pragma comment(lib, "strmbasd.lib")
+#   pragma comment(lib, "asynbasd.lib")
 #  endif
 # else
 #  pragma comment(lib, "d3dx9.lib")
 #  ifdef MOVIETEST
 #   pragma comment(lib, "strmbase.lib")
+#   pragma comment(lib, "asynbase.lib")
 #  endif
 # endif
 #endif

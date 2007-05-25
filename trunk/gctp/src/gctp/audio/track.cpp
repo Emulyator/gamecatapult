@@ -15,8 +15,4 @@ using namespace std;
 
 namespace gctp { namespace audio {
 
-	Track::Track()
-	{
-	}
-
 }} // namespace gctp

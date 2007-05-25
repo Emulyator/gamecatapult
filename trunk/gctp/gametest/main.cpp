@@ -24,7 +24,7 @@ extern "C" int main(int argc, char *argv[]);
 class GameWindow
 	: public gctp::GameApp
 	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, GameWindow>
-	, public SmartWin::HeartBeat
+//	, public SmartWin::HeartBeat
 {
 	typedef GameWindow Self;
 
@@ -133,7 +133,7 @@ public:
 		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
 		onRaw( &Self::doOnSysChar, sw::Message(WM_SYSCHAR) );
 
-		sw::Application::instance().setHeartBeatFunction(this);
+		//sw::Application::instance().setHeartBeatFunction(this);
 		game_thread_ = fork( SmartUtil::tstring(_T("GameThread")), &Self::runInThread );
 	}
 
@@ -161,6 +161,7 @@ public:
 
 	virtual bool canContinue()
 	{
+		::Sleep(0); // yield
 		if(req_suspend_) {
 			req_suspend_ = false;
 			is_suspending_ = true;
@@ -184,7 +185,17 @@ public:
 			if(hr) return true;
 			else device_ok_ = false;
 		}
-		::Sleep(1); // yield
+		if(!device_ok_) ::SendMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatus‚ð‚³‚¹‚é‚½‚ß‚É
+		D3DRASTER_STATUS status;
+		D3DDISPLAYMODE mode;
+		if(gctp::HRslt(g_.impl()->GetRasterStatus(0, &status))&&gctp::HRslt(g_.impl()->GetDisplayMode(0, &mode))) {
+			if(!status.InVBlank && status.ScanLine < mode.Height) {
+				if(mode.RefreshRate==0) mode.RefreshRate = 60; // –Ê“|‚È‚Ì‚Å60Hz‚Æ‰¼’è
+				DWORD sleeptime = (DWORD)(((mode.Height-status.ScanLine)*1000)/(mode.Height * (mode.RefreshRate/2)));
+				//PRNN("sleeptime "<<sleeptime<<","<<mode.Height<<","<<status.ScanLine<<","<<mode.RefreshRate);
+				if(sleeptime) ::Sleep(sleeptime);
+			}
+		}
 		return false;
 	}
 
@@ -198,7 +209,6 @@ public:
 			}
 			GameApp::present();
 		}
-		::Sleep(0); // yield
 	}
 
 	virtual void showCursor(bool yes) { is_cursor_visible_ = yes; }
@@ -224,6 +234,7 @@ protected:
 
 	HRESULT doOnSetCursor(LPARAM lParam, WPARAM wParam)
 	{
+		checkDeviceStatus();
 		if(LOWORD(lParam) == HTCLIENT) {
 			if(is_cursor_visible_) {
 				if(cursor_) ::SetCursor(cursor_);
@@ -424,7 +435,7 @@ protected:
 		}
 	}
 	
-	virtual void tick()
+	void checkDeviceStatus()
 	{
 		if(!is_closing_) {
 			if(do_close_) {
@@ -444,6 +455,11 @@ protected:
 				}
 			}
 		}
+	}
+
+	virtual void tick()
+	{
+		checkDeviceStatus();
 	}
 
 	unsigned long runInThread( SmartUtil::tstring & message )

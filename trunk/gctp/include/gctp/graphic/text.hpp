@@ -17,6 +17,7 @@
 namespace gctp {
 	class Font;
 	namespace graphic {
+		class SpriteDescVector;
 		class SpriteBuffer;
 		class FontTexture;
 		class FontTextureSet;
@@ -41,13 +42,15 @@ namespace gctp { namespace graphic {
 		~Text();
 
 		/// 使用するスプライトバッファとフォントテクスチャを指定して描画
-		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTexture &fonttex) const;
+		HRslt draw(SpriteBuffer &spr, FontTexture &fonttex) const;
 		/// 使用するスプライトバッファとフォントテクスチャセットを指定して描画
-		HRslt draw(graphic::SpriteBuffer &spr, graphic::FontTextureSet &fonttex) const;
+		HRslt draw(SpriteBuffer &spr, FontTextureSet &fonttex) const;
+		/// 直接描画せず、SpriteDescVectorにスプライト定義を溜め込む
+		HRslt draw(SpriteDescVector &descvec, FontTexture &fonttex) const;
+		/// 直接描画せず、SpriteDescVectorにスプライト定義を溜め込む
+		HRslt draw(SpriteDescVector &descvec, FontTextureSet &fonttex) const;
 
 		Text &setPos(float x, float y, int ofs = 0);
-		Text &setClumpPos(float x, float y, int ofs = 0);
-		Text &setCenterdPos(float x, float y, int ofs = 0);
 		Text &setColor(Color32 color, int ofs = 0);
 		Text &setBackColor(Color32 color, int ofs = 0);
 		Text &setFont(const Handle<Font> &font, int ofs = 0);
@@ -56,14 +59,18 @@ namespace gctp { namespace graphic {
 		Point2f getPos(graphic::FontTextureSet &fonttex, int ofs = 0);
 		void reset();
 
+		void setClip(const Rect &rc);
+		void setLayoutRectangle(const Rect &rc);
 		std::basic_ostream<_TCHAR> &out();
 
 	GCTP_DECLARE_CLASS
 
 	private:
-		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &font, Point2f *lastpos, int ofs) const;
-		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTextureSet &font, Point2f *lastpos, int ofs) const;
+		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &font, SpriteDescVector *descvec, Point2f *lastpos, int ofs) const;
+		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTextureSet &font, SpriteDescVector *descvec, Point2f *lastpos, int ofs) const;
 		boost::scoped_ptr<detail::TextImpl> impl_;
+		RectC clip_;
+		RectC layout_;
 	};
 
 }} //namespace gctp::graphic

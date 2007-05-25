@@ -9,7 +9,7 @@
 #include "common.h"
 #include <gctp/audio/dx/device.hpp>
 #include <gctp/audio/dx/buffer.hpp>
-#include <gctp/audio/dx/wavfile.hpp>
+#include <gctp/audio/clip.hpp>
 #ifdef GCTP_AUDIO_USE_TIMER
 #include <gctp/timer.hpp>
 #endif
@@ -36,7 +36,7 @@ namespace gctp { namespace audio { namespace dx {
 		close();
 	}
 
-	ulong Device::allow_streaming_threshold_ = 100*1024; // 1*1024*1024*1024;
+	ulong Device::allow_streaming_threshold_ = 0; // これもうなくすべきだな…
 
 	HRslt Device::open(HWND hwnd, DWORD coop_mode, bool global_focus) {
 		global_focus_ = global_focus;
@@ -140,21 +140,17 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/25 19:44:56
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Pointer<Buffer> Device::ready(const _TCHAR *fname) {
+	Pointer<Buffer> Device::ready(Handle<Clip> clip) {
 		Pointer<Buffer> ret;
-		dx::WavFile wav;
-		if(wav.open(fname)) {
-			if(wav.size() < allow_streaming_threshold_) {
-				ret = newStaticBuffer(ptr_, wav, global_focus_);
+		if(clip && clip->isOpen()) {
+			if(clip->size() < allow_streaming_threshold_) {
+				ret = newStaticBuffer(ptr_, clip, global_focus_);
 				add(Handle<Buffer>(ret));
 			}
 			else {
-				ret = newStreamingBuffer(ptr_, fname, global_focus_);
+				ret = newStreamingBuffer(ptr_, clip, global_focus_);
 				add(Handle<Buffer>(ret));
 			}
-		}
-		else {
-			GCTP_TRACE(_T("指定のファイルを読み込めませんでした :")<<fname);
 		}
 		return ret;
 	}

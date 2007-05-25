@@ -14,6 +14,7 @@
 #include <gctp/graphic/vertexbuffer.hpp>
 #include <gctp/matrix2.hpp>
 #include <gctp/types.hpp>
+#include <vector>
 
 namespace gctp { namespace graphic {
 
@@ -80,10 +81,10 @@ namespace gctp { namespace graphic {
 		}
 		/// 整数レクトから４頂点を設定
 		SpriteDesc &setPos(Rect rc) {
-			pos[0].x = rc.left-0.5f;  pos[0].y = rc.top-0.5f;
-			pos[1].x = rc.right-0.5f; pos[1].y = rc.top-0.5f;
-			pos[2].x = rc.left-0.5f;  pos[2].y = rc.bottom-0.5f;
-			pos[3].x = rc.right-0.5f; pos[3].y = rc.bottom-0.5f;
+			pos[0].x = (float)rc.left;  pos[0].y = (float)rc.top;
+			pos[1].x = (float)rc.right; pos[1].y = (float)rc.top;
+			pos[2].x = (float)rc.left;  pos[2].y = (float)rc.bottom;
+			pos[3].x = (float)rc.right; pos[3].y = (float)rc.bottom;
 			return *this;
 		}
 		/// レクトから４頂点を設定
@@ -108,6 +109,13 @@ namespace gctp { namespace graphic {
 		SpriteDesc &setHilight(Color32 col) { hilight[0] = hilight[1] = hilight[2] = hilight[3] = col; return *this; }
 	};
 
+	/// Textはこれに文字スプライトを格納して返すことが出来る
+	class SpriteDescVector {
+	public:
+		typedef std::vector<SpriteDesc> VectorType;
+		VectorType descs;
+	};
+
 	/** スプライトバッファクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -119,11 +127,17 @@ namespace gctp { namespace graphic {
 		struct TLVertex;
 		struct LVertex;
 
+		enum AddressMode {
+			ADDRESS_NONE,
+			ADDRESS_WRAP,
+			ADDRESS_CLAMP,
+		};
+
 		HRslt setUp(const _TCHAR *name);
 		HRslt setUp(uint maxnum = default_maxnum_, bool is_TL = true);
 
 		SpriteBuffer &begin(bool do_filter = true);
-		SpriteBuffer &begin(const class Texture &tex, bool do_filter = true);
+		SpriteBuffer &begin(const class Texture &tex, bool do_filter = true, AddressMode addressmode = ADDRESS_NONE);
 		SpriteBuffer &begin(const Size2 &screen/**< 仮想スクリーンサイズ */, bool do_filter = true);
 		SpriteBuffer &begin(const Size2 &screen/**< 仮想スクリーンサイズ */, const class Texture &tex, bool do_filter = true);
 		SpriteBuffer &draw(const SpriteDesc &desc);

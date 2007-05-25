@@ -23,8 +23,8 @@ namespace gctp { namespace graphic {
 
 	namespace detail {
 		struct AsciiAttr {
-			ulong	cellsize;
-			Rectf	tex_coords[128-32];
+			ulong cellsize;
+			Rectf tex_coords[128-32];
 			int max_width;
 			float scale;
 			int idx;
@@ -200,8 +200,15 @@ namespace gctp { namespace graphic {
 
 	namespace {
 
-		void draw(detail::DrawContext *cntx, int bitmapsize, const Size2 &tsize, HFONT font
-			, int c, int x, int y, Size2 &gsize)
+		enum DrawMode {
+			DM_NORMAL, // 只描画
+			DM_SHADOW, // 影文字
+			DM_OUTLINE, // 袋文字
+		};
+
+		uint16_t bkcolor__ = 0x0000;
+
+		void draw(detail::DrawContext *cntx, int bitmapsize, const Size2 &tsize, HFONT font, int c, int x, int y, Size2 &gsize, DrawMode mode)
 		{
 #ifdef __GLYPH_OUTLINE_
 			cntx->dc.selectFont( font );
@@ -227,24 +234,113 @@ namespace gctp { namespace graphic {
 
 			//PRNN(str<<":"<<gsize.x<<","<<gsize.y);
 			uint16_t *dst = (uint16_t *)cntx->tex.lr.buf;
-			uint8_t alpha;
-			for(int dy = 0; dy < bitmapsize; dy++) {
-				if(ggo_yofs <= dy && dy < ggo_height) {
-					for(int dx = 0; dx < bitmapsize; dx++ ) {
-						if(ggo_xofs <= dx && dx < ggo_width) {
-							alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
-							if(alpha) {
-								dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
-								//alpha = (alpha-1)&0xf;
-								//dst[(y+dy)*tsize.y+(x+dx)] = (alpha << 12) | (alpha << 8) | (alpha << 4) | alpha;
+			if(mode == DM_NORMAL) {
+				uint8_t alpha;
+				for(int dy = 0; dy < bitmapsize; dy++) {
+					if(ggo_yofs <= dy && dy < ggo_height) {
+						for(int dx = 0; dx < bitmapsize; dx++ ) {
+							if(ggo_xofs <= dx && dx < ggo_width) {
+								alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
+								if(alpha) {
+									dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+								}
+								else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 							}
 							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 						}
-						else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+					}
+					else {
+						for(int dx = 0; dx < bitmapsize; dx++) dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 					}
 				}
-				else {
-					for(int dx = 0; dx < bitmapsize; dx++) dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+			}
+			else {
+				uint8_t srcalpha;
+				uint16_t dstcolor, srccolor;
+				int loop_count_max = 1;
+				if(mode == DM_OUTLINE) {
+					loop_count_max = 9;
+					gsize.x += 2;
+					gsize.y += 2;
+				}
+				else if(mode == DM_SHADOW) {
+					loop_count_max = 2;
+					gsize.x += 1;
+					gsize.y += 1;
+				}
+				int ox = x, oy = y;
+				int cell_width, cell_height;
+				bool blend = false;
+				for(int loop_count = 0; loop_count < loop_count_max; loop_count++) {
+					if(mode == DM_OUTLINE) {
+						static int ofs[][2] = {
+							{0, 0},
+							{1, 0},
+							{2, 0},
+							{0, 1},
+							{2, 1},
+							{0, 2},
+							{1, 2},
+							{2, 2},
+							{1, 1},
+						};
+						x = ox + ofs[loop_count][0];
+						y = oy + ofs[loop_count][1];
+						cell_width = bitmapsize-ofs[loop_count][0];
+						cell_height = bitmapsize-ofs[loop_count][1];
+						if(loop_count < 8) {
+							srccolor = bkcolor__;
+							if(loop_count > 0) blend = true;
+						}
+						else {
+							srccolor = 0x0fff;
+						}
+					}
+					else if(mode == DM_SHADOW) {
+						if(loop_count == 0) {
+							cell_width = bitmapsize-1;
+							cell_height = bitmapsize-1;
+							srccolor = bkcolor__; // 影は一律黒（とりあえず）
+							x += 1;
+							y += 1;
+						}
+						else {
+							cell_width = bitmapsize;
+							cell_height = bitmapsize;
+							blend = true;
+							srccolor = 0x0fff;
+							x = ox;
+							y = oy;
+						}
+					}
+					for(int dy = 0; dy < cell_height; dy++) {
+						if(ggo_yofs <= dy && dy < ggo_height) {
+							for(int dx = 0; dx < cell_width; dx++ ) {
+								if(ggo_xofs <= dx && dx < ggo_width) {
+									srcalpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
+									if(srcalpha) {
+										srcalpha -= 1;
+										if(blend && srcalpha < 15) {
+											if(srcalpha > 0) {
+												dstcolor = dst[(y+dy)*tsize.y+(x+dx)];
+												uint8_t a = std::max<uint8_t>(srcalpha, ((dstcolor>>12)&0xf));
+												uint8_t r = (((((srccolor>>8)&0xf)-((dstcolor>>8)&0xf))*srcalpha)/15 + (dstcolor>>8)&0xf);
+												uint8_t g = (((((srccolor>>4)&0xf)-((dstcolor>>4)&0xf))*srcalpha)/15 + (dstcolor>>4)&0xf);
+												uint8_t b = (((((srccolor)&0xf)-((dstcolor)&0xf))*srcalpha)/15 + (dstcolor)&0xf);
+												dst[(y+dy)*tsize.y+(x+dx)] = a << 12 | r << 8 | g << 4 | b;
+											}
+										}
+										else dst[(y+dy)*tsize.y+(x+dx)] = ((srcalpha&0xf) << 12) | srccolor;
+									}
+									else if(!blend) dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+								}
+								else if(!blend) dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+							}
+						}
+						else {
+							if(!blend) for(int dx = 0; dx < cell_width; dx++) dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+						}
+					}
 				}
 			}
 			delete[] buf;
@@ -335,10 +431,10 @@ namespace gctp { namespace graphic {
 					AllocBitMap<LEVEL>::Block block;
 					block.set(match->second.idx);
 					Size2 tsize = size();
-					ret.uv.left   = ((float)block.pos.x*cellSize())/tsize.x;
-					ret.uv.top    = ((float)block.pos.y*cellSize())/tsize.y;
-					ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x))/tsize.x;
-					ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y))/tsize.y;
+					ret.uv.left   = ((float)block.pos.x*cellSize()+0.5f)/tsize.x;
+					ret.uv.top    = ((float)block.pos.y*cellSize()+0.5f)/tsize.y;
+					ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x+0.5f))/tsize.x;
+					ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y+0.5f))/tsize.y;
 					ret.size.x    = (float)match->second.size.x;
 					ret.size.y    = (float)match->second.size.y;
 					const Attr *attr = &match->second;
@@ -359,8 +455,6 @@ namespace gctp { namespace graphic {
 	/** begin endで囲む必要なし
 	 *
 	 * と言うかむしろbegin-endの外でやってください
-	 *
-	 * @note 現在、一枚につき一種類のアスキーフォントしか持てない。（２度目以降は上書きされる。しかも領域を開放しないまま）
 	 *
 	 * @todo 複数のアスキーフォントをキャッシュできるようにする
 	 * @todo せめて以前の奴は領域を開放するようにする
@@ -416,8 +510,11 @@ namespace gctp { namespace graphic {
 					if(attr.idx != -1) {
 						AllocBitMap<LEVEL>::Block block;
 						block.set(attr.idx);
+						DrawMode mode = DM_NORMAL;
+						if(_font->exStyle()==Font::EX_OUTLINE) mode = DM_OUTLINE;
+						else if(_font->exStyle()==Font::EX_SHADOW) mode = DM_SHADOW;
 #ifdef __GLYPH_OUTLINE_
-						draw(cntx_.get(), block.w*cellSize(), size(), _font->get(), c, block.pos.x*cellSize(), block.pos.y*cellSize(), attr.size);
+						draw(cntx_.get(), block.w*cellSize(), size(), _font->get(), c, block.pos.x*cellSize(), block.pos.y*cellSize(), attr.size, mode);
 #else
 						draw(cntx_.get(), maxCellSize(), size(), _font->get(), c, block.pos.x*cellSize(), block.pos.y*cellSize(), attr.size);
 #endif
@@ -440,23 +537,30 @@ namespace gctp { namespace graphic {
 
 	int FontTexture::alloc(int level)
 	{
-		int ret = detail_->alloc_.alloc(level);
-		if(ret == -1) {
-			for(AsciiFigureMap::iterator i = detail_->asciimap_.begin(); i != detail_->asciimap_.end();) {
-				if(i->second.priority<4) {
-					detail_->alloc_.free(i->second.idx);
-					detail_->asciimap_.erase(i++);
-				}
-				else i++;
-			}
-			for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
-				if(i->second.priority<4) {
-					detail_->alloc_.free(i->second.idx);
-					detail_->map_.erase(i++);
-				}
-				else i++;
-			}
+		bool _free = true;
+		int ret = -1;
+		while(_free) {
 			ret = detail_->alloc_.alloc(level);
+			if(ret != -1) break;
+			else {
+				_free = false;
+				for(AsciiFigureMap::iterator i = detail_->asciimap_.begin(); i != detail_->asciimap_.end();) {
+					if(i->second.priority<4) {
+						detail_->alloc_.free(i->second.idx);
+						detail_->asciimap_.erase(i++);
+						_free = true;
+					}
+					else i++;
+				}
+				for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
+					if(i->second.priority<4) {
+						detail_->alloc_.free(i->second.idx);
+						detail_->map_.erase(i++);
+						_free = true;
+					}
+					else i++;
+				}
+			}
 		}
 		return ret;
 	}
@@ -502,6 +606,10 @@ namespace gctp { namespace graphic {
 		uint8_t alpha; // 4-bit measure of pixel intensity
 		attr.max_width = 0;
 
+		DrawMode mode = DM_NORMAL;
+		if(font.exStyle()==Font::EX_OUTLINE) mode = DM_OUTLINE;
+		else if(font.exStyle()==Font::EX_SHADOW) mode = DM_SHADOW;
+
 		uint x = ofsx, y = ofsy;
 		for( char c=32; c<127; c++ ) {
 			ulong bufsize = dc.getGlyphOutline( c, GGO_GRAY4_BITMAP, &glyph, 0, NULL, &mat2 );
@@ -518,6 +626,14 @@ namespace gctp { namespace graphic {
 			int ggo_width = ggo_xofs+glyph.gmBlackBoxX;
 			int ggo_height = ggo_yofs+glyph.gmBlackBoxY;
 
+			if(mode == DM_OUTLINE) {
+				gsize.cx += 2;
+				gsize.cy += 2;
+			}
+			else if(mode == DM_SHADOW) {
+				gsize.cx += 1;
+				gsize.cy += 1;
+			}
 			if(c == 32) default_line_height = line_height = gsize.cy+1;
 			if(attr.max_width < gsize.cx) attr.max_width = gsize.cx;
 			if(line_height < gsize.cy+1) line_height = gsize.cy+1;
@@ -525,34 +641,117 @@ namespace gctp { namespace graphic {
 				x  = ofsx; y += line_height; line_height = default_line_height;
 			}
 
-			attr.tex_coords[c-32].left   = ((float)x)/tsize.x;
-			attr.tex_coords[c-32].top    = ((float)y)/tsize.y;
-			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx))/tsize.x;
-			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy))/tsize.y;
+			attr.tex_coords[c-32].left   = ((float)x+0.5f)/tsize.x;
+			attr.tex_coords[c-32].top    = ((float)y+0.5f)/tsize.y;
+			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx+0.5f))/tsize.x;
+			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy+0.5f))/tsize.y;
 			
-			for(int dy = 0; dy < gsize.cy; dy++) {
-				if(ggo_yofs <= dy && dy < ggo_height) {
-					for(int dx = 0; dx < gsize.cx; dx++ ) {
-						if(ggo_xofs <= dx && dx < ggo_width) {
-							alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
-							if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-							else if(alpha) {
-								dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
-								//alpha = (alpha-1)&0xf;
-								//dst[(y+dy)*tsize.y+(x+dx)] = (alpha << 12) | (alpha << 8) | (alpha << 4) | alpha;
+			if(c == 32 || mode == DM_NORMAL) {
+				for(int dy = 0; dy < gsize.cy; dy++) {
+					if(ggo_yofs <= dy && dy < ggo_height) {
+						for(int dx = 0; dx < gsize.cx; dx++ ) {
+							if(ggo_xofs <= dx && dx < ggo_width) {
+								alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
+								if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
+								else if(alpha) {
+									dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
+								}
+								else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 							}
-							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+							else {
+								if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
+								else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+							}
 						}
-						else {
+					}
+					else {
+						for(int dx = 0; dx < gsize.cx; dx++) {
 							if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
 							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
 						}
 					}
 				}
-				else {
-					for(int dx = 0; dx < gsize.cx; dx++) {
-						if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-						else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
+			}
+			else {
+				uint8_t srcalpha;
+				uint16_t dstcolor, srccolor;
+				int loop_count_max = 1;
+				if(mode == DM_OUTLINE) {
+					loop_count_max = 9;
+				}
+				else if(mode == DM_SHADOW) loop_count_max = 2;
+				int tmpx = x, tmpy = y;
+				int cell_width, cell_height;
+				bool blend = false;
+				for(int loop_count = 0; loop_count < loop_count_max; loop_count++) {
+					if(mode == DM_OUTLINE) {
+						static int ofs[][2] = {
+							{0, 0},
+							{1, 0},
+							{2, 0},
+							{0, 1},
+							{2, 1},
+							{0, 2},
+							{1, 2},
+							{2, 2},
+							{1, 1},
+						};
+						tmpx = x + ofs[loop_count][0];
+						tmpy = y + ofs[loop_count][1];
+						cell_width = gsize.cx-ofs[loop_count][0];
+						cell_height = gsize.cy-ofs[loop_count][1];
+						if(loop_count < 8) {
+							srccolor = bkcolor__;
+							if(loop_count > 0) blend = true;
+						}
+						else {
+							srccolor = 0x0fff;
+						}
+					}
+					else if(mode == DM_SHADOW) {
+						if(loop_count == 0) {
+							cell_width = gsize.cx-1;
+							cell_height = gsize.cy-1;
+							srccolor = bkcolor__;
+							tmpx += 1;
+							tmpy += 1;
+						}
+						else {
+							cell_width = gsize.cx;
+							cell_height = gsize.cy;
+							blend = true;
+							srccolor = 0x0fff;
+							tmpx = x;
+							tmpy = y;
+						}
+					}
+					for(int dy = 0; dy < cell_height; dy++) {
+						if(ggo_yofs <= dy && dy < ggo_height) {
+							for(int dx = 0; dx < cell_width; dx++ ) {
+								if(ggo_xofs <= dx && dx < ggo_width) {
+									srcalpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
+									if(srcalpha) {
+										srcalpha -= 1;
+										if(blend && srcalpha < 15) {
+											if(srcalpha > 0) {
+												dstcolor = dst[(tmpy+dy)*tsize.y+(tmpx+dx)];
+												uint8_t a = std::max<uint8_t>(srcalpha, ((dstcolor>>12)&0xf));
+												uint8_t r = (((((srccolor>>8)&0xf)-((dstcolor>>8)&0xf))*srcalpha)/15 + (dstcolor>>8)&0xf);
+												uint8_t g = (((((srccolor>>4)&0xf)-((dstcolor>>4)&0xf))*srcalpha)/15 + (dstcolor>>4)&0xf);
+												uint8_t b = (((((srccolor)&0xf)-((dstcolor)&0xf))*srcalpha)/15 + (dstcolor)&0xf);
+												dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = a << 12 | r << 8 | g << 4 | b;
+											}
+										}
+										else dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = ((srcalpha&0xf) << 12) | srccolor;
+									}
+									else if(!blend) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
+								}
+								else if(!blend) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
+							}
+						}
+						else {
+							if(!blend) for(int dx = 0; dx < cell_width; dx++) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
+						}
 					}
 				}
 			}
@@ -686,6 +885,11 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
+	void FontTexture::setShadowColor(Color32 bkcolor)
+	{
+		bkcolor__ = ((bkcolor.r>>4)&0xf)<<8|((bkcolor.g>>4)&0xf)<<4|((bkcolor.b>>4)&0xf);
+	}
+
 	namespace detail {
 
 		class FontTextureSet {
@@ -752,7 +956,7 @@ namespace gctp { namespace graphic {
 				glyph = font.find(cfont, c);
 				if(glyph && !isSpaceChar(c)) {
 					SpriteDesc desc;
-					desc.setPos(RectfC(wpos.x-0.5f, wpos.y-0.5f, wpos.x+glyph.size.x-0.5f, wpos.y+glyph.size.y-0.5f));
+					desc.setPos(RectfC(wpos.x, wpos.y, wpos.x+glyph.size.x, wpos.y+glyph.size.y));
 					desc.setUV(glyph.uv);
 					desc.setColor(color);
 					spr.draw(desc);

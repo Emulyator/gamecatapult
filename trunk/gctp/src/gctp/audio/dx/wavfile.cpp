@@ -15,6 +15,55 @@ using namespace std;
 
 namespace gctp { namespace audio { namespace dx {
 
+	namespace {
+		// オリジナルのIOProc
+		LRESULT PASCAL ioprocForWavfile(LPSTR lpmmioinfo, UINT wMsg, LPARAM lParam1, LPARAM lParam2)
+		{
+			MMIOINFO *mmioinfo = (MMIOINFO *)lpmmioinfo;
+			AbstractFilePtr *__self = (AbstractFilePtr *)mmioinfo->adwInfo;
+			switch(wMsg) {
+			case MMIOM_OPEN:
+				mmioinfo->lDiskOffset = 0;
+				break;
+			case MMIOM_CLOSE:
+				(*__self) = 0;
+				break;
+			case MMIOM_READ:{
+				int ret = (*__self)->read((void *)lParam1, lParam2);
+				if(ret > 0) mmioinfo->lDiskOffset += ret;
+				return ret;
+							}
+			//case MMIOM_WRITE:
+			case MMIOM_SEEK:
+				switch (lParam2) {
+				case SEEK_SET:
+					mmioinfo->lDiskOffset = (LONG)lParam1;
+					break;
+
+				case SEEK_CUR:
+					mmioinfo->lDiskOffset += (LONG)lParam1;
+					break;
+
+				case SEEK_END:
+					mmioinfo->lDiskOffset = (LONG)((*__self)->size() - 1 - lParam1);
+					break;
+				}
+				(*__self)->seek(mmioinfo->lDiskOffset);
+				return mmioinfo->lDiskOffset;
+			}
+			return 0;
+		}
+
+		void installIOProc()
+		{
+			static bool installed = false;
+			if(!installed) {
+				installed = true;
+				mmioInstallIOProc(mmioFOURCC('g', 'c', 't', 'p'), (LPMMIOPROC)ioprocForWavfile, MMIO_INSTALLPROC);
+			}
+		}
+	}
+
 	WavFile::WavFile() : wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {}
 
 	WavFile::WavFile(const _TCHAR *fname)
@@ -27,14 +76,18 @@ namespace gctp { namespace audio { namespace dx {
 		open(fname, wfx);
 	}
 
-	WavFile::WavFile(const void * const src, std::size_t size, const WAVEFORMATEX *wfx)
+	WavFile::WavFile(const void * const src, std::size_t size)
 		: wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {
-		open(src, size, wfx);
+		open(src, size);
+	}
+
+	WavFile::WavFile(AbstractFilePtr fileptr)
+		: wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {
+		open(fileptr);
 	}
 
 	WavFile::~WavFile() {
 		close();
-		if(!(flags_&MEMORY) && wfx_) free(wfx_);
 	}
 
 	/** ファイルからの読み込みモードでオープン
@@ -45,19 +98,13 @@ namespace gctp { namespace audio { namespace dx {
 	 */
 	HRslt WavFile::open(const _TCHAR *fname) {
 		if(!fname) return E_INVALIDARG;
-		if( (flags_ & MEMORY) && isOpen() ) {
-			if(fname_ == fname) return S_FALSE;
-			close();
-		}
-		fname_ = fname;
-
-		SAFE_FREE(wfx_);
+		if(isOpen()) close();
 		flags_ = READ;
 
 		HRslt hr;
 		_TCHAR fn[_MAX_PATH];
 		_tcsncpy(fn, fname, _MAX_PATH);
-		hmmio_ = mmioOpen(fn, NULL, MMIO_ALLOCBUF | MMIO_READ);
+		hmmio_ = mmioOpen(fn, NULL, MMIO_ALLOCBUF | MMIO_READ | MMIO_COMPAT);
 		if(!hmmio_) {
 			// Loading it as a file failed, so try it as a resource
 			HRSRC hResInfo = FindResource(NULL, fn, TEXT("WAVE"));
@@ -84,7 +131,7 @@ namespace gctp { namespace audio { namespace dx {
 			mmioinfo.cchBuffer = dwSize;
 			mmioinfo.pchBuffer = reinterpret_cast<char *>(buffer_);
 
-			hmmio_ = mmioOpen(NULL, &mmioinfo, MMIO_ALLOCBUF | MMIO_READ);
+			hmmio_ = mmioOpen(NULL, &mmioinfo, MMIO_ALLOCBUF | MMIO_READ | MMIO_COMPAT);
 		}
 
 		if(!( hr = readMMIO() )) {
@@ -108,11 +155,7 @@ namespace gctp { namespace audio { namespace dx {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	HRslt WavFile::open(const _TCHAR *fname, const WAVEFORMATEX * const wfx) {
-		if( (flags_ & MEMORY) && isOpen() ) {
-			if(fname_ == fname) return S_FALSE;
-			close();
-		}
-		fname_ = fname;
+		if(isOpen()) close();
 
 		_TCHAR fn[_MAX_PATH];
 		_tcsncpy(fn, fname, _MAX_PATH);
@@ -121,7 +164,7 @@ namespace gctp { namespace audio { namespace dx {
 		flags_ = WRITE;
 
 		HRslt hr;
-		if(!( hr = writeMMIO(wfx_) )) {
+		if(!( hr = writeMMIO(wfx) )) {
 			mmioClose(hmmio_, 0 );
 			return DXTRACE_ERR(TEXT("writeMMIO"), hr.i);
 		}
@@ -135,18 +178,59 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/21 2:32:45
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt WavFile::open(const void * const src, std::size_t size, const WAVEFORMATEX * const wfx) {
-		if(flags_ & MEMORY) {
-			if(isOpen()) {
-				close();
-				fname_.clear();
-			}
-			SAFE_FREE(wfx_);
+	HRslt WavFile::open(const void * const src, std::size_t size) {
+		if(isOpen()) close();
+		flags_ = READ;
+
+		HRslt hr;
+		MMIOINFO mmioinfo;
+		memset(&mmioinfo, 0, sizeof(mmioinfo));
+		mmioinfo.fccIOProc = FOURCC_MEM;
+		mmioinfo.cchBuffer = (DWORD)size;
+		mmioinfo.pchBuffer = const_cast<char *>(reinterpret_cast<const char *>(src));
+		hmmio_ = mmioOpen(NULL, &mmioinfo, MMIO_ALLOCBUF | MMIO_READ | MMIO_COMPAT);
+
+		if(!( hr = readMMIO() )) {
+			// ReadMMIO will fail if its an not a wave file
+			mmioClose(hmmio_, 0);
+			return DXTRACE_ERR(TEXT("readMMIO"), hr.i);
 		}
-		wfx_ = reinterpret_cast<WAVEFORMATEX *>(const_cast<void *>(src));
-		size_ = size;
-		datacur_ = data_ = const_cast<uint8_t * const>(reinterpret_cast<const uint8_t * const>(src));
-		flags_ = READ|MEMORY;
+
+		if(!( hr = rewind() )) return DXTRACE_ERR( TEXT("ResetFile"), hr.i );
+
+		// After the rewind, the size of the wav file is m_ck.cksize so store it now
+		size_ = ck_.cksize;
+		return S_OK;
+	}
+
+	/** 抽象ファイルからの読み込み用にオープン
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/21 2:32:45
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	HRslt WavFile::open(AbstractFilePtr fileptr) {
+		if(isOpen()) close();
+		flags_ = READ;
+		HRslt hr;
+		MMIOINFO mmioinfo;
+		memset(&mmioinfo, 0, sizeof(mmioinfo));
+		AbstractFilePtr *__self = (AbstractFilePtr *)mmioinfo.adwInfo;
+		(*__self) = fileptr;
+		installIOProc();
+		mmioinfo.fccIOProc = mmioFOURCC('g', 'c', 't', 'p');
+		hmmio_ = mmioOpen(NULL, &mmioinfo, MMIO_ALLOCBUF | MMIO_READ | MMIO_COMPAT);
+
+		if(!( hr = readMMIO() )) {
+			// ReadMMIO will fail if its an not a wave file
+			mmioClose(hmmio_, 0);
+			return DXTRACE_ERR(TEXT("readMMIO"), hr.i);
+		}
+
+		if(!( hr = rewind() )) return DXTRACE_ERR( TEXT("ResetFile"), hr.i );
+
+		// After the rewind, the size of the wav file is m_ck.cksize so store it now
+		size_ = ck_.cksize;
 		return S_OK;
 	}
 
@@ -157,16 +241,14 @@ namespace gctp { namespace audio { namespace dx {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	HRslt WavFile::close() {
+		if( !hmmio_ ) return CO_E_NOTINITIALIZED;
 		if( flags_ & READ ) {
 			mmioClose( hmmio_, 0 );
 			hmmio_ = NULL;
-			SAFE_FREE( buffer_ );
 		}
 		else {
-			if( !hmmio_ ) return CO_E_NOTINITIALIZED;
-
-			mmioinfo_.dwFlags |= MMIO_DIRTY;
-			if( 0 != mmioSetInfo( hmmio_, &mmioinfo_, 0 ) )
+			write_mmioinfo_.dwFlags |= MMIO_DIRTY;
+			if( 0 != mmioSetInfo( hmmio_, &write_mmioinfo_, 0 ) )
 				return DXTRACE_ERR( TEXT("mmioSetInfo"), E_FAIL );
     
 			// Ascend the output file out of the 'data' chunk -- this will cause
@@ -199,6 +281,8 @@ namespace gctp { namespace audio { namespace dx {
 			mmioClose( hmmio_, 0 );
 			hmmio_ = NULL;
 		}
+		SAFE_FREE( buffer_ );
+		SAFE_FREE( wfx_ );
 
 		return S_OK;
 	}
@@ -211,31 +295,28 @@ namespace gctp { namespace audio { namespace dx {
 	 */
 	HRslt WavFile::rewind()
 	{
-		if( flags_&MEMORY ) datacur_ = data_;
+		if(!hmmio_) return CO_E_NOTINITIALIZED;
+
+		if( flags_&READ ) {
+			// Seek to the data
+			if( -1 == mmioSeek( hmmio_, ckriff_.dwDataOffset + sizeof(FOURCC), SEEK_SET ) )
+				return DXTRACE_ERR( TEXT("mmioSeek"), E_FAIL );
+
+			// Search the input file for the 'data' chunk.
+			ck_.ckid = mmioFOURCC('d','a','t','a');
+			if( 0 != mmioDescend( hmmio_, &ck_, &ckriff_, MMIO_FINDCHUNK ) )
+			  return DXTRACE_ERR( TEXT("mmioDescend"), E_FAIL );
+		}
 		else {
-			if(!hmmio_) return CO_E_NOTINITIALIZED;
+			// Create the 'data' chunk that holds the waveform samples.  
+			ck_.ckid = mmioFOURCC('d','a','t','a');
+			ck_.cksize = 0;
 
-			if( flags_&READ ) {
-				// Seek to the data
-				if( -1 == mmioSeek( hmmio_, ckriff_.dwDataOffset + sizeof(FOURCC), SEEK_SET ) )
-					return DXTRACE_ERR( TEXT("mmioSeek"), E_FAIL );
+			if( 0 != mmioCreateChunk( hmmio_, &ck_, 0 ) ) 
+				return DXTRACE_ERR( TEXT("mmioCreateChunk"), E_FAIL );
 
-				// Search the input file for the 'data' chunk.
-				ck_.ckid = mmioFOURCC('d','a','t','a');
-				if( 0 != mmioDescend( hmmio_, &ck_, &ckriff_, MMIO_FINDCHUNK ) )
-				  return DXTRACE_ERR( TEXT("mmioDescend"), E_FAIL );
-			}
-			else {
-				// Create the 'data' chunk that holds the waveform samples.  
-				ck_.ckid = mmioFOURCC('d','a','t','a');
-				ck_.cksize = 0;
-
-				if( 0 != mmioCreateChunk( hmmio_, &ck_, 0 ) ) 
-					return DXTRACE_ERR( TEXT("mmioCreateChunk"), E_FAIL );
-
-				if( 0 != mmioGetInfo( hmmio_, &mmioinfo_, 0 ) )
-					return DXTRACE_ERR( TEXT("mmioGetInfo"), E_FAIL );
-			}
+			if( 0 != mmioGetInfo( hmmio_, &write_mmioinfo_, 0 ) )
+				return DXTRACE_ERR( TEXT("mmioGetInfo"), E_FAIL );
 		}
     
 		return S_OK;
@@ -319,56 +400,40 @@ namespace gctp { namespace audio { namespace dx {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	HRslt WavFile::read( void *dst, size_t size, size_t * const readsize ) {
-		if( flags_ & MEMORY ) {
-			if( datacur_ == NULL ) return CO_E_NOTINITIALIZED;
-			if( readsize ) *readsize = 0;
+		if( !hmmio_ ) return CO_E_NOTINITIALIZED;
+		if( !dst ) return E_INVALIDARG;
 
-			if( datacur_ + size > data_ + size_ ) size = size_ - static_cast<size_t>(datacur_ - data_);
-        
-			memcpy( dst, datacur_, size );
-        
-			if( readsize ) *readsize = size;
+		if( readsize ) *readsize = 0;
 
-			return S_OK;
-		}
-		else {
-			MMIOINFO mmioinfo; // current status of m_hmmio
+		MMIOINFO mmioinfo; // current status of hmmio_
+		if( 0 != mmioGetInfo( hmmio_, &mmioinfo, 0 ) )
+			return DXTRACE_ERR( TEXT("mmioGetInfo"), E_FAIL );
 
-			if( !hmmio_ ) return CO_E_NOTINITIALIZED;
-			if( !dst ) return E_INVALIDARG;
+		DWORD cbDataIn = (DWORD)size;
+		if( cbDataIn > ck_.cksize ) cbDataIn = ck_.cksize;
 
-			if( readsize ) *readsize = 0;
+		ck_.cksize -= cbDataIn;
 
-			if( 0 != mmioGetInfo( hmmio_, &mmioinfo, 0 ) )
-				return DXTRACE_ERR( TEXT("mmioGetInfo"), E_FAIL );
-                
-			size_t cbDataIn = size;
-			if( cbDataIn > ck_.cksize ) cbDataIn = ck_.cksize;
+		for( size_t cT = 0; cT < cbDataIn; cT++ ) {
+			// Copy the bytes from the io to the buffer.
+			if( mmioinfo.pchNext == mmioinfo.pchEndRead ) {
+				if( 0 != mmioAdvance( hmmio_, &mmioinfo, MMIO_READ ) )
+					return DXTRACE_ERR( TEXT("mmioAdvance"), E_FAIL );
 
-			ck_.cksize -= cbDataIn;
-    
-			for( size_t cT = 0; cT < cbDataIn; cT++ ) {
-				// Copy the bytes from the io to the buffer.
-				if( mmioinfo.pchNext == mmioinfo.pchEndRead ) {
-					if( 0 != mmioAdvance( hmmio_, &mmioinfo, MMIO_READ ) )
-						return DXTRACE_ERR( TEXT("mmioAdvance"), E_FAIL );
-
-					if( mmioinfo.pchNext == mmioinfo.pchEndRead )
-						return DXTRACE_ERR( TEXT("mmioinfo.pchNext"), E_FAIL );
-				}
-
-				// Actual copy.
-				*((uint8_t *)dst+cT) = *mmioinfo.pchNext;
-				mmioinfo.pchNext++;
+				if( mmioinfo.pchNext == mmioinfo.pchEndRead )
+					return DXTRACE_ERR( TEXT("mmioinfo.pchNext"), E_FAIL );
 			}
 
-			if( 0 != mmioSetInfo( hmmio_, &mmioinfo, 0 ) )
-				return DXTRACE_ERR( TEXT("mmioSetInfo"), E_FAIL );
-
-			if( readsize ) *readsize = cbDataIn;
-
-			return S_OK;
+			// Actual copy.
+			*((uint8_t *)dst+cT) = *mmioinfo.pchNext;
+			mmioinfo.pchNext++;
 		}
+
+		if( 0 != mmioSetInfo( hmmio_, &mmioinfo, 0 ) )
+			return DXTRACE_ERR( TEXT("mmioSetInfo"), E_FAIL );
+
+		if( readsize ) *readsize = cbDataIn;
+		return S_OK;
 	}
 
 	/** MMIOストリームへ書き込み
@@ -447,14 +512,14 @@ namespace gctp { namespace audio { namespace dx {
 		if(wrotesize) *wrotesize = 0;
 
 		for(size_t cT = 0; cT < size; cT++ ) {
-			if( mmioinfo_.pchNext == mmioinfo_.pchEndWrite ) {
-				mmioinfo_.dwFlags |= MMIO_DIRTY;
-				if( 0 != mmioAdvance( hmmio_, &mmioinfo_, MMIO_WRITE ) )
+			if( write_mmioinfo_.pchNext == write_mmioinfo_.pchEndWrite ) {
+				write_mmioinfo_.dwFlags |= MMIO_DIRTY;
+				if( 0 != mmioAdvance( hmmio_, &write_mmioinfo_, MMIO_WRITE ) )
 					return DXTRACE_ERR( TEXT("mmioAdvance"), E_FAIL );
 			}
 
-			*mmioinfo_.pchNext = *((BYTE*)src+cT);
-			mmioinfo_.pchNext++;
+			*write_mmioinfo_.pchNext = *((BYTE*)src+cT);
+			write_mmioinfo_.pchNext++;
 
 			if(wrotesize) (*wrotesize)++;
 		}

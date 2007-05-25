@@ -58,7 +58,7 @@ namespace gctp { namespace movie {
 	 */
 	bool Player::isPlaying()
 	{
-		return false;
+		return ptr_->isPlaying();
 	}
 
 	/** Ä¶
@@ -67,7 +67,7 @@ namespace gctp { namespace movie {
 	 * @date 2004/01/25 19:24:21
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Player::play(bool loop)
+	bool Player::play(int loop)
 	{
 		return ptr_->play(loop);
 	}
@@ -116,18 +116,18 @@ namespace gctp { namespace movie {
 			int movie_h = height();
 			if(movie_w > 0) {
 				ret.left = 0;
-				ret.right = (float)movie_w/(float)tex_size.x;
+				ret.right = (float)(movie_w+0.5f)/(float)tex_size.x;
 			}
 			else {
-				ret.left = (float)(-movie_w)/(float)tex_size.x;
+				ret.left = (float)(-movie_w-0.5f)/(float)tex_size.x;
 				ret.right = 0;
 			}
 			if(movie_h > 0) {
 				ret.top = 0;
-				ret.bottom = (float)movie_h/(float)tex_size.y;
+				ret.bottom = (float)(movie_h+0.5f)/(float)tex_size.y;
 			}
 			else {
-				ret.top = (float)(-movie_h)/(float)tex_size.y;
+				ret.top = (float)(-movie_h-0.5f)/(float)tex_size.y;
 				ret.bottom = 0;
 			}
 		}

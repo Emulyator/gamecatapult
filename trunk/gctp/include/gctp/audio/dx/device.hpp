@@ -17,9 +17,12 @@
 // 割り込み(DirectSoundNotify)でなくタイマーで通知制御にするには以下のフラグをオンにする
 #define GCTP_AUDIO_USE_TIMER
 
+namespace gctp { namespace audio {
+	class Clip;
+}}
+
 namespace gctp { namespace audio { namespace dx {
 
-	class WavFile;
 	class Buffer;
 
 	TYPEDEF_DXCOMPTR(IDirectSound8);
@@ -50,7 +53,7 @@ namespace gctp { namespace audio { namespace dx {
 
 		HRslt getFormat(int &channel_num, int &freq, int &bitrate);
 
-		Pointer<Buffer> ready(const _TCHAR *fname);
+		Pointer<Buffer> ready(Handle<Clip> clip);
 
 		void setVolume(float volume);
 		

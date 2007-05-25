@@ -18,14 +18,15 @@ namespace gctp {
 		bool initialized = false;
 		class TimerPeriod {
 		public:
-			TimerPeriod() { timeBeginPeriod(1); }
-			~TimerPeriod() { timeEndPeriod(1); }
+			TimerPeriod(UINT period) : period_(period) { timeBeginPeriod(period_); }
+			~TimerPeriod() { timeEndPeriod(period_); }
+			UINT period_;
 		};
 	}
 
 	void Timer::coinitialize()
 	{
-		static TimerPeriod period;
+		static TimerPeriod period(1);
 		clock_start = clock();
 		tick_start = tick();
 		coinitialized = true;

@@ -10,9 +10,13 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 #include <gctp/def.hpp>
-#include <gctp/audio/clip.hpp>
+//#include <gctp/pointer.hpp>
+#include <gctp/audio/track.hpp>
 
 namespace gctp { namespace audio {
+
+	//class Track; // いつかtypedefで無くなる…
+	class Clip;
 
 	/** 再生ハンドルクラス
 	 *
@@ -23,15 +27,16 @@ namespace gctp { namespace audio {
 	class Player {
 	public:
 		Player() {}
-		Player(ClipPtr clip);
+		Player(Pointer<Track> track, Pointer<Clip> clip);
 
-		bool play(bool loop = false);
+		bool play(int times = 1);
 		bool isPlaying();
 		void stop();
 		void release();
 		void reset();
 	private:
-		ClipPtr clip_;
+		Pointer<Track> track_;
+		Pointer<Clip> clip_;
 	};
 
 }} // namespace gctp

@@ -7,9 +7,9 @@
  * @date 2004/01/20 19:17:07
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <gctp/def.hpp>
+#include <gctp/object.hpp>
 #include <gctp/hrslt.hpp>
-#include <gctp/tcstr.hpp>
+#include <gctp/fileserver.hpp>
 #include <mmsystem.h>
 
 namespace gctp { namespace audio { namespace dx {
@@ -22,23 +22,24 @@ namespace gctp { namespace audio { namespace dx {
 	 * @date 2004/01/20 19:18:45
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class WavFile {
+	class WavFile : public Object {
 	public:
 		enum {
 			READ = 1,
-			WRITE = 1<<1,
-			MEMORY = 1<<2,
+			WRITE = 1<<1
 		};
 
 		WavFile();
 		explicit WavFile(const _TCHAR *fname);
 		WavFile(const _TCHAR *fname, const WAVEFORMATEX * const wfx);
-		WavFile(const void * const data, std::size_t size, const WAVEFORMATEX *wfx);
+		WavFile(const void * const data, std::size_t size);
+		explicit WavFile(AbstractFilePtr fileptr);
 		~WavFile();
 
 		HRslt open(const _TCHAR *fname);
 		HRslt open(const _TCHAR *fname, const WAVEFORMATEX * const wfx);
-		HRslt open(const void * const src, std::size_t size, const WAVEFORMATEX * const wfx);
+		HRslt open(const void * const src, std::size_t size);
+		HRslt open(AbstractFilePtr fileptr);
 		HRslt close();
 
 		bool isOpen() { return hmmio_ != NULL; }
@@ -47,7 +48,6 @@ namespace gctp { namespace audio { namespace dx {
 		HRslt rewind();
 
 		std::size_t size() const { return size_; }
-		const _TCHAR *fname() const { return fname_.c_str(); }
 		const WAVEFORMATEX *format() const { return wfx_; }
 		
 	protected:
@@ -55,17 +55,13 @@ namespace gctp { namespace audio { namespace dx {
 		HRslt writeMMIO(const WAVEFORMATEX *src);
 
 	private:
-		TCStr                     fname_;
 		WAVEFORMATEX              *wfx_;        // Pointer to WAVEFORMATEX structure
 		HMMIO                     hmmio_;       // MM I/O handle for the WAVE
 		MMCKINFO                  ck_;          // Multimedia RIFF chunk
 		MMCKINFO                  ckriff_;      // Use in opening a WAVE file
 		std::size_t               size_;        // The size of the wave file
-		MMIOINFO                  mmioinfo_;
+		MMIOINFO                  write_mmioinfo_;
 		uint32_t                  flags_;
-		uint8_t                   *data_;
-		uint8_t                   *datacur_;
-		std::size_t               datasize_;
 		void                      *buffer_;
 	};
 
