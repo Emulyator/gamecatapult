@@ -46,6 +46,11 @@ namespace gctp { namespace movie {
 		void release();
 		void reset();
 
+		void setVolume(float volume);
+		float getVolume();
+		void setPan(float pan);
+		float getPan();
+
 		int width();
 		int height();
 		// 製作したテクスチャを返す

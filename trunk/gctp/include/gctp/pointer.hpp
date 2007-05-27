@@ -24,8 +24,8 @@ namespace gctp {
 		/** 弱参照のためのスタブ
 		 */
 		class Stub {
-			friend Object;
-			friend Hndl;
+			friend class Object;
+			friend class Hndl;
 
 			Stub(Object *p) : refcount_(1), p_(p), mutex_(0)
 			{
@@ -39,21 +39,24 @@ namespace gctp {
 				if(mutex_) delete mutex_;
 			}
 
-			Object *p() { return p_; }
-			
-			const Object *p() const { return p_; }
-
-			void addRef() const
+			bool addRef() const
 			{
 				Object::AutoLock al(mutex_);
-				refcount_++;
+				if(refcount_ > 0) {
+					refcount_++;
+					return true;
+				}
+				else return false;
 			}
 
 			bool decRef() const
 			{
 				Object::AutoLock al(mutex_);
-				refcount_--;
-				return refcount_==0;
+				if(refcount_ > 0 && --refcount_==0) {
+					refcount_ = -1;
+					return true;
+				}
+				else return false;
 			}
 
 			void synchronize(bool yes)
@@ -66,7 +69,7 @@ namespace gctp {
 				}
 			}
 
-			mutable uint refcount_;
+			mutable int refcount_;
 			Object *p_;
 			Mutex *mutex_;
 		};
@@ -88,20 +91,14 @@ namespace gctp {
 		/// 参照先の型情報を返す
 		const GCTP_TYPEINFO &typeinfo() const { return GCTP_THISTYPEID(*p_); }
 
-		Ptr(const Object *p) : p_(const_cast<Object *>(p))
+		Ptr(const Object *p) : p_(0)
 		{
-			if(p_ != 0) {
-				if(p_->refcount_ == -1) p_ = 0;
-				else addRef();
-			}
+			if(p && p->addRef()) p_ = const_cast<Object *>(p);
 		}
 
-		Ptr(Ptr const & rhs) : p_(rhs.p_)
+		Ptr(Ptr const & rhs) : p_(0)
 		{
-			if(p_ != 0) {
-				if(p_->refcount_ == -1) p_ = 0;
-				else addRef();
-			}
+			if(rhs.p_ && rhs.p_->addRef()) p_ = rhs.p_;
 		}
 
 		~Ptr() { release(); }
@@ -127,7 +124,7 @@ namespace gctp {
 		/// 解放
 		void release()
 		{
-			if(p_ != 0 && decRef()) Object::destroy(p_);
+			if(p_ && p_->decRef()) Object::destroy(p_);
 			p_ = 0;
 		}
 
@@ -210,8 +207,6 @@ namespace gctp {
 		}
 
 	protected:
-		void addRef() const { Object::AutoLock al(p_->mutex_); if(p_->refcount_ < (uint)-1) p_->refcount_++; }
-		bool decRef() const { Object::AutoLock al(p_->mutex_); if(0 < p_->refcount_ && p_->refcount_ < (uint)-1 && --p_->refcount_ == 0) return true; return false; }
 		Object *p_;
 	};
 
@@ -484,7 +479,7 @@ namespace gctp {
 		/// 参照先の型情報を返す（NULLポインタの場合typeid(Object)か、gctp::TypeInfo(Object)が返ってくる）
 		const GCTP_TYPEINFO &typeinfo() const
 		{
-			if(stub_ && stub_->p()) return GCTP_THISTYPEID(*stub_->p());
+			if(stub_ && stub_->p_) return GCTP_THISTYPEID(*stub_->p_);
 			return GCTP_TYPEID(Object);
 		}
 
@@ -607,18 +602,21 @@ namespace gctp {
 		/// gctp::Ptrに変換
 		Ptr lock()
 		{
+			Object::AutoLock al(stub_ ? stub_->mutex_ : 0);
 			return Ptr(get());
 		}
 
 		/// const gctp::Ptrに変換
 		const Ptr lock() const
 		{
+			Object::AutoLock al(stub_ ? stub_->mutex_ : 0);
 			return Ptr(get());
 		}
 
 	protected:
 		void expire() const
 		{
+			Object::AutoLock al(stub_ && stub_->p_ ? stub_->p_->mutex_: 0);
 			if(stub_ && stub_->decRef()) delete stub_;
 			stub_ = 0;
 		}
@@ -629,9 +627,10 @@ namespace gctp {
 		void enter(Object *p)
 		{
 			if(p) {
+				Object::AutoLock al(p->mutex_);
 				stub_ = p->stub_;
 				if(!stub_) stub_ = new detail::Stub(p);
-				stub_->addRef();
+				if(!stub_->addRef()) stub_ = 0;
 			}
 		}
 	};

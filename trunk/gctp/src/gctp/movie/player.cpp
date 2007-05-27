@@ -93,6 +93,26 @@ namespace gctp { namespace movie {
 		ptr_->stop();
 	}
 
+	void Player::setVolume(float volume)
+	{
+		ptr_->setVolume(volume);
+	}
+
+	float Player::getVolume()
+	{
+		return ptr_->getVolume();
+	}
+
+	void Player::setPan(float pan)
+	{
+		ptr_->setVolume(pan);
+	}
+
+	float Player::getPan()
+	{
+		return ptr_->getPan();
+	}
+
 	/** テクスチャを取得
 	 *
 	 * openForTextureを使用した場合のみ有効

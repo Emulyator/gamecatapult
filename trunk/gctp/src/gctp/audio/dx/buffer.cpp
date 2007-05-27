@@ -20,6 +20,8 @@ namespace gctp { namespace audio { namespace dx {
 		TYPEDEF_DXCOMPTR(IDirectSound3DBuffer8);
 		TYPEDEF_DXCOMPTR(IDirectSound3DListener8);
 		TYPEDEF_DXCOMPTR(IDirectSoundNotify);
+
+		const float min_gain = -5000;
 	}
 
 	Buffer::~Buffer()
@@ -29,7 +31,8 @@ namespace gctp { namespace audio { namespace dx {
 	namespace {
 		class StaticBuffer : public Buffer {
 		public:
-			HRslt setUp(IDirectSound8Ptr device, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, bool global_focus)
+			{
 				if( !device ) return CO_E_NOTINITIALIZED;
 				PCMWAVEFORMAT pcmwf;
 				DSBUFFERDESC dsbd;
@@ -61,7 +64,8 @@ namespace gctp { namespace audio { namespace dx {
 				return hr;
 			}
 
-			HRslt setUp(IDirectSound8Ptr device, Clip &clip, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, Clip &clip, bool global_focus)
+			{
 				if( !device ) return CO_E_NOTINITIALIZED;
 				DSBUFFERDESC dsbd;
  
@@ -81,7 +85,8 @@ namespace gctp { namespace audio { namespace dx {
 				return load(clip);
 			}
 
-			HRslt load(Clip &clip) {
+			HRslt load(Clip &clip)
+			{
 				HRslt hr;
 				void *buf = NULL;
 				ulong bufsize = 0;
@@ -108,7 +113,8 @@ namespace gctp { namespace audio { namespace dx {
 				return S_OK;
 			}
 
-			virtual bool isPlaying() {
+			virtual bool isPlaying()
+			{
 				if(!ptr_) return false;
 				HRslt hr;
 				DWORD status;
@@ -118,7 +124,8 @@ namespace gctp { namespace audio { namespace dx {
 				return false;
 			}
 
-			virtual HRslt play(int times) {
+			virtual HRslt play(int times)
+			{
 				if(!ptr_) return CO_E_NOTINITIALIZED;
 				HRslt hr;
 				hr = ptr_->Play(0, 0, times == 0 ? DSBPLAY_LOOPING : 0);
@@ -143,10 +150,8 @@ namespace gctp { namespace audio { namespace dx {
 				return hr;
 			}
 
-			virtual void doChangeVolume() {
-			}
-
-			virtual HRslt restore() {
+			virtual HRslt restore()
+			{
 				if(!ptr_) return CO_E_NOTINITIALIZED;
 
 				HRslt hr;
@@ -170,12 +175,73 @@ namespace gctp { namespace audio { namespace dx {
 			HANDLE event() { return 0; }
 #endif
 
-			virtual void cleanUp() {
+			virtual void cleanUp()
+			{
 				ptr_ = 0;
 			}
 
+			virtual HRslt setVolume(float volume)
+			{
+				// MIN 0～1 MAX
+				if(!ptr_) return CO_E_NOTINITIALIZED;
+				LONG arg = 0;
+				if(volume >= 1) arg = DSBVOLUME_MAX;
+				else if(volume <= 0) arg = DSBVOLUME_MIN;
+				else if(volume > 0) arg = (LONG)((1-volume)*min_gain);
+				return ptr_->SetVolume(arg);
+			}
+
+			virtual float getVolume()
+			{
+				LONG ret;
+				HRslt hr;
+				if(!ptr_) hr = CO_E_NOTINITIALIZED;
+				else hr = ptr_->GetVolume(&ret);
+				if(hr) {
+					float volume;
+					if(ret >= DSBVOLUME_MAX) volume = 1;
+					if(ret <= DSBVOLUME_MIN) volume = 0;
+					else if(ret > 1) volume = (min_gain-ret)/min_gain;
+					if(volume < 0) volume = 0;
+					else if(volume > 1) volume = 1;
+					return volume;
+				}
+				else GCTP_TRACE(hr);
+				return 0;
+			}
+
+			virtual HRslt setPan(float pan)
+			{
+				/// 左-1～1右
+				if(!ptr_) return CO_E_NOTINITIALIZED;
+				LONG arg = 0;
+				if(pan >= 1) arg = DSBPAN_RIGHT;
+				else if(pan <= -1) arg = DSBPAN_LEFT;
+				else if(pan != 0) arg = (LONG)(-pan*min_gain);
+				return ptr_->SetPan(arg);
+			}
+
+			virtual float getPan()
+			{
+				LONG ret;
+				HRslt hr;
+				if(!ptr_) hr = CO_E_NOTINITIALIZED;
+				else hr = ptr_->GetPan(&ret);
+				if(hr) {
+					float pan = 0;
+					if(ret == DSBPAN_RIGHT) pan = 1;
+					else if(ret > 0) pan = -ret/min_gain;
+					else if(ret == DSBPAN_LEFT) pan = -1;
+					else if(ret < 0) pan = ret/min_gain;
+					if(pan < -1) pan = -1;
+					else if(pan > 1) pan = 1;
+					return pan;
+				}
+				else GCTP_TRACE(hr);
+				return 0;
+			}
+
 		protected:
-			float volume_;	///< トラックボリューム
 			size_t buffersize_;
 			IDirectSoundBuffer8Ptr ptr_;
 		};
@@ -205,6 +271,7 @@ namespace gctp { namespace audio { namespace dx {
 #endif
 				in_coda_(false), times_(1), count_(0)
 			{
+				synchronize(true);
 			}
 
 #ifndef GCTP_AUDIO_USE_TIMER
@@ -219,8 +286,6 @@ namespace gctp { namespace audio { namespace dx {
 
 				if( !device ) return CO_E_NOTINITIALIZED;
 				if( !clip || !clip->isOpen() ) return E_INVALIDARG;
-
-				clip->synchronize(true);
 				clip_ = clip;
 
 				// Figure out how big the DSound buffer should be
@@ -397,7 +462,7 @@ namespace gctp { namespace audio { namespace dx {
 							DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
 							return S_FALSE;
 						}
-						last_written_ += written_size;
+						last_written_ += (ulong)written_size;
 						in_coda_ = true;
 					}
 				}

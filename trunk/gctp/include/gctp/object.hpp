@@ -237,8 +237,11 @@ namespace gctp {
 		friend class Hndl;
 		friend class detail::Stub;
 		friend class AbstractDeleter;
-		mutable uint refcount_;
+		mutable int refcount_;
+		bool addRef() const { AutoLock al(mutex_); if(refcount_ >= 0) { ++refcount_; return true; } else return false; }
+		bool decRef() const { AutoLock al(mutex_); if(refcount_ > 0 && --refcount_ == 0){ refcount_=-1; expire(); return true; } else return false; }
 		mutable detail::Stub *stub_;
+		void expire() const;
 		AbstractDeleter *deleter_;
 		class AutoLock {
 		public:

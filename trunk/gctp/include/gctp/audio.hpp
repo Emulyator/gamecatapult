@@ -55,7 +55,7 @@ namespace gctp { namespace audio {
 		/** @defgroup AudioPlayback 再生関連
 		 */
 		/* @{ */
-		/** これらはトラックをその場で作る
+		/** プレイヤー取得
 		 * @{ */
 		Player ready(const _TCHAR *fname);
 		Player ready(const Clip &clip, uint repeat = 0);
@@ -81,9 +81,6 @@ namespace gctp { namespace audio {
 		boost::scoped_ptr<dx::Device> impl_;
 		GCTP_TLS static Device* current_;	///< カレントデバイスインスタンス
 	};
-
-	void setStreamingThreshold(ulong threshold);
-	ulong streamingThreshold();
 
 	/** Audioの取得
 	 *

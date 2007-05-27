@@ -24,6 +24,8 @@ using namespace std;
 namespace gctp { namespace movie { namespace dx {
 
 	namespace {
+		const float min_gain = -5000;
+
 		TYPEDEF_DXCOMPTR(IFilterGraph);
 		TYPEDEF_DXCOMPTR(IPin);
 
@@ -46,11 +48,11 @@ namespace gctp { namespace movie { namespace dx {
 				else {
 					if(llPos < m_llPosition) {
 						//PRNN(_T("Šª‚«–ß‚µ‚¾"));
-						fileptr_->seek(llPos);
+						fileptr_->seek((int)llPos);
 					}
 					if(llPos > m_llPosition) {
 						//PRNN(_T("æ‘—‚è‚¾"));
-						fileptr_->seek(llPos);
+						fileptr_->seek((int)llPos);
 					}
 					m_llPosition = llPos;
 					return S_OK;
@@ -799,6 +801,7 @@ namespace gctp { namespace movie { namespace dx {
 			graph_builder_.QueryInterface(&media_control_);
 			graph_builder_.QueryInterface(&media_position_);
 			graph_builder_.QueryInterface(&media_event_);
+			graph_builder_.QueryInterface(&audio_);
 			return S_OK;
 		}
 		else {
@@ -897,6 +900,8 @@ namespace gctp { namespace movie { namespace dx {
 
 			// Query for audio interfaces, which may not be relevant for video-only files
 			//JIF(pGB->QueryInterface(IID_IBasicAudio, (void **)&pBA));
+			if(!(hr = graph_builder_.QueryInterface(&audio_)))
+				return hr;
 
 			// Have the graph signal event via window callbacks for performance
 			//JIF(pME->SetNotifyWindow((OAHWND)ghApp, WM_GRAPHNOTIFY, 0));
@@ -1033,6 +1038,67 @@ namespace gctp { namespace movie { namespace dx {
 		}
 		loop_count_ = loop_ = 1;
 		return hr;
+	}
+
+	void Player::setVolume(float volume)
+	{
+		if(audio_) {
+			LONG arg = 0;
+			if(volume >= 1) arg = 0;
+			else if(volume <= 0) arg = -10000;
+			else if(volume > 0) arg = (LONG)((1-volume)*min_gain);
+			HRslt hr = audio_->put_Volume(arg);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	float Player::getVolume()
+	{
+		if(audio_) {
+			float volume;
+			LONG ret = 0;
+			HRslt hr = audio_->get_Volume(&ret);
+			if(hr) {
+				if(ret >= 0) volume = 1;
+				if(ret <= -10000) volume = 0;
+				else if(ret > 1) volume = (min_gain-ret)/min_gain;
+				return volume;
+			}
+			else GCTP_TRACE(hr);
+		}
+		return 0;
+	}
+
+	void Player::setPan(float pan)
+	{
+		if(audio_) {
+			LONG arg = 0;
+			if(pan >= 1) arg = 10000;
+			else if(pan <= -1) arg = -10000;
+			else if(pan != 0) arg = (LONG)(-pan*min_gain);
+			HRslt hr = audio_->put_Balance(arg);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	float Player::getPan()
+	{
+		if(audio_) {
+			float pan;
+			LONG ret = 0;
+			HRslt hr = audio_->get_Balance(&ret);
+			if(hr) {
+				if(ret == 10000) pan = 1;
+				else if(ret > 0) pan = -ret/min_gain;
+				else if(ret == -10000) pan = -1;
+				else if(ret < 0) pan = ret/min_gain;
+				if(pan < -1) pan = -1;
+				else if(pan > 1) pan = 1;
+				return pan;
+			}
+			else GCTP_TRACE(hr);
+		}
+		return 0;
 	}
 
 	Handle<graphic::Texture> Player::getTexture()

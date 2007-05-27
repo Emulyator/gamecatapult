@@ -27,11 +27,23 @@ namespace gctp {
 		p->~Object();
 	}
 	
-	Object::~Object()
+	void Object::expire() const
 	{
 		if(stub_) {
-			if(stub_->decRef()) delete stub_;
-			else stub_->p_ = 0;
+			if(stub_->addRef()) {
+				stub_->p_ = 0;
+				if(stub_->decRef()) delete stub_;
+				else if(stub_->decRef()) delete stub_;
+			}
+			stub_ = 0;
+		}
+	}
+
+	Object::~Object()
+	{
+		{
+			Object::AutoLock al(mutex_);
+			expire();
 		}
 		if(mutex_) delete mutex_;
 		// Object‚ÌíœŒã‚É‚ÍAStub‚Ìsynchronize‚ğ‰ğœ‚·‚éè’i‚Í–³‚¢c
