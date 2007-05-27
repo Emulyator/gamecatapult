@@ -17,7 +17,12 @@ using namespace std;
 
 namespace gctp { namespace audio {
 
-	const int on_memory_streaming_threshold = 128*1024; // 128k
+	int Clip::on_memory_streaming_threshold__ = 128*1024; // 128k
+
+	Clip::Clip()
+	{
+		synchronize(true);
+	}
 
 	bool Clip::open(const _TCHAR *path)
 	{
@@ -26,10 +31,11 @@ namespace gctp { namespace audio {
 		TURI uri(path);
 		if(uri.extension()==_T("wav")) {
 			Pointer<dx::WavFile> wav = new dx::WavFile;
+			wav->synchronize(true);
 			stream_ = wav;
 			if(wav) {
 				if(filei) {
-					if(filei->size() < on_memory_streaming_threshold) {
+					if(filei->size() < on_memory_streaming_threshold__) {
 						on_memory_ = fileserver().getFile(path);
 						return wav->open(on_memory_->buf(), on_memory_->size());
 					}
@@ -38,7 +44,7 @@ namespace gctp { namespace audio {
 				else {
 					File f(path);
 					if(f.is_open()) {
-						if(f.length() < on_memory_streaming_threshold) {
+						if(f.length() < on_memory_streaming_threshold__) {
 							on_memory_ = f.load();
 							return wav->open(on_memory_->buf(), on_memory_->size());
 						}
@@ -49,10 +55,11 @@ namespace gctp { namespace audio {
 		}
 		else if(uri.extension()==_T("ogg")) {
 			Pointer<OggVorbis> ogg = new OggVorbis;
+			ogg->synchronize(true);
 			stream_ = ogg;
 			if(ogg) {
 				if(filei) {
-					if(filei->size() < on_memory_streaming_threshold) {
+					if(filei->size() < on_memory_streaming_threshold__) {
 						on_memory_ = fileserver().getFile(path);
 						return ogg->open(on_memory_->buf(), on_memory_->size());
 					}
@@ -61,7 +68,7 @@ namespace gctp { namespace audio {
 				else {
 					File f(path);
 					if(f.is_open()) {
-						if(f.length() < on_memory_streaming_threshold) {
+						if(f.length() < on_memory_streaming_threshold__) {
 							on_memory_ = f.load();
 							return ogg->open(on_memory_->buf(), on_memory_->size());
 						}

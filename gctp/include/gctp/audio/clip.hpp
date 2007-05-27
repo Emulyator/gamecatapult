@@ -24,6 +24,8 @@ namespace gctp { namespace audio {
 	 */
 	class Clip : public Object {
 	public:
+		Clip();
+
 		bool open(const _TCHAR *path);
 		bool isOpen();
 		HRslt read(void *dst, std::size_t size, std::size_t * const readsize = NULL);
@@ -31,9 +33,19 @@ namespace gctp { namespace audio {
 
 		std::size_t size() const;
 		const WAVEFORMATEX *format() const;
+
+		static int getOnMemoryStreamingThreshold()
+		{
+			return on_memory_streaming_threshold__;
+		}
+		static void setOnMemoryStreamingThreshold(int threshold)
+		{
+			on_memory_streaming_threshold__ = threshold;
+		}
 	private:
 		Ptr stream_;
 		BufferPtr on_memory_;
+		static int on_memory_streaming_threshold__;
 	};
 
 }} // namespace gctp

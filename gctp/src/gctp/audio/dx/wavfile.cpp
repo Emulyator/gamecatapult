@@ -64,7 +64,9 @@ namespace gctp { namespace audio { namespace dx {
 		}
 	}
 
-	WavFile::WavFile() : wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {}
+	WavFile::WavFile() : wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0)
+	{
+	}
 
 	WavFile::WavFile(const _TCHAR *fname)
 		: wfx_(0), hmmio_(0), size_(0), flags_(0), buffer_(0) {

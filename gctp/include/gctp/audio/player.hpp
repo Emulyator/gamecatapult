@@ -34,6 +34,10 @@ namespace gctp { namespace audio {
 		void stop();
 		void release();
 		void reset();
+		void setVolume(float);
+		float getVolume();
+		void setPan(float);
+		float getPan();
 	private:
 		Pointer<Track> track_;
 		Pointer<Clip> clip_;

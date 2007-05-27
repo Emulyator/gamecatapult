@@ -29,11 +29,14 @@ namespace gctp { namespace audio { namespace dx {
 		virtual HRslt play(int times) = 0;
 		virtual HRslt stop() = 0;
 		virtual HRslt rewind() = 0;
+		virtual HRslt setVolume(float) = 0;
+		virtual float getVolume() = 0;
+		virtual HRslt setPan(float) = 0;
+		virtual float getPan() = 0;
 		virtual HRslt onNotified() = 0;
 #ifndef GCTP_AUDIO_USE_TIMER
 		virtual HANDLE event() = 0;
 #endif
-		virtual void doChangeVolume() = 0;
 		virtual HRslt restore() = 0;
 		virtual void cleanUp() = 0;
 	};

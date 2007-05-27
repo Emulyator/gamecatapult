@@ -243,6 +243,7 @@ namespace gctp { namespace audio {
 	{
 		if(isOpen()) {
 			ov_clear(&ogg_vorbis_);
+			vorbis_info_ = 0;
 			if(fp_) {
 				fclose( fp_ );
 				fp_ = 0;

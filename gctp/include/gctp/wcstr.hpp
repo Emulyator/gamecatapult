@@ -154,11 +154,6 @@ namespace gctp {
 		/// サイズを指定してバッファ確保
 		explicit WCStr(std::size_t size) : Pointer<detail::WCStrImpl>(size > 0 ? new detail::WCStrImpl(size) : 0) {}
 
-		WCStr(detail::WCStrImpl * p, bool delete_guard = false) : Pointer<detail::WCStrImpl>(p)
-		{
-			if(delete_guard) addRef();
-		}
-
 		WCStr(Ptr const & rhs): Pointer<detail::WCStrImpl>(rhs) {}
 
 		WCStr(Pointer<detail::WCStrImpl> const & rhs): Pointer<detail::WCStrImpl>(rhs) {}
@@ -195,7 +190,7 @@ namespace gctp {
 		bool operator<(const wchar_t *rhs) const { return (**this < rhs); }
 
 		/// 文字列領域を複製せず、その開放も行わないCStrを返す
-		static WCStr hold(const wchar_t *str) { return new detail::WCStrImpl(str, true); }
+		static WCStr hold(const wchar_t *str) { return *new detail::WCStrImpl(str, false); }
 	};
 
 	/** テンポラリ文字列定数ポインタクラス
@@ -210,8 +205,9 @@ namespace gctp {
 	class TempWCStr : private boost::base_from_member<detail::WCStrImpl>, public WCStr {
 		typedef boost::base_from_member<detail::WCStrImpl> Dummy;
 	public:
-		TempWCStr(const wchar_t *str) : Dummy(str, false), WCStr(&member, true)
+		TempWCStr(const wchar_t *str) : Dummy(str, false), WCStr(member)
 		{
+			member.setDeleter(NullDeleter::get());
 		}
 	};
 

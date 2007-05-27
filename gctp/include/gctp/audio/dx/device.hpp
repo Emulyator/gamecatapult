@@ -59,9 +59,6 @@ namespace gctp { namespace audio { namespace dx {
 		
 		float volume();
 		
-		static void setStreamingThreshold(ulong threshold) { allow_streaming_threshold_ = threshold; }
-		static ulong streamingThreshold() { return allow_streaming_threshold_; }
-		
 		/// デバイス消失時のリソース解放
 		void cleanUp();
 
@@ -81,7 +78,6 @@ namespace gctp { namespace audio { namespace dx {
 		float volume_;	///< トラックボリューム
 		bool global_focus_;
 
-		static ulong allow_streaming_threshold_;
 		IDirectSound8Ptr ptr_;
 	};
 

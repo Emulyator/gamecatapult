@@ -21,6 +21,7 @@ namespace gctp { namespace movie { namespace dx {
 	TYPEDEF_DXCOMPTR(IMediaControl);
 	TYPEDEF_DXCOMPTR(IMediaPosition);
 	TYPEDEF_DXCOMPTR(IMediaEventEx);
+	TYPEDEF_DXCOMPTR(IBasicAudio);
 	TYPEDEF_DXCOMPTR(IBaseFilter);
 
 	/** DirectShowラッパークラス
@@ -41,6 +42,10 @@ namespace gctp { namespace movie { namespace dx {
 		bool isPlaying();
 		HRslt play(int loop);
 		HRslt stop();
+		void setVolume(float volume);
+		float getVolume();
+		void setPan(float pan);
+		float getPan();
 
 		HRslt checkStatus();
 
@@ -54,6 +59,7 @@ namespace gctp { namespace movie { namespace dx {
 		IMediaControlPtr media_control_;
 		IMediaPositionPtr media_position_;
 		IMediaEventExPtr media_event_;
+		IBasicAudioPtr audio_;
 		IBaseFilterPtr renderer_;
 		HWND hwnd_;
 		Ptr archive_source_;

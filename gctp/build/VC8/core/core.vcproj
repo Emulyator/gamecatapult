@@ -529,6 +529,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\mutex.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\object.hpp"
 				>
 			</File>

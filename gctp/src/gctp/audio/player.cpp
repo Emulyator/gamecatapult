@@ -81,4 +81,32 @@ namespace gctp { namespace audio {
 		if(track_) track_->stop();
 	}
 
+	void Player::setVolume(float volume)
+	{
+		if(track_) {
+			HRslt hr = track_->setVolume(volume);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	float Player::getVolume()
+	{
+		if(track_) return track_->getVolume();
+		return 0;
+	}
+
+	void Player::setPan(float pan)
+	{
+		if(track_) {
+			HRslt hr = track_->setPan(pan);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	float Player::getPan()
+	{
+		if(track_) return track_->getPan();
+		return 0;
+	}
+
 }} // namespace gctp

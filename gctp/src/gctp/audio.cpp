@@ -46,9 +46,6 @@ namespace gctp { namespace audio {
 		if(current_ == this) current_ = NULL;
 	}
 	
-	void setStreamingThreshold(ulong threshold) { dx::Device::setStreamingThreshold(threshold); }
-	ulong streamingThreshold() { return dx::Device::streamingThreshold(); }
-
 	void Device::setVolume(float volume)
 	{
 		if(impl_) impl_->setVolume(volume);

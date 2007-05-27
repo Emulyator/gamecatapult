@@ -36,8 +36,6 @@ namespace gctp { namespace audio { namespace dx {
 		close();
 	}
 
-	ulong Device::allow_streaming_threshold_ = 0; // Ç±ÇÍÇ‡Ç§Ç»Ç≠Ç∑Ç◊Ç´ÇæÇ»Åc
-
 	HRslt Device::open(HWND hwnd, DWORD coop_mode, bool global_focus) {
 		global_focus_ = global_focus;
 		HRslt hr = ::DirectSoundCreate8(NULL, &ptr_, NULL);
@@ -143,14 +141,8 @@ namespace gctp { namespace audio { namespace dx {
 	Pointer<Buffer> Device::ready(Handle<Clip> clip) {
 		Pointer<Buffer> ret;
 		if(clip && clip->isOpen()) {
-			if(clip->size() < allow_streaming_threshold_) {
-				ret = newStaticBuffer(ptr_, clip, global_focus_);
-				add(Handle<Buffer>(ret));
-			}
-			else {
-				ret = newStreamingBuffer(ptr_, clip, global_focus_);
-				add(Handle<Buffer>(ret));
-			}
+			ret = newStreamingBuffer(ptr_, clip, global_focus_);
+			add(Handle<Buffer>(ret));
 		}
 		return ret;
 	}
