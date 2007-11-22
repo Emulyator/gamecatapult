@@ -27,7 +27,7 @@ namespace gctp { namespace audio {
 	class Player {
 	public:
 		Player() {}
-		Player(Pointer<Track> track, Pointer<Clip> clip);
+		Player(Pointer<Track> track, Pointer<Clip> clip = 0);
 
 		bool play(int times = 1);
 		bool isPlaying();

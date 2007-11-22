@@ -15,18 +15,30 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4786 4503)
 #endif // _MSC_VER
+#include <gctp/targmap.hpp>
+#include <gctp/turi.hpp>
+#include <gctp/archive.hpp>
+#include <gctp/archiveeditable.hpp>
+#include <gctp/dbgout.hpp>
+#include <gctp/cstr.hpp>
 #include <iostream>
 #include <fstream>
 #include <ios>
-#include <gctp/argmap.hpp>
-#include <gctp/archive.hpp>
 #include <_direct.h>
 #include <direct.h>
 #include <sys/stat.h>
 #include <locale.h>
+#include <io.h>
+#include <fcntl.h>
 
 using namespace gctp;
 using namespace std;
+
+#ifdef _UNICODE
+#define _tststat _stat64i32
+#else
+#define _tststat _stat
+#endif
 
 namespace {
 
@@ -44,24 +56,31 @@ void print_help()
 "         : -u | --update\n"
 "         : -l | --list\n"
 "         : -a | --abstruct\n"
+"         : -c | --crypt password\n"
+"\n"
+"example:\n"
+"   new archive : gcar dirname\n"
+"         (to make dirname.gcar)\n"
+"   update archive : gcar -u dirname\n"
+"         (sync dirname.gcar with dirname directory.)\n"
 	;
 }
 
-void addRecursive(ArchiveEditable &arc, std::string path, DIR *dir)
+void addRecursive(ArchiveEditable &arc, std::basic_string<_TCHAR> path, TDIR *dir)
 {
-	struct dirent *ent;
-	while(ent = readdir(dir)) {
-		if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-			string fname;
+	tdirent *ent;
+	while(ent = treaddir(dir)) {
+		if(_tcscmp(ent->d_name, _T(".")) && _tcscmp(ent->d_name, _T(".."))) {
+			basic_string<_TCHAR> fname;
 			if(path.empty()) fname = ent->d_name;
-			else fname = path + "/" + ent->d_name;
-			DIR *dir_;
-			if(dir_ = opendir(fname.c_str())) {
+			else fname = path + _T("/") + ent->d_name;
+			TDIR *dir_;
+			if(dir_ = topendir(fname.c_str())) {
 				addRecursive(arc, fname, dir_);
-				closedir(dir_);
+				tclosedir(dir_);
 			}
 			else {
-				cout << "add " << fname << endl;
+				//cout << "add " << CStr(fname.c_str()) << endl;
 				arc.add(fname.c_str());
 			}
 		}
@@ -70,63 +89,89 @@ void addRecursive(ArchiveEditable &arc, std::string path, DIR *dir)
 
 }
 
-int main(int argc, char *argv[])
+int _tmain(int argc, _TCHAR *argv[])
 {
-	setlocale(LC_ALL, "jpn");
+	setlocale(LC_ALL, "");
+	locale::global(locale("japanese"));
+	_setmode(_fileno(stdout), _O_BINARY);
+	_setmode(_fileno(stderr), _O_BINARY);
+	//gctp::logfile.open(_T("log.txt"));
 
-	ArgMap arg;
-	arg.defAlias('o', "output");
-	arg.defAlias('d', "root");
-	arg.defAlias('r', "remove");
-	arg.defAlias('x', "extract");
-	arg.defAlias('f', "forceupdate");
-	arg.defAlias('a', "align");
-	arg.defAlias('X', "extractall");
-	arg.defAlias('u', "update");
-	arg.defAlias('l', "list");
-	arg.addHasValKey("output");
-	arg.addHasValKey("root");
-	arg.addHasValKey("remove");
-	arg.addHasValKey("extract");
-	arg.addHasValKey("forceupdate");
-	arg.addHasValKey("align");
+	TArgMap arg;
+	arg.defAlias(_T('o'), _T("output"));
+	arg.defAlias(_T('d'), _T("root"));
+	arg.defAlias(_T('r'), _T("remove"));
+	arg.defAlias(_T('x'), _T("extract"));
+	arg.defAlias(_T('f'), _T("forceupdate"));
+	arg.defAlias(_T('a'), _T("align"));
+	arg.defAlias(_T('X'), _T("extractall"));
+	arg.defAlias(_T('u'), _T("update"));
+	arg.defAlias(_T('l'), _T("list"));
+	arg.defAlias(_T('c'), _T("crypt"));
+	arg.addHasValKey(_T("output"));
+	arg.addHasValKey(_T("root"));
+	arg.addHasValKey(_T("remove"));
+	arg.addHasValKey(_T("extract"));
+	arg.addHasValKey(_T("forceupdate"));
+	arg.addHasValKey(_T("align"));
+	arg.addHasValKey(_T("crypt"));
 	if(!arg.parse(argc, argv)) {
 		print_help();
 		return 1;
 	}
 	else {
-		if(arg.hasKey("list") && arg.hasKey("")) {
-			Archive arc(arg[""].front().c_str());
+		if(arg.hasKey(_T("list")) && arg.hasKey(_T(""))) {
+			Archive arc(arg[_T("")].front().c_str());
+			if(!arc.is_open()) {
+				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
+				return 2;
+			}
 			arc.printIndex(cout);
 			return 0;
 		}
-		if(arg.hasKey("extractall") && arg.hasKey("")) {
-			Archive arc(arg[""].front().c_str());
-			if(arg.hasKey("root")) {
-				if(_chdir(arg["root"].front().c_str())) return 2;
+		if(arg.hasKey(_T("extractall")) && arg.hasKey(_T(""))) {
+			Archive arc(arg[_T("")].front().c_str());
+			if(!arc.is_open()) {
+				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
+				return 2;
+			}
+			if(arg.hasKey(_T("root"))) {
+				if(_tchdir(arg[_T("root")].front().c_str())) return 2;
 			}
 			arc.extract();
 			return 0;
 		}
-		if(arg.hasKey("extract") && arg.hasKey("")) {
-			Archive arc(arg[""].front().c_str());
-			if(arg.hasKey("root")) {
-				if(_chdir(arg["root"].front().c_str())) return 2;
+		if(arg.hasKey(_T("extract")) && arg.hasKey(_T(""))) {
+			Archive arc(arg[_T("")].front().c_str());
+			if(!arc.is_open()) {
+				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
+				return 2;
 			}
-			for(ArgMap::ValListItr i = arg["extract"].begin(); i != arg["extract"].end(); i++) {
+			if(arg.hasKey(_T("root"))) {
+				if(_tchdir(arg[_T("root")].front().c_str())) return 2;
+			}
+			for(WArgMap::ValListItr i = arg[_T("extract")].begin(); i != arg[_T("extract")].end(); i++) {
 				arc.extract(i->c_str(), i->c_str());
 			}
 			return 0;
 		}
-		string arcname;
-		if(arg.hasKey("output")) arcname = arg["output"].front();
-		else if(arg.hasKey("")) {
-			struct _stat st;
-			if(0 == _stat(arg[""].front().c_str(), &st)) {
-				arcname = arg[""].front() + ".gcar";
+		basic_string<_TCHAR> arcname;
+		if(arg.hasKey(_T("output"))) arcname = arg[_T("output")].front();
+		else if(arg.hasKey(_T(""))) {
+			struct _tststat st;
+			if(0 == _tstat(arg[_T("")].front().c_str(), &st)) {
+				if((st.st_mode&_S_IFDIR)) {
+					arcname = arg[_T("")].front() + _T(".gcar");
+				}
+				else {
+					TURI uri = arg[_T("")].front();
+					if(uri.majorextension() == _T("gcar")) {
+						arg[_T("")].front() = uri.raw().substr(uri.raw().length()-5);
+					}
+				}
 			}
 			else {
-				cerr << arg[""].front() << ": ファイルが開けません" << endl;
+				cerr << CStr(arg[_T("")].front().c_str()) << ": ディレクトリが開けません" << endl;
 				return 2;
 			}
 		}
@@ -135,52 +180,70 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 		ArchiveEditable arc(arcname.c_str());
+		arc.setWorkBufferSize(8*1024*1024);
 		if(!arc.is_open()) {
-			cerr << arcname << ": ファイルが開けません" << endl;
+			cerr << CStr(arcname.c_str()) << ": ファイルが開けません" << endl;
 			return 2;
 		}
-		if(arg.hasKey("root")) {
-			if(_chdir(arg["root"].front().c_str())) {
-				cerr << arg["root"].front() << ": ディレクトリが開けません" << endl;
+		if(arg.hasKey(_T("root"))) {
+			if(_tchdir(arg[_T("root")].front().c_str())) {
+				cerr << CStr(arg[_T("root")].front().c_str()) << ": ディレクトリが開けません" << endl;
 				return 2;
 			}
 		}
-		if(arg.hasKey("remove")) {
-			for(ArgMap::ValListItr i = arg["remove"].begin(); i != arg["remove"].end(); i++) {
+		if(arg.hasKey(_T("remove"))) {
+			for(WArgMap::ValListItr i = arg[_T("remove")].begin(); i != arg[_T("remove")].end(); i++) {
 				arc.remove(i->c_str());
 			}
 		}
-		if(arg.hasKey("update")) {
+		if(arg.hasKey(_T("update"))) {
 			arc.update();
 		}
-		if(arg.hasKey("forceupdate")) {
-			for(ArgMap::ValListItr i = arg["forceupdate"].begin(); i != arg["forceupdate"].end(); i++) {
+		if(arg.hasKey(_T("forceupdate"))) {
+			for(WArgMap::ValListItr i = arg[_T("forceupdate")].begin(); i != arg[_T("forceupdate")].end(); i++) {
 				arc.forceUpdate(i->c_str());
 			}
 		}
-		if(arg.hasKey("align")) {
-			int align = atol(arg["align"].front().c_str());
+		if(arg.hasKey(_T("align"))) {
+			int align = _tstol(arg[_T("align")].front().c_str());
 			cout << "align " << align << endl;
 			if(align && align%4==0) arc.setAlign(align);
 		}
-		if(arg.hasKey("")) {
-			for(ArgMap::ValListItr i = arg[""].begin(); i != arg[""].end(); i++) {
-				DIR *dir;
-				if(dir = opendir(i->c_str())) {
-					addRecursive(arc, *i, dir);
-					closedir(dir);
+		if(arg.hasKey(_T(""))) {
+			if(arg[_T("")].size()==1) {
+				if(_tchdir(arg[_T("")].front().c_str())) {
+					cerr << CStr(arg[_T("")].front().c_str()) << ": ディレクトリが開けません" << endl;
+					return 2;
+				}
+				TDIR *dir;
+				if(dir = topendir(_T("."))) {
+					addRecursive(arc, _T(""), dir);
+					tclosedir(dir);
 				}
 				else {
-					cout << "add " << *i << endl;
-					arc.add(i->c_str());
+					//cout << "add " << CStr(arg[_T("")].front().c_str()) << endl;
+					arc.add(arg[_T("")].front().c_str());
+				}
+			}
+			else {
+				for(TArgMap::ValListItr i = arg[_T("")].begin(); i != arg[_T("")].end(); i++) {
+					TDIR *dir;
+					if(dir = topendir(i->c_str())) {
+						addRecursive(arc, *i, dir);
+						tclosedir(dir);
+					}
+					else {
+						//cout << "add " << CStr(i->c_str()) << endl;
+						arc.add(i->c_str());
+					}
 				}
 			}
 		}
 		else {
-			DIR *dir;
-			if(dir = opendir(".")) {
-				addRecursive(arc, "", dir);
-				closedir(dir);
+			TDIR *dir;
+			if(dir = topendir(_T("."))) {
+				addRecursive(arc, _T(""), dir);
+				tclosedir(dir);
 			}
 			else {
 				cerr << "格納ファイルを指定してください。" << endl;

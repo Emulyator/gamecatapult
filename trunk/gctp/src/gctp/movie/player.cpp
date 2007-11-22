@@ -45,9 +45,20 @@ namespace gctp { namespace movie {
 	 * @date 2004/01/25 19:24:21
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Player::open(HWND hwnd, const _TCHAR *name, bool audio_on)
+	HRslt Player::open(HWND hwnd, int notify_msgid, const _TCHAR *name, bool audio_on)
 	{
-		return ptr_->open(hwnd, name, audio_on);
+		return ptr_->open(hwnd, notify_msgid, name, audio_on);
+	}
+
+	/** Ä¶€”õ‚ªŠ®—¹‚µ‚½‚©H
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:24:21
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	bool Player::isReady()
+	{
+		return ptr_->isReady();
 	}
 
 	/** Ä¶’†‚©H

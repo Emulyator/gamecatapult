@@ -31,6 +31,9 @@ namespace gctp { namespace math {
 	struct Rectangle {
 		_Type left, top, right, bottom;
 
+		typedef Vector2d<_Type> Point;
+		typedef Vector2dC<_Type> PointC;
+
 		/// 値セット
 		Rectangle &set(const _Type *p)
 		{

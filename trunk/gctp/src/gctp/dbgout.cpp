@@ -74,8 +74,8 @@ namespace gctp {
 #endif
 
 #if GCTP_LOGFILE
-	basic_ofstream<_TCHAR> logfile(_T("log.txt"));		// ログファイルストリーム
-	//basic_ofstream<_TCHAR> logfile;
+	//basic_ofstream<_TCHAR> logfile(_T("log.txt"));		// ログファイルストリーム
+	basic_ofstream<_TCHAR> logfile;
 #endif
 
 };	// namespace gctp

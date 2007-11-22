@@ -21,7 +21,6 @@ namespace gctp {
 		class SpriteBuffer;
 
 		namespace detail {
-			struct AsciiAttr;
 			class DrawContext;
 			class FontTextureDetail;
 			class FontTextureSetDetail;
@@ -98,17 +97,14 @@ namespace gctp { namespace graphic {
 		}
 
 		/// テクスチャ領域のセットアップ（createOnDB等用）
-		HRslt setUp(const _TCHAR *name) { return setUp(); }
+		HRslt setUp(const _TCHAR *name);
 
 		/// テクスチャ領域のセットアップ
-		HRslt setUp();
+		HRslt setUp(int width, int height);
 
 		bool isCached(const Handle<Font> font, int c) const;
 
 		FontGlyph find(const Handle<Font> font, int c) const;
-
-		/// Ascii文字を一度にキャッシュ
-		void cacheAscii(const Handle<Font> font);
 
 		/// 文字キャッシュ開始
 		void begin();
@@ -122,9 +118,6 @@ namespace gctp { namespace graphic {
 		/// すべて開放
 		void clear();
 
-		/// アスキー文字が収まる最少の幅を計算
-		static uint getSmallestWidth(const Font &font, uint unit);
-
 		/// 袋文字、影文字のときの輪郭色。標準で黒
 		static void setShadowColor(Color32 bkcolor);
 
@@ -134,11 +127,9 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	private:
-		HRslt setUpAscii(detail::AsciiAttr &attr, const Font &font, ulong width, ulong height, int ofsx = 0, int ofsy = 0);
 		int alloc(int level);
 		Pointer<detail::DrawContext> cntx_;
 		boost::scoped_ptr<detail::FontTextureDetail> detail_;
-		//float scale_;
 	};
 
 	/// FontTextureを使った文字表示

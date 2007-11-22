@@ -21,7 +21,7 @@ namespace gctp { namespace audio {
 	/** audio::Deviceの初期化
 	 *
 	 * これを呼び出す前に、CoInitializeEx(NULL, 0) をやっておくこと。
-	 * COM関係の初期化、末期化には、Audioクラスは関わらない。
+	 * COM関係の初期化、末期化には、audio::Deviceクラスは関わらない。
 	 */
 	HRslt Device::open(
 		HWND hwnd,				///< フォーカスウィンドウ
@@ -70,15 +70,26 @@ namespace gctp { namespace audio {
 
 	Device* Device::current_;
 
-	Player Device::ready(const _TCHAR *fname) {
+	Player Device::ready(const _TCHAR *fname, bool streaming)
+	{
 		if(impl_) {
 			Pointer<Clip> clip = new Clip;
 			if(clip && clip->open(fname)) {
-				return Player(impl_->ready(clip), clip);
+				if(streaming) return Player(impl_->newStream(clip), clip);
+				else return Player(impl_->newBuffer(clip));
 			}
 			else {
 				GCTP_TRACE(_T("指定のファイルを読み込めませんでした :")<<fname);
 			}
+		}
+		return Player();
+	}
+
+	Player Device::ready(Clip &clip, bool streaming)
+	{
+		if(impl_) {
+			if(streaming) return Player(impl_->newStream(&clip), &clip);
+			else return Player(impl_->newBuffer(&clip));
 		}
 		return Player();
 	}

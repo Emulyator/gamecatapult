@@ -291,9 +291,9 @@ extern "C" int main(int argc, char *argv[])
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
 
-	audio::Player bgm = audio::ready(_T("../../../media/hugeraw.wav"));
+	audio::Player bgm = gctp::audio::device().ready(_T("../../../media/hugeraw.wav"));
 	bgm.play(true);
-	audio::Player se = audio::ready(_T("../../../media/pang.wav"));
+	audio::Player se = gctp::audio::device().ready(_T("../../../media/pang.wav"));
 #ifdef MOVIETEST
 	movie::Player movie;
 	hr = movie.openForTexture(_T("../graphictest/onegoshu_trial.mpg"));
@@ -520,7 +520,7 @@ extern "C" int main(int argc, char *argv[])
 
 			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
 
-			if(qcam->enable()) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setClumpPos(10, -20).setColor(Color32(200, 127, 200)).out()
+			if(qcam->enable()) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
 				<< _T("ウォークスルー中");
 
 			text.draw(spr, *fonttex);

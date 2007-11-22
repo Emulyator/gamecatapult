@@ -37,7 +37,7 @@ namespace gctp {
 	}
 
 	namespace {
-			
+		
 		struct GUIEvent {
 			enum Message {
 				DOWN,

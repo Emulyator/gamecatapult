@@ -556,6 +556,12 @@ namespace luapp {
 			return Table(*this, Key(table));
 		}
 
+		/// Valueからテーブルに(のつもりで間違って呼び出すことがあるので)
+		Table toTable() const
+		{
+			return *this;
+		}
+
 		/// このテーブル内に、新しいテーブルを指定のキーで作る
 		Table newTable(const Key &key)
 		{
@@ -1692,6 +1698,45 @@ namespace luapp {
 		_Type1 arg1;
 		_Type2 arg2;
 		_Type3 arg3;
+	};
+	/** lua関数呼び出しの引数受け渡しコールバックを定義するテンプレート
+	 *
+	 */
+	template<typename _Type1, typename _Type2, typename _Type3, typename _Type4>
+	class Argument4 : public Callback
+	{
+	public:
+		Argument4(_Type1 arg1, _Type2 arg2, _Type3 arg3, _Type4 arg4) : arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4) {}
+		virtual int length() { return 4; }
+		virtual void operator()(Stack &L)
+		{
+			L << arg1 << arg2 << arg3 << arg4;
+		}
+	private:
+		_Type1 arg1;
+		_Type2 arg2;
+		_Type3 arg3;
+		_Type4 arg4;
+	};
+	/** lua関数呼び出しの引数受け渡しコールバックを定義するテンプレート
+	 *
+	 */
+	template<typename _Type1, typename _Type2, typename _Type3, typename _Type4, typename _Type5>
+	class Argument5 : public Callback
+	{
+	public:
+		Argument5(_Type1 arg1, _Type2 arg2, _Type3 arg3, _Type4 arg4, _Type5 arg5) : arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4), arg5(arg5) {}
+		virtual int length() { return 5; }
+		virtual void operator()(Stack &L)
+		{
+			L << arg1 << arg2 << arg3 << arg4 << arg5;
+		}
+	private:
+		_Type1 arg1;
+		_Type2 arg2;
+		_Type3 arg3;
+		_Type4 arg4;
+		_Type5 arg5;
 	};
 	
 	/** 登録処理を纏めた関数オブジェクト

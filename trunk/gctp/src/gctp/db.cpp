@@ -24,7 +24,7 @@ namespace gctp {
 	 */
 	bool DB::insert(const _TCHAR *key, const Hndl hndl)
 	{
-		if(index_.find(key) == index_.end()) {
+		if(!find(key)) {
 			index_[key] = hndl;
 			return true;
 		}

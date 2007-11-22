@@ -35,7 +35,7 @@ public:
 		p1_ = a_.ready(_T("pang.wav"));
 		p2_ = a_.ready(_T("hugeraw.wav"));
 		//p2_ = a_.ready(_T("JM5.ogg"));
-		p2_.play(true);
+		p2_.play(0);
 
 		// handlers
 		onLeftMouseUp( &Self::doOnLButtonUp );
@@ -46,14 +46,14 @@ private:
 	void doOnLButtonUp(const MouseEventResult &mouse)
 	{
 		GCTP_TRACE("onLButtonUp");
-		p1_.play(); // 鬼クリックすると、BGMが遅れます…どうにかしないと
+		p1_.play(3);
 	}
 
 	void doOnRButtonUp(const MouseEventResult &mouse)
 	{
 		GCTP_TRACE("onRButtonUp");
 		if(p2_.isPlaying()) p2_.stop();
-		else p2_.play(true);
+		else p2_.play(0);
 	}
 
 	bool doOnClosing()

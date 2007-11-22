@@ -245,35 +245,10 @@ namespace gctp { namespace graphic {
 		}
 
 		// 文字キャッシュ
-		fonttex.gabage();
 		const basic_string<_TCHAR> &str = impl_->os.str();
 		const _TCHAR *text = str.c_str();
 		Pointer<Font> font;
 		graphic::FontGlyph glyph;
-		// まずアスキーから。２回に分けるのは無駄だけど…
-		while( i < size ) {
-			int c, n;
-			n = getChar(c, text);
-			if(n == 0) break;
-			for(AttrMap::iterator attri = impl_->attrs_.lower_bound(i); attri != impl_->attrs_.upper_bound(i+ios::pos_type(n-1)); attri++) {
-				if(attri->second.type == Attr::FONT) {
-					font = attri->second.font.get();
-				}
-				else if(attri->second.type == Attr::BACKCOLOR) {
-					glyph = fonttex.find(font, ' ');
-					if(!glyph) fonttex.cacheAscii(font);
-				}
-			}
-
-			if( _istascii(c) ) {
-				if(!fonttex.isCached(font, c)) fonttex.cacheAscii(font);
-			}
-			text += n;
-			i += n;
-		}
-		// 巻き戻し
-		i = 0;
-		text = str.c_str();
 		bool began = false;
 		while( i < size ) {
 			int c, n;
@@ -284,14 +259,12 @@ namespace gctp { namespace graphic {
 					font = attri->second.font.get();
 				}
 			}
-			if( !_istascii(c) ) {
-				if(!fonttex.isCached(font, c)) {
-					if(!began) {
-						fonttex.begin();
-						began = true;
-					}
-					fonttex.cache(font, c);
+			if(!fonttex.isCached(font, c)) {
+				if(!began) {
+					fonttex.begin();
+					began = true;
 				}
+				fonttex.cache(font, c);
 			}
 			text += n;
 			i += n;

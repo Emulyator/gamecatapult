@@ -54,7 +54,7 @@ namespace gctp {
 		enum ArchiveType {
 			AUTO, ///< 自動認識
 			NATIVE, ///< ネイティブのファイルシステム（単にフォルダを指定するだけ）
-			GAR, ///< garアーカイブ
+			GCAR, ///< gcarアーカイブ
 			ZIP, ///< zipアーカイブ
 		};
 

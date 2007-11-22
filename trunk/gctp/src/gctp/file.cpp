@@ -272,87 +272,99 @@ namespace gctp {
 		return BufferPtr();
 	}
 
+	/**
+	 * これなくすべきかもな。。。
+	 */
 	File &File::moveBlock(int dst_pos, int src_pos, int size)
 	{
-		const int max = move_buf_size_;
-		if(dst_pos > src_pos) {
-			// 後ろへずらす
-			if(size > max) {
-				int comp_len = 0;
-				char *buf = new char[max];
-				dst_pos += size - max;
-				src_pos += size - max;
-				while(comp_len < size) {
-					if((size - comp_len) >= max) {
-						seek(src_pos);
-						read(buf, max);
-						seek(dst_pos);
-						write(buf, max);
-						comp_len += max;
-						src_pos -= max;
-						dst_pos -= max;
+		if(size > 0) {
+			const int max = move_buf_size_;
+			if(dst_pos > src_pos) {
+				// 後ろへずらす
+				if(size > max) {
+					int comp_len = 0;
+					char *buf = new char[max];
+					dst_pos += size - max;
+					src_pos += size - max;
+					while(comp_len < size) {
+						if((size - comp_len) >= max) {
+							seek(src_pos);
+							read(buf, max);
+							seek(dst_pos);
+							write(buf, max);
+							comp_len += max;
+							src_pos -= max;
+							dst_pos -= max;
+						}
+						else {
+							seek(src_pos);
+							read(buf, size - comp_len);
+							seek(dst_pos);
+							write(buf, size - comp_len);
+							comp_len = size;
+						}
 					}
-					else {
-						seek(src_pos);
-						read(buf, size - comp_len);
-						seek(dst_pos);
-						write(buf, size - comp_len);
-						comp_len = size;
-					}
+					delete [] buf;
 				}
-				delete [] buf;
-			}
-			else {
-				char *buf = new char[size];
-				seek(src_pos);
-				read(buf, size);
-				seek(dst_pos);
-				write(buf, size);
-				delete [] buf;
-			}
-		}
-		else if(dst_pos < src_pos) {
-			// 前へずらす
-			if(size > max) {
-				int comp_len = 0;
-				char *buf = new char[max];
-				while(comp_len < size) {
-					if((size - comp_len) >= max) {
-						seek(src_pos);
-						read(buf, max);
-						seek(dst_pos);
-						write(buf, max);
-						comp_len += max;
-						src_pos += max;
-						dst_pos += max;
-					}
-					else {
-						seek(src_pos);
-						read(buf, size - comp_len);
-						seek(dst_pos);
-						write(buf, size - comp_len);
-						comp_len = size;
-					}
+				else {
+					char *buf = new char[size];
+					seek(src_pos);
+					read(buf, size);
+					seek(dst_pos);
+					write(buf, size);
+					delete [] buf;
 				}
-				delete [] buf;
 			}
-			else {
-				char *buf = new char[size];
-				seek(src_pos);
-				read(buf, size);
-				seek(dst_pos);
-				write(buf, size);
-				delete [] buf;
+			else if(dst_pos < src_pos) {
+				// 前へずらす
+				if(size > max) {
+					int comp_len = 0;
+					char *buf = new char[max];
+					while(comp_len < size) {
+						if((size - comp_len) >= max) {
+							seek(src_pos);
+							read(buf, max);
+							seek(dst_pos);
+							write(buf, max);
+							comp_len += max;
+							src_pos += max;
+							dst_pos += max;
+						}
+						else {
+							seek(src_pos);
+							read(buf, size - comp_len);
+							seek(dst_pos);
+							write(buf, size - comp_len);
+							comp_len = size;
+						}
+					}
+					delete [] buf;
+				}
+				else {
+					char *buf = new char[size];
+					seek(src_pos);
+					read(buf, size);
+					seek(dst_pos);
+					write(buf, size);
+					delete [] buf;
+				}
 			}
 		}
 		return *this;
 	}
 
+	/**
+	 * これなくすべきかもな。。。
+	 */
 	File &File::insert(int ins_pos, int size)
 	{
+		truncate(length()+size);
 		return moveBlock(ins_pos+size, ins_pos, length()-ins_pos);
 	}
 
+	/**
+	 * これなくすべきかもな。。。
+	 */
 	File &File::remove(int rmv_pos, int size)
 	{
 		return moveBlock(rmv_pos, rmv_pos+size, length()-rmv_pos);

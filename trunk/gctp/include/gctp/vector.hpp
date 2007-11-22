@@ -21,12 +21,12 @@
 
 namespace gctp {
 
-	typedef math::Vector2d<float> Vector2;
-	typedef math::Vector3d<float> Vector;
-	typedef math::Vector4d<float> Vector4;
-	typedef math::Vector2dC<float> Vector2C;
-	typedef math::Vector3dC<float> VectorC;
-	typedef math::Vector4dC<float> Vector4C;
+	typedef math::Vector2d<Real> Vector2;
+	typedef math::Vector3d<Real> Vector;
+	typedef math::Vector4d<Real> Vector4;
+	typedef math::Vector2dC<Real> Vector2C;
+	typedef math::Vector3dC<Real> VectorC;
+	typedef math::Vector4dC<Real> Vector4C;
 	typedef Vector2 Point2f;
 	typedef Vector2C Point2fC;
 	typedef Vector2 Size2f;

@@ -1,11 +1,10 @@
-#ifndef _GCTP_ARGMAP_HPP_
-#define _GCTP_ARGMAP_HPP_
+#ifndef _GCTP_WARGMAP_HPP_
+#define _GCTP_WARGMAP_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
 #endif // GCTP_ONCE
-/**@file
- *
+/**@file argmap.hpp
  * ArgMapクラス
  * 引数読み取り・保持クラス
  *
@@ -28,11 +27,11 @@ namespace gctp {
 	 * オプションをキーとしたmapが出来上がる。値はlist<string>。ArgMap::ValListという別名が
 	 * つけられている。
 	@code
-	ArgMap arg;
-	arg.addHaveValKey("output");
-	arg.addHaveValKey("include");
-	arg.defAlias('o', "output");
-	arg.defAlias('i', "include");
+	WArgMap arg;
+	arg.addHaveValKey(L"output");
+	arg.addHaveValKey(L"include");
+	arg.defAlias(L'o', L"output");
+	arg.defAlias(L'i', L"include");
 	arg.parse(argc, argv);
 		foo -o output_path -i include_path input_file1 "input file2"
 		#=>	"output" => {"output_path"}
@@ -42,48 +41,48 @@ namespace gctp {
 	 * '"'の解釈はOSの方でやってくれる。\n
 	 *	: 読み込んだ引数を表示するサンプル
 	@code
-	ArgMap arg;
+	WArgMap arg;
 	arg.parse(argc, argv);
-	for(ArgMap::Itr i = arg.begin(); i != arg.end(); i++) {
-		cout << "KEY:" << i->first << " VAL:";
+	for(WArgMap::Itr i = arg.begin(); i != arg.end(); i++) {
+		wcout << L"KEY:" << i->first << L" VAL:";
 		for(ArgMap::ValListItr j = i->second.begin(); j != i->second.end(); j++) {
-			cout << *j << " ";
+			wcout << *j << L" ";
 		}
-		cout << endl;
+		wcout << endl;
 	}
 	@endcode
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/09 20:43:33
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class ArgMap : public std::map<std::string, std::vector<std::string> >
+	class WArgMap : public std::map<std::wstring, std::vector<std::wstring> >
 	{
 	public:
 		typedef iterator Itr;
 		typedef const_iterator ConItr;
-		typedef std::auto_ptr<ArgMap> Ptr;
-		typedef std::vector<std::string> ValList;
-		typedef std::vector<std::string>::iterator ValListItr;
-		typedef std::vector<std::string>::const_iterator ValListConItr;
-		bool hasKey(const std::string &key) const;
-		void add(const std::string &key, const std::string &val);
-		void addHasValKey(const std::string &key);
-		void defAlias(const char opt, const std::string &key);
-		bool parse(int argc, char *argv[]);
-		bool parse(const char *cmdline);
-		bool parse(std::istream &in);
+		typedef std::auto_ptr<WArgMap> Ptr;
+		typedef std::vector<std::wstring> ValList;
+		typedef std::vector<std::wstring>::iterator ValListItr;
+		typedef std::vector<std::wstring>::const_iterator ValListConItr;
+		bool hasKey(const std::wstring &key) const;
+		void add(const std::wstring &key, const std::wstring &val);
+		void addHasValKey(const std::wstring &key);
+		void defAlias(const wchar_t opt, const std::wstring &key);
+		bool parse(int argc, wchar_t *argv[]);
+		bool parse(const wchar_t *cmdline);
+		bool parse(std::wistream &in);
 		void clear(void);
 	private:
-		typedef std::map<std::string, ValList> Super;
-		typedef std::vector<std::string> HasValKeyList;
+		typedef std::map<std::wstring, ValList> Super;
+		typedef std::vector<std::wstring> HasValKeyList;
 		HasValKeyList have_val_key_;
-		std::map<char, std::string> alias_;
-		bool doseKeyHasVal(const std::string &key) const;
-		bool hasAlias(const char opt) const;
-		bool checkOpt(const char *arg, std::string &cur_key);
-		static std::istream &tokenize(std::istream &lhs, std::string &rhs);
+		std::map<wchar_t, std::wstring> alias_;
+		bool doseKeyHasVal(const std::wstring &key) const;
+		bool hasAlias(const wchar_t opt) const;
+		bool checkOpt(const wchar_t *arg, std::wstring &cur_key);
+		static std::wistream &tokenize(std::wistream &lhs, std::wstring &rhs);
 	};
 
 } // namespace gctp
 
-#endif //_GCTP_ARGMAP_HPP_
+#endif //_GCTP_WARGMAP_HPP_

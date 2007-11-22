@@ -102,6 +102,7 @@ namespace gctp {
 		inline bool press(int key) { return (buffer_[key]&PRESS)?true:false; }
 		inline bool push(int key) { return (buffer_[key]&PUSH)?true:false; }
 		inline bool release(int key) { return (buffer_[key]&RELEASE)?true:false; }
+		static int stringToKey(const char *name);
 	private:
 		char buffer_[BUFFER_SIZE];
 		bool first_;

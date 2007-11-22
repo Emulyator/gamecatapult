@@ -44,6 +44,7 @@ namespace gctp {
 			lua_CFunction func;
 		};
 		TukiRegister(const char *luaname, const GCTP_TYPEINFO &type, void (*register_func)(lua_State *L));
+		TukiRegister(const char *luaname, void (*register_func)(lua_State *L));
 		void useTuki();
 		static void registerIt(lua_State *l, const char *name);
 		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
@@ -64,7 +65,7 @@ namespace gctp {
 		static Object *check(lua_State *L, int narg);
 	};
 
-	/** TukiÇÃregisterã@î\Ç∆uselib_*Çìoò^Ç∑ÇÈInitializer
+	/** TukiÇÃregisterã@î\Ç∆tuki_dump/tuki_loadÇìoò^Ç∑ÇÈInitializer
 	 *
 	 * ìTå^ìIÇ…ÇÕÅA
 	 * @code
@@ -205,12 +206,24 @@ namespace gctp {
 			// stack has userdata, followed by method args
 			T *obj = check(L, 1);  // get 'self', or if you prefer, 'this'
 			if(obj) {
+				// move self to registry
+				lua_pushlightuserdata(L, (void *)altThunk);
+				lua_pushvalue(L, 1);
+				lua_settable(L, LUA_REGISTRYINDEX);
+				lua_remove(L, 1);
 				// get member function from upvalue
-				Method *l = static_cast<Method *>(lua_touserdata(L, lua_upvalueindex(1)));
+				auto Method *l = static_cast<Method *>(lua_touserdata(L, lua_upvalueindex(1)));
 				luapp::Stack ls(L);
 				(obj->*(l->selffunc_))(ls);  // call member function
-				lua_checkstack(L, 1);
-				lua_pushvalue(L, 1);
+				// push self to stack top
+				lua_pushlightuserdata(L, (void *)altThunk);
+				lua_gettable(L, LUA_REGISTRYINDEX);
+				lua_insert(L, 1);
+				// remove self from registry
+				lua_pushlightuserdata(L, (void *)altThunk);
+				lua_pushnil(L);
+				lua_settable(L, LUA_REGISTRYINDEX);
+				lua_settop(L, 1);
 				return 1;
 			}
 			else luaL_typerror(L, 1, T::lua_name__);

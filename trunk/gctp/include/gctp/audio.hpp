@@ -31,7 +31,7 @@ namespace gctp { namespace audio {
 	 * ※デバイス消失を考慮しなくていいDirectSoundでDXRsrcDBを確保する意味は、Audioリソースを
 	 * すべて開放してから出ないとMusicの開放が出来ないから。\n
 	 */
-	class Device : public DB {
+	class Device {
 	public:
 		Device();
 		~Device();
@@ -57,9 +57,8 @@ namespace gctp { namespace audio {
 		/* @{ */
 		/** プレイヤー取得
 		 * @{ */
-		Player ready(const _TCHAR *fname);
-		Player ready(const Clip &clip, uint repeat = 0);
-		Player ready(int stance, const Clip &clip, uint repeat = 0);
+		Player ready(const _TCHAR *fname, bool streaming = true);
+		Player ready(Clip &clip, bool streaming = true);
 		/* @} */
 		/* @} */
 
@@ -87,71 +86,6 @@ namespace gctp { namespace audio {
 	 * カレントデバイスのインスタンスを返す。
 	 */
 	inline Device &device() { return *Device::getCurrent(); }
-
-
-	/** データベースに登録しつつ製作
-	 *
-	 * すでにデータベースにあるならそれを返し、そうで無かったら新規製作しＤＢに登録する、という
-	 * 操作のテンプレート\n
-	 * DB登録名とsetUpに渡す文字列を別々に指定できる
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/16 14:03:54
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	template<class _T>
-	Pointer<_T> createOnDB(const char *name)
-	{
-		Handle<_T> h = device()[name];
-		if(h) return h.lock();
-		else {
-			Pointer<_T> ret = new _T;
-			if(ret) {
-				if(ret->setUp(name)) {
-					PRNN(_T("リソース'")<<name<<_T("'を製作"));
-					h = ret;
-					device().insert(h, name);
-					return ret;
-				}
-			}
-			PRNN(_T("リソース'")<<name<<_T("'の製作に失敗"));
-		}
-		return Pointer<_T>();
-	}
-
-	/** データベースに登録しつつ製作
-	 *
-	 * すでにデータベースにあるならそれを返し、そうで無かったら新規製作しＤＢに登録する、という
-	 * 操作のテンプレート\n
-	 * DB登録名とsetUpに渡す文字列を別々に指定できる\n
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/16 14:03:54
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	template<class _T>
-	Pointer<_T> createOnDB(const char *name, const char *setup)
-	{
-		Handle<_T> h = device()[name];
-		if(h) return h.lock();
-		else {
-			Pointer<_T> ret = new _T;
-			if(ret) {
-				if(ret->setUp(setup)) {
-					PRNN(_T("リソース'")<<name_T(<<"'を製作"));
-					h = ret;
-					device().insert(h, name);
-					return ret;
-				}
-			}
-			PRNN(_T("リソース'")<<name<<_T("'の製作に失敗"));
-		}
-		return Pointer<_T>();
-	}
-
-	/** @defgroup CurrentAudioDeviceOperation カレントに対する操作 */
-	/* @{*/
-	/// 指定ファイルから音声データを用意
-	inline Player ready(const _TCHAR *fname) { return device().ready(fname); }
-	/* @}*/
 
 }} // namespace gctp
 

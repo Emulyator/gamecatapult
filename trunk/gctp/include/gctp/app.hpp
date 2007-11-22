@@ -119,19 +119,19 @@ namespace gctp {
 		static void postCharMsg(Events &q, int ch);
 
 		/// ボタンが押されたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>			down_signal;
+		Signal3<true, Point2, uint8_t, uint8_t>				down_signal;
 		/// ボタンが離されたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>			up_signal;
+		Signal3<true, Point2, uint8_t, uint8_t>				up_signal;
 		/// ダブルクリックされたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>			dblclick_signal;
+		Signal3<true, Point2, uint8_t, uint8_t>				dblclick_signal;
 		/// ポインタの移動(X, Y, OPTBUTTON)
-		Signal2<true, Point2, uint8_t>					move_signal;
+		Signal2<true, Point2, uint8_t>						move_signal;
 		/// マウスホイールや、パッドのアナコン操作(X, Y, DELTA, WHEEL, OPT)
 		Signal4<true, Point2, int16_t, uint8_t, uint8_t>	wheel_signal;
 		/// キー入力（プラットホーム依存、WindowsならVK_*が入る）
-		Signal1<true, int>								key_signal;
+		Signal1<true, int>									key_signal;
 		/// 文字入力
-		Signal1<true, int>								char_signal;
+		Signal1<true, int>									char_signal;
 
 		bool procEvent(const Event &event);
 #ifndef BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS

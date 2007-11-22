@@ -228,7 +228,7 @@ public:
 			theta_ += 1/180.0f*g_pi;
 			scale_ = fabsf(sinf(theta_))+0.5f;
 
-			text_.setClumpPos(10, -20).out() << "Alt + F4 to exit";
+			text_.setPos(10, g_.getScreenSize().y-20).out() << "Alt + F4 to exit";
 			text_.setPos(10, 20).setColor(Color32(255, 0, 127)).out() << _T("Œ»Ý‚ÌŠp“x:");
 			text_.setPos(90, 20).out() << theta_;
 			text_.setPos(160, 20).out() << scale_;

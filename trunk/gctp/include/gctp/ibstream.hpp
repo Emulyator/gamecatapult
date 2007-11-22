@@ -83,6 +83,10 @@ namespace gctp {
 		_Self& operator>>(unsigned short &__x) { return read((void *)&__x, sizeof(__x)); }
 		_Self& operator>>(long &__x) { return read((void *)&__x, sizeof(__x)); }
 		_Self& operator>>(unsigned long &__x) { return read((void *)&__x, sizeof(__x)); }
+		#ifdef _MSC_VER
+		_Self& operator>>(__int64 &__x) { return read((void *)&__x, sizeof(__x)); }
+		_Self& operator>>(unsigned __int64 &__x) { return read((void *)&__x, sizeof(__x)); }
+		#endif
 		#ifdef _STLP_LONG_LONG
 		_Self& operator>> (_STLP_LONG_LONG &__x) { return read((void *)&__x, sizeof(__x)); }
 		_Self& operator>> (unsigned _STLP_LONG_LONG &__x) { return read(&__x, sizeof(__x)); }

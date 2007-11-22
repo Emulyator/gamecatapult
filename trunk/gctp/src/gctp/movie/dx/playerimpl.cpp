@@ -282,10 +282,10 @@ namespace gctp { namespace movie { namespace dx {
 		}
 
 		// TextureRenderer Class Declarations
-		class CTextureRenderer : public CBaseVideoRenderer
+		class TextureRenderer : public CBaseVideoRenderer
 		{
 		public:
-			CTextureRenderer(LPUNKNOWN pUnk, HRESULT *phr, bool allow_alpha, bool allow_dynamic = true)
+			TextureRenderer(IUnknown *pUnk, HRESULT *phr, bool allow_alpha, bool allow_dynamic = true)
 				: CBaseVideoRenderer(__uuidof(CLSID_TextureRenderer), NAME("Texture Renderer"), pUnk, phr)
 				, use_dynamic_textures_(allow_dynamic), allow_alpha_(allow_alpha), alpha_(false)
 			{
@@ -678,6 +678,7 @@ namespace gctp { namespace movie { namespace dx {
 	{
 		HRslt hr;
 
+		is_ready_ = false;
 		hwnd_ = 0;
 		// Create the filter graph
 		if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
@@ -689,16 +690,16 @@ namespace gctp { namespace movie { namespace dx {
 #endif
 
 		// Create the Texture Renderer object
-		CTextureRenderer *pCTR = new CTextureRenderer(NULL, &hr.i, true);// DirectShow Texture renderer
-		if(!(hr) || !pCTR) {
-			delete pCTR;
+		TextureRenderer *pTR = new TextureRenderer(NULL, &hr.i, true);// DirectShow Texture renderer
+		if(!(hr) || !pTR) {
+			delete pTR;
 			//Msg(TEXT("Could not create texture renderer object!  hr=0x%x"), hr);
 			GCTP_TRACE(_T("Could not create texture renderer object! : ")<<hr);
 			return hr;
 		}
 
 		// Get a pointer to the IBaseFilter on the TextureRenderer, add it to graph
-		renderer_ = (IBaseFilter *)pCTR;
+		renderer_ = (IBaseFilter *)pTR;
 		if(!(hr = graph_builder_->AddFilter(renderer_, L"TEXTURERENDERER"))) {
 			//Msg(TEXT("Could not add renderer filter to graph!  hr=0x%x"), hr);
 			GCTP_TRACE(_T("Could not add renderer filter to graph! : ") << hr);
@@ -715,7 +716,7 @@ namespace gctp { namespace movie { namespace dx {
 
 		IPinPtr pFSrcPinOut;    // Source Filter Output Pin
 		if(ArchiveMediaFile::needThis(path)) {
-			PRNN(_T("アーカイブ内メディアファイルをストリーム"));
+			//PRNN(_T("アーカイブ内メディアファイルをストリーム"));
 			ArchiveMediaFile *archive_source = new ArchiveMediaFile;
 			if(archive_source) archive_source_ = archive_source;
 			if(hr = archive_source->open(path)) {
@@ -781,7 +782,7 @@ namespace gctp { namespace movie { namespace dx {
 			IPinPtr pFTRPinIn;      // Texture Renderer Input Pin
 
 			// Find the source's output pin and the renderer's input pin
-			if(!(hr = pCTR->FindPin(L"In", &pFTRPinIn))) {
+			if(!(hr = pTR->FindPin(L"In", &pFTRPinIn))) {
 				//Msg(TEXT("Could not find input pin!  hr=0x%x"), hr);
 				GCTP_TRACE(_T("Could not find input pin! : ") << hr);
 				return hr;
@@ -795,7 +796,7 @@ namespace gctp { namespace movie { namespace dx {
 			}
 		}
 
-		if(pCTR->texture_) {
+		if(pTR->texture_) {
 			//　これがあるなら正常にCTextureRendererがセットアップされたはず
 			// Get the graph's media control, event & position interfaces
 			graph_builder_.QueryInterface(&media_control_);
@@ -819,13 +820,15 @@ namespace gctp { namespace movie { namespace dx {
 	 * @date 2004/01/25 19:24:21
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Player::open(HWND hwnd, const _TCHAR *path, bool audio_on)
+	HRslt Player::open(HWND hwnd, int notify_msgid, const _TCHAR *path, bool audio_on)
 	{
 		USES_CONVERSION;
 		WCHAR wFile[MAX_PATH];
 		HRslt hr;
 
 		if(!path) return E_POINTER;
+		
+		is_ready_ = false;
 
 		// Convert filename to wide character string
 		wcsncpy(wFile, T2W((LPTSTR)path), NUMELMS(wFile)-1);
@@ -847,7 +850,7 @@ namespace gctp { namespace movie { namespace dx {
 
 		if(hr) {
 			if(ArchiveMediaFile::needThis(path)) {
-				PRNN(_T("アーカイブ内メディアファイルをストリーム"));
+				//PRNN(_T("アーカイブ内メディアファイルをストリーム"));
 				ArchiveMediaFile *archive_source = new ArchiveMediaFile;
 				if(archive_source) archive_source_ = archive_source;
 				if(archive_source->open(path)) {
@@ -905,9 +908,11 @@ namespace gctp { namespace movie { namespace dx {
 
 			// Have the graph signal event via window callbacks for performance
 			//JIF(pME->SetNotifyWindow((OAHWND)ghApp, WM_GRAPHNOTIFY, 0));
-			if(!(hr = media_event_->SetNotifyWindow((OAHWND)hwnd, WM_USER+13/* 適当。後々ぶつかるんで、何とかしないと*/, 0))) {
-				GCTP_TRACE(hr);
-				return hr;
+			if(notify_msgid > 0) {
+				if(!(hr = media_event_->SetNotifyWindow((OAHWND)hwnd, notify_msgid, 0))) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
 			}
 
 			// Is this an audio-only file (no video component)?
@@ -981,6 +986,11 @@ namespace gctp { namespace movie { namespace dx {
 
 			// Run the graph to play the media file
 			//JIF(pMC->Run());
+			// Start the graph running;
+			/*if(!(hr = media_control_->Pause())) {
+				//Msg(TEXT("Could not run the DirectShow graph!  hr=0x%x"), hr);
+				GCTP_TRACE(_T("Could not run the DirectShow graph! : "<<hr));
+			}*/
 
 			//g_psCurrent=Running;
 		}
@@ -1106,8 +1116,8 @@ namespace gctp { namespace movie { namespace dx {
 		if(renderer_) {
 			IBaseFilter *filter = renderer_;
 			if(filter) {
-				if(((CTextureRenderer *)filter)->texture_)
-					return ((CTextureRenderer *)filter)->texture_;
+				if(((TextureRenderer *)filter)->texture_)
+					return ((TextureRenderer *)filter)->texture_;
 			}
 		}
 		return 0;
@@ -1124,7 +1134,7 @@ namespace gctp { namespace movie { namespace dx {
 			return hr;
 		}
 
-		if(isPlaying() && hwnd_) {
+		if(isPlaying() && hwnd_ && is_ready_) {
 			DWORD now = timeGetTime();
 			if(now - invalidate_timer_ > 100) {
 				invalidate_timer_ = now;
@@ -1133,15 +1143,30 @@ namespace gctp { namespace movie { namespace dx {
 			}
 		}
 
+		/*{
+			OAFilterState state;
+			hr = media_control_->GetState(INFINITE, &state);
+			GCTP_TRACE(hr);
+			PRNN("state = "<<state);
+		}*/
+
 		// Check for completion events
 		hr = media_event_->GetEvent(&lEventCode, &lParam1, &lParam2, 0);
 		if(hr) {
 			// If we have reached the end of the media file, reset to beginning
-			if (EC_COMPLETE == lEventCode) {
+			if(EC_COMPLETE == lEventCode) {
 				if(loop_ > 0) loop_count_++;
 				if(loop_ == 0 || loop_count_ < loop_) {
 					hr = media_position_->put_CurrentPosition(0);
 				}
+			}
+			else if(EC_PAUSED == lEventCode) {
+				// どうも初期化が終わると一度は来る見たい
+				is_ready_ = true;
+				PRNN("lEventCode = EC_PAUSED");
+			}
+			else {
+				PRNN("lEventCode = "<<lEventCode);
 			}
 			// Free any memory associated with this event
 			hr = media_event_->FreeEventParams(lEventCode, lParam1, lParam2);
@@ -1154,7 +1179,7 @@ namespace gctp { namespace movie { namespace dx {
 		if(renderer_) {
 			IBaseFilter *filter = renderer_;
 			if(filter) {
-				return ((CTextureRenderer *)filter)->width_;
+				return ((TextureRenderer *)filter)->width_;
 			}
 		}
 		return 0;
@@ -1165,7 +1190,7 @@ namespace gctp { namespace movie { namespace dx {
 		if(renderer_) {
 			IBaseFilter *filter = renderer_;
 			if(filter) {
-				return ((CTextureRenderer *)filter)->height_;
+				return ((TextureRenderer *)filter)->height_;
 			}
 		}
 		return 0;

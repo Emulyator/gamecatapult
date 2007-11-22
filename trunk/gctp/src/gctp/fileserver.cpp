@@ -109,7 +109,7 @@ namespace gctp {
 		};
 
 		// gar
-		class Gar : public FileServer::Volume {
+		class Gcar : public FileServer::Volume {
 		public:
 			static bool isExistEx(const _TCHAR *volume_name, std::basic_string<_TCHAR> &filename, std::basic_string<_TCHAR> &currentdir)
 			{
@@ -117,14 +117,14 @@ namespace gctp {
 				std::basic_string<_TCHAR> ext = volume_uri.extension();
 				if(ext.empty()) {
 					std::basic_stringstream<_TCHAR> str;
-					str << volume_name << ".gar";
+					str << volume_name << ".gcar";
 					DWORD attr = ::GetFileAttributes(str.str().c_str());
 					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 						filename = str.str();
 						return true;
 					}
 				}
-				else if(ext == _T("gar")) {
+				else if(ext == _T("gcar")) {
 					DWORD attr = ::GetFileAttributes(volume_name);
 					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 						filename = volume_name;
@@ -145,34 +145,34 @@ namespace gctp {
 				std::basic_string<_TCHAR> currentdir;
 				return isExistEx(volume_name, filename, currentdir);
 			}
-			Gar(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
+			Gcar(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
 			{
 				if(isExistEx(volume_name, filename_, currentdir_)) {
-					PRNN("gar volume_name "<<volume_name);
-					PRNN("gar filename "<<filename_);
-					PRNN("gar currentdir "<<currentdir_);
-					gar_.open(filename_.c_str());
+					//PRNN("gcar volume_name "<<volume_name);
+					//PRNN("gcar filename "<<filename_);
+					//PRNN("gcar currentdir "<<currentdir_);
+					gcar_.open(filename_.c_str());
 				}
 			}
 			virtual int find(const _TCHAR *fname)
 			{
 				std::basic_string<_TCHAR> filename = currentdir_+fname;
-				ArchiveEntry *entry = gar_.get(filename.c_str());
+				ArchiveEntry *entry = gcar_.get(filename.c_str());
 				if(entry) return entry->size;
 				return -1;
 			}
 			virtual int read(const _TCHAR *fname, Buffer &buffer)
 			{
 				std::basic_string<_TCHAR> filename = currentdir_+fname;
-				ArchiveEntry *entry = gar_.get(filename.c_str());
+				ArchiveEntry *entry = gcar_.get(filename.c_str());
 				if(entry) {
-					gar_.read(buffer.buf(), entry);
+					gcar_.read(buffer.buf(), entry);
 					return entry->size;
 				}
 				return -1;
 			}
 
-			class GarFile : public AbstractFile {
+			class GcarFile : public AbstractFile {
 			public:
 				virtual int size() const
 				{
@@ -199,9 +199,9 @@ namespace gctp {
 			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
 			{
 				std::basic_string<_TCHAR> filename = currentdir_+fname;
-				ArchiveEntry *entry = gar_.get(filename.c_str());
+				ArchiveEntry *entry = gcar_.get(filename.c_str());
 				if(!entry) return 0;
-				Pointer<GarFile> ret = new GarFile;
+				Pointer<GcarFile> ret = new GcarFile;
 				ret->file_.open(filename_.c_str());
 				if(!ret->file_.is_open()) ret = 0;
 				else {
@@ -211,7 +211,7 @@ namespace gctp {
 				return ret;
 			}
 		private:
-			Archive gar_;
+			Archive gcar_;
 			std::basic_string<_TCHAR> filename_;
 			std::basic_string<_TCHAR> currentdir_;
 		};
@@ -257,9 +257,9 @@ namespace gctp {
 			Zip(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
 			{
 				if(isExistEx(volume_name, filename_, currentdir_)) {
-					PRNN("zip volume_name "<<volume_name);
-					PRNN("zip filename "<<filename_);
-					PRNN("zip currentdir "<<currentdir_);
+					//PRNN("zip volume_name "<<volume_name);
+					//PRNN("zip filename "<<filename_);
+					//PRNN("zip currentdir "<<currentdir_);
 					zip_.open(filename_.c_str());
 				}
 			}
@@ -388,8 +388,8 @@ namespace gctp {
 			if(NativeFS::isExist(path)) {
 				type = NATIVE;
 			}
-			else if(Gar::isExist(path)) {
-				type = GAR;
+			else if(Gcar::isExist(path)) {
+				type = GCAR;
 			}
 #ifdef GCTP_USE_ZLIB
 			else if(Zip::isExist(path)) {
@@ -402,8 +402,8 @@ namespace gctp {
 			volume_list_.push_back(new NativeFS(path));
 			PRNN(_T("アーカイブ'")<<path<<_T("'をネイティブFSとしてマウント。"));
 			break;
-		case GAR:
-			volume_list_.push_back(new Gar(path));
+		case GCAR:
+			volume_list_.push_back(new Gcar(path));
 			PRNN(_T("アーカイブ'")<<path<<_T("'をGameCatapultアーカイブとしてマウント。"));
 			break;
 #ifdef GCTP_USE_ZLIB

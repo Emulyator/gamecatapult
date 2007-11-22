@@ -102,8 +102,6 @@ namespace gctp { namespace audio { namespace dx {
 				hr = ptr_->Lock(0, (DWORD)buffersize_, &buf, &bufsize, NULL, NULL, 0L );
 				if(!hr) return DXTRACE_ERR(TEXT("Lock"), hr.i);
 
-				clip.rewind();
-
 				hr = clip.read(buf, bufsize, &readsize);
 				if(!hr) return DXTRACE_ERR(TEXT("Read"), hr.i);
 				if( readsize < bufsize ) // 空白埋め
@@ -265,7 +263,7 @@ namespace gctp { namespace audio { namespace dx {
 			};
 		public:
 			StreamingBuffer()
-				: glast_(0), llast_(0),
+				: prev_pcur_(0), prev_wcur_(0), llast_(0), last_written_(0),
 #ifndef GCTP_AUDIO_USE_TIMER
 				notified_event_(NULL),
 #endif
@@ -281,7 +279,8 @@ namespace gctp { namespace audio { namespace dx {
 			}
 #endif
 
-			HRslt setUp(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus) {
+			HRslt setUp(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
+			{
 				HRslt hr;
 
 				if( !device ) return CO_E_NOTINITIALIZED;
@@ -332,12 +331,48 @@ namespace gctp { namespace audio { namespace dx {
 					return DXTRACE_ERR( TEXT("SetNotificationPositions"), hr.i );
 				}
 #endif
-				glast_ = (ulong)buffersize_;
-				return load(*clip_);
+				return S_OK;
+			}
+
+			// サウンドデータ書き込み
+			HRslt load(ulong size)
+			{
+				HRslt hr;
+				ulong pcur, wcur; // 現在の再生カーソル位置
+				if( !( hr = ptr_->GetCurrentPosition( &pcur, &wcur ) ) ) {
+					DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
+					return S_FALSE;
+				}
+				void *buf1 = NULL, *buf2 = NULL;
+				ulong buf1size, buf2size;
+				if( !( hr = ptr_->Lock( llast_, size, &buf1, &buf1size, &buf2, &buf2size, 0L ) ) ) {
+					GCTP_TRACE("ptr->Lock("<<llast_<<","<<size<<","<<buffersize_<<")");
+					DXTRACE_ERR( TEXT("Lock"), hr.i );
+					return S_FALSE;
+				}
+
+				if( in_coda_ ) {
+					fillWithSilence(buf1, buf1size);
+					if(buf2) fillWithSilence(buf2, buf2size);
+				}
+				else {
+					last_written_ = llast_;
+					fill(buf1, buf1size);
+					if(buf2) {
+						if(!in_coda_) last_written_ = 0;
+						fill(buf2, buf2size);
+					}
+				}
+				ptr_->Unlock( buf1, buf1size, buf2, buf2size );
+				if(buf2) llast_ = buf2size;
+				else llast_ += buf1size;
+				if(llast_ == buffersize_) llast_ = 0;
+				return S_OK;
 			}
 
 			/// Notificationに対する処理
-			HRslt onNotified() {
+			HRslt onNotified()
+			{
 				ScopedLock al(monitor_);
 				Pointer<Clip> clip = clip_.lock();
 				if( !ptr_ || !clip || !clip->isOpen() ) return CO_E_NOTINITIALIZED;
@@ -352,55 +387,45 @@ namespace gctp { namespace audio { namespace dx {
 				// なんか他の割り込みに反応してしまうことがあるようなので、本当に更新する必要があるのか
 				// 確かめる
 				ulong notify_size = (ulong)buffersize_/NOTIFY_COUNT/clip->format()->nBlockAlign*clip->format()->nBlockAlign; ///< １回のonNotifiedで処理されるはずのサイズ
-				ulong size, maxsize, current, writebegin; // 現在の再生カーソル位置
-				if( !( hr = ptr_->GetCurrentPosition( &current, &writebegin ) ) ) {
+				ulong pcur, wcur; // 現在の再生カーソル位置
+				if( !( hr = ptr_->GetCurrentPosition( &pcur, &wcur ) ) ) {
 					DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
 					return S_FALSE;
 				}
-				if( current <= writebegin ) {
-					maxsize = (ulong)(buffersize_-writebegin+current)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
-					if(current <= llast_ && llast_ < writebegin) llast_ = writebegin;
+
+				if(in_coda_) {
+					//PRNN("in coda "<<last_written_<<","<<pcur);
+					if((prev_pcur_ < pcur && prev_pcur_ < last_written_ && last_written_ <= pcur)
+					|| (prev_pcur_ > pcur && (last_written_ <= pcur || prev_pcur_ < last_written_))) {
+						return ptr_->Stop();
+					}
+				}
+
+				ulong size, maxsize;
+				if( pcur <= wcur ) {
+					maxsize = (ulong)(buffersize_-wcur+pcur)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
+					if(pcur <= llast_ && llast_ < wcur) llast_ = wcur;
 				}
 				else {
-					maxsize = (ulong)(current-writebegin)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
-					if(current <= llast_ || llast_ < writebegin) llast_ = writebegin;
+					maxsize = (ulong)(pcur-wcur)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
+					if(pcur <= llast_ || llast_ < wcur) llast_ = wcur;
 				}
-				if( current < llast_ ) size = (ulong)(buffersize_-llast_+current)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
-				else size = (current-llast_)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
+				// これだとレイテンシでかいなぁ…あ、レイテンシを下げたい場合は、バッファサイズを小さくしなさい、でいいか
+				if( pcur < llast_ ) size = (ulong)(buffersize_-llast_+pcur)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
+				else size = (pcur-llast_)/clip->format()->nBlockAlign*clip->format()->nBlockAlign;
 				if(size < notify_size) {
 					//PRNN("通知サイズに達してないのに来た？ : " << /*notified_event_ << "," << */wav_.fname() << "(" << size << "/" << notify_size << ")");
 					return S_FALSE; // 通知サイズに達してないのに来た？
 				}
 				//PRNN("通知イベントサービス : " << /*notified_event_ << "," << */wav_.fname() << "(" << size << "/" << notify_size << ")");
 				if(size > maxsize) {
-					llast_ = writebegin;
+					llast_ = wcur;
 					size = maxsize;
 				}
-
-				void *buf1 = NULL, *buf2 = NULL;
-				ulong buf1size, buf2size;
-				if( !( hr = ptr_->Lock( llast_, size, &buf1, &buf1size, &buf2, &buf2size, 0L ) ) ) {
-					GCTP_TRACE("ptr->Lock("<<llast_<<","<<size<<","<<buffersize_<<","<<current<<")");
-					DXTRACE_ERR( TEXT("Lock"), hr.i );
-					return S_FALSE;
-				}
-
-				if( in_coda_ ) {
-					fillWithSilence(buf1, buf1size);
-					if(buf2) fillWithSilence(buf2, buf2size);
-				}
-				else {
-					fill(buf1, buf1size);
-					if(buf2) fill(buf2, buf2size);
-					glast_ += size;
-				}
-				llast_ += size;
-				if(llast_ >= buffersize_) llast_ = llast_ % buffersize_;
-				ptr_->Unlock( buf1, buf1size, buf2, buf2size );
-
-				//if(in_coda_ && last_written_ glast_ >= clip->size()) ptr_->Stop();
-				if(in_coda_ && current >= last_written_) ptr_->Stop();
-				return S_OK;
+				// サウンドデータ書き込み
+				hr = load(size);
+				prev_pcur_ = pcur; prev_wcur_ = wcur;
+				return hr;
 			}
 
 			HRslt rewind()
@@ -410,22 +435,31 @@ namespace gctp { namespace audio { namespace dx {
 
 				HRslt hr;
 				ScopedLock al(monitor_);
-				glast_ = llast_ = 0; in_coda_ = false;
+				prev_pcur_ = prev_wcur_ = llast_ = last_written_ = 0; in_coda_ = false;
 				clip->rewind();
-				if( !( hr = load(*clip) ) ) return DXTRACE_ERR( TEXT("load"), hr.i );
-				return ptr_->SetCurrentPosition(0);
+				return S_OK;
 			}
 
 			virtual HRslt play(int times)
 			{
 				if(!ptr_) return CO_E_NOTINITIALIZED;
 				HRslt hr;
-				if(in_coda_) {
-					hr = rewind();
-					if(!hr) GCTP_TRACE(hr);
-				}
 				times_ = times;
 				count_ = 0;
+				in_coda_ = false;
+				if(!isPlaying()) {
+					hr = rewind();
+					if(!hr) GCTP_TRACE(hr);
+					hr = ptr_->SetCurrentPosition(0);
+					if(!hr) GCTP_TRACE(hr);
+					prev_pcur_ = prev_wcur_ = llast_ = last_written_ = 0;
+					Pointer<Clip> clip = clip_.lock();
+					hr = load((ulong)buffersize_/NOTIFY_COUNT/clip->format()->nBlockAlign*clip->format()->nBlockAlign*2);
+					if(!hr) {
+						GCTP_TRACE(hr);
+						return hr;
+					}
+				}
 				hr = ptr_->Play(0, 0, DSBPLAY_LOOPING);
 				if(!hr) GCTP_TRACE(hr);
 				return hr;
@@ -444,9 +478,14 @@ namespace gctp { namespace audio { namespace dx {
 				size_t written_size;
 				// Fill the DirectSound buffer with wav data
 				if( !( hr = clip->read( buf, size, &written_size ) ) ) return DXTRACE_ERR( TEXT("Read"), hr.i );
+				last_written_ += (ulong)written_size;
 				if( written_size < size ) {
 					count_++;
 					if( times_ == 0 || count_ < times_ ) {
+						if( !( hr = ptr_->GetCurrentPosition( NULL, &last_written_ ) ) ) {
+							DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
+							return S_FALSE;
+						}
 						DWORD total_read = (DWORD)written_size;
 						while( total_read < size ) {
 							if( !( hr = clip->rewind() ) )
@@ -454,15 +493,11 @@ namespace gctp { namespace audio { namespace dx {
 							if( !( hr = clip->read( (BYTE*)buf + total_read, size - total_read, &written_size ) ) )
 								return DXTRACE_ERR( TEXT("Clip::read"), hr.i );
 							total_read += (DWORD)written_size;
+							last_written_ += (ulong)written_size;
 						}
 					}
 					else {
 						fillWithSilence( (BYTE*)buf + written_size, size - written_size );
-						if( !( hr = ptr_->GetCurrentPosition( NULL, &last_written_ ) ) ) {
-							DXTRACE_ERR( TEXT("GetCurrentPosition"), hr.i );
-							return S_FALSE;
-						}
-						last_written_ += (ulong)written_size;
 						in_coda_ = true;
 					}
 				}
@@ -479,14 +514,15 @@ namespace gctp { namespace audio { namespace dx {
 			}
 
 			Handle<Clip> clip_;
-			ulong glast_;			///< ストリーム全体での処理済位置(バッファ終端のグローバル位置を示す。ストリーム全体での再生カーソル位置はglast_+abs((current-llast_)%buffersize_)で求まる)
+			ulong prev_pcur_;		///< 前回通知時の再生カーソル位置
+			ulong prev_wcur_;		///< 前回通知時の書き込みカーソル位置
 			ulong llast_;			///< バッファローカルでの処理済位置
 
 #ifndef GCTP_AUDIO_USE_TIMER
 			HANDLE notified_event_;	///< 通知イベントのハンドル
 #endif
-			ulong last_written_;	///< 最後にウェーブを書き込んだバッファ位置(in_coda_がtrueになってからのみ有効)
-			bool in_coda_;			///< ウェーブの最後に達したか？
+			ulong last_written_;	///< 最後に空白以外のウェーブを書き込んだバッファローカル位置
+			bool in_coda_;			///< （書き込む処理が）ウェーブの最後に達したか？
 			int times_;				///< 再生回数設定(0は無限)
 			int count_;				///< 再生カウント
 			Mutex monitor_;

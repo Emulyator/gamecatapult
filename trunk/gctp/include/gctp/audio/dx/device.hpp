@@ -53,7 +53,8 @@ namespace gctp { namespace audio { namespace dx {
 
 		HRslt getFormat(int &channel_num, int &freq, int &bitrate);
 
-		Pointer<Buffer> ready(Handle<Clip> clip);
+		Pointer<Buffer> newStream(Handle<Clip> clip);
+		Pointer<Buffer> newBuffer(Handle<Clip> clip);
 
 		void setVolume(float volume);
 		
