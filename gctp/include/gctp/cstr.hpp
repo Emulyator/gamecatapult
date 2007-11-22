@@ -143,7 +143,7 @@ namespace gctp {
 	public:
 		/// デフォルトコンストラクタ
 		CStr() {}
-		/// wchar_t * から変換(MB->Unicode変換)
+		/// wchar_t * から変換(Unicode->MB変換)
 		CStr(const wchar_t *src) : Pointer<detail::CStrImpl>(src ? new detail::CStrImpl(src) : 0) {}
 		/// char * から変換
 		CStr(const char *src) : Pointer<detail::CStrImpl>(src ? new detail::CStrImpl(src) : 0) {}

@@ -18,6 +18,10 @@
 
 namespace gctp { namespace graphic {
 
+	namespace dx {
+		class StateBlockRsrc;
+	}
+
 	/** スプライト定義情報
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -109,6 +113,19 @@ namespace gctp { namespace graphic {
 		SpriteDesc &setHilight(Color32 col) { hilight[0] = hilight[1] = hilight[2] = hilight[3] = col; return *this; }
 	};
 
+	/// マルチテクスチャ版（２テクスチャ）
+	struct SpriteDesc2 : SpriteDesc {
+		Point2f uv2[4];
+		/// レクトから４頂点分のＵＶを設定
+		SpriteDesc2 &setUV2(Rectf rc) {
+			uv2[0].x = rc.left;  uv2[0].y = rc.top;
+			uv2[1].x = rc.right; uv2[1].y = rc.top;
+			uv2[2].x = rc.left;  uv2[2].y = rc.bottom;
+			uv2[3].x = rc.right; uv2[3].y = rc.bottom;
+			return *this;
+		}
+	};
+
 	/// Textはこれに文字スプライトを格納して返すことが出来る
 	class SpriteDescVector {
 	public:
@@ -124,8 +141,17 @@ namespace gctp { namespace graphic {
 	 */
 	class SpriteBuffer : public VertexBuffer {
 	public:
-		struct TLVertex;
 		struct LVertex;
+		struct TLVertex;
+		struct L2Vertex;
+		struct TL2Vertex;
+
+		enum VertexType {
+			VT_L,
+			VT_TL,
+			VT_L2,
+			VT_TL2,
+		};
 
 		enum AddressMode {
 			ADDRESS_NONE,
@@ -134,14 +160,16 @@ namespace gctp { namespace graphic {
 		};
 
 		HRslt setUp(const _TCHAR *name);
-		HRslt setUp(uint maxnum = default_maxnum_, bool is_TL = true);
+		HRslt setUp(uint maxnum = default_maxnum_, VertexType type = VT_TL);
 
 		SpriteBuffer &begin(bool do_filter = true);
 		SpriteBuffer &begin(const class Texture &tex, bool do_filter = true, AddressMode addressmode = ADDRESS_NONE);
 		SpriteBuffer &begin(const Size2 &screen/**< 仮想スクリーンサイズ */, bool do_filter = true);
 		SpriteBuffer &begin(const Size2 &screen/**< 仮想スクリーンサイズ */, const class Texture &tex, bool do_filter = true);
 		SpriteBuffer &draw(const SpriteDesc &desc);
+		SpriteBuffer &draw(const SpriteDesc2 &desc);
 		SpriteBuffer &draw(const Texture &tex, const SpriteDesc &desc);
+		SpriteBuffer &draw(const Texture &tex, const SpriteDesc2 &desc);
 		SpriteBuffer &set(const Texture &tex);
 		SpriteBuffer &end();
 
@@ -161,10 +189,10 @@ namespace gctp { namespace graphic {
 		uint maxnum_;
 		uint lastfreenum_;
 
-		Pointer<class SpriteSB>	sb_;
+		Pointer<dx::StateBlockRsrc>	sb_;
 	private:
 		void *locked_;
-		bool is_TL_;
+		VertexType type_;
 	};
 
 }}

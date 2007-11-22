@@ -1,5 +1,5 @@
-#ifndef _GCTP_GRAPHIC_RENDERTARGET_HPP_
-#define _GCTP_GRAPHIC_RENDERTARGET_HPP_
+#ifndef _GCTP_GRAPHIC_DEPTHSTENCIL_HPP_
+#define _GCTP_GRAPHIC_DEPTHSTENCIL_HPP_
 /** @file
  * GameCatapult レンダーターゲットクラスヘッダファイル
  *
@@ -13,16 +13,9 @@
 
 namespace gctp { namespace graphic {
 
-	class Texture;
-
-	/// テクスチャリソースクラス
-	class RenderTarget : public Rsrc {
+	/// 深度・ステンシルバッファリソースクラス
+	class DepthStencil : public Rsrc {
 	public:
-		enum Type {
-			NORMAL, // 後でテクスチャとして使いたいという、普通の使い道
-			OFFSCREEN // ファイルに落としたい時用
-		};
-
 		struct LockedRect {
 			int pitch;
 			void *buf;
@@ -31,10 +24,10 @@ namespace gctp { namespace graphic {
 			operator bool() { return buf ? true : false; }
 		};
 
-		RenderTarget();
+		DepthStencil();
 
 		HRslt setUp(const _TCHAR *fname);
-		HRslt setUp(Type type, int width, int height, int format, int miplevel=1);
+		HRslt setUp(int width, int height, int format = D3DFMT_D24S8, bool discardable = false);
 
 		HRslt restore();
 		void cleanUp();
@@ -43,21 +36,9 @@ namespace gctp { namespace graphic {
 		dx::IDirect3DSurface *get() const { return ptr_; }
 
 		/// カレントに設定
-		HRslt begin(uint index = 0);
-		/// レンダーターゲットを無効に
+		HRslt begin(bool stencil =  true);
+		/// 無効に
 		HRslt end();
-		/// テクスチャに転送
-		HRslt resolve();
-		/// テクスチャ取得
-		const Texture &texture() const
-		{
-			return *tex_;
-		}
-		/// テクスチャ取得
-		Texture &texture()
-		{
-			return *tex_;
-		}
 
 		Point2 size() const;
 		
@@ -76,17 +57,15 @@ namespace gctp { namespace graphic {
 	protected:
 		dx::IDirect3DSurfacePtr ptr_;
 		dx::IDirect3DSurfacePtr backup_;
-		gctp::Pointer<Texture> tex_;
 
 	private:
 		int org_width_;
 		int org_height_;
 		int org_format_;
-		int org_miplevel_;
+		bool discardable_;
 		int index_for_system_;
-		Type type_;
 	};
 
 }} //namespace gctp
 
-#endif //_GCTP_GRAPHIC_RENDERTARGET_HPP_
+#endif //_GCTP_GRAPHIC_DEPTHSTENCIL_HPP_

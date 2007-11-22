@@ -8,6 +8,7 @@
 #include "common.h"
 #include <gctp/input.hpp>
 #include <gctp/dbgout.hpp>
+#include <gctp/stringmap.hpp>
 
 using namespace std;
 
@@ -19,6 +20,169 @@ namespace gctp {
 	IDirectInput8Ptr Input::api_;
 
 	Input::DeviceList Input::devicies_;
+
+	namespace {
+		// DIK->•¶Žš—ñ‚Ìƒ}ƒbƒv
+		class DIKMap : public StaticStringMap<int>
+		{
+			DIKMap()
+			{
+#define DEC_STR_TO_DIK(s)	(*this).put(#s, DIK_##s)
+				DEC_STR_TO_DIK(ESCAPE);
+				DEC_STR_TO_DIK(1);
+				DEC_STR_TO_DIK(2);
+				DEC_STR_TO_DIK(3);
+				DEC_STR_TO_DIK(4);
+				DEC_STR_TO_DIK(5);
+				DEC_STR_TO_DIK(6);
+				DEC_STR_TO_DIK(7);
+				DEC_STR_TO_DIK(8);
+				DEC_STR_TO_DIK(9);
+				DEC_STR_TO_DIK(0);
+				DEC_STR_TO_DIK(MINUS);
+				DEC_STR_TO_DIK(EQUALS);
+				DEC_STR_TO_DIK(BACK);
+				DEC_STR_TO_DIK(TAB);
+				DEC_STR_TO_DIK(Q);
+				DEC_STR_TO_DIK(W);
+				DEC_STR_TO_DIK(E);
+				DEC_STR_TO_DIK(R);
+				DEC_STR_TO_DIK(T);
+				DEC_STR_TO_DIK(Y);
+				DEC_STR_TO_DIK(U);
+				DEC_STR_TO_DIK(I);
+				DEC_STR_TO_DIK(O);
+				DEC_STR_TO_DIK(P);
+				DEC_STR_TO_DIK(LBRACKET);
+				DEC_STR_TO_DIK(RBRACKET);
+				DEC_STR_TO_DIK(RETURN);
+				DEC_STR_TO_DIK(LCONTROL);
+				DEC_STR_TO_DIK(A);
+				DEC_STR_TO_DIK(S);
+				DEC_STR_TO_DIK(D);
+				DEC_STR_TO_DIK(F);
+				DEC_STR_TO_DIK(G);
+				DEC_STR_TO_DIK(H);
+				DEC_STR_TO_DIK(J);
+				DEC_STR_TO_DIK(K);
+				DEC_STR_TO_DIK(L);
+				DEC_STR_TO_DIK(SEMICOLON);
+				DEC_STR_TO_DIK(APOSTROPHE);
+				DEC_STR_TO_DIK(GRAVE );
+				DEC_STR_TO_DIK(LSHIFT);
+				DEC_STR_TO_DIK(BACKSLASH);
+				DEC_STR_TO_DIK(Z);
+				DEC_STR_TO_DIK(X);
+				DEC_STR_TO_DIK(C);
+				DEC_STR_TO_DIK(V);
+				DEC_STR_TO_DIK(B);
+				DEC_STR_TO_DIK(N);
+				DEC_STR_TO_DIK(M);
+				DEC_STR_TO_DIK(COMMA);
+				DEC_STR_TO_DIK(PERIOD);
+				DEC_STR_TO_DIK(SLASH);
+				DEC_STR_TO_DIK(RSHIFT);
+				DEC_STR_TO_DIK(MULTIPLY);/* * on numeric keypad */
+				DEC_STR_TO_DIK(LMENU);
+				DEC_STR_TO_DIK(SPACE);
+				DEC_STR_TO_DIK(CAPITAL);
+				DEC_STR_TO_DIK(F1);
+				DEC_STR_TO_DIK(F2);
+				DEC_STR_TO_DIK(F3);
+				DEC_STR_TO_DIK(F4);
+				DEC_STR_TO_DIK(F5);
+				DEC_STR_TO_DIK(F6);
+				DEC_STR_TO_DIK(F7);
+				DEC_STR_TO_DIK(F8);
+				DEC_STR_TO_DIK(F9);
+				DEC_STR_TO_DIK(F10);
+				DEC_STR_TO_DIK(NUMLOCK);
+				DEC_STR_TO_DIK(SCROLL);
+				DEC_STR_TO_DIK(NUMPAD7);
+				DEC_STR_TO_DIK(NUMPAD8);
+				DEC_STR_TO_DIK(NUMPAD9);
+				DEC_STR_TO_DIK(SUBTRACT);/* - on numeric keypad */
+				DEC_STR_TO_DIK(NUMPAD4);
+				DEC_STR_TO_DIK(NUMPAD5);
+				DEC_STR_TO_DIK(NUMPAD6);
+				DEC_STR_TO_DIK(ADD);
+				DEC_STR_TO_DIK(NUMPAD1);
+				DEC_STR_TO_DIK(NUMPAD2);
+				DEC_STR_TO_DIK(NUMPAD3);
+				DEC_STR_TO_DIK(NUMPAD0);
+				DEC_STR_TO_DIK(DECIMAL);/* . on numeric keypad */
+				DEC_STR_TO_DIK(OEM_102);/* <> or \| on RT 102-key keyboard (Non-U.S.) */
+				DEC_STR_TO_DIK(F11);
+				DEC_STR_TO_DIK(F12);
+				DEC_STR_TO_DIK(F13);
+				DEC_STR_TO_DIK(F14);
+				DEC_STR_TO_DIK(F15);
+				DEC_STR_TO_DIK(KANA);
+				DEC_STR_TO_DIK(ABNT_C1);/* /? on Brazilian keyboard */
+				DEC_STR_TO_DIK(CONVERT);/* (Japanese keyboard)            */
+				DEC_STR_TO_DIK(NOCONVERT);/* (Japanese keyboard)            */
+				DEC_STR_TO_DIK(YEN);
+				DEC_STR_TO_DIK(ABNT_C2);/* Numpad . on Brazilian keyboard */
+				DEC_STR_TO_DIK(NUMPADEQUALS);/* = on numeric keypad (NEC PC98) */
+				DEC_STR_TO_DIK(PREVTRACK);/* Previous Track (DIK_CIRCUMFLEX on Japanese keyboard) */
+				DEC_STR_TO_DIK(AT);
+				DEC_STR_TO_DIK(COLON);
+				DEC_STR_TO_DIK(UNDERLINE);/*                     (NEC PC98) */
+				DEC_STR_TO_DIK(KANJI);
+				DEC_STR_TO_DIK(STOP);
+				DEC_STR_TO_DIK(AX);
+				DEC_STR_TO_DIK(UNLABELED);/*                        (J3100) */
+				DEC_STR_TO_DIK(NEXTTRACK);/* Next Track */
+				DEC_STR_TO_DIK(NUMPADENTER);/* Enter on numeric keypad */
+				DEC_STR_TO_DIK(RCONTROL);
+				DEC_STR_TO_DIK(MUTE);
+				DEC_STR_TO_DIK(CALCULATOR);/* Calculator */
+				DEC_STR_TO_DIK(PLAYPAUSE);/* Play / Pause */
+				DEC_STR_TO_DIK(MEDIASTOP);/* Media Stop */
+				DEC_STR_TO_DIK(VOLUMEDOWN);/* Volume - */
+				DEC_STR_TO_DIK(VOLUMEUP);/* Volume + */
+				DEC_STR_TO_DIK(WEBHOME);/* Web home */
+				DEC_STR_TO_DIK(NUMPADCOMMA);/* , on numeric keypad (NEC PC98) */
+				DEC_STR_TO_DIK(DIVIDE);
+				DEC_STR_TO_DIK(SYSRQ);
+				DEC_STR_TO_DIK(RMENU);
+				DEC_STR_TO_DIK(PAUSE);
+				DEC_STR_TO_DIK(HOME);
+				DEC_STR_TO_DIK(UP);
+				DEC_STR_TO_DIK(PRIOR);
+				DEC_STR_TO_DIK(LEFT);
+				DEC_STR_TO_DIK(RIGHT);
+				DEC_STR_TO_DIK(END);
+				DEC_STR_TO_DIK(DOWN);
+				DEC_STR_TO_DIK(NEXT);
+				DEC_STR_TO_DIK(INSERT);
+				DEC_STR_TO_DIK(DELETE);
+				DEC_STR_TO_DIK(LWIN);
+				DEC_STR_TO_DIK(RWIN);
+				DEC_STR_TO_DIK(APPS);
+				DEC_STR_TO_DIK(POWER);
+				DEC_STR_TO_DIK(SLEEP);
+				DEC_STR_TO_DIK(WAKE);
+				DEC_STR_TO_DIK(WEBSEARCH);
+				DEC_STR_TO_DIK(WEBFAVORITES);
+				DEC_STR_TO_DIK(WEBREFRESH);
+				DEC_STR_TO_DIK(WEBSTOP);
+				DEC_STR_TO_DIK(WEBFORWARD);
+				DEC_STR_TO_DIK(WEBBACK);
+				DEC_STR_TO_DIK(MYCOMPUTER);
+				DEC_STR_TO_DIK(MAIL);
+				DEC_STR_TO_DIK(MEDIASELECT);
+#undef DEC_STR_TO_DIK
+			}
+
+		public:
+			static const DIKMap &getInstance()
+			{
+				static DIKMap ret;
+				return ret;
+			}
+		};
+	}
 
 	std::basic_ostream<_TCHAR> &operator<<(std::basic_ostream<_TCHAR> &os, const Input::Device &device)
 	{
@@ -570,6 +734,11 @@ namespace gctp {
 			else buffer_[i] = (prev&PRESS ? RELEASE : 0);
 		}
 		return hr;
+	}
+		
+	int KbdDevice::stringToKey(const char *name)
+	{
+		return DIKMap::getInstance().get(name);
 	}
 
 } // !gctp

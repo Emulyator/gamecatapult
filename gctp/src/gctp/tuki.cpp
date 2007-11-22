@@ -154,6 +154,11 @@ namespace gctp {
 		typeRegistry().put(type, luaname);
 	}
 
+	TukiRegister::TukiRegister(const char *luaname, void (*register_func)(lua_State *L))
+	{
+		registry().put(luaname, register_func);
+	}
+
 	void TukiRegister::useTuki()
 	{
 	}

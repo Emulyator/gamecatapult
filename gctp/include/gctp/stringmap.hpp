@@ -43,11 +43,12 @@ namespace gctp {
 	public:
 		void put(const char *key, _T val)
 		{
-			StaticStringMapBase::put(key, val);
+			StaticStringMapBase::put(key, *(void **)&val);
 		}
 		_T get(const char *key) const
 		{
-			return reinterpret_cast<_T>(StaticStringMapBase::get(key));
+			void *ret = StaticStringMapBase::get(key);
+			return *(_T *)&ret;
 		}
 	};
 

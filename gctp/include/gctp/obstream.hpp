@@ -64,6 +64,10 @@ namespace gctp {
 		_Self& operator<<(const unsigned short __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<<(const long __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<<(const unsigned long __x) { return write((void *)&__x, sizeof(__x)); }
+		#ifdef _MSC_VER
+		_Self& operator<<(__int64 &__x) { return write((void *)&__x, sizeof(__x)); }
+		_Self& operator<<(unsigned __int64 &__x) { return write((void *)&__x, sizeof(__x)); }
+		#endif
 		#ifdef _STLP_LONG_LONG
 		_Self& operator<< (_STLP_LONG_LONG __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<< (unsigned _STLP_LONG_LONG __x) { return write(&__x, sizeof(__x)); }

@@ -132,16 +132,33 @@ namespace gctp { namespace audio { namespace dx {
 		return CO_E_NOTINITIALIZED;
 	}
 
-	/** 再生するサウンドを用意する
+	/** サウンドバッファを用意する
 	 *
+	 * ストリーミングサウンドバッファを作ってクリップに関連付けして返す
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/25 19:44:56
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Pointer<Buffer> Device::ready(Handle<Clip> clip) {
+	Pointer<Buffer> Device::newStream(Handle<Clip> clip) {
 		Pointer<Buffer> ret;
 		if(clip && clip->isOpen()) {
 			ret = newStreamingBuffer(ptr_, clip, global_focus_);
+			add(Handle<Buffer>(ret));
+		}
+		return ret;
+	}
+
+	/** ワンショット用サウンドバッファを用意する
+	 *
+	 * 静的サウンドバッファを作ってクリップに関連付けして返す
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:44:56
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Pointer<Buffer> Device::newBuffer(Handle<Clip> clip) {
+		Pointer<Buffer> ret;
+		if(clip && clip->isOpen()) {
+			ret = newStaticBuffer(ptr_, clip, global_focus_);
 			add(Handle<Buffer>(ret));
 		}
 		return ret;
@@ -201,9 +218,10 @@ namespace gctp { namespace audio { namespace dx {
 							if(ptr) {
 								if(ptr->isPlaying()) {
 									if( !( hr = ptr->onNotified() ) ) {
-										DXTRACE_ERR( TEXT("audio::dx::Device::handleEvents"), hr.i );
-										done = true;
-										break;
+										GCTP_TRACE(hr);
+										//DXTRACE_ERR( TEXT("audio::dx::Device::handleEvents"), hr.i );
+										//done = true;
+										//break;
 									}
 								}
 								++i;

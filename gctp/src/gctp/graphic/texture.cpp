@@ -117,7 +117,7 @@ namespace gctp { namespace graphic {
 			org_height_ = info.Height;
 			org_format_ = (int)info.Format;
 			org_miplevel_ = info.MipLevels;
-			PRNN("Image "<<fname<<" "<<info<<" Desc {"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
+			//PRNN("Texture "<<fname<<" "<<info<<" Desc {"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
 		}
 		else type_ = NONE;
 		return hr;
@@ -160,7 +160,7 @@ namespace gctp { namespace graphic {
 			org_height_ = info.Height;
 			org_format_ = (int)info.Format;
 			org_miplevel_ = info.MipLevels;
-			PRNN("Image memory "<<info<<" Desc {"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
+			//PRNN("Texture memory "<<info<<" Desc {"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
 		}
 		else type_ = NONE;
 		return hr;
@@ -237,9 +237,19 @@ namespace gctp { namespace graphic {
 			D3DSURFACE_DESC desc;
 			hr = ptr_->GetLevelDesc(0, &desc);
 			if(!hr) GCTP_TRACE(hr);
-			PRNN("Texture {"<<org_width_<<","<<org_height_<<","<<(D3DFORMAT)org_format_<<"}->Desc{"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
+			//PRNN("Texture {"<<org_width_<<","<<org_height_<<","<<(D3DFORMAT)org_format_<<"}->Desc{"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
 		}
 		return hr;
+	}
+
+	int Texture::format() const
+	{
+		if(ptr_) {
+			D3DSURFACE_DESC desc;
+			ptr_->GetLevelDesc(0, &desc);
+			return desc.Format;
+		}
+		return -1;
 	}
 
 	Point2 Texture::size() const
@@ -285,18 +295,18 @@ namespace gctp { namespace graphic {
 	Texture::LockedRect Texture::lock(uint miplevel, const Rect &rc, uint32_t flag)
 	{
 		D3DLOCKED_RECT lr;
-		if(HRslt(ptr_->LockRect(miplevel, &lr, rc, flag))) {
-			return LockedRect(lr.Pitch, lr.pBits);
-		}
+		HRslt hr = ptr_->LockRect(miplevel, &lr, rc, flag);
+		if(hr) return LockedRect(lr.Pitch, lr.pBits);
+		GCTP_TRACE(hr);
 		return LockedRect(0, 0);
 	}
 
 	Texture::LockedRect Texture::lock(uint miplevel, uint32_t flag)
 	{
 		D3DLOCKED_RECT lr;
-		if(HRslt(ptr_->LockRect(miplevel, &lr, 0, flag))) {
-			return LockedRect(lr.Pitch, lr.pBits);
-		}
+		HRslt hr = ptr_->LockRect(miplevel, &lr, 0, flag);
+		if(hr) return LockedRect(lr.Pitch, lr.pBits);
+		GCTP_TRACE(hr);
 		return LockedRect(0, 0);
 	}
 

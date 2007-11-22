@@ -1,7 +1,7 @@
-#ifndef _GCTP_GRAPHIC_TEXTURE_HPP_
-#define _GCTP_GRAPHIC_TEXTURE_HPP_
+#ifndef _GCTP_GRAPHIC_IMAGE_HPP_
+#define _GCTP_GRAPHIC_IMAGE_HPP_
 /** @file
- * GameCatapult テクスチャクラスヘッダファイル
+ * GameCatapult オフスクリーンサーフェスクラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/01/28 12:43:53
@@ -13,8 +13,8 @@
 
 namespace gctp { namespace graphic {
 
-	/// テクスチャリソースクラス
-	class Texture : public Rsrc {
+	/// オフスクリーンサーフェスリソースクラス
+	class Image : public Rsrc {
 	public:
 		struct LockedRect {
 			int pitch;
@@ -28,36 +28,25 @@ namespace gctp { namespace graphic {
 			NONE, // 未初期化をあらわす。setUpに指定してはいけない
 			NORMAL,
 			WORK,
-			RENDERTARGET,
-			OFFSCREEN,
 		};
 
-		Texture(bool no_scaling = false);
+		Image() : type_(NONE)
+		{
+		}
 
 		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(const void *memory, std::size_t size);
-		HRslt setUp(Type type, int width, int height, int format, int miplevel = 1);
+		HRslt setUp(Type type, int width, int height, int format);
 
 		HRslt restore();
 		void cleanUp();
 
-		operator dx::IDirect3DTexture *() const { return ptr_; }
-		operator dx::IDirect3DBaseTexture *() const { return ptr_; }
-		dx::IDirect3DTexture *get() const { return ptr_; }
-
-		/// カレントに設定
-		HRslt setCurrent(uint index) const;
-		/// カレントか？
-		bool isCurrent(uint index) const;
-		/// テクスチャを無効に
-		static HRslt unSet(uint index);
+		operator dx::IDirect3DSurface *() const { return ptr_; }
+		dx::IDirect3DSurface *get() const { return ptr_; }
 
 		int format() const;
 		Point2 size() const;
-		Point2 originalSize() const { return Point2C(org_width_, org_height_); }
 		bool isDynamic() const { return type_ == WORK; }
-		/// 実際に確保したテクスチャ領域全体に拡大していないか？（デフォルトfalse）
-		bool noScaling() const { return no_scaling_; }
 
 		enum LockFlag {
 			DISCARD = D3DLOCK_DISCARD,
@@ -65,9 +54,11 @@ namespace gctp { namespace graphic {
 			NO_SYSLOCK = D3DLOCK_NOSYSLOCK,
 			READONLY = D3DLOCK_READONLY
 		};
-		LockedRect lock(uint miplevel, const Rect &rc, uint32_t flag = 0L);
-		LockedRect lock(uint miplevel, uint32_t flag = 0L);
-		HRslt unlock(uint miplevel);
+		LockedRect lock(const Rect &rc, uint32_t flag = 0L);
+		LockedRect lock(uint32_t flag = 0L);
+		HRslt unlock();
+
+		HRslt save(const _TCHAR *fname);
 
 		/** スコープから抜けるとアンロックする
 		 *
@@ -77,29 +68,27 @@ namespace gctp { namespace graphic {
 		 */
 		class ScopedLock {
 		public:
-			ScopedLock(Texture &tex, uint miplevel, const Rect &rc, uint32_t flag = 0L)
-				: tex_(tex), miplevel_(miplevel), lr(tex.lock(miplevel, rc, flag)) {}
-			ScopedLock(Texture &tex, uint miplevel, uint32_t flag = 0L)
-				: tex_(tex), miplevel_(miplevel), lr(tex.lock(miplevel, flag)) {}
-			~ScopedLock() { tex_.unlock(miplevel_); }
+			ScopedLock(Image &img, const Rect &rc, uint32_t flag = 0L)
+				: img_(img), lr(img.lock(rc, flag)) {}
+			ScopedLock(Image &img, uint32_t flag = 0L)
+				: img_(img), lr(img.lock(flag)) {}
+			~ScopedLock() { img_.unlock(); }
 			LockedRect lr;
 		private:
-			Texture &tex_;
+			Image &img_;
 			uint miplevel_;
 		};
 
 	GCTP_DECLARE_CLASS
 
 	protected:
-		bool no_scaling_;
+		Type type_;
 		int org_width_;
 		int org_height_;
 		int org_format_;
-		int org_miplevel_;
-		Type type_;
-		dx::IDirect3DTexturePtr ptr_;
+		dx::IDirect3DSurfacePtr ptr_;
 	};
 
 }} //namespace gctp
 
-#endif //_GCTP_GRAPHIC_TEXTURE_HPP_
+#endif //_GCTP_GRAPHIC_IMAGE_HPP_

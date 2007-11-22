@@ -38,9 +38,10 @@ namespace gctp { namespace movie {
 		Player();
 
 		HRslt openForTexture(const _TCHAR *name, bool audio_on = true);
-		HRslt open(HWND hwnd, const _TCHAR *name, bool audio_on = true);
+		HRslt open(HWND hwnd, int notify_msgid, const _TCHAR *name, bool audio_on = true);
 
 		bool play(int loop = 1);
+		bool isReady();
 		bool isPlaying();
 		void stop();
 		void release();

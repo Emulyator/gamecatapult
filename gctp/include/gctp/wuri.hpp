@@ -133,6 +133,21 @@ namespace gctp {
 			return L"";
 		}
 
+		/** 拡張子を抽出
+		 *
+		 * 二重拡張子を無視する
+		 * c:/xxx/yyy/zzz.ee.ext だったら、ext が
+		 * http://xxx/yyy/zzz.ext だったら、ext が
+		 * 帰ってくる。
+		 */
+		inline std::wstring majorextension() const
+		{
+			std::wstring::size_type lower = rn_.find_last_of(L'/');
+			std::wstring::size_type begin = rn_.find_last_of(L'.');
+			if(begin != std::wstring::npos && (lower == std::wstring::npos || begin>lower)) return rn_.substr(begin+1);
+			return L"";
+		}
+
 		/// 生ストリングを返す
 		inline const std::wstring &raw() const
 		{

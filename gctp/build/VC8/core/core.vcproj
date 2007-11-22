@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\archiveeditable.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\argmap.cpp"
 				>
 			</File>
@@ -319,6 +323,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\wargmap.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\wstringmap.cpp"
 				>
 			</File>
@@ -354,6 +362,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\archive.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\archiveeditable.hpp"
 				>
 			</File>
 			<File
@@ -645,6 +657,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\targmap.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\tcstr.hpp"
 				>
 			</File>
@@ -690,6 +706,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\vector.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\wargmap.hpp"
 				>
 			</File>
 			<File

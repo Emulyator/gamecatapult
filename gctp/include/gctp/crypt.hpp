@@ -447,12 +447,12 @@ namespace gctp {
 		/// à√çÜâª
 		bool encode(void *dst, size_t len) const
 		{
-			if(len%8) {
+			if(len&0x7) {
 				//std::cerr << "\aBlowfish requires the input to be a multiple of 8 bytes (64bits) to work.\n";
 				return false;
 			}
 
-			len /= 8;
+			len >>= 3;
 			DWord *work = reinterpret_cast<DWord *>(dst);
 			for(size_t i=0; i<len; i++) {
 				enBF(work->word0, work->word1);
@@ -464,12 +464,12 @@ namespace gctp {
 		/// ïúçÜ
 		bool decode(void *dst, size_t len) const
 		{
-			if(len%8) {
+			if(len&0x7) {
 				// std::cerr << "\aBlowfish requires the input to be a multiple of 8 bytes (64bits) to work.\n";
 				return false;
 			}
 
-			len /= 8;
+			len >>= 3;
 			DWord *work = reinterpret_cast<DWord *>(dst);
 			for(size_t i=0; i<len; i++) {
 				deBF(work->word0, work->word1);

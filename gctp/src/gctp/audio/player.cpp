@@ -48,7 +48,7 @@ namespace gctp { namespace audio {
 	bool Player::play(int times)
 	{
 		if(isPlaying()) {
-			if(track_ && track_->rewind()) return true;
+			if(track_ && track_->rewind() && track_->play(times)) return true;
 		}
 		else {
 			if(track_ && track_->play(times)) return true;

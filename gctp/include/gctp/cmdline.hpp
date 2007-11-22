@@ -1,5 +1,5 @@
-#ifndef _GUTIL_CMDLINE_HPP_
-#define _GUTIL_CMDLINE_HPP_
+#ifndef _GCTP_CMDLINE_HPP_
+#define _GCTP_CMDLINE_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
@@ -15,17 +15,37 @@
 #include <vector>
 
 namespace gctp {
+
+	template<class E>
+	class CmdLineChar {};
+	template<>
+	class CmdLineChar<char> {
+	public:
+		static const int space = ' ';
+		static const int lspace = '　';
+		static const int newline = '\n';
+		static const int dquot = '"';
+	};
+	template<>
+	class CmdLineChar<wchar_t> {
+	public:
+		static const wchar_t space = L' ';
+		static const wchar_t lspace = L'　';
+		static const wchar_t newline = L'\n';
+		static const wchar_t dquot = '"';
+	};
+
 	/** コマンドライン引数解析
-	*
-	* Windowsの単一文字列式のコマンドラインを読み取って、
-	* int argc, char *argv[] 方式に変換する。
-	*
-	* また、ファイルストリームをコマンドライン引数として解釈する機能もある。
-	* 
-	* @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	* @date 2004/01/18 23:06:52
-	* Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	*/
+	 *
+	 * Windowsの単一文字列式のコマンドラインを読み取って、
+	 * int argc, char *argv[] 方式に変換する。
+	 *
+	 * また、ファイルストリームをコマンドライン引数として解釈する機能もある。
+	 * 
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/18 23:06:52
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
 	template<typename _CHAR>
 	class CmdLineBase {
 	public:
@@ -71,17 +91,17 @@ namespace gctp {
 		int argc() const { return (int)arg_.size(); }
 
 		/// argvを返す
-		char **argv() { if(arg_.empty()) return 0; else return &arg_[0]; }
+		_CHAR **argv() { if(arg_.empty()) return 0; else return &arg_[0]; }
 		/// argvを返す
-		const char **argv() const { if(arg_.empty()) return 0; else return &arg_[0]; }
+		const _CHAR **argv() const { if(arg_.empty()) return 0; else return &arg_[0]; }
 
 		/** 文字列からからコマンド引数の１トークンを切り出し
-		*
-		* @author osamu takasugi
-		* @date 2003年5月21日
-		* $Id: cmdline.hpp,v 1.3 2005/02/21 02:20:28 takasugi Exp $
-		*/
-		static const char *tokenize(const _CHAR *cmdline, std::basic_string<_CHAR> &rhs)
+		 *
+		 * @author osamu takasugi
+		 * @date 2003年5月21日
+		 * $Id: cmdline.hpp,v 1.3 2005/02/21 02:20:28 takasugi Exp $
+		 */
+		static const _CHAR *tokenize(const _CHAR *cmdline, std::basic_string<_CHAR> &rhs)
 		{
 			bool in_quote = false;
 			rhs.clear();
@@ -92,10 +112,10 @@ namespace gctp {
 				if(isleadbyte(ch)) ch = ch<<8 | *cmdline++;
 #endif
 				// ""の中でなければ空白は区切り
-				if((ch == ' ' || ch == '　' || ch == '\n') && !in_quote) {
+				if((ch == CmdLineChar<_CHAR>::space || ch == CmdLineChar<_CHAR>::lspace || ch == CmdLineChar<_CHAR>::newline) && !in_quote) {
 					return cmdline;
 				}
-				else if(ch == '"') {
+				else if(ch == CmdLineChar<_CHAR>::dquot) {
 					if(in_quote) in_quote = false;
 					else in_quote = true;
 					continue;
@@ -104,18 +124,18 @@ namespace gctp {
 				if(ch > 255) (rhs += (char)(ch>>8)) += (char)ch;
 				else
 #endif
-					rhs += (char)ch;
+					rhs += (_CHAR)ch;
 			}
 			return 0;
 		}
 
 		/** ストリームからコマンド引数の１トークンを切り出し
-		*
-		* @author osamu takasugi
-		* @date 2003年5月21日
-		* $Id: cmdline.hpp,v 1.3 2005/02/21 02:20:28 takasugi Exp $
-		*/
-		static std::istream &tokenize(std::basic_istream<_CHAR> &lhs, std::basic_string<_CHAR> &rhs)
+		 *
+		 * @author osamu takasugi
+		 * @date 2003年5月21日
+		 * $Id: cmdline.hpp,v 1.3 2005/02/21 02:20:28 takasugi Exp $
+		 */
+		static std::basic_istream<_CHAR> &tokenize(std::basic_istream<_CHAR> &lhs, std::basic_string<_CHAR> &rhs)
 		{
 			bool in_quote = false;
 			rhs.clear();
@@ -125,8 +145,9 @@ namespace gctp {
 #ifdef _MBCS
 				if(isleadbyte(ch)) ch = ch<<8 | lhs.get();
 #endif
-				if((ch == ' ' || ch == '\n' || ch == '　') && !in_quote) break; // ""の中でなければ空白は区切り
-				else if(ch == '"') {
+				// ""の中でなければ空白は区切り
+				if((ch == CmdLineChar<_CHAR>::space || ch == CmdLineChar<_CHAR>::lspace || ch == CmdLineChar<_CHAR>::newline) && !in_quote) break;
+				else if(ch == CmdLineChar<_CHAR>::dquot) {
 					if(in_quote) in_quote = false;
 					else in_quote = true;
 					continue;
@@ -135,7 +156,7 @@ namespace gctp {
 				if(ch > 255) (rhs += (char)(ch>>8)) += (char)ch;
 				else
 #endif
-					rhs += (char)ch;
+					rhs += (_CHAR)ch;
 			}
 			return lhs;
 		}
@@ -143,17 +164,17 @@ namespace gctp {
 		void sync()
 		{
 			arg_.resize(vec_.size());
-			std::vector< char * >::iterator j = arg_.begin();
+			std::vector<_CHAR *>::iterator j = arg_.begin();
 			for(std::vector< std::basic_string<_CHAR> >::iterator i = vec_.begin(); i != vec_.end(); ++i)
 			{
-				(*j++) = reinterpret_cast<char *>(const_cast<_CHAR *>((*i).c_str()));
+				(*j++) = reinterpret_cast<_CHAR *>(const_cast<_CHAR *>((*i).c_str()));
 			}
 		}
-		std::vector< char * > arg_;
+		std::vector<_CHAR *> arg_;
 		std::vector< std::basic_string<_CHAR> > vec_;
 	};
 	typedef CmdLineBase<char> CmdLine;
 	typedef CmdLineBase<wchar_t> WCmdLine;
 }
 
-#endif //_GUTIL_CMDLINE_HPP_
+#endif //_GCTP_CMDLINE_HPP_

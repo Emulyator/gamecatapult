@@ -32,8 +32,8 @@ namespace gctp {
 	/// ‹éŒ`
 	typedef math::Rectangle<unsigned long> Rect;
 	typedef math::RectangleC<unsigned long> RectC;
-	typedef math::Rectangle<float> Rectf;
-	typedef math::RectangleC<float> RectfC;
+	typedef math::Rectangle<Real> Rectf;
+	typedef math::RectangleC<Real> RectfC;
 
 } //namespace gctp
 

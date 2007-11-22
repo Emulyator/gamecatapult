@@ -167,11 +167,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\graphic\depthstencil.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\graphic\fonttexture.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\graphic.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\graphic\image.cpp"
 				>
 			</File>
 			<File
@@ -319,11 +327,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\graphic\depthstencil.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\graphic\fonttexture.hpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\graphic.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\graphic\image.hpp"
 				>
 			</File>
 			<File

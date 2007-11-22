@@ -13,6 +13,7 @@
 #include <gctp/font.hpp>
 #include <gctp/allocmap.hpp>
 #include <gctp/utils.hpp>
+#include <gctp/tcsv.hpp>
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -20,17 +21,6 @@ using namespace std;
 namespace gctp { namespace graphic {
 
 	GCTP_IMPLEMENT_CLASS_NS(gctp, FontTexture, Texture);
-
-	namespace detail {
-		struct AsciiAttr {
-			ulong cellsize;
-			Rectf tex_coords[128-32];
-			int max_width;
-			float scale;
-			int idx;
-			int priority;
-		};
-	}
 
 	namespace {
 		
@@ -50,7 +40,6 @@ namespace gctp { namespace graphic {
 			int priority;
 		};
 		typedef std::map<Figure, Attr> FigureMap;
-		typedef std::map<Handle<Font>, detail::AsciiAttr> AsciiFigureMap;
 
 	}
 
@@ -194,7 +183,6 @@ namespace gctp { namespace graphic {
 		public:
 			AllocBitMap<FontTexture::LEVEL> alloc_;
 			FigureMap map_;
-			AsciiFigureMap asciimap_;
 		};
 	}
 
@@ -300,7 +288,7 @@ namespace gctp { namespace graphic {
 						if(loop_count == 0) {
 							cell_width = bitmapsize-1;
 							cell_height = bitmapsize-1;
-							srccolor = bkcolor__; // 影は一律黒（とりあえず）
+							srccolor = bkcolor__;
 							x += 1;
 							y += 1;
 						}
@@ -367,10 +355,23 @@ namespace gctp { namespace graphic {
 
 	FontTexture::FontTexture() : detail_(new detail::FontTextureDetail) {}
 
-	HRslt FontTexture::setUp()
+	HRslt FontTexture::setUp(const _TCHAR *name)
 	{
-		HRslt hr = Texture::setUp(Texture::NORMAL, 1024, 1024, D3DFMT_A4R4G4B4);
-		//HRslt hr = Texture::setUp(Texture::NORMAL, 256, 256, D3DFMT_A4R4G4B4);
+		if(name) {
+			basic_stringstream<_TCHAR> ioss;
+			ioss << name;
+			TCSVRow csv;
+			ioss >> csv;
+			if(csv.size() > 2) {
+				return setUp(boost::lexical_cast<int>(csv[1]), boost::lexical_cast<int>(csv[2]));
+			}
+		}
+		return setUp(256, 256);
+	}
+
+	HRslt FontTexture::setUp(int width, int height)
+	{
+		HRslt hr = Texture::setUp(Texture::NORMAL, width, height, D3DFMT_A4R4G4B4);
 		if(!hr) return hr;
 		if(cellSize() > 0) return hr;
 		else return E_FAIL;
@@ -379,6 +380,8 @@ namespace gctp { namespace graphic {
 	/** 文字がキャッシュされているか？
 	 *
 	 * 不正な文字や非表示文字は、常にtrueを返す
+	 *
+	 * また、満杯時に追い出されないようpriorityをアップデートする効果もある
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/07/23 4:43:20
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -386,13 +389,11 @@ namespace gctp { namespace graphic {
 	bool FontTexture::isCached(const Handle<Font> font, int c) const
 	{
 		if(font && isPrintChar(c)) {
-			if(isascii(c)) {
-				AsciiFigureMap::const_iterator match = detail_->asciimap_.find(font);
-				if(match != detail_->asciimap_.end()) return true;
-			}
-			else {
-				FigureMap::const_iterator match = detail_->map_.find(Figure(font, c));
-				if(match != detail_->map_.end()) return true;
+			FigureMap::const_iterator match = detail_->map_.find(Figure(font, c));
+			if(match != detail_->map_.end()) {
+				const Attr *attr = &match->second;
+				const_cast<Attr *>(attr)->priority = 8;
+				return true;
 			}
 			return false;
 		}
@@ -402,7 +403,7 @@ namespace gctp { namespace graphic {
 	/** 対応するUV情報を返す
 	 *
 	 * 表示文字のみ相手にする。見つからなかったら、sizeに-1が入り、FontGlyphのboolおよび!演算子で
-	 * falseが変えることでわかる。
+	 * falseが返ることでわかる。
 	 * 文字が不正(表示文字でない）などの場合は、すべてに0が入り、FontGlyphのbool演算をパスする。
 	 * (ただし、当然その情報を使っては表示不可能)
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -413,34 +414,18 @@ namespace gctp { namespace graphic {
 	{
 		FontGlyph ret;
 		if(font && isPrintChar(c)) {
-			if(isascii(c)) {
-				AsciiFigureMap::const_iterator match = detail_->asciimap_.find(font);
-				if(match != detail_->asciimap_.end()) {
-					ret.uv = match->second.tex_coords[c-32];
-					Size2f tex_size = Vector2C(size());
-					ret.size.x = ret.uv.width()  * tex_size.x / match->second.scale;
-					ret.size.y = ret.uv.height() * tex_size.y / match->second.scale;
-					const detail::AsciiAttr *attr = &match->second;
-					const_cast<detail::AsciiAttr *>(attr)->priority = 8;
-					return ret;
-				}
-			}
-			else {
-				FigureMap::const_iterator match = detail_->map_.find(Figure(font, c));
-				if(match != detail_->map_.end()) {
-					AllocBitMap<LEVEL>::Block block;
-					block.set(match->second.idx);
-					Size2 tsize = size();
-					ret.uv.left   = ((float)block.pos.x*cellSize()+0.5f)/tsize.x;
-					ret.uv.top    = ((float)block.pos.y*cellSize()+0.5f)/tsize.y;
-					ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x+0.5f))/tsize.x;
-					ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y+0.5f))/tsize.y;
-					ret.size.x    = (float)match->second.size.x;
-					ret.size.y    = (float)match->second.size.y;
-					const Attr *attr = &match->second;
-					const_cast<Attr *>(attr)->priority = 8;
-					return ret;
-				}
+			FigureMap::const_iterator match = detail_->map_.find(Figure(font, c));
+			if(match != detail_->map_.end()) {
+				AllocBitMap<LEVEL>::Block block;
+				block.set(match->second.idx);
+				Size2 tsize = size();
+				ret.uv.left   = ((float)block.pos.x*cellSize()+0.5f)/tsize.x;
+				ret.uv.top    = ((float)block.pos.y*cellSize()+0.5f)/tsize.y;
+				ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x+0.5f))/tsize.x;
+				ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y+0.5f))/tsize.y;
+				ret.size.x    = (float)match->second.size.x;
+				ret.size.y    = (float)match->second.size.y;
+				return ret;
 			}
 			ret.uv.set(0, 0, 0, 0);
 			ret.size.set(-1, -1);
@@ -450,38 +435,6 @@ namespace gctp { namespace graphic {
 			ret.size.set(0, 0);
 		}
 		return ret;
-	}
-
-	/** begin endで囲む必要なし
-	 *
-	 * と言うかむしろbegin-endの外でやってください
-	 *
-	 * @todo 複数のアスキーフォントをキャッシュできるようにする
-	 * @todo せめて以前の奴は領域を開放するようにする
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/20 21:23:22
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	void FontTexture::cacheAscii(const Handle<Font> font)
-	{
-		if(font) {
-			AsciiFigureMap::const_iterator match = detail_->asciimap_.find(font);
-			if(match == detail_->asciimap_.end()) {
-				Pointer<Font> _font = font.lock();
-				int level = AllocBitMap<LEVEL>::blockToLevel(toBlockSize(getSmallestWidth(*_font, cellSize())));
-				int idx = alloc(level);
-				if(idx != -1) {
-					detail::AsciiAttr &attr = detail_->asciimap_[font];
-					attr.idx = idx;
-					attr.priority = 8;
-					AllocBitMap<LEVEL>::Block block;
-					block.set(idx);
-					//attr.size.x = attr.size.y = block.w*cellSize();
-					attr.scale = 1.0f;
-					setUpAscii(attr, *_font, block.w*cellSize(), block.w*cellSize(), block.pos.x*cellSize(), block.pos.y*cellSize());
-				}
-			}
-		}
 	}
 
 	void FontTexture::begin()
@@ -506,8 +459,8 @@ namespace gctp { namespace graphic {
 					int level = AllocBitMap<LEVEL>::blockToLevel(toBlockSize(_font->cellsize()+1));
 					Attr attr;
 					attr.idx = alloc(level);
-					attr.priority = 8;
 					if(attr.idx != -1) {
+						attr.priority = 8;
 						AllocBitMap<LEVEL>::Block block;
 						block.set(attr.idx);
 						DrawMode mode = DM_NORMAL;
@@ -520,6 +473,9 @@ namespace gctp { namespace graphic {
 #endif
 						detail_->map_[Figure(_font.get(), c)] = attr;
 					}
+					else {
+						PRNN("文字がキャッシュできなかった : '"<<charToStr(c)<<"'");
+					}
 				}
 			}
 		}
@@ -527,9 +483,6 @@ namespace gctp { namespace graphic {
 
 	void FontTexture::gabage()
 	{
-		for(AsciiFigureMap::iterator i = detail_->asciimap_.begin(); i != detail_->asciimap_.end(); i++) {
-			if(i->second.priority > 0) i->second.priority--;
-		}
 		for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end(); i++) {
 			if(i->second.priority > 0) i->second.priority--;
 		}
@@ -537,30 +490,18 @@ namespace gctp { namespace graphic {
 
 	int FontTexture::alloc(int level)
 	{
-		bool _free = true;
-		int ret = -1;
-		while(_free) {
-			ret = detail_->alloc_.alloc(level);
-			if(ret != -1) break;
-			else {
-				_free = false;
-				for(AsciiFigureMap::iterator i = detail_->asciimap_.begin(); i != detail_->asciimap_.end();) {
-					if(i->second.priority<4) {
-						detail_->alloc_.free(i->second.idx);
-						detail_->asciimap_.erase(i++);
-						_free = true;
-					}
-					else i++;
+		int threshold = 1;
+		int ret = detail_->alloc_.alloc(level);
+		while(ret < 0 && threshold < 9) {
+			for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
+				if(i->second.priority<threshold) {
+					detail_->alloc_.free(i->second.idx);
+					detail_->map_.erase(i++);
 				}
-				for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
-					if(i->second.priority<4) {
-						detail_->alloc_.free(i->second.idx);
-						detail_->map_.erase(i++);
-						_free = true;
-					}
-					else i++;
-				}
+				else i++;
 			}
+			ret = detail_->alloc_.alloc(level);
+			threshold++;
 		}
 		return ret;
 	}
@@ -574,315 +515,6 @@ namespace gctp { namespace graphic {
 	{
 		detail_->alloc_.reset();
 		detail_->map_.clear();
-	}
-
-	/** 文字をレンダしてテクスチャに転送
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/15 1:59:28
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	HRslt FontTexture::setUpAscii(detail::AsciiAttr &attr, const Font &font, ulong width, ulong height, int ofsx, int ofsy)
-	{
-		HRslt hr;
-		attr.cellsize = font.cellsize();
-
-#ifdef __GLYPH_OUTLINE_
-		// Create a DC and a bitmap for the font
-		detail::DC dc;
-		dc.setMapMode(MM_TEXT);
-		dc.selectFont(font.get());
-		TEXTMETRIC tm; // 現在のフォント情報
-		dc.getTextMetrics(&tm);
-		MAT2 mat2 = { { 0, 1 }, { 0, 0 }, { 0, 0 }, { 0, 1 } };
-		GLYPHMETRICS glyph;
-
-		SIZE gsize;
-		_TCHAR str[2] = _T("x");
-		Size2 tsize = size();
-		int default_line_height, line_height;
-		Texture::ScopedLock al(*this, 0);
-		uint16_t *dst = (uint16_t *)al.lr.buf;
-		uint8_t alpha; // 4-bit measure of pixel intensity
-		attr.max_width = 0;
-
-		DrawMode mode = DM_NORMAL;
-		if(font.exStyle()==Font::EX_OUTLINE) mode = DM_OUTLINE;
-		else if(font.exStyle()==Font::EX_SHADOW) mode = DM_SHADOW;
-
-		uint x = ofsx, y = ofsy;
-		for( char c=32; c<127; c++ ) {
-			ulong bufsize = dc.getGlyphOutline( c, GGO_GRAY4_BITMAP, &glyph, 0, NULL, &mat2 );
-			uint8_t *buf = new uint8_t[bufsize]; // 実際にバッファに取得
-			// アウトラインをグレースケールで作成
-			dc.getGlyphOutline( c, GGO_GRAY4_BITMAP, &glyph, bufsize, (void *)buf, &mat2 );
-
-			str[0] = c;
-			dc.getTextExtent( str, 1, &gsize );
-
-			int ggo_pitch = ( glyph.gmBlackBoxX + 3 ) & 0xfffc; // ダブルワード境界に整列
-			int ggo_xofs = glyph.gmptGlyphOrigin.x;
-			int ggo_yofs = tm.tmAscent-glyph.gmptGlyphOrigin.y;
-			int ggo_width = ggo_xofs+glyph.gmBlackBoxX;
-			int ggo_height = ggo_yofs+glyph.gmBlackBoxY;
-
-			if(mode == DM_OUTLINE) {
-				gsize.cx += 2;
-				gsize.cy += 2;
-			}
-			else if(mode == DM_SHADOW) {
-				gsize.cx += 1;
-				gsize.cy += 1;
-			}
-			if(c == 32) default_line_height = line_height = gsize.cy+1;
-			if(attr.max_width < gsize.cx) attr.max_width = gsize.cx;
-			if(line_height < gsize.cy+1) line_height = gsize.cy+1;
-			if( (int)((x-ofsx)+gsize.cx+1) > width ) {
-				x  = ofsx; y += line_height; line_height = default_line_height;
-			}
-
-			attr.tex_coords[c-32].left   = ((float)x+0.5f)/tsize.x;
-			attr.tex_coords[c-32].top    = ((float)y+0.5f)/tsize.y;
-			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx+0.5f))/tsize.x;
-			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy+0.5f))/tsize.y;
-			
-			if(c == 32 || mode == DM_NORMAL) {
-				for(int dy = 0; dy < gsize.cy; dy++) {
-					if(ggo_yofs <= dy && dy < ggo_height) {
-						for(int dx = 0; dx < gsize.cx; dx++ ) {
-							if(ggo_xofs <= dx && dx < ggo_width) {
-								alpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
-								if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-								else if(alpha) {
-									dst[(y+dy)*tsize.y+(x+dx)] = (((alpha-1)&0xf) << 12) | 0x0fff;
-								}
-								else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
-							}
-							else {
-								if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-								else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
-							}
-						}
-					}
-					else {
-						for(int dx = 0; dx < gsize.cx; dx++) {
-							if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-							else dst[(y+dy)*tsize.y+(x+dx)] = 0x0000;
-						}
-					}
-				}
-			}
-			else {
-				uint8_t srcalpha;
-				uint16_t dstcolor, srccolor;
-				int loop_count_max = 1;
-				if(mode == DM_OUTLINE) {
-					loop_count_max = 9;
-				}
-				else if(mode == DM_SHADOW) loop_count_max = 2;
-				int tmpx = x, tmpy = y;
-				int cell_width, cell_height;
-				bool blend = false;
-				for(int loop_count = 0; loop_count < loop_count_max; loop_count++) {
-					if(mode == DM_OUTLINE) {
-						static int ofs[][2] = {
-							{0, 0},
-							{1, 0},
-							{2, 0},
-							{0, 1},
-							{2, 1},
-							{0, 2},
-							{1, 2},
-							{2, 2},
-							{1, 1},
-						};
-						tmpx = x + ofs[loop_count][0];
-						tmpy = y + ofs[loop_count][1];
-						cell_width = gsize.cx-ofs[loop_count][0];
-						cell_height = gsize.cy-ofs[loop_count][1];
-						if(loop_count < 8) {
-							srccolor = bkcolor__;
-							if(loop_count > 0) blend = true;
-						}
-						else {
-							srccolor = 0x0fff;
-						}
-					}
-					else if(mode == DM_SHADOW) {
-						if(loop_count == 0) {
-							cell_width = gsize.cx-1;
-							cell_height = gsize.cy-1;
-							srccolor = bkcolor__;
-							tmpx += 1;
-							tmpy += 1;
-						}
-						else {
-							cell_width = gsize.cx;
-							cell_height = gsize.cy;
-							blend = true;
-							srccolor = 0x0fff;
-							tmpx = x;
-							tmpy = y;
-						}
-					}
-					for(int dy = 0; dy < cell_height; dy++) {
-						if(ggo_yofs <= dy && dy < ggo_height) {
-							for(int dx = 0; dx < cell_width; dx++ ) {
-								if(ggo_xofs <= dx && dx < ggo_width) {
-									srcalpha = buf[ggo_pitch*(dy-ggo_yofs) + (dx-ggo_xofs)];
-									if(srcalpha) {
-										srcalpha -= 1;
-										if(blend && srcalpha < 15) {
-											if(srcalpha > 0) {
-												dstcolor = dst[(tmpy+dy)*tsize.y+(tmpx+dx)];
-												uint8_t a = std::max<uint8_t>(srcalpha, ((dstcolor>>12)&0xf));
-												uint8_t r = (((((srccolor>>8)&0xf)-((dstcolor>>8)&0xf))*srcalpha)/15 + (dstcolor>>8)&0xf);
-												uint8_t g = (((((srccolor>>4)&0xf)-((dstcolor>>4)&0xf))*srcalpha)/15 + (dstcolor>>4)&0xf);
-												uint8_t b = (((((srccolor)&0xf)-((dstcolor)&0xf))*srcalpha)/15 + (dstcolor)&0xf);
-												dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = a << 12 | r << 8 | g << 4 | b;
-											}
-										}
-										else dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = ((srcalpha&0xf) << 12) | srccolor;
-									}
-									else if(!blend) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
-								}
-								else if(!blend) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
-							}
-						}
-						else {
-							if(!blend) for(int dx = 0; dx < cell_width; dx++) dst[(tmpy+dy)*tsize.y+(tmpx+dx)] = 0x0000;
-						}
-					}
-				}
-			}
-			x += gsize.cx+1;
-			delete[] buf;
-		}
-#else
-		// Prepare to create a bitmap
-		BITMAPINFO bmi;
-		ZeroMemory( &bmi.bmiHeader,  sizeof(BITMAPINFOHEADER) );
-		bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
-		bmi.bmiHeader.biWidth       =  (int)width;
-		bmi.bmiHeader.biHeight      = -(int)height;
-		bmi.bmiHeader.biPlanes      = 1;
-		bmi.bmiHeader.biCompression = BI_RGB;
-		bmi.bmiHeader.biBitCount    = 32;
-		
-		// Create a DC and a bitmap for the font
-		detail::DC dc;
-		DWORD *pBitmapBits;
-		detail::Bitmap bitmap = dc.createDIBSection(&bmi, DIB_RGB_COLORS, (void**)&pBitmapBits, NULL, 0);
-		
-		dc.setMapMode(MM_TEXT);
-		dc.selectBitmap(bitmap.bitmap);
-		
-		// Set text properties
-		dc.setTextColor(RGB(255,255,255));
-		dc.setBkColor(0x00000000);
-		dc.setTextAlign(TA_TOP);
-		
-		dc.selectFont(font);
-
-		// Loop through all printable character and output them to the bitmap..
-		// Meanwhile, keep track of the corresponding tex coords for each character.
-		uint x = 0;
-		uint y = 0;
-		char str[2] = _T("x");
-		SIZE gsize;
-		Size2 tsize = size();
-		int default_line_height, line_height;
-		//max_width_ = 0;
-		
-		for( char c=32; c<127; c++ ) {
-			str[0] = c;
-			dc.getTextExtent( str, 1, &gsize );
-			
-			if(c == 32) default_line_height = line_height = gsize.cy+1;
-			if(line_height < gsize.cy+1) line_height = gsize.cy+1;
-			//if(max_width_ < gsize.cx) max_width_ = gsize.cx;
-			if( (int)(x+gsize.cx+1) > width ) {
-				x  = 0; y += line_height; line_height = default_line_height;
-			}
-			
-			dc.drawText( x, y, ETO_OPAQUE, NULL, str, 1, NULL );
-			
-			/*tex_coords_[c-32].left   = ((float)x+ofsx)/tsize.x;
-			tex_coords_[c-32].top    = ((float)y+ofsx)/tsize.y;
-			tex_coords_[c-32].right  = ((float)(x+ofsx+gsize.cx))/tsize.x;
-			tex_coords_[c-32].bottom = ((float)(y+ofsx+gsize.cy))/tsize.y;*/
-			
-			x += gsize.cx+1;
-		}
-		
-		// Lock the surface and write the alpha values for the set pixels
-		{
-			Texture::ScopedLock al(*this, 0);
-			uint16_t *dst = (uint16_t *)al.lr.buf;
-			uint8_t alpha; // 4-bit measure of pixel intensity
-			
-			for( y=0; y < height; y++ ) {
-				for( x=0; x < width; x++ ) {
-					alpha = (uint8_t)((pBitmapBits[width*y + x] & 0xff) >> 4);
-					//if(c==32) dst[(y+dy)*tsize.y+(x+dx)] = 0xffff; // 空白は真っ白に（バックカラーとかで使う）
-					//else 
-					if(alpha > 0) dst[tsize.x*(y+ofsy)+x+ofsx] = (alpha << 12) | 0x0fff;
-					else dst[tsize.x*(y+ofsy)+x+ofsx] = 0x0000;
-				}
-			}
-		}
-#endif
-		return S_OK;
-	}
-
-	/** 指定フォントのアスキー文字が全部収まるサイズを返す
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/15 1:59:28
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	uint FontTexture::getSmallestWidth(const Font &font, uint unit)
-	{
-		// Create a DC and a bitmap for the font
-		detail::DC dc;
-		dc.setMapMode(MM_TEXT);
-		dc.setTextAlign(TA_TOP);
-		dc.selectFont(font.get());
-		_TCHAR str[2] = _T(" ");
-		SIZE gsize;
-		int default_line_height, line_height;
-		uint char_width[128-32];
-		
-		uint total_height = 0, line_width = 0;
-		
-		for( char c=32; c<127; c++ ) {
-			str[0] = c;
-			dc.getTextExtent( str, 1, &gsize );
-
-			if(c == 32) default_line_height = line_height = gsize.cy+1;
-			if(line_height < gsize.cy+1) line_height = gsize.cy+1;
-			char_width[c-32] = gsize.cx+1;
-			if(line_width+gsize.cx+1 > unit) {
-				line_width = 0; total_height += line_height; line_height = default_line_height;
-			}
-			line_width += gsize.cx+1;
-		}
-		
-		uint ret = unit;
-		for(;;) {
-			total_height = 0;
-			line_width = 0;
-			for( char c=32; c<127; c++ ) {
-				if(line_width+char_width[c-32] > ret) {
-					line_width = 0;
-					total_height += line_height;
-				}
-				line_width += char_width[c-32];
-			}
-			if(ret > total_height) break;
-			ret *= 2;
-		}
-		return ret;
 	}
 
 	void FontTexture::setShadowColor(Color32 bkcolor)
@@ -913,29 +545,17 @@ namespace gctp { namespace graphic {
 		FontGlyph glyph = font.find(cfont, _T(' '));
 		uint space_size = static_cast<uint>(glyph.size.x);
 		line_height = default_line_height = static_cast<uint>(glyph.size.y);
-		font.gabage();
 		// 文字をキャッシュ
-		// まずアスキーから。２回に分けるのは無駄だけど…
-		while(text && *text) {
-			int c;
-			text += getChar(c, text);
-			if( isascii(c) ) {
-				if(!font.isCached(cfont, c)) font.cacheAscii(cfont);
-			}
-		}
-		text = _text;
 		bool began = false;
 		while(text && *text) {
 			int c;
 			text += getChar(c, text);
-			if( !isascii(c) ) {
-				if(!font.isCached(cfont, c)) {
-					if(!began) {
-						font.begin();
-						began = true;
-					}
-					font.cache(cfont, c);
+			if(!font.isCached(cfont, c)) {
+				if(!began) {
+					font.begin();
+					began = true;
 				}
+				font.cache(cfont, c);
 			}
 		}
 		if(began) font.end();

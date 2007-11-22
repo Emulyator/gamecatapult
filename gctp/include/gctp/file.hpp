@@ -132,6 +132,12 @@ namespace gctp {
 		/// 削除
 		File &remove(int rmv_pos, int size);
 
+		/// 作業バッファサイズ設定
+		void setWorkBufferSize(int size)
+		{
+			move_buf_size_ = size;
+		}
+
 	private:
 		FileBuf _M_buf;
 
@@ -142,12 +148,6 @@ namespace gctp {
 		CStr filename_;
 # endif
 	};
-
-	inline obstream &operator<<(obstream &lhs, File &rhs)
-	{
-		rhs.extract(lhs, 0, rhs.length());
-		return lhs;
-	}
 
 } // namespace gctp
 
