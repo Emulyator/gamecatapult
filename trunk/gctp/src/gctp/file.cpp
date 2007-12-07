@@ -64,7 +64,7 @@ namespace gctp {
 		if(fd_ != -1) _close(fd_); fd_ = -1;
 	}
 
-	std::streampos FileBuf::seekoff(std::streamoff off, std::ios::seek_dir dir, std::ios_base::openmode mode)
+	FileBuf::pos_type FileBuf::seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode mode)
 	{
 		int idir;
 		if(dir == std::ios::cur) idir = SEEK_CUR;
@@ -73,7 +73,7 @@ namespace gctp {
 		return _lseek(fd_, off, idir);
 	}
 
-	std::streampos FileBuf::seekpos(std::streampos pos, std::ios_base::openmode mode)
+	FileBuf::pos_type FileBuf::seekpos(pos_type pos, std::ios_base::openmode mode)
 	{
 		return _lseek(fd_, pos, SEEK_SET);
 	}
@@ -135,54 +135,16 @@ namespace gctp {
 
 	int File::length() const
 	{
-		return _filelength(_M_buf.fd());
-	}
-
-	bool File::eof() const
-	{
-		return _eof(_M_buf.fd()) != 0;
-	}
-
-	File& File::read(void *d, int n)
-	{
-		_read(_M_buf.fd(), d, n);
-		if(eof()) setstate(std::ios::eofbit);
-		return *this;
-	}
-
-	File& File::write(const void *s, int n)
-	{
-		_write(_M_buf.fd(), s, n);
-		return *this;
-	}
-
-	File& File::seek(std::streamoff off, std::ios::seek_dir dir)
-	{
-		//seekp(off, dir);
-		_lseek(_M_buf.fd(), off, dir);
-		if(eof()) setstate(std::ios::eofbit);
-		return *this;
-	}
-
-	std::streamoff File::tell() const
-	{
-		return _tell(_M_buf.fd());
-		//return const_cast<File *>(this)->tellp();
+		return _filelength(filebuf_.fd());
 	}
 
 	File &File::truncate(int newsize)
 	{
 		flush();
-		_chsize(_M_buf.fd(), newsize);
+		_chsize(filebuf_.fd(), newsize);
 		return *this;
 	}
 	
-	File &File::flush()
-	{
-		rdbuf()->pubsync();
-		return *this;
-	}
-
 	File &File::relativeTruncate(int addsize)
 	{
 		return truncate(length() + addsize);
@@ -191,7 +153,7 @@ namespace gctp {
 	File& File::extract(obstream &dst, long pos, long size)
 	{
 		const int max = move_buf_size_;
-		seek(pos);
+		seekg(pos);
 		if(size > max) {
 			int comp_len = 0;
 			char *buf = new char[max];
@@ -221,7 +183,7 @@ namespace gctp {
 	File& File::extract(std::ostream &dst, long pos, long size)
 	{
 		const int max = move_buf_size_;
-		seek(pos);
+		seekg(pos);
 		if(size > max) {
 			int comp_len = 0;
 			char *buf = new char[max];
@@ -261,113 +223,15 @@ namespace gctp {
 		if(size == -1) {
 			size = length();
 			if(pos != -1) size -= pos;
-			else size -= tell();
+			else size -= tellg();
 		}
 		if(size > 0) {
 			BufferPtr ret = new Buffer(size);
-			if(pos != -1) seek(pos);
+			if(pos != -1) seekg(pos);
 			read(ret->buf(), size);
 			return ret;
 		}
 		return BufferPtr();
-	}
-
-	/**
-	 * これなくすべきかもな。。。
-	 */
-	File &File::moveBlock(int dst_pos, int src_pos, int size)
-	{
-		if(size > 0) {
-			const int max = move_buf_size_;
-			if(dst_pos > src_pos) {
-				// 後ろへずらす
-				if(size > max) {
-					int comp_len = 0;
-					char *buf = new char[max];
-					dst_pos += size - max;
-					src_pos += size - max;
-					while(comp_len < size) {
-						if((size - comp_len) >= max) {
-							seek(src_pos);
-							read(buf, max);
-							seek(dst_pos);
-							write(buf, max);
-							comp_len += max;
-							src_pos -= max;
-							dst_pos -= max;
-						}
-						else {
-							seek(src_pos);
-							read(buf, size - comp_len);
-							seek(dst_pos);
-							write(buf, size - comp_len);
-							comp_len = size;
-						}
-					}
-					delete [] buf;
-				}
-				else {
-					char *buf = new char[size];
-					seek(src_pos);
-					read(buf, size);
-					seek(dst_pos);
-					write(buf, size);
-					delete [] buf;
-				}
-			}
-			else if(dst_pos < src_pos) {
-				// 前へずらす
-				if(size > max) {
-					int comp_len = 0;
-					char *buf = new char[max];
-					while(comp_len < size) {
-						if((size - comp_len) >= max) {
-							seek(src_pos);
-							read(buf, max);
-							seek(dst_pos);
-							write(buf, max);
-							comp_len += max;
-							src_pos += max;
-							dst_pos += max;
-						}
-						else {
-							seek(src_pos);
-							read(buf, size - comp_len);
-							seek(dst_pos);
-							write(buf, size - comp_len);
-							comp_len = size;
-						}
-					}
-					delete [] buf;
-				}
-				else {
-					char *buf = new char[size];
-					seek(src_pos);
-					read(buf, size);
-					seek(dst_pos);
-					write(buf, size);
-					delete [] buf;
-				}
-			}
-		}
-		return *this;
-	}
-
-	/**
-	 * これなくすべきかもな。。。
-	 */
-	File &File::insert(int ins_pos, int size)
-	{
-		truncate(length()+size);
-		return moveBlock(ins_pos+size, ins_pos, length()-ins_pos);
-	}
-
-	/**
-	 * これなくすべきかもな。。。
-	 */
-	File &File::remove(int rmv_pos, int size)
-	{
-		return moveBlock(rmv_pos, rmv_pos+size, length()-rmv_pos);
 	}
 
 } // namespace gctp

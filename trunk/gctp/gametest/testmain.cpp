@@ -307,7 +307,7 @@ extern "C" int main(int argc, char *argv[])
 	graphic::SpriteBuffer spr;
 	spr.setUp();
 	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // ‚Ç‚¤‚·‚Á‚©‚ÈBBB
-	fonttex->setUp();
+	fonttex->setUp(512, 512);
 	Pointer<Font> font = new gctp::Font;
 	font->setUp(_T(",10,BOLD|FIXEDPITCH"));
 	Pointer<Font> font2 = new gctp::Font;

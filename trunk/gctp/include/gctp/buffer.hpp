@@ -12,8 +12,8 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/buffwd.hpp>
-#include <gctp/obstream.hpp>
 #include <gctp/class.hpp>
+#include <iosfwd>
 #include <string>
 
 namespace gctp {
@@ -57,7 +57,8 @@ namespace gctp {
 		std::string buf_;
 	};
 
-	inline obstream &operator<<(obstream &lhs, Buffer &rhs)
+	template<class _Ch, class _Tr>
+	std::basic_ostream<_Ch, _Tr> &operator<<(std::basic_ostream<_Ch, _Tr> &lhs, Buffer &rhs)
 	{
 		return lhs.write(rhs.buf(), static_cast<std::streamsize>(rhs.size()));
 	}

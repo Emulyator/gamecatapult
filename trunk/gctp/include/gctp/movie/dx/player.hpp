@@ -32,14 +32,13 @@ namespace gctp { namespace movie { namespace dx {
 	 */
 	class Player : public Object {
 	public:
-		Player() : hwnd_(0), loop_(0), loop_count_(1), is_ready_(false) {}
+		Player() : hwnd_(0), loop_(0), loop_count_(1) {}
 
 		~Player();
 
 		HRslt openForTexture(const _TCHAR *name, bool audio_on = true);
 		HRslt open(HWND hwnd, int notify_msgid, const _TCHAR *name, bool audio_on = true);
 
-		bool isReady() { return is_ready_; }
 		bool isPlaying();
 		HRslt play(int loop);
 		HRslt stop();
@@ -67,7 +66,6 @@ namespace gctp { namespace movie { namespace dx {
 		int loop_;
 		int loop_count_;
 		DWORD invalidate_timer_;
-		bool is_ready_;
 	};
 
 }}} // namespace gctp

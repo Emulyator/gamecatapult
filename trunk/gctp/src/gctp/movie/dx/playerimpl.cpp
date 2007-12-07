@@ -678,7 +678,6 @@ namespace gctp { namespace movie { namespace dx {
 	{
 		HRslt hr;
 
-		is_ready_ = false;
 		hwnd_ = 0;
 		// Create the filter graph
 		if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
@@ -828,8 +827,6 @@ namespace gctp { namespace movie { namespace dx {
 
 		if(!path) return E_POINTER;
 		
-		is_ready_ = false;
-
 		// Convert filename to wide character string
 		wcsncpy(wFile, T2W((LPTSTR)path), NUMELMS(wFile)-1);
 		wFile[MAX_PATH-1] = 0;
@@ -1134,7 +1131,7 @@ namespace gctp { namespace movie { namespace dx {
 			return hr;
 		}
 
-		if(isPlaying() && hwnd_ && is_ready_) {
+		if(isPlaying() && hwnd_) {
 			DWORD now = timeGetTime();
 			if(now - invalidate_timer_ > 100) {
 				invalidate_timer_ = now;
@@ -1162,7 +1159,7 @@ namespace gctp { namespace movie { namespace dx {
 			}
 			else if(EC_PAUSED == lEventCode) {
 				// ‚Ç‚¤‚à‰Šú‰»‚ªI‚í‚é‚Æˆê“x‚Í—ˆ‚éŒ©‚½‚¢
-				is_ready_ = true;
+				//is_ready_ = true;
 				PRNN("lEventCode = EC_PAUSED");
 			}
 			else {

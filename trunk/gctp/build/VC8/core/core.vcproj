@@ -425,6 +425,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\cryptfilter.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\cstr.hpp"
 				>
 			</File>
@@ -442,6 +446,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\dbgout.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\dbgoutbuf.hpp"
 				>
 			</File>
 			<File

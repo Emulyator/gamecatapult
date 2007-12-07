@@ -10,12 +10,13 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/class.hpp>
+#include <gctp/buffwd.hpp> // for gctp::BufferPtr
 
 namespace gctp { namespace graphic {
 
 	class Texture;
 
-	/// テクスチャリソースクラス
+	/// レンダーターゲットリソースクラス
 	class RenderTarget : public Rsrc {
 	public:
 		enum Type {
@@ -70,6 +71,8 @@ namespace gctp { namespace graphic {
 		LockedRect lock(const Rect &rc, uint32_t flag = 0L);
 		LockedRect lock(uint32_t flag = 0L);
 		HRslt unlock();
+		HRslt save(const _TCHAR *fn);
+		HRslt save(BufferPtr &ret, D3DXIMAGE_FILEFORMAT format);
 
 	GCTP_DECLARE_CLASS
 

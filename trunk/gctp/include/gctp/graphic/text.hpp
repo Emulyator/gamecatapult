@@ -41,6 +41,13 @@ namespace gctp { namespace graphic {
 		Text();
 		~Text();
 
+		// まだ未実装
+		enum Alignment {
+			LEFT,
+			CENTER,
+			RIGHT
+		};
+
 		/// 使用するスプライトバッファとフォントテクスチャを指定して描画
 		HRslt draw(SpriteBuffer &spr, FontTexture &fonttex) const;
 		/// 使用するスプライトバッファとフォントテクスチャセットを指定して描画
@@ -54,6 +61,7 @@ namespace gctp { namespace graphic {
 		Text &setColor(Color32 color, int ofs = 0);
 		Text &setBackColor(Color32 color, int ofs = 0);
 		Text &setFont(const Handle<Font> &font, int ofs = 0);
+		Text &setAlignment(Alignment alignment, int ofs = 0);
 
 		Point2f getPos(graphic::FontTexture &fonttex, int ofs = 0);
 		Point2f getPos(graphic::FontTextureSet &fonttex, int ofs = 0);

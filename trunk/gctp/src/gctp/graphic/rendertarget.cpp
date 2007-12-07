@@ -12,6 +12,9 @@
 #include <gctp/graphic/rendertarget.hpp>
 #include <gctp/graphic/texture.hpp>
 #include <gctp/dbgout.hpp>
+#include <gctp/turi.hpp>
+#include <gctp/buffer.hpp>
+#include <gctp/dxcomptrs.hpp>
 
 using namespace std;
 
@@ -144,6 +147,33 @@ namespace gctp { namespace graphic {
 	HRslt RenderTarget::unlock()
 	{
 		return ptr_->UnlockRect();
+	}
+
+	HRslt RenderTarget::save(const _TCHAR *fn)
+	{
+		TURI save_file(fn);
+		basic_string<_TCHAR> ext = save_file.extension();
+		D3DXIMAGE_FILEFORMAT format = D3DXIFF_BMP;
+		if(ext == _T("jpg")) format = D3DXIFF_JPG;
+		else if(ext == _T("tga")) format = D3DXIFF_TGA;
+		else if(ext == _T("png")) format = D3DXIFF_PNG;
+		else if(ext == _T("dds")) format = D3DXIFF_DDS;
+		else if(ext == _T("ppm")) format = D3DXIFF_PPM;
+		else if(ext == _T("dib")) format = D3DXIFF_DIB;
+		else if(ext == _T("hdr")) format = D3DXIFF_HDR;
+		else if(ext == _T("pfm")) format = D3DXIFF_PFM;
+		return D3DXSaveSurfaceToFile(fn, format, ptr_, NULL, NULL);
+	}
+
+	HRslt RenderTarget::save(BufferPtr &ret, D3DXIMAGE_FILEFORMAT format)
+	{
+		ID3DXBufferPtr buf;
+		HRslt r = D3DXSaveSurfaceToFileInMemory(&buf, format, ptr_, NULL, NULL);
+		if(r && buf) {
+			ret = new Buffer(buf->GetBufferSize());
+			memcpy(ret->buf(), buf->GetBufferPointer(), ret->size());
+		}
+		return r;
 	}
 
 }} // namespace gctp

@@ -60,6 +60,8 @@ namespace gctp {
 
 		/// アーカイブをマウントする
 		bool mount(const _TCHAR *path, ArchiveType type = AUTO);
+		/// (暗号化)アーカイブをマウントする
+		bool mount(const _TCHAR *path, const char *key, ArchiveType type = AUTO);
 		/// アーカイブをアンマウントする
 		bool unmount(const _TCHAR *path);
 		/// 検索優先度の設定

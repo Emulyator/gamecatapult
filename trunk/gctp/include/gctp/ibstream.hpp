@@ -58,23 +58,23 @@ namespace gctp {
 		}
 		std::streamsize gcount() const { return _M_gcount; }
 	private:
-		// for operator >> std::string
-		char getchar() {
-			char c;
-			read(&c, sizeof(c));
-			return c;
-		}
-		// for operator >> std::wstring
-		wchar_t getwchar() {
-			wchar_t c;
-			read(&c, sizeof(c));
+		// for operator >> std::string or for operator >> std::wstring
+		template<class Ch>
+		Ch _getc() {
+			Ch c;
+			read(&c, sizeof(Ch));
 			return c;
 		}
 		std::streamsize _M_gcount;
 
 	public:							// Formatted output.
 		// Formatted output from a streambuf.
-		_Self& operator>>(std::streambuf *__buf);
+		template<class _Ch, class _Tr>
+		_Self& operator>>(std::basic_streambuf<_Ch, _Tr> *__buf)
+		{
+			for(_Ch c = _getc<_Ch>(); good() && !eof(); c = _getc<_Ch>()) __buf->sputc(c);
+			return *this;
+		}
 		_Self& operator>>(char &__x) { return read(&__x, sizeof(__x)); }
 		_Self& operator>>(unsigned char &__x) { return read((void *)&__x, sizeof(__x)); }
 		_Self& operator>>(int &__x) { return read((void *)&__x, sizeof(__x)); }
@@ -94,11 +94,11 @@ namespace gctp {
 		_Self& operator>>(float &__x)	{ return read(&__x, sizeof(__x)); }
 		_Self& operator>>(double &__x)	{ return read(&__x, sizeof(__x)); }
 		_Self& operator>>(std::string &s) {
-			s = ""; for(char c = getchar(); good() && !eof() && c != '\0'; c = getchar()) s += c;
+			s = ""; for(char c = _getc<char>(); good() && !eof() && c != '\0'; c = _getc<char>()) s += c;
 			return *this;
 		}
 		_Self& operator>>(std::wstring &s) {
-			s = L""; for(wchar_t c = getwchar(); good() && !eof() && c != L'\0' && c != traits_type::eof(); c = getwchar()) s += c;
+			s = L""; for(wchar_t c = _getc<wchar_t>(); good() && !eof() && c != L'\0' && c != traits_type::eof(); c = _getc<wchar_t>()) s += c;
 			return *this;
 		}
 		# ifndef _STLP_NO_LONG_DOUBLE

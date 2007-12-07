@@ -121,7 +121,7 @@ int _tmain(int argc, _TCHAR *argv[])
 	}
 	else {
 		if(arg.hasKey(_T("list")) && arg.hasKey(_T(""))) {
-			Archive arc(arg[_T("")].front().c_str());
+			Archive arc(arg[_T("")].front().c_str(), arg.hasKey(_T("crypt"))?CStr(arg[_T("crypt")].front().c_str()).c_str():0);
 			if(!arc.is_open()) {
 				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
 				return 2;
@@ -130,7 +130,7 @@ int _tmain(int argc, _TCHAR *argv[])
 			return 0;
 		}
 		if(arg.hasKey(_T("extractall")) && arg.hasKey(_T(""))) {
-			Archive arc(arg[_T("")].front().c_str());
+			Archive arc(arg[_T("")].front().c_str(), arg.hasKey(_T("crypt"))?CStr(arg[_T("crypt")].front().c_str()).c_str():0);
 			if(!arc.is_open()) {
 				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
 				return 2;
@@ -142,7 +142,7 @@ int _tmain(int argc, _TCHAR *argv[])
 			return 0;
 		}
 		if(arg.hasKey(_T("extract")) && arg.hasKey(_T(""))) {
-			Archive arc(arg[_T("")].front().c_str());
+			Archive arc(arg[_T("")].front().c_str(), arg.hasKey(_T("crypt"))?CStr(arg[_T("crypt")].front().c_str()).c_str():0);
 			if(!arc.is_open()) {
 				cerr << CStr(arg[_T("")].front().c_str()) << ": ファイルが開けません" << endl;
 				return 2;
@@ -179,7 +179,7 @@ int _tmain(int argc, _TCHAR *argv[])
 			print_help();
 			return 1;
 		}
-		ArchiveEditable arc(arcname.c_str());
+		ArchiveEditable arc(arcname.c_str(), arg.hasKey(_T("crypt"))?CStr(arg[_T("crypt")].front().c_str()).c_str():0, arg.hasKey(_T("crypt")));
 		arc.setWorkBufferSize(8*1024*1024);
 		if(!arc.is_open()) {
 			cerr << CStr(arcname.c_str()) << ": ファイルが開けません" << endl;

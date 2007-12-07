@@ -36,10 +36,12 @@ namespace gctp { namespace graphic {
 					BACKCOLOR,
 					FONT,
 					CURSOR,
+					ALIGNMENT,
 				} type;
 
 				Attr() {}
 				Attr(float x, float y) : type(POSITION) { pos.x = x; pos.y = y; }
+				Attr(Text::Alignment _alignment) : type(ALIGNMENT) { alignment = _alignment; }
 				explicit Attr(D3DCOLOR _color) : type(COLOR), color(_color) {}
 				explicit Attr(D3DCOLOR _color, bool dummy) : type(BACKCOLOR), color(_color) {}
 				explicit Attr(const Handle<Font> &_font) : type(FONT), font(_font) {}
@@ -48,6 +50,7 @@ namespace gctp { namespace graphic {
 				union {
 					Pos pos;
 					D3DCOLOR color;
+					Text::Alignment alignment;
 				};
 				Handle<Font> font;
 			};
@@ -180,23 +183,33 @@ namespace gctp { namespace graphic {
 		//TextImplを公開していないので、空のデストラクタを宣言しないと使用側でTextImplの削除法がわからないといわれる
 	}
 
-	Text &Text::setPos(float x, float y, int ofs) {
+	Text &Text::setPos(float x, float y, int ofs)
+	{
 		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(x, y)));
 		return *this;
 	}
 
-	Text &Text::setColor(Color32 color, int ofs) {
+	Text &Text::setColor(Color32 color, int ofs)
+	{
 		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(color)));
 		return *this;
 	}
 
-	Text &Text::setBackColor(Color32 color, int ofs) {
+	Text &Text::setBackColor(Color32 color, int ofs)
+	{
 		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(color, true)));
 		return *this;
 	}
 
-	Text &Text::setFont(const Handle<Font> &font, int ofs) {
+	Text &Text::setFont(const Handle<Font> &font, int ofs)
+	{
 		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(font)));
+		return *this;
+	}
+
+	Text &Text::setAlignment(Alignment alignment, int ofs)
+	{
+		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), alignment));
 		return *this;
 	}
 
@@ -310,6 +323,7 @@ namespace gctp { namespace graphic {
 		if(spr)	spr->begin(fonttex, false);
 		int prev_c = 0, now_disp_count = 0;
 		float x = (float)layout_.left, y = (float)layout_.top;
+		Text::Alignment alignment = Text::LEFT;
 		Color32 color(0, 0, 0), backcolor(0, 0, 0, 0);
 		uint line_height = 0, default_line_height = 0, space_size = 0;
 		bool loopback = false;
@@ -337,6 +351,9 @@ namespace gctp { namespace graphic {
 						space_size = static_cast<uint>(glyph.size.x);
 					}
 				}
+				else if(attri->second.type == Attr::ALIGNMENT) {
+					alignment = attri->second.alignment;
+				}
 			}
 
 			if(lastpos && !(i < size+ofs)) break;
@@ -345,7 +362,7 @@ namespace gctp { namespace graphic {
 			text += n;
 			i += n;
 
-			if(c == _T('\n') || c == _T('\r') ) {
+			if(c == _T('\n') || c == _T('\r')) {
 				if(!loopback) {
 					x = (float)layout_.left; y += line_height; line_height = default_line_height;
 				}
@@ -359,6 +376,36 @@ namespace gctp { namespace graphic {
 				continue;
 			}
 			loopback = false;
+
+			if(font && (i == n || prev_c == _T('\n')) && (alignment == Text::CENTER || alignment == Text::RIGHT)) {
+				// その行の長さを図る
+				basic_string<_TCHAR>::size_type _i = i;
+				float width = 0;
+				int n = 1, c = 0;
+				const _TCHAR *_text = text;
+				if(_i < size) n = getChar(c, _text);
+				while( _i <= size && n > 0 && c != _T('\n')) {
+					if(_i < size) n = getChar(c, _text);
+					if(c == _T('\t')) {
+						width += toTabbed(0, space_size*4);
+					}
+					else if(isPrintChar(c)) {
+						glyph = fonttex.find(font, c);
+						if(glyph) width += glyph.size.x;
+					}
+					_text += n;
+					_i += n;
+				}
+				if(width < layout_.width()) {
+					if(alignment == Text::CENTER) {
+						x += (float)(layout_.width()-width)/2;
+					}
+					else {
+						x += (float)(layout_.width()-width);
+					}
+				}
+			}
+
 			if(isPrintChar(c)) {
 				if(font) {
 					glyph = fonttex.find(font, c);
@@ -412,7 +459,7 @@ namespace gctp { namespace graphic {
 					}
 					x += glyph.size.x;
 					if(loopback) {
-						 line_height = default_line_height;
+						line_height = default_line_height;
 					}
 				}
 				else PRNN(_T("フォントが設定されていません！"));
