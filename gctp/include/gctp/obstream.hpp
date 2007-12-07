@@ -54,7 +54,17 @@ namespace gctp {
 
 	public:							// Formatted output.
 		// Formatted output from a streambuf.
-		_Self& operator<<(std::streambuf* __buf);
+		template<class _Ch, class _Tr>
+		_Self& operator<<(std::basic_streambuf<_Ch, _Tr> *__buf)
+		{
+			_Ch buf[64];
+			std::streamsize l = __buf->sgetn(buf, 64);
+			while(l > 0) {
+				rdbuf()->sputn((char *)buf, l*sizeof(_Ch));
+				l = __buf->sgetn(buf, 64);
+			}
+			return *this;
+		}
 		_Self& operator<<(const char __x) { return write(&__x, sizeof(__x)); }
 		_Self& operator<<(const unsigned char __x) { return write((void *)&__x, sizeof(__x)); }
 		_Self& operator<<(const wchar_t __x) { return write(&__x, sizeof(__x)); }

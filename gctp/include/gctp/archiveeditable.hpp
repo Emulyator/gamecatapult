@@ -12,6 +12,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/archive.hpp>
+#include <list>
 
 namespace gctp {
 
@@ -30,15 +31,17 @@ namespace gctp {
 		class EntryAttr : public ArchiveEntry {
 		public:
 			enum Attr {ALREADY, NEW, UPDATE, REMOVE};
-			/// エントリのパス
-			TCStr name;
 			/// 属性
 			Attr attr;
+			/// 代替ストリーム
+			std::istream *strm;
 
 			/// デフォルトコンストラクタ
-			EntryAttr() : attr(ALREADY) {}
+			EntryAttr() : attr(ALREADY), strm(0) {}
 			/// コンストラクタ
-			EntryAttr(const _TCHAR *name, ArchiveEntry &entry, Attr attr = ALREADY) : ArchiveEntry(entry), name(name), attr(attr) {}
+			EntryAttr(ArchiveEntry &entry, std::istream *strm, Attr attr = ALREADY) : ArchiveEntry(entry), attr(attr), strm(strm) {}
+			/// コンストラクタ
+			explicit EntryAttr(ArchiveEntry &entry, Attr attr = ALREADY) : ArchiveEntry(entry), attr(attr), strm(0) {}
 			bool operator==(const EntryAttr &rhs) const { return pos==rhs.pos; }
 			bool operator!=(const EntryAttr &rhs) const { return pos!=rhs.pos; }
 			bool operator<(const EntryAttr &rhs) const { return pos<rhs.pos; }
@@ -52,13 +55,23 @@ namespace gctp {
 		typedef List::iterator ListItr;
 
 		/// デフォルトコンストラクタ
-		ArchiveEditable() : alignment_(4) {}
+		explicit ArchiveEditable(bool crypt = false) : alignment_(crypt ? 8 : 4), crypt_(crypt) {}
 		/// コンストラクタ
-		explicit ArchiveEditable(const _TCHAR *fn);
+		ArchiveEditable(const _TCHAR *fn, const char *key, bool crypt = false) : alignment_(crypt ? 8 : 4), crypt_(crypt)
+		{
+			setKey(key);
+			open(fn);
+		}
 		/// アライメントを指定(0にそろえられる下位ビット数で指定)
-		void setAlign(int bit) { alignment_ = 1<<bit; }
+		void setAlign(int bit)
+		{
+			alignment_ = 1<<bit;
+			if(crypt_ && alignment_ < 8) alignment_ = 8;
+		}
 		/// 開く
 		void open(const _TCHAR *fn);
+		/// 新規製作
+		void openAsNew(const _TCHAR *fn);
 		/// エントリ追加
 		void add(const _TCHAR *fn);
 		/// 更新日付を無視し、強制再構築
@@ -72,6 +85,7 @@ namespace gctp {
 		/// 編集中リストを出力
 		void printList(std::ostream &os);
 		//void printList(std::basic_ostream<_TCHAR> &os);
+
 	protected:
 		List list_; // 書き込みのときのリスト
 		void setUpList();
@@ -82,11 +96,12 @@ namespace gctp {
 			TLStr wfn(fn);
 			ListItr i;
 			for(i = list_.begin(); i != list_.end(); ++i) {
-				if(i->name == wfn) break;
+				if(i->id == wfn) break;
 			}
 			return i;
 		}
 		int alignment_;
+		bool crypt_;
 		int align(int n) { return Archive::align(n, alignment_); }
 	private:
 		int index_page_size_;

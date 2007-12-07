@@ -7,6 +7,7 @@
 #endif
 #include <gctp/bbstream.hpp>
 #include <gctp/zfilter.hpp>
+#include <gctp/cryptfilter.hpp>
 #include <gctp/archive.hpp>
 //CUPPA:include=-
 #include <cppunit/extensions/HelperMacros.h>
@@ -151,6 +152,43 @@ public:
     }
   }
 #endif // GCTP_USE_ZLIB
+  void test_cryptfilter() {
+    const char *test = 
+		"暗号ストリームテストあああああああああああああああああああああああああああああああああああああああああああああああ";
+	// 暗号
+    {
+		std::filebuf ofb;
+		ofb.open("cryptfiltertest", std::ios::out|std::ios::binary);
+		CPPUNIT_ASSERT(ofb.is_open());
+		basic_cryptfilter<16, char> ocf(&ofb);
+		ocf.setKey("Who is John Galt?");
+		obstream ofs(&ocf);
+
+		ofs << test;
+    }
+
+	{
+		File f(_T("cryptfiltertest"));
+		CPPUNIT_ASSERT((unsigned)f.length()<(strlen(test)+12));
+		std::string str;
+		f >> str;
+		CPPUNIT_ASSERT(str!=test);
+	}
+
+    // 復号
+    {
+		std::filebuf ifb;
+		ifb.open("cryptfiltertest", std::ios::in|std::ios::binary);
+		CPPUNIT_ASSERT(ifb.is_open());
+        basic_cryptfilter<16, char> icf(&ifb);
+		icf.setKey("Who is John Galt?");
+		ibstream ifs(&icf);
+
+		std::string str;
+		ifs >> str;
+		CPPUNIT_ASSERT(str == test);
+    }
+  }
 //CUPPA:decl=-
   CPPUNIT_TEST_SUITE(BinaryStreamTest);
 //CUPPA:suite=+
@@ -164,6 +202,7 @@ public:
 #ifdef GCTP_USE_ZLIB
   CPPUNIT_TEST(test_zfilter);
 #endif // GCTP_USE_ZLIB
+  CPPUNIT_TEST(test_cryptfilter);
 //CUPPA:suite=-
   CPPUNIT_TEST_SUITE_END();
 };

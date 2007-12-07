@@ -15,9 +15,8 @@
 #include <gctp/buffer.hpp>
 #include <gctp/tcstr.hpp>
 #include <gctp/file.hpp>
-#include <gctp/crypt.hpp>
-#include <map>
-#include <list>
+#include <gctp/cryptfilter.hpp>
+#include <set>
 
 namespace gctp {
 
@@ -30,11 +29,31 @@ namespace gctp {
 	 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
 	 */
 	struct ArchiveEntry {
+		TCStr   id;
 		time_t	time;
 		bool	ziped;
 		long	size;
 		long	pos;
+
+		ArchiveEntry() {}
+		ArchiveEntry(const _TCHAR *fn) : id(fn) {}
+		bool operator<(const ArchiveEntry &rhs) const
+		{
+			return id < rhs.id;
+		}
+		bool operator==(const ArchiveEntry &rhs) const
+		{
+			return id == rhs.id;
+		}
 	};
+
+	template<class E, class T> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, const ArchiveEntry &ae)
+	{
+		char ts[26];
+		ctime_s(ts, 26, &ae.time);
+		ts[24] = '\0';
+		return os<<ae.id.c_str()<<" "<<ts<<"\tsize "<<ae.size<<", offset "<<ae.pos;
+	}
 
 	/** アーカイブファイルクラス
 	 *
@@ -52,18 +71,26 @@ namespace gctp {
 		};
 
 		/// アーカイブ内のファイル情報の索引を表すクラス
-		typedef std::map<TCStr, ArchiveEntry> Index;
+		typedef std::set<ArchiveEntry> Index;
 		/// Indexのiterator
 		typedef Index::iterator IndexItr;
 
 		/// デフォルトコンストラクタ
-		Archive() : index_size_(0), flags_(0), crypt_(0) {}
+		Archive() : index_size_(0), flags_(0), filter_(0), crypt_(0) {}
 		/// アーカイブファイル名を指定して開く
-		explicit Archive(const _TCHAR *fn) : index_size_(0), flags_(0), crypt_(0)
+		explicit Archive(const _TCHAR *fn, const char *key = 0) : index_size_(0), flags_(0), filter_(0), crypt_(0)
 		{
+			setKey(key);
 			open(fn);
 		}
-		~Archive();
+		~Archive()
+		{
+			if(filter_) {
+				rdbuf(filebuf());
+				delete filter_;
+				delete crypt_;
+			}
+		}
 
 		/// アーカイブファイル名を指定して開く
 		void open(const _TCHAR *fn);
@@ -107,12 +134,15 @@ namespace gctp {
 		}
 		/// 暗号化キーをセット
 		void setKey(const char *key);
+		Crypt *crypt() { return crypt_; }
+		int flags() { return flags_; }
 
 	protected:
 		Index index_; // 読み出しのときの索引
 		bool readIndex();
 		int index_size_; // Index index_のサイズではなく、オープンした時点でのファイル上のインデックスデータのサイズ。
 		int flags_;
+		cryptfilter *filter_;
 		Crypt *crypt_;
 		static int align(int n, int alignment) { return ((n+alignment-1)/alignment)*alignment; }
 	};

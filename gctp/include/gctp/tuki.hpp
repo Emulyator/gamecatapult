@@ -19,6 +19,7 @@
 
 #include <gctp/pointer.hpp>
 #include <gctp/typeinfo.hpp>
+#include <gctp/serializer.hpp>
 #include <boost/tokenizer.hpp>
 
 #ifdef _MSC_VER
@@ -294,6 +295,11 @@ namespace gctp {
 	template<typename T> Pointer<T> tuki_cast(const luapp::Value &val) {
 		return Pointer<T>(toObject(val));
 	}
+
+	/** luapp::Table用に特殊化したシリアライズ演算子
+	 */
+	template<>
+	Serializer &operator<<(Serializer &lhs, luapp::Table &rhs);
 
 } // namespace gctp
 

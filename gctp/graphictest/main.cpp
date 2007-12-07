@@ -124,7 +124,7 @@ public:
 		spr_ = new SpriteBuffer;
 		spr_->setUp();
 		fonttex_ = new FontTexture;
-		fonttex_->setUp();
+		fonttex_->setUp(512, 512);
 		theta_ = 0; scale_ = 0; count_ = 0;
 
 		updateDisplay();

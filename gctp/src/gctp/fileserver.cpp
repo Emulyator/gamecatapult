@@ -86,14 +86,14 @@ namespace gctp {
 				}
 				virtual int seek(int pos)
 				{
-					file_.seek(pos);
-					return file_.tell();
+					file_.seekg(pos);
+					return file_.tellg();
 				}
 				virtual int read(void *p, size_t s)
 				{
-					std::streamoff n = file_.tell();
+					std::streamoff n = file_.tellg();
 					file_.read(p, (int)s);
-					return file_.tell()-n;
+					return file_.tellg()-n;
 				}
 				File file_;
 			};
@@ -115,7 +115,7 @@ namespace gctp {
 			{
 				TURI volume_uri(volume_name);
 				std::basic_string<_TCHAR> ext = volume_uri.extension();
-				if(ext.empty()) {
+				/*if(ext.empty()) {
 					std::basic_stringstream<_TCHAR> str;
 					str << volume_name << ".gcar";
 					DWORD attr = ::GetFileAttributes(str.str().c_str());
@@ -124,13 +124,13 @@ namespace gctp {
 						return true;
 					}
 				}
-				else if(ext == _T("gcar")) {
+				else if(ext == _T("gcar")) {*/
 					DWORD attr = ::GetFileAttributes(volume_name);
 					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 						filename = volume_name;
 						return true;
 					}
-				}
+				//}
 				std::basic_string<_TCHAR> path = volume_uri.path();
 				if(!path.empty()) {
 					if(currentdir.empty()) currentdir = TURI(volume_name).leaf() + _T("/");
@@ -145,13 +145,15 @@ namespace gctp {
 				std::basic_string<_TCHAR> currentdir;
 				return isExistEx(volume_name, filename, currentdir);
 			}
-			Gcar(const _TCHAR *volume_name) : FileServer::Volume(volume_name)
+			Gcar(const _TCHAR *volume_name, const char *key) : FileServer::Volume(volume_name)
 			{
 				if(isExistEx(volume_name, filename_, currentdir_)) {
 					//PRNN("gcar volume_name "<<volume_name);
 					//PRNN("gcar filename "<<filename_);
 					//PRNN("gcar currentdir "<<currentdir_);
+					if(key) gcar_.setKey(key);
 					gcar_.open(filename_.c_str());
+					assert(gcar_.is_open());
 				}
 			}
 			virtual int find(const _TCHAR *fname)
@@ -174,18 +176,26 @@ namespace gctp {
 
 			class GcarFile : public AbstractFile {
 			public:
+				GcarFile() : filter_(0) {}
+				~GcarFile()
+				{
+					if(filter_) {
+						file_.rdbuf(file_.filebuf());
+						delete filter_;
+					}
+				}
 				virtual int size() const
 				{
 					return entry_.size;
 				}
 				virtual int seek(int pos)
 				{
-					file_.seek(std::min<std::streamoff>(entry_.pos+entry_.size, entry_.pos + pos));
-					return file_.tell();
+					file_.seekg(std::min<std::streamoff>(entry_.pos+entry_.size, entry_.pos + pos));
+					return file_.tellg();
 				}
 				virtual int read(void *p, size_t s)
 				{
-					std::streamoff n = file_.tell();
+					std::streamoff n = file_.tellg();
 					std::streamoff end = (std::streamoff)(entry_.pos+entry_.size);
 					s = std::min<size_t>(std::max<std::streamoff>(end-n,0),s);
 					if(s > 0) {
@@ -195,6 +205,7 @@ namespace gctp {
 				}
 				ArchiveEntry entry_;
 				File file_;
+				cryptfilter *filter_;
 			};
 			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
 			{
@@ -206,7 +217,11 @@ namespace gctp {
 				if(!ret->file_.is_open()) ret = 0;
 				else {
 					ret->entry_ = *entry;
-					ret->file_.seek(entry->pos);
+					ret->file_.seekg(entry->pos);
+					if(gcar_.flags() & Archive::FLAG_CRYPTED) {
+						ret->filter_ = new cryptfilter(*gcar_.crypt());
+						ret->filter_->open(ret->file_.rdbuf(ret->filter_), std::ios::in);
+					}
 				}
 				return ret;
 			}
@@ -224,7 +239,7 @@ namespace gctp {
 			{
 				TURI volume_uri(volume_name);
 				std::basic_string<_TCHAR> ext = volume_uri.extension();
-				if(ext.empty()) {
+				/*if(ext.empty()) {
 					std::basic_stringstream<_TCHAR> str;
 					str << volume_name << ".zip";
 					DWORD attr = ::GetFileAttributes(str.str().c_str());
@@ -233,13 +248,13 @@ namespace gctp {
 						return true;
 					}
 				}
-				else if(ext == _T("zip")) {
+				else if(ext == _T("zip")) {*/
 					DWORD attr = ::GetFileAttributes(volume_name);
 					if(attr != -1 && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
 						filename = volume_name;
 						return true;
 					}
-				}
+				//}
 				std::basic_string<_TCHAR> path = volume_uri.path();
 				if(!path.empty()) {
 					if(currentdir.empty()) currentdir = TURI(volume_name).leaf() + _T("/");
@@ -381,8 +396,13 @@ namespace gctp {
 
 	bool FileServer::mount(const _TCHAR *path, ArchiveType type)
 	{
+		return mount(path, 0, type);
+	}
+
+	bool FileServer::mount(const _TCHAR *path, const char *key, ArchiveType type)
+	{
 		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
-			if(*i && (*i)->name_ == path) return false;
+			if(*i && (*i)->name_ == path) return true;
 		}
 		if(type == AUTO) {
 			if(NativeFS::isExist(path)) {
@@ -403,7 +423,7 @@ namespace gctp {
 			PRNN(_T("アーカイブ'")<<path<<_T("'をネイティブFSとしてマウント。"));
 			break;
 		case GCAR:
-			volume_list_.push_back(new Gcar(path));
+			volume_list_.push_back(new Gcar(path, key));
 			PRNN(_T("アーカイブ'")<<path<<_T("'をGameCatapultアーカイブとしてマウント。"));
 			break;
 #ifdef GCTP_USE_ZLIB
@@ -423,7 +443,7 @@ namespace gctp {
 	bool FileServer::unmount(const _TCHAR *path)
 	{
 		PointerList<Volume>::iterator i;
-		for(i = volume_list_.begin(); i != volume_list_.end(); i++) {
+		for(i = volume_list_.begin(); i != volume_list_.end(); ++i) {
 			if(*i && (*i)->name_ == path) break;
 		}
 		if(i != volume_list_.end()) {

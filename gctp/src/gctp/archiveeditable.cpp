@@ -23,16 +23,22 @@ using namespace std;
 
 namespace gctp {
 
-	ArchiveEditable::ArchiveEditable(const _TCHAR *fn) : alignment_(4)
-	{
-		open(fn);
-	}
-
 	void ArchiveEditable::open(const _TCHAR *fn)
 	{
 		File::open(fn, File::WRITE);
-		if(readIndex()) setUpList();
+		if(readIndex()) {
+			if(flags_ & FLAG_CRYPTED) {
+				crypt_ = true;
+			}
+			setUpList();
+		}
 		else close();
+	}
+
+	void ArchiveEditable::openAsNew(const _TCHAR *fn)
+	{
+		File::open(fn, File::NEW);
+		setUpList();
 	}
 
 	void ArchiveEditable::add(const _TCHAR *fn)
@@ -57,12 +63,12 @@ namespace gctp {
 				}
 				else {
 					// 最後尾に追加
-					ArchiveEntry newe;
+					ArchiveEntry newe(fn);
 					newe.time = st.st_mtime;
 					newe.size = st.st_size;
 					if(list_.size() > 0) newe.pos = list_.back().pos+list_.back().size;
 					else newe.pos = 0;
-					list_.push_back(EntryAttr(fn, newe, EntryAttr::NEW));
+					list_.push_back(EntryAttr(newe, EntryAttr::NEW));
 				}
 			}
 		}
@@ -101,7 +107,7 @@ namespace gctp {
 	{
 		for(ListItr i = list_.begin(); i != list_.end(); ++i) {
 			struct _stat st;
-			if( 0 == _tstat(i->name.c_str(), &st) && (i->time != st.st_mtime || i->size != st.st_size) && i->attr != EntryAttr::NEW) {
+			if( 0 == _tstat(i->id.c_str(), &st) && (i->time != st.st_mtime || i->size != st.st_size) && i->attr != EntryAttr::NEW) {
 				i->attr = EntryAttr::UPDATE;
 				i->time = st.st_mtime; i->size = st.st_size;
 			}
@@ -113,7 +119,7 @@ namespace gctp {
 		int ret = sizeof(int)*3; // ヘッダサイズ
 		for(ListItr i = list_.begin(); i != list_.end(); i++) {
 			if(i->attr != EntryAttr::REMOVE) {
-				ret += static_cast<int>(i->name.size() + sizeof(_TCHAR) + sizeof(time_t) + sizeof(long) + sizeof(long));
+				ret += static_cast<int>(i->id.size() + sizeof(_TCHAR) + sizeof(time_t) + sizeof(long) + sizeof(long));
 			}
 		}
 		assert(ret > 0);
@@ -128,19 +134,23 @@ namespace gctp {
 //		if(diff_index_real_size > 0) File::remove(0, diff_index_real_size);
 //		if(diff_index_real_size < 0) File::insert(0, -diff_index_real_size);
 		int ret = align(index_size);
+		if(crypt_ && filter_) {
+			// 暗号化の場合オフセットが特殊
+			ret = align(align(index_size-sizeof(int)*3)+sizeof(int)*3);
+		}
 		for(ListItr i = list_.begin(); i != list_.end(); i++) {
 			switch(i->attr) {
 			case EntryAttr::REMOVE:
-				cout<<"REMOVE "<<CStr(i->name.c_str())<<endl;
+				cout<<"REMOVE "<<CStr(i->id.c_str())<<endl;
 				break;
 			case EntryAttr::UPDATE:
-				cout<<"UPDATE "<<CStr(i->name.c_str())<<endl;
+				cout<<"UPDATE "<<CStr(i->id.c_str())<<endl;
 				break;
 			case EntryAttr::ALREADY:
-				cout<<"ALREADY "<<CStr(i->name.c_str())<<endl;
+				cout<<"ALREADY "<<CStr(i->id.c_str())<<endl;
 				break;
 			case EntryAttr::NEW:
-				cout<<"NEW "<<CStr(i->name.c_str())<<endl;
+				cout<<"NEW "<<CStr(i->id.c_str())<<endl;
 				break;
 			}
 			switch(i->attr) {
@@ -170,13 +180,20 @@ namespace gctp {
 				{
 					i->pos = ret;
 					ret += align(i->size);
-					File::seek(i->pos);
-					{
-						File file(i->name.c_str());
+					File::seekp(i->pos);
+					if(crypt_ && filter_) {
+						filter_->open(rdbuf(filter_));
+					}
+					if(i->strm) (*this) << i->strm->rdbuf();
+					else {
+						File file(i->id.c_str());
+						//(*this) << file.rdbuf();
 						file.extract(*this, 0, file.length());
 					}
 					int align_size = align(i->size);
 					for(int j = 0; j < align_size - i->size; j++) (*this) << '\0';
+					sync();
+					rdbuf(filebuf());
 				}
 				break;
 			default:
@@ -193,12 +210,20 @@ namespace gctp {
 	{
 #define _SWAP_(n)	(((n)&0xFF000000)>>24|((n)&0xFF0000)>>8|((n)&0xFF00)<<8|((n)&0xFF)<<24)
 		index_size_ = index_size;
-		File::seek(0);
+		if(filter_) filter_->close();
+		rdbuf(filebuf());
+		File::seekp(0);
+		if(crypt_ && filter_) {
+			flags_ |= FLAG_CRYPTED;
+		}
 		(*this) << (int)_SWAP_('GCAR') << index_size_ << flags_;
+		if(crypt_ && filter_) {
+			filter_->open(rdbuf(filter_));
+		}
 		for(ListItr i = list_.begin(); i != list_.end(); i++) {
 			if(i->attr != EntryAttr::REMOVE) {
-				(*this) << i->name.c_str() << i->time << i->size << i->pos;
-				PRNN("write "<<i->name<<" "<<ctime(&i->time)<<"\tsize "<<i->size<<", pos "<<i->pos);
+				(*this) << i->id.c_str() << i->time << i->size << i->pos;
+				PRNN("write "<<(*i));
 			}
 		}
 		File::clear();
@@ -252,14 +277,14 @@ namespace gctp {
 			case EntryAttr::REMOVE: attr = "REMOVE"; break;
 			case EntryAttr::UPDATE: attr = "UPDATE"; break;
 			}
-			os<<CStr(i->name.c_str())<<" "<<ctime(&i->time)<<"\tsize "<<i->size<<", pos "<<i->pos<<", attr "<<attr<<endl;
+			os<<(*i)<<", attr "<<attr<<endl;
 		}
 	}
 
 	void ArchiveEditable::setUpList()
 	{
 		for(IndexItr i = index_.begin(); i != index_.end(); ++i) {
-			list_.push_back(EntryAttr(i->first.c_str(), i->second));
+			list_.push_back(EntryAttr(*i));
 		}
 		list_.sort();
 	}

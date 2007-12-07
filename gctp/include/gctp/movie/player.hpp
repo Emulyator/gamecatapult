@@ -41,7 +41,6 @@ namespace gctp { namespace movie {
 		HRslt open(HWND hwnd, int notify_msgid, const _TCHAR *name, bool audio_on = true);
 
 		bool play(int loop = 1);
-		bool isReady();
 		bool isPlaying();
 		void stop();
 		void release();

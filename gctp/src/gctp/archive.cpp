@@ -24,9 +24,21 @@ using namespace std;
 
 namespace gctp {
 
-	Archive::~Archive()
+	void Archive::setKey(const char *key)
 	{
-		if(crypt_) delete crypt_;
+		if(key) {
+			if(!filter_) {
+				crypt_ = new Crypt;
+				filter_ = new cryptfilter(*crypt_);
+			}
+			crypt_->setKey(key);
+		}
+		else if(filter_) {
+			delete filter_;
+			delete crypt_;
+			filter_ = 0;
+			crypt_ = 0;
+		}
 	}
 
 	void Archive::open(const _TCHAR *fn)
@@ -35,12 +47,6 @@ namespace gctp {
 		if(!readIndex()) close();
 	}
 	
-	void Archive::setKey(const char *key)
-	{
-		if(crypt_) delete crypt_;
-		crypt_ = new Crypt(key);
-	}
-
 	/** インデックス読み込み
 	 *
 	 * @return 空でなく、gcarファイルでもない場合、falseを返す。通常true
@@ -55,37 +61,36 @@ namespace gctp {
 #define _SWAP_(n)	(((n)&0xFF000000)>>24|((n)&0xFF0000)>>8|((n)&0xFF00)<<8|((n)&0xFF)<<24)
 		if(!File::is_open()) return false;
 		if(length()>0) {
-			File::seek(0);
+			rdbuf(filebuf());
+			File::seekg(0);
 			int head;
 			(*this) >> head;
 			if(head == _SWAP_('GCAR')) {
 				(*this) >> index_size_;
 				(*this) >> flags_;
-				ibstream *stream = 0;
-				ibbstream in_memory;
-				BufferPtr in_memory_index;
 				if(flags_ & FLAG_CRYPTED) {
-					if(!crypt_) return false;
-					stream = &in_memory;
-					in_memory_index = File::load(-1, align(index_size_, 8));
-					//crypt_->reset();
-					crypt_->setKey("");
-					if(!crypt_->decode(in_memory_index.get(), align(index_size_, 8))) return false;
+					if(!filter_) return false;
+					filter_->open(rdbuf(filter_));
 				}
-				else {
-					stream = this;
-				}
-				while(tell() < index_size_) {
+				while(tellg() < index_size_) {
 					basic_string<_TCHAR> name; time_t time; int size, pos;
-					(*stream) >> name >> time >> size >> pos;
-					PRNN("read "<<name.c_str()<<" "<<ctime(&time)<<"\tsize "<<size<<", pos "<<pos);
-					ArchiveEntry &ent = index_[name];
+					(*this) >> name >> time >> size >> pos;
+					ArchiveEntry ent(name.c_str());
 					ent.time = time;
 					ent.size = size;
 					ent.pos = pos;
+					index_.insert(ent);
+					//PRNN("read "<<ent);
 				}
 			}
 			else return false;
+			if(flags_ & FLAG_CRYPTED) {
+				if(!filter_) return false;
+				filter_->close();
+				rdbuf(filebuf());
+				File::seekg(0);
+				filter_->open(rdbuf(filter_));
+			}
 		}
 		return true;
 #undef _SWAP_
@@ -93,24 +98,21 @@ namespace gctp {
 
 	ArchiveEntry *Archive::get(const _TCHAR *fn)
 	{
-		if(index_.end() != index_.find(fn)) {
-			return &index_[fn];
-		}
+		IndexItr i = index_.find(ArchiveEntry(fn));
+		if(index_.end() != i) return &(*i);
 		return NULL;
 	}
 
 	Archive &Archive::seek(const ArchiveEntry *entry)
 	{
-		File::seek(entry->pos);
+		File::seekg(entry->pos);
 		return *this;
 	}
 
 	Archive &Archive::seek(const _TCHAR *fn)
 	{
-		IndexItr i = index_.find(fn);
-		if(index_.end() != i) {
-			File::seek(i->second.pos);
-		}
+		IndexItr i = index_.find(ArchiveEntry(fn));
+		if(index_.end() != i) File::seekg(i->pos);
 		return *this;
 	}
 
@@ -123,14 +125,18 @@ namespace gctp {
 
 	Archive &Archive::extract(const _TCHAR *fn, const ArchiveEntry *entry)
 	{
-		File::extract(File(fn, File::WRITE), entry->pos, entry->size);
+		File ef(fn, File::WRITE);
+		if(ef.is_open()) File::extract(ef, entry->pos, entry->size);
+		else PRNN(_T("書き出しファイル:'")<<fn<<_T("'を開けませんでした。"));
 		return *this;
 	}
 
 	Archive &Archive::extract()
 	{
 		for(IndexItr i = index_.begin(); i != index_.end(); i++) {
-			File::extract(File(i->first.c_str(), File::WRITE), i->second.pos, i->second.size);
+			File ef(i->id.c_str(), File::WRITE);
+			if(ef.is_open()) File::extract(ef, i->pos, i->size);
+			else PRNN(_T("書き出しファイル:'")<<i->id.c_str()<<_T("'を開けませんでした。"));
 		}
 		return *this;
 	}
@@ -138,14 +144,14 @@ namespace gctp {
 	Archive &Archive::read(void *dst, const _TCHAR *entryname)
 	{
 		ArchiveEntry *entry = get(entryname);
-		File::seek(entry->pos);
+		File::seekg(entry->pos);
 		File::read(dst, entry->size);
 		return *this;
 	}
 
 	Archive &Archive::read(void *dst, const ArchiveEntry *entry)
 	{
-		File::seek(entry->pos);
+		File::seekg(entry->pos);
 		File::read(dst, entry->size);
 		return *this;
 	}
@@ -175,8 +181,13 @@ namespace gctp {
 
 	void Archive::printIndex(std::ostream &os)
 	{
+		//for(IndexItr i = index_.begin(); i != index_.end(); ++i) os<<(*i)<<endl;
+		// CStr/WCStr周りのバグで上手くいかない
 		for(IndexItr i = index_.begin(); i != index_.end(); ++i) {
-			os<<CStr(i->first.c_str())<<" "<<ctime(&i->second.time)<<", size "<<i->second.size<<", offset "<<i->second.pos<<endl;
+			char ts[26];
+			ctime_s(ts, 26, &i->time);
+			ts[24] = '\0';
+			os<<CStr(i->id.c_str())<<" "<<ts<<"\tsize "<<i->size<<", offset "<<i->pos<<endl;
 		}
 	}
 

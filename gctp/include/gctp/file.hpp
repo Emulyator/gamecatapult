@@ -48,8 +48,8 @@ namespace gctp {
 		int fd() const { return fd_; }
 
 	protected:
-		virtual std::streampos seekoff(std::streamoff off, std::ios::seek_dir dir, std::ios_base::openmode mode = std::ios::in | std::ios::out);
-		virtual std::streampos seekpos(std::streampos pos, std::ios_base::openmode mode = std::ios::in | std::ios::out);
+		virtual pos_type seekoff(off_type, std::ios_base::seekdir, std::ios_base::openmode = std::ios_base::in | std::ios_base::out);
+		virtual pos_type seekpos(pos_type, std::ios_base::openmode = std::ios_base::in | std::ios_base::out);
 
 		virtual std::streamsize xsgetn(char_type *s, std::streamsize n);
 		virtual std::streamsize xsputn(const char_type *s, std::streamsize n);
@@ -83,38 +83,25 @@ namespace gctp {
 		enum {DEFAULT_MOVE_BUF_SIZE = 1024*1024};
 		enum Mode {NEW, READ, WRITE};
 		enum {BEG, CUR, END};
-		File() : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) {}
-		explicit File(Temporary) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) { open(); }
-		explicit File(const _TCHAR *fname, Mode mode = READ) : iobstream(&_M_buf), move_buf_size_(DEFAULT_MOVE_BUF_SIZE)
+		File() : iobstream(&filebuf_), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) {}
+		explicit File(Temporary) : iobstream(&filebuf_), move_buf_size_(DEFAULT_MOVE_BUF_SIZE) { open(); }
+		explicit File(const _TCHAR *fname, Mode mode = READ) : iobstream(&filebuf_), move_buf_size_(DEFAULT_MOVE_BUF_SIZE)
 		{ open(fname, mode); }
 		virtual ~File() {flush(); close();}
 		bool is_open() const
-		{return _M_buf.is_open();}
+		{return filebuf_.is_open();}
 		Mode mode()
-		{return (Mode)_M_buf.mode();}
+		{return (Mode)filebuf_.mode();}
 		void open(const _TCHAR *fname, Mode mode = READ)
-		{ _M_buf.open(fname, (FileBuf::Mode)mode); }
+		{ filebuf_.open(fname, (FileBuf::Mode)mode); }
 		void open()
-		{ _M_buf.open(); }
+		{ filebuf_.open(); }
 		void close()
-		{ _M_buf.close(); }
+		{ filebuf_.close(); }
 
-		/// 読み込み
-		File &read(void *d, int n);
-		/// 書き込み
-		File &write(const void *s, int n);
 		/// ファイル長
 		int length() const;
-		/// 終端に達したか？
-		bool eof() const;
 
-		/// シーク
-		File &seek(std::streamoff off, std::ios::seek_dir dir = std::ios::beg);
-		/// ポインタ位置問い合わせ
-		std::streamoff tell() const;
-
-		/// バッファフラッシュ
-		File &flush();
 		/// サイズ変更
 		File &truncate(int newsize);
 		/// サイズ変更（相対指定）
@@ -125,21 +112,16 @@ namespace gctp {
 		File &extract(std::ostream &dst, long pos, long size);
 		/// 指定位置を読み込んでBufferで返す
 		BufferPtr load(long pos = -1, long size = -1);
-		/// ブロック移動
-		File &moveBlock(int dst_pos, int src_pos, int size);
-		/// 空白挿入
-		File &insert(int ins_pos, int size);
-		/// 削除
-		File &remove(int rmv_pos, int size);
-
 		/// 作業バッファサイズ設定
 		void setWorkBufferSize(int size)
 		{
 			move_buf_size_ = size;
 		}
+		/// ファイルバッファ
+		FileBuf *filebuf() { return &filebuf_; }
 
 	private:
-		FileBuf _M_buf;
+		FileBuf filebuf_;
 
 		const File &operator=(const File &src);
 		File(const File &src);

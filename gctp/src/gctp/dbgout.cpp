@@ -68,6 +68,32 @@ namespace gctp {
 		OutputDebugStringW(pbase());
 	}
 
+	template<>
+	basic_win32console_streambuf<wchar_t>::int_type basic_win32console_streambuf<wchar_t>::overflow(basic_win32console_streambuf<wchar_t>::int_type ch)
+	{
+		wchar_t buffer[2] = {ch, 0};
+		WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), buffer, 1, NULL, NULL);
+		return 0;
+	}
+
+	template<>
+	basic_win32console_streambuf<char>::int_type basic_win32console_streambuf<char>::overflow(basic_win32console_streambuf<char>::int_type ch)
+	{
+		if(isleadbyte(ch)) {
+			prev_char_ = ch;
+		}
+		else if(isleadbyte(prev_char_)) {
+			char buffer[3] = {prev_char_, ch, 0};
+			prev_char_ = 0;
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, 2, NULL, NULL);
+		}
+		else {
+			char buffer[2] = {ch, 0};
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, 1, NULL, NULL);
+		}
+		return 0;
+	}
+
 #if GCTP_DBGOUT
 	static debuggeroutbuf<_TCHAR> _dbgout_buf;
 	basic_ostream<_TCHAR> dbgout(&_dbgout_buf);		// デバッガアウトプットストリーム

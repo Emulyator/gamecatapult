@@ -6,6 +6,8 @@
 #include <gctp/context.hpp>
 #include <gctp/class.hpp>
 #include <gctp/turi.hpp>
+#include <gctp/fileserver.hpp>
+#include <gctp/file.hpp>
 //CUPPA:include=-
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestAssert.h>
@@ -75,14 +77,19 @@ public:
 	  CPPUNIT_ASSERT(p);
   }
   void testContext() {
+	  {
+		  File f(_T("context.ext"), File::WRITE);
+		  f << "wwwwwwwwwwww";
+	  }
+	  fileserver().mount(_T("."));
 	  Context root;
 	  {
 		  Context mycontext;
-		  mycontext.load(_T("test/context.ext"));
-		  ContextTestFoo::Hndl h = context()[_T("test/context.ext")];
+		  mycontext.load(_T("context.ext"));
+		  ContextTestFoo::Hndl h = context()[_T("context.ext")];
 		  CPPUNIT_ASSERT(h);
 	  }
-	  ContextTestFoo::Hndl h = context()[_T("test/context.ext")];
+	  ContextTestFoo::Hndl h = context()[_T("context.ext")];
 	  CPPUNIT_ASSERT(!h);
   }
 //CUPPA:decl=-

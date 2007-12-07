@@ -16,20 +16,49 @@
 
 namespace gctp {
 
+#ifdef WIN32
+	/// コンソールストリームバッファ
+	template<class _Ch, class _Tr = std::char_traits<_Ch> >
+	class basic_win32console_streambuf : public std::basic_streambuf<_Ch, _Tr> {
+	public:
+		basic_win32console_streambuf()
+		{
+			setbuf(0,0);
+			AllocConsole();
+		}
+		~basic_win32console_streambuf()
+		{
+			FreeConsole();
+		}
+
+	protected:
+		virtual int_type overflow(int_type ch);
+
+	private:
+		_Ch prev_char_;
+	};
+	
+	template<> basic_win32console_streambuf<wchar_t>::int_type basic_win32console_streambuf<wchar_t>::overflow(basic_win32console_streambuf<wchar_t>::int_type ch);
+	template<> basic_win32console_streambuf<char>::int_type basic_win32console_streambuf<char>::overflow(basic_win32console_streambuf<char>::int_type ch);
+#endif
+
 	/// デバッガログストリームクラス
-	template<typename _CharType>
-	class debuggeroutbuf : public std::basic_streambuf<_CharType> {
+	template<typename _CharType, class _Traits = std::char_traits<_CharType> >
+	class debuggeroutbuf : public std::basic_streambuf<_CharType, _Traits> {
 		enum {
 			BUF_LEN = 256
 		};
 	public:
-		debuggeroutbuf() : std::basic_streambuf<_CharType>() {
+		debuggeroutbuf() : std::basic_streambuf<_CharType, _Traits>()
+		{
 			__buf[BUF_LEN-1] = (_CharType)'\0';
 			setp(__buf, __buf+(BUF_LEN-1));
 		}
-		~debuggeroutbuf() {
+		~debuggeroutbuf()
+		{
 			if(pptr() != pbase()) sync();
 		}
+
 	protected:
 		int sync() {
 			output();
@@ -38,6 +67,7 @@ namespace gctp {
 		}
 		virtual int_type overflow(int_type ch);
 		void output();
+
 	private:
 		_CharType __buf[BUF_LEN];
 	};
