@@ -38,6 +38,8 @@ namespace gctp {
 #endif
 
 #if GCTP_DBGOUT
+	void insertDbgoutSyncStream(std::basic_streambuf<_TCHAR> *sync_buf);
+	void eraseDbgoutSyncStream(std::basic_streambuf<_TCHAR> *sync_buf);
 	extern std::basic_ostream<_TCHAR> dbgout;
 #endif
 

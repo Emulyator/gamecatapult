@@ -1338,31 +1338,31 @@ namespace luapp {
 	 */
 	class State : public Stack {
 	public:
-		State(bool do_open = false, lua_Alloc allocf = l_alloc) : Stack((do_open)?lua_newstate(allocf, this):0) { addref(); }
-		State(lua_State *lua) : Stack(lua) { addref(); }
-		State(const Initializer &ini, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this)) { addref(); ini(lua_); }
+		explicit State(bool do_open = false, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack((do_open)?lua_newstate(allocf, ud):0) { addref(); }
 		State(const State &src) : Stack(src.lua_) { addref(); }
-		explicit State(const char *filename, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		State(lua_State *lua) : Stack(lua) { addref(); }
+		explicit State(const Initializer &ini, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud)) { addref(); ini(lua_); }
+		explicit State(const char *filename, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); run(filename);
 		}
-		explicit State(const Initializer &ini, const char *filename, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		explicit State(const Initializer &ini, const char *filename, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); ini(lua_); run(filename);
 		}
-		explicit State(const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		explicit State(const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); run(str.c_str(), str.size(), name);
 		}
-		explicit State(const Initializer &ini, const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		explicit State(const Initializer &ini, const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); ini(lua_); run(str.c_str(), str.size(), name);
 		}
-		explicit State(const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		explicit State(const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); run(buff, size, name);
 		}
-		explicit State(const Initializer &ini, const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc) : Stack(lua_newstate(allocf, this))
+		explicit State(const Initializer &ini, const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
 			addref(); ini(lua_); run(buff, size, name);
 		}
@@ -1370,10 +1370,10 @@ namespace luapp {
 
 		void registerEnv(const Initializer &ini) { ini(lua_); }
 
-		void open()
+		void open(lua_Alloc allocf = l_alloc, void *ud = 0)
 		{
 			release();
-			lua_ = lua_open();
+			lua_ = lua_newstate(allocf, ud);
 			addref();
 		}
 
@@ -1444,7 +1444,7 @@ namespace luapp {
 
 		inline bool main()
 		{
-			int status = lua_pcall(lua_, 0, LUA_MULTRET, 0);  /* call main */
+			int status = lua_pcall(lua_, 0, 0, 0);  /* call main */
 			if(status != 0) printAlert();
 			return status==0;
 		}
