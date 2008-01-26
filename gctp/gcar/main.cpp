@@ -22,6 +22,7 @@
 #include <gctp/dbgout.hpp>
 #include <gctp/cstr.hpp>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <ios>
 #include <_direct.h>
@@ -96,7 +97,7 @@ int _tmain(int argc, _TCHAR *argv[])
 	_setmode(_fileno(stdout), _O_BINARY);
 	_setmode(_fileno(stderr), _O_BINARY);
 	//gctp::logfile.open(_T("log.txt"));
-
+	
 	TArgMap arg;
 	arg.defAlias(_T('o'), _T("output"));
 	arg.defAlias(_T('d'), _T("root"));

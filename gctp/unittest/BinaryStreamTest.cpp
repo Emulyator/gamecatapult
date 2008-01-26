@@ -160,8 +160,8 @@ public:
 		std::filebuf ofb;
 		ofb.open("cryptfiltertest", std::ios::out|std::ios::binary);
 		CPPUNIT_ASSERT(ofb.is_open());
-		basic_cryptfilter<16, char> ocf(&ofb);
-		ocf.setKey("Who is John Galt?");
+		Crypt cpypt("Who is John Galt?");
+		basic_cryptfilter<16, char> ocf(cpypt, &ofb);
 		obstream ofs(&ocf);
 
 		ofs << test;
@@ -180,8 +180,8 @@ public:
 		std::filebuf ifb;
 		ifb.open("cryptfiltertest", std::ios::in|std::ios::binary);
 		CPPUNIT_ASSERT(ifb.is_open());
-        basic_cryptfilter<16, char> icf(&ifb);
-		icf.setKey("Who is John Galt?");
+		Crypt cpypt("Who is John Galt?");
+        basic_cryptfilter<16, char> icf(cpypt, &ifb);
 		ibstream ifs(&icf);
 
 		std::string str;

@@ -447,6 +447,7 @@ namespace gctp {
 			if(*i && (*i)->name_ == path) break;
 		}
 		if(i != volume_list_.end()) {
+			PRNN(_T("アーカイブ'")<<(*i)->name_<<_T("'をアンマウント。"));
 			volume_list_.erase(i);
 			return true;
 		}
