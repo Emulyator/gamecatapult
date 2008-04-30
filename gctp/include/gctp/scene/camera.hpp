@@ -12,7 +12,6 @@
 #include <gctp/types.hpp>
 #include <gctp/strutumnode.hpp>
 #include <gctp/frustum.hpp>
-#include <gctp/scene/renderingnode.hpp>
 #include <gctp/tuki.hpp>
 
 namespace gctp { namespace scene {
@@ -24,18 +23,21 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Camera : public Renderer
+	class Camera : public Object
 	{
 	public:
 		/// コンストラクタ
 		Camera();
 
-		/// 独自Strutumを作る
-		void setUp();
-		/// 登場
-		void enter(Stage &stage);
-		/// 退場
-		void exit(Stage &stage);
+		/// 有効化・無効化（App::draw_signalに連結するかどうか）
+		void activate(bool yes);
+
+		/// 描画シグナル
+		Signal1<false, float /*delta*/> draw_signal;
+
+		bool onDraw(float delta) const;
+		/// 描画スロット
+		ConstMemberSlot1<const Camera, float /*delta*/, &Camera::onDraw> draw_slot;
 
 		/// ニアクリップ
 		const float &nearclip() const { return nearclip_; }
@@ -54,9 +56,9 @@ namespace gctp { namespace scene {
 		/// サブウィンドウ
 		Rectf &subwindow() { return subwindow_; }
 		/// アタッチしているノードを返す
-		Pointer<StrutumNode> node() const { return node_; }
+		Handle<StrutumNode> node() const { return node_; }
 		/// アタッチしているノードを返す
-		Pointer<StrutumNode> &node() { return node_; }
+		Handle<StrutumNode> &node() { return node_; }
 		/// 独自にウィンドウサイズを指定
 		void setWindow(float w, float h)
 		{
@@ -80,9 +82,9 @@ namespace gctp { namespace scene {
 		/// カメラをグラフィックシステムに設定
 		void setToSystem() const;
 		/// カメラ設定開始
-		bool onEnter() const;
+		bool begin() const;
 		/// カメラ設定終了
-		bool onLeave() const;
+		bool end() const;
 
 		/// カレントカメラ（このカメラの子レンダリング要素にのみ有効）		
 		static Camera &current() { return *current_; }
@@ -93,6 +95,9 @@ namespace gctp { namespace scene {
 			return frustum_.isColliding(bs);
 		}
 
+		/// 指定のステージに新たに階層ノードを作ってそれにアタッチ
+		void newNode(Stage &stage);
+
 		/// 視錘台
 		const Frustum &frustum() { return frustum_; }
 
@@ -101,11 +106,10 @@ namespace gctp { namespace scene {
 
 	protected:
 		bool setUp(luapp::Stack &L);
-		void enter(luapp::Stack &L);
-		void exit(luapp::Stack &L);
+		void activate(luapp::Stack &L);
 
 	private:
-		Pointer<StrutumNode> node_;
+		Handle<StrutumNode> node_;
 		
 		float nearclip_;
 		float farclip_;

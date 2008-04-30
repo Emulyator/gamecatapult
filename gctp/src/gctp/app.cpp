@@ -282,7 +282,7 @@ namespace gctp {
 	 @code
 		while(app().canContinue()) {
 
-			app().update(app().lap);
+			app().update(lap);
 
 			if(app().canDraw()) {
 				graphic::clear();

@@ -287,7 +287,7 @@ namespace gctp { namespace graphic {
 		return _w == _x;
 	}
 
-	HRslt Texture::unSet(uint index)
+	HRslt Texture::unset(uint index)
 	{
 		return device().impl()->SetTexture(index, NULL);
 	}

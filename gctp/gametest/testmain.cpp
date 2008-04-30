@@ -254,7 +254,7 @@ extern "C" int main(int argc, char *argv[])
 	GCTP_USE_CLASS(graphic::Texture);
 	GCTP_USE_CLASS(scene::GraphFile);
 	GCTP_USE_CLASS(scene::Camera);
-	GCTP_USE_CLASS(scene::QuakeLikeCamera);
+	GCTP_USE_CLASS(scene::QuakeCamera);
 	GCTP_USE_CLASS(scene::Entity);
 	return Game::run("../../../media/ini.lua");
 }
@@ -279,7 +279,7 @@ extern "C" int main(int argc, char *argv[])
 	GCTP_USE_CLASS(scene::Camera);
 	GCTP_USE_CLASS(scene::GraphFile);
 	GCTP_USE_CLASS(graphic::Texture);
-	GCTP_USE_CLASS(scene::QuakeLikeCamera);
+	GCTP_USE_CLASS(scene::QuakeCamera);
 	GCTP_USE_CLASS(scene::Entity);
 	const char *mesh_mode = "Vertex Shader";
 	HRslt hr;
@@ -304,6 +304,7 @@ extern "C" int main(int argc, char *argv[])
 	// ルートスクリプト実行
 	graphic::Text text;
 
+	bool qcam_on = false;
 	graphic::SpriteBuffer spr;
 	spr.setUp();
 	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // どうすっかな。。。
@@ -319,15 +320,18 @@ extern "C" int main(int argc, char *argv[])
 	Pointer<graphic::Texture> ptex = context[_T("BitmapSet4.bmp")].lock();
 	Pointer<scene::Stage> stage = context.create("gctp.Stage").lock();
 	if(stage) {
+		app().update_signal.connectOnce(stage->update_slot);
 		Pointer<scene::Camera> camera = stage->newNode(context, "gctp.Camera", _T("camera")).lock();
 		if(camera) {
-			scene::Camera *c = camera.get();
-			camera->setUp();
-			camera->enter(*stage);
-			camera->node()->val.getLCM().right() = VectorC(1.0f, 0.0f, 0.0f);
-			camera->node()->val.getLCM().up() = VectorC(0.0f, 1.0f, 0.0f);
-			camera->node()->val.getLCM().at() = VectorC(0.0f, 0.0f, 1.0f);
-			camera->node()->val.getLCM().position() = VectorC(0.0f, 0.5f, -2.0f);
+			camera->newNode(*stage);
+			camera->node()->val.getLCM() = MatrixC(
+				VectorC(1.0f, 0.0f, 0.0f),
+				VectorC(0.0f, 1.0f, 0.0f),
+				VectorC(0.0f, 0.0f, 1.0f),
+				VectorC(0.0f, 0.5f, -2.0f)
+			);
+			camera->draw_signal.connectOnce(stage->draw_slot);
+			app().draw_signal.connectOnce(camera->draw_slot);
 		}
 		Pointer<scene::Entity> entity;
 		entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
@@ -406,28 +410,30 @@ extern "C" int main(int argc, char *argv[])
 				//pl->enter(*stage);
 			}
 		}
-		Pointer<scene::QuakeLikeCamera> qcam = stage->newNode(context, "gctp.QuakeLikeCamera", _T("qcamera")).lock();
+		Pointer<scene::QuakeCamera> qcam = stage->newNode(context, "gctp.QuakeCamera", _T("qcamera")).lock();
 		if(qcam) {
 			qcam->target() = camera;
-			qcam->enter(*stage);
 		}
 	}
 
 	while(app().canContinue()) {
 		//if(input().kbd().press(DIK_ESCAPE)) break;
 		Pointer<scene::Camera> camera = (*stage)[_T("camera")].lock();
-		Pointer<scene::QuakeLikeCamera> qcam = (*stage)[_T("qcamera")].lock();
+		Pointer<scene::QuakeCamera> qcam = (*stage)[_T("qcamera")].lock();
 		if(camera && qcam) {
 			if(input().kbd().push(DIK_TAB)) {
-				qcam->setEnable(!qcam->enable());
-				app().showCursor(!qcam->enable());
-				app().holdCursor(qcam->enable());
+				qcam_on = !qcam_on;
+				qcam->activate(qcam_on);
+				app().showCursor(!qcam_on);
+				app().holdCursor(qcam_on);
 			}
 			if(input().kbd().press(DIK_HOME)) {
-				camera->node()->val.getLCM().right() = VectorC(1.0f, 0.0f, 0.0f);
-				camera->node()->val.getLCM().up() = VectorC(0.0f, 1.0f, 0.0f);
-				camera->node()->val.getLCM().at() = VectorC(0.0f, 0.0f, 1.0f);
-				camera->node()->val.getLCM().position() = VectorC(0.0f, 0.5f, -2.0f);
+				camera->node()->val.getLCM() = MatrixC(
+					VectorC(1.0f, 0.0f, 0.0f),
+					VectorC(0.0f, 1.0f, 0.0f),
+					VectorC(0.0f, 0.0f, 1.0f),
+					VectorC(0.0f, 0.5f, -2.0f)
+				);
 				camera->fov() = g_pi/4;
 			}
 		}
@@ -474,13 +480,15 @@ extern "C" int main(int argc, char *argv[])
 		}
 //		if(input().mouse().push[0]) se.play();
 
-		stage->onUpdate(app().lap);
+		//stage->onUpdate(app().lap);
+		app().update_signal(app().lap);
 
 		if(app().canDraw()) {
 			graphic::clear();
 			graphic::begin();
 
-			stage->onDraw();
+			//stage->onDraw();
+			app().draw_signal(app().lap);
 
 			graphic::LineParticleDesc pdesc;
 			Vector pos[2];
@@ -514,13 +522,13 @@ extern "C" int main(int argc, char *argv[])
 				<< _T("ピッチ:") << qcam->pitch_ << endl
 				<< _T("速度  :") << qcam->speed_ << endl
 				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
-				<< _T("位置  :") << camera->node()->val.wtm().position() << endl << endl
+				<< _T("位置  :") << camera->node()->val.lcm().position() << endl << endl
 				<< _T("モード: ") << mesh_mode << endl << endl
 				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
 
 			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
 
-			if(qcam->enable()) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
+			if(qcam_on) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
 				<< _T("ウォークスルー中");
 
 			text.draw(spr, *fonttex);

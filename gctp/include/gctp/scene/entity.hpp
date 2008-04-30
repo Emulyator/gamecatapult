@@ -9,7 +9,6 @@
  */
 #include <gctp/class.hpp>
 #include <gctp/signal.hpp>
-#include <gctp/scene/renderer.hpp>
 #include <gctp/scene/body.hpp>
 #include <gctp/tuki.hpp>
 
@@ -46,7 +45,7 @@ namespace gctp { namespace scene {
 		/// プライオリティーを指定してステージ登場
 		void enter(Stage &stage, int16_t update_pri);
 		/// 退場
-		void exit(Stage &stage);
+		void leave(Stage &stage);
 
 		/// スケルトンがあるか？
 		bool hasSkeleton() { return target_; }
@@ -89,7 +88,7 @@ namespace gctp { namespace scene {
 	protected:
 		bool setUp(luapp::Stack &L);
 		void enter(luapp::Stack &L);
-		void exit(luapp::Stack &L);
+		void leave(luapp::Stack &L);
 		void setPos(luapp::Stack &L);
 		void getPos(luapp::Stack &L);
 		

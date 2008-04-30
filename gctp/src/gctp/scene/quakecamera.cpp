@@ -17,26 +17,16 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	QuakeLikeCamera::QuakeLikeCamera() : update_slot(1), yaw_(0), pitch_(0), speed_(5.0f), enable_(false)
+	QuakeCamera::QuakeCamera() : update_slot(1), yaw_(0), pitch_(0), speed_(5.0f)
 	{
 		update_slot.bind(this);
 	}
 
-	void QuakeLikeCamera::enter(Stage &stage)
+	void QuakeCamera::activate(bool yes)
 	{
-		stage.update_signal.connectOnce(update_slot);
-	}
-	
-	void QuakeLikeCamera::exit(Stage &stage)
-	{
-		stage.update_signal.disconnect(update_slot);
-	}
-
-	bool QuakeLikeCamera::setEnable(bool _enable)
-	{
-		if(enable_ != _enable) {
-			(std::swap)(enable_, _enable);
-			if(enable_ && target_) {
+		if(yes) {
+			app().update_signal.connectOnce(update_slot);
+			if(target_) {
 				Pointer<Camera> target = target_.lock();
 				if(target->node()) {
 					yaw_ = atan2f(target->node()->val.lcm().at().x, target->node()->val.lcm().at().z);
@@ -47,16 +37,13 @@ namespace gctp { namespace scene {
 				}
 			}
 		}
-		return _enable;
+		else app().update_signal.disconnect(update_slot);
 	}
 
-	bool QuakeLikeCamera::update(float delta)
+	bool QuakeCamera::update(float delta)
 	{
-		if(enable_ && target_) {
-			Matrix m;
-
-			Pointer<Camera> target = target_.lock();
-
+		Pointer<Camera> target = target_.lock();
+		if(target && target->node()) {
 			float neck_speed = 0.01f;
 #ifdef GCTP_COORD_RH
 			yaw_ += -neck_speed*input().mouse().dx;
@@ -71,6 +58,7 @@ namespace gctp { namespace scene {
 			target->fov() += 0.0005f*input().mouse().dz;
 			if(target->fov() > g_pi) target->fov() = g_pi;
 			if(target->fov() < 0) target->fov() = 0;
+			Matrix m;
 			m.rot(yaw_, pitch_, 0);
 			target->node()->val.getLCM().at() = m.transformVector(VectorC(0, 0, 1));
 			target->node()->val.getLCM().up() = m.transformVector(VectorC(0, 1, 0));
@@ -96,42 +84,35 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool QuakeLikeCamera::setUp(luapp::Stack &L)
+	bool QuakeCamera::setUp(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
 			target_ = tuki_cast<Camera>(L[1]);
 		}
 		return true;
 	}
-
-	void QuakeLikeCamera::enter(luapp::Stack &L)
+	
+	void QuakeCamera::attach(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
-			if(stage) enter(*stage);
+		if(L.top() >= 1) {
+			target_ = tuki_cast<Camera>(L[1]);
+		}
+		else {
+			target_ = 0;
 		}
 	}
 
-	void QuakeLikeCamera::exit(luapp::Stack &L)
+	void QuakeCamera::activate(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
-			if(stage) exit(*stage);
+		if(L.top() >= 1) {
+			activate(L[1].toBoolean());
 		}
 	}
 
-	void QuakeLikeCamera::setEnable(luapp::Stack &L)
-	{
-		if(L.top() >= 2) {
-			setEnable(L[2].toBoolean());
-		}
-	}
-
-	GCTP_IMPLEMENT_CLASS_NS(gctp, QuakeLikeCamera, Object);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, QuakeLikeCamera)
-		TUKI_METHOD(QuakeLikeCamera, enter)
-		TUKI_METHOD(QuakeLikeCamera, exit)
-		TUKI_METHOD(QuakeLikeCamera, setEnable)
-	TUKI_IMPLEMENT_END(QuakeLikeCamera)
+	GCTP_IMPLEMENT_CLASS_NS(gctp, QuakeCamera, Object);
+	TUKI_IMPLEMENT_BEGIN_NS(Scene, QuakeCamera)
+		TUKI_METHOD(QuakeCamera, attach)
+		TUKI_METHOD(QuakeCamera, activate)
+	TUKI_IMPLEMENT_END(QuakeCamera)
 
 }} // namespace gctp::scene

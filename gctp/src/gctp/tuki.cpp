@@ -195,9 +195,27 @@ namespace gctp {
 		if(pobj) {
 			const char *luaname = typeRegistry().get(GCTP_TYPEID(*pobj));
 			if(luaname) {
-				struct UserdataType { Ptr pT; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
+				struct UserdataType { Ptr p; Hndl h; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
 				if(ud) {
-					ud->pT = pobj;  // store pointer to object in userdata
+					ud->p = pobj;  // store pointer to object in userdata
+					luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
+					lua_setmetatable(l, -2);
+					return 1;  // userdata containing pointer to T object
+				}
+			}
+		}
+		return 0;
+	}
+
+	/// 型不明の状態から、Luaにさらす
+	int TukiRegister::newUserData(lua_State *l, Hndl hobj)
+	{
+		if(hobj) {
+			const char *luaname = typeRegistry().get(GCTP_TYPEID(*hobj));
+			if(luaname) {
+				struct UserdataType { Ptr p; Hndl h; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
+				if(ud) {
+					ud->h = hobj;  // store pointer to object in userdata
 					luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
 					lua_setmetatable(l, -2);
 					return 1;  // userdata containing pointer to T object
@@ -350,20 +368,23 @@ namespace gctp {
 	// garbage collection metamethod
 	int TukiRegister::deleteThis(lua_State *L)
 	{
-		struct UserdataType { Ptr pT; } *ud = static_cast<UserdataType*>(lua_touserdata(L, 1));
+		struct UserdataType { Ptr p; Hndl h; } *ud = static_cast<UserdataType*>(lua_touserdata(L, 1));
 		if(ud) {
 			// これをキーしたレジストリエントリがあったら削除
+			void *p = ud->p.get();
+			if(!p) p = ud->h.get();
 			lua_checkstack(L, 2);
-			lua_pushlightuserdata(L, ud->pT.get());
+			lua_pushlightuserdata(L, p);
 			lua_gettable(L, LUA_REGISTRYINDEX);
 			if(!lua_isnil(L, -1)) {
 				lua_pop(L, 1);
-				lua_pushlightuserdata(L, ud->pT.get());
+				lua_pushlightuserdata(L, p);
 				lua_pushnil(L);
 				lua_settable(L, LUA_REGISTRYINDEX);
 			}
 			else lua_pop(L, 1);
-			ud->pT = 0;  // call destructor for T objects
+			ud->h = 0;
+			ud->p = 0;  // call destructor for T objects
 		}
 		else {
 			luaL_typerror(L, 1, "TukiObject");

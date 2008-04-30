@@ -50,6 +50,7 @@ namespace gctp {
 		static void registerIt(lua_State *l, const char *name);
 		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
 		static int newUserData(lua_State *l, Ptr pobj);
+		static int newUserData(lua_State *l, Hndl hobj);
 		static int luaRegister(lua_State *L);
 		static int luaTableDump(lua_State *L);
 		static int luaTableLoad(lua_State *L);
@@ -124,7 +125,9 @@ namespace gctp {
 		struct UserData {
 			UserData() {}
 			explicit UserData(Pointer<T> p) : pT(p) {}
+			explicit UserData(Handle<T> p) : hT(p) {}
 			Pointer<T> pT;
+			Handle<T> hT;
 		};
 
 		static void registerMe(lua_State *L)
@@ -135,8 +138,11 @@ namespace gctp {
 		// get userdata from Lua stack and return pointer to T object
 		static T *check(lua_State *L, int narg) {
 			UserData *ud = static_cast<UserData*>(luaL_checkudata(L, narg, T::lua_name__));
-			if(!ud) return NULL;
-			return ud->pT.get();  // pointer to T object
+			if(ud) {
+				if(ud->pT) return ud->pT.get();  // pointer to T object
+				if(ud->hT) return ud->hT.get();  // pointer to T object
+			}
+			return 0;
 		}
 
 		/** push onto the Lua stack a userdata containing a pointer to T object
@@ -153,7 +159,6 @@ namespace gctp {
 			if(p) {
 				UserData *ud = new(lua_newuserdata(L, sizeof(UserData))) UserData;
 				if(ud) {
-					memset(ud, 0, sizeof(UserData)); // 配置new使っているなら、これやら無いほうがいいんじゃ？
 					ud->pT = p;  // store pointer to object in userdata
 					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
 					lua_setmetatable(L, -2);
@@ -166,20 +171,22 @@ namespace gctp {
 		/** push onto the Lua stack a userdata containing a pointer to T object
 		 *
 		 * C++側で制作したオブジェクトをLuaにさらすには、これを使う。
-		 *
-		 * ライトユーザーデータなので、GCされない。
 		 * @code
-   static Tuki<Foo>::UserData foo = { new Foo; };
-   Tuki<Foo>::pushUserData(L, foo); // Fooのメタテーブル
+   Pointer<Foo> foo = new Foo;
+   Tuki<Foo>::newUserData(L, Handle<Foo>(foo)); // Fooのメタテーブル
    L.global().declare("foo"); // グローバルの変数'foo'としてアクセスできる。
 		 * @endcode
 		 */
-		static int pushUserData(lua_State *L, UserData &ud) {
-			if(ud.pT) {
-				lua_pushlightuserdata(L, &ud);
-				luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
-				lua_setmetatable(L, -2);
-				return 1;  // userdata containing pointer to T object
+		static int newUserData(lua_State *L, Hndl hobj) {
+			Handle<T> h = hobj;
+			if(h) {
+				UserData *ud = new(lua_newuserdata(L, sizeof(UserData))) UserData;
+				if(ud) {
+					ud->hT = h;  // store pointer to object in userdata
+					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
+					lua_setmetatable(L, -2);
+					return 1;  // userdata containing pointer to T object
+				}
 			}
 			return 0;
 		}
@@ -188,7 +195,8 @@ namespace gctp {
 		Tuki();  // hide default constructor
 
 		// member function dispatcher
-		static int thunk(lua_State *L) {
+		static int thunk(lua_State *L)
+		{
 			// stack has userdata, followed by method args
 			T *obj = check(L, 1);  // get 'self', or if you prefer, 'this'
 			if(obj) {
@@ -203,7 +211,8 @@ namespace gctp {
 		}
 
 		// member function dispatcher without removing self from stack
-		static int altThunk(lua_State *L) {
+		static int altThunk(lua_State *L)
+		{
 			// stack has userdata, followed by method args
 			T *obj = check(L, 1);  // get 'self', or if you prefer, 'this'
 			if(obj) {
@@ -233,7 +242,8 @@ namespace gctp {
 
 		// create a new T object and
 		// push onto the Lua stack a userdata containing a pointer to T object
-		static int newThis(lua_State *L) {
+		static int newThis(lua_State *L)
+		{
 			lua_remove(L, 1);   // use classname:new(), instead of classname.new()
 			Pointer<T> p = Factory::create(GCTP_TYPEID(T));  // call constructor for T objects
 			luapp::Stack lua(L);
@@ -250,13 +260,17 @@ namespace gctp {
 			return 0;
 		}
 
-		static int toString(lua_State *L) {
-			char buff[256];
-			UserData *ud = static_cast<UserData*>(lua_touserdata(L, 1));
-			sprintf(buff, "%p", ud->pT.get());
-			lua_checkstack(L, 1);
-			lua_pushfstring(L, "%s (%s)", T::lua_name__, buff);
-			return 1;
+		static int toString(lua_State *L)
+		{
+			T *p = check(L, 1);
+			if(p) {
+				char buff[256];
+				sprintf(buff, "%p", p);
+				lua_checkstack(L, 1);
+				lua_pushfstring(L, "%s (%s)", T::lua_name__, buff);
+				return 1;
+			}
+			return 0;
 		}
 		
 		static void registerMember(lua_State *L, int methods)

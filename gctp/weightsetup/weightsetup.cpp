@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <lwsdk/lwhost.h>
-#include <lwsdk/lwserver.h>
-#include <lwsdk/lwcmdseq.h>
+#include <lwhost.h>
+#include <lwserver.h>
+#include <lwcmdseq.h>
 
 extern "C" {
 #include "lwmodlib.h"
@@ -36,8 +36,22 @@ extern "C" {
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 using namespace gctp;
+
+// Skelegon情報
+// ボーンウェイトマップ
+#define LWPTAG_BNWT LWID_('B','N','W','T')
+// Skelegon Editor 追加情報
+//スケルゴンを一意に認識するためのID
+#define LWPTAG_SKID LWID_('S','K','I','D')
+// アイテム親子関係
+#define LWPTAG_SKPR LWID_('S','K','P','R')
+// スケルゴンのアイテムカラー
+#define LWPTAG_SKCL LWID_('S','K','C','L')
+// ゴールオブジェクトの名称
+#define LWPTAG_SKGL LWID_('S','K','G','L')
 
 namespace lwpp { namespace modeler {
 
@@ -217,7 +231,7 @@ namespace {
 //								mesh_->scanPolys(mesh_, dumpPolygons, &param);
 								mesh_->scanPolys(mesh_, scanSkelegonCB, this);
 								setUpHierarchy();
-								if(use_calsium_) compactHierarchy();
+								compactHierarchy();
 							}
 						}
 						else PRNN("obj"<<i<<"layer"<<j<<" is not visible or not exist");
@@ -241,42 +255,44 @@ namespace {
 		static int scanSkelegonCB(void *param, const EDPolygonInfo *p)
 		{
 			WeightSetUp *self = (WeightSetUp *)param;
-			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE)) {
-				switch(p->type) {
-				case LWPOLTYPE_BONE:
-					{
-						const char *partname = meGetPolyTag( p->pol, LWPTAG_PART );
-						if(partname) {
-							if(p->numPnts == 2) {
-								SkelegonAttr attr;
-								attr.s = p->points[0];
-								attr.e = p->points[1];
-								EDPointInfo *pnt = mePointInfo( p->points[0] );
-								attr.l.s = Vector(static_cast<float>(pnt->position[0]), static_cast<float>(pnt->position[1]), static_cast<float>(pnt->position[2]));
-								pnt = mePointInfo( p->points[1] );
-								attr.l.e = Vector(static_cast<float>(pnt->position[0]), static_cast<float>(pnt->position[1]), static_cast<float>(pnt->position[2]));
-								self->skelegons_[partname].attrs.push_back(attr);
-							}
-							else {
-								PRNN("こんなことあるの？");
-							}
-						}
+			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE) && p->type == LWPOLTYPE_BONE) {
+				const char *partname = meGetPolyTag( p->pol, LWPTAG_PART );
+				if(partname) {
+					if(p->numPnts == 2) {
+						SkelegonAttr attr;
+						attr.s = p->points[0];
+						attr.e = p->points[1];
+						EDPointInfo *pnt = mePointInfo( p->points[0] );
+						attr.l.s = VectorC(static_cast<float>(pnt->position[0]), static_cast<float>(pnt->position[1]), static_cast<float>(pnt->position[2]));
+						pnt = mePointInfo( p->points[1] );
+						attr.l.e = VectorC(static_cast<float>(pnt->position[0]), static_cast<float>(pnt->position[1]), static_cast<float>(pnt->position[2]));
+						const char *idname = meGetPolyTag( p->pol, LWPTAG_SKID );
+						if(idname) attr.skid = (unsigned)atoi(idname);
+						else attr.skid = 0;
+						const char *parentname = meGetPolyTag( p->pol, LWPTAG_SKPR );
+						if(parentname) attr.parent = (unsigned)atoi(parentname);
+						else attr.parent = 0;
+						self->skelegons_[partname].attrs.push_back(attr);
+						//PRNN(partname << " : "<<attr.s<<","<<attr.e<<","<<attr.l.s<<","<<attr.l.e);
+						//PRNN(partname << " : "<<attr.skid<<","<<attr.parent);
 					}
-					break;
+					else {
+						PRNN("こんなことあるの？");
+					}
 				}
 			}
 			return 0;
 		}
-		
+
 		static EDError delPolysVMap(void *param, const EDPolygonInfo *p)
 		{
 			WeightSetUp *self = (WeightSetUp *)param;
 			EDError ret = EDERR_NONE;
-			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE)) {
+			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE) && p->type != LWPOLTYPE_BONE) {
 				for(int i = 0; i < p->numPnts; i++) {
 					for(std::map<std::string, SkelegonInfo>::const_iterator j = self->skelegons_.begin(); j != self->skelegons_.end(); ++j) {
 						ret = meSetPointVPMap( p->points[i], p->pol, LWVMAP_WGHT, j->first.c_str(), 1, NULL );
-						if(ret != EDERR_NONE) PRNN("meSetPointVPMap error occur : "<<ret);
+						//if(ret != EDERR_NONE) PRNN("meSetPointVPMap error occur : "<<ret);
 					}
 				}
 				if(self->prog_.step(1)) return EDERR_USERABORT;
@@ -284,19 +300,19 @@ namespace {
 			return ret;
 		}
 		
-		static EDError delSkelegonVMap(void *param, const EDPolygonInfo *p)
+		static EDError setWeightToSkelegon(void *param, const EDPolygonInfo *p)
 		{
 			WeightSetUp *self = (WeightSetUp *)param;
 			EDError ret = EDERR_NONE;
-			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE)) {
-				if(p->type == LWPOLTYPE_BONE) {
-					for(int i = 0; i < p->numPnts; i++) {
-						for(std::map<std::string, SkelegonInfo>::const_iterator j = self->skelegons_.begin(); j != self->skelegons_.end(); ++j) {
-							ret = meSetPointVMap( p->points[i], LWVMAP_WGHT, j->first.c_str(), 1, NULL );
-							if(ret != EDERR_NONE) PRNN("meSetPointVMap error occur : "<<ret);
+			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE) && p->type == LWPOLTYPE_BONE) {
+				if(p->numPnts == 2) {
+					const char *partname = meGetPolyTag( p->pol, LWPTAG_PART );
+					if(partname) {
+						std::string _partname(partname);
+						if(p->numPnts == 2 && !(self->use_calsium_ && (_partname.substr(_partname.length()-2) == "_I" || _partname.substr(_partname.length()-2) == "_F"))) {
+							ret = meSetPolyTag( p->pol, LWPTAG_BNWT, partname );
 						}
 					}
-//					if(self->prog_.step(1)) return EDERR_USERABORT;
 				}
 			}
 			return ret;
@@ -307,7 +323,7 @@ namespace {
 			WeightSetUp *self = (WeightSetUp *)param;
 			EDError ret = EDERR_NONE;
 			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE)) {
-				Vector pos(static_cast<float>(p->position[0]),static_cast<float>(p->position[1]),static_cast<float>(p->position[2]));
+				VectorC pos(static_cast<float>(p->position[0]),static_cast<float>(p->position[1]),static_cast<float>(p->position[2]));
 				float dis;
 				std::map<std::string, SkelegonInfo>::const_iterator w = self->getNearest(pos, &dis);
 #if 0
@@ -388,6 +404,8 @@ namespace {
 		struct SkelegonAttr {
 			LineSeg l;
 			LWPntID s, e;
+			unsigned long skid;
+			unsigned long parent;
 		};
 		struct SkelegonInfo {
 			std::vector<SkelegonAttr> attrs;
@@ -442,6 +460,12 @@ namespace {
 					if(i!=j) {
 						if(i->second.attrs[0].s == j->second.attrs[0].e) i->second.parents.push_back(j->first);
 						else if(i->second.attrs[0].e == j->second.attrs[0].s) i->second.children.push_back(j->first);
+						else if(i->second.attrs[0].skid && i->second.attrs[0].skid == j->second.attrs[0].parent) {
+							i->second.children.push_back(j->first);
+						}
+						else if(i->second.attrs[0].parent && i->second.attrs[0].parent == j->second.attrs[0].skid) {
+							i->second.parents.push_back(j->first);
+						}
 					}
 				}
 			}
@@ -451,28 +475,49 @@ namespace {
 		{
 			for(std::map<std::string, SkelegonInfo>::iterator i = skelegons_.begin(); i != skelegons_.end(); ++i) {
 				int flag = 0;
-				if(i->first.substr(i->first.length()-2) == "_I") flag = 1;
-				else if(i->first.substr(i->first.length()-2) == "_F") flag = 2;
+				if(use_calsium_) {
+					if(i->first.substr(i->first.length()-2) == "_I") flag = 1;
+					else if(i->first.substr(i->first.length()-2) == "_F") flag = 2;
+				}
 				if(flag == 0) {
 					std::vector<std::string> adee;
 					for(std::vector<std::string>::iterator j = i->second.children.begin(); j != i->second.children.end();) {
-						std::map<std::string, SkelegonInfo>::const_iterator _src = skelegons_.find(*j);
-						if(_src != skelegons_.end() && mergeSkelegon(adee, i, _src)) j = i->second.children.erase(j);
-						else ++j;
+						if(use_calsium_) {
+							std::map<std::string, SkelegonInfo>::const_iterator _src = skelegons_.find(*j);
+							if(_src != skelegons_.end() && mergeSkelegon(adee, i, _src)) j = i->second.children.erase(j);
+							else ++j;
+						}
+						else {
+							std::map<std::string, SkelegonInfo>::const_iterator _child = skelegons_.find(*j);
+							if(_child != skelegons_.end()) {
+								// 子の浮遊ボーンまでの線分も自身の線分として追加
+								if((_child->second.attrs[0].l.s-i->second.attrs[0].l.e).length2() > FLT_EPSILON) {
+									i->second.attrs.push_back(i->second.attrs[0]);
+									i->second.attrs.back().s = i->second.attrs[0].e;
+									i->second.attrs.back().e = _child->second.attrs[0].s;
+									i->second.attrs.back().l.s = i->second.attrs[0].l.e;
+									i->second.attrs.back().l.e = _child->second.attrs[0].l.s;
+									//PRNN("Add Float Bone!");
+								}
+							}
+							++j;
+						}
 					}
 					for(std::vector<std::string>::const_iterator j = adee.begin(); j != adee.end(); ++j) {
 						i->second.children.push_back(*j);
 					}
 				}
 			}
-			for(std::map<std::string, SkelegonInfo>::iterator i = skelegons_.begin(); i != skelegons_.end();) {
-				if(i->first.substr(i->first.length()-2) == "_I") {
-					skelegons_.erase(i++);
+			if(use_calsium_) {
+				for(std::map<std::string, SkelegonInfo>::iterator i = skelegons_.begin(); i != skelegons_.end();) {
+					if(i->first.substr(i->first.length()-2) == "_I") {
+						skelegons_.erase(i++);
+					}
+					else if(i->first.substr(i->first.length()-2) == "_F") {
+						skelegons_.erase(i++);
+					}
+					else ++i;
 				}
-				else if(i->first.substr(i->first.length()-2) == "_F") {
-					skelegons_.erase(i++);
-				}
-				else ++i;
 			}
 		}
 
@@ -491,7 +536,7 @@ namespace {
 			return ret;
 		}
 
-		enum { ID_LIMIT_MAX = 0x8001, ID_LIMIT_MIN, ID_LIMIT_MAG, ID_USE_CALSIUM };
+		enum { ID_LIMIT_MAX = 0x8001, ID_LIMIT_MIN, ID_LIMIT_MAG, ID_USE_CALSIUM, ID_REMOVE_WMAP };
 
 		bool doModal()
 		{
@@ -553,7 +598,7 @@ namespace {
 		   xpanf_->formSet( panel, ID_LIMIT_MIN, &limit );
 		   limit = 0.05f;
 		   xpanf_->formSet( panel, ID_LIMIT_MAG, &limit );
-		   int ibool = 1;
+		   int ibool = 0;
 		   xpanf_->formSet( panel, ID_USE_CALSIUM, &ibool );
 
 		   if(xpanf_->post( panel )) {
@@ -592,24 +637,36 @@ namespace {
 					PRNN("mePolyScan ret : "<<ret);
 					if(ret == EDERR_NONE) {
 						setUpHierarchy();
-						if(use_calsium_) compactHierarchy();
+						compactHierarchy();
 
-						ret = mePolyScan( delPolysVMap, this, OPLYR_FG );
-						PRNN("mePolyScan ret : "<<ret);
-						if(ret == EDERR_NONE) {
-							ret = mePointScan( editPointsVMap, this, OPLYR_FG );
-							PRNN("mePointScan ret : "<<ret);
-							ret = mePolyScan( delSkelegonVMap, this, OPLYR_FG );
-							PRNN("mePointScan ret : "<<ret);
-	//						if(ret == EDERR_NONE) {
-	//							// しょうがないからこれで
-	//							WeightNormalize normalize_plugin(global_, local_);
-	//							ret = normalize_plugin.proc(md_, prog_); // 何でこれでもダメなんだ？？？？？？
-	//							PRNN("normalize_plugin.proc ret : "<<ret);
-	//							csPlugin("weightsetup.p", LWMESHEDIT_CLASS, THIS_SERVER_NAME2, THIS_SERVER_NAME2); // これ、プラグイン読み込み機能
-	//							csCmdSeq(THIS_SERVER_NAME2, NULL); // じゃぁ、これはなんだ？
-	//							md_->local->evaluate( md_->local->data, THIS_SERVER_NAME2 );// これも違う…
-	//						}
+						if(skelegons_.size() > 0) {
+							ret = mePolyScan( delPolysVMap, this, OPLYR_FG );
+							PRNN("mePolyScan ret : "<<ret);
+							if(ret == EDERR_NONE) {
+								ret = mePointScan( editPointsVMap, this, OPLYR_FG );
+								PRNN("mePointScan ret : "<<ret);
+								ret = mePolyScan( setWeightToSkelegon, this, OPLYR_FG );
+								PRNN("mePointScan ret : "<<ret);
+		//						if(ret == EDERR_NONE) {
+		//							// しょうがないからこれで
+		//							WeightNormalize normalize_plugin(global_, local_);
+		//							ret = normalize_plugin.proc(md_, prog_); // 何でこれでもダメなんだ？？？？？？
+		//							PRNN("normalize_plugin.proc ret : "<<ret);
+		//							csPlugin("weightsetup.p", LWMESHEDIT_CLASS, THIS_SERVER_NAME2, THIS_SERVER_NAME2); // これ、プラグイン読み込み機能
+		//							csCmdSeq(THIS_SERVER_NAME2, NULL); // じゃぁ、これはなんだ？
+		//							md_->local->evaluate( md_->local->data, THIS_SERVER_NAME2 );// これも違う…
+		//						}
+							}
+						}
+						else {
+							LWMessageFuncs *msgf;
+							msgf = reinterpret_cast<LWMessageFuncs *>(global_( LWMESSAGEFUNCS_GLOBAL, GFUSE_TRANSIENT ));
+							if(locale_ == LANGID_JAPANESE) {
+								msgf->error("ボーンウェイトを製作できませんでした。", "スケルゴンと対象のポリゴンを選択してください。");
+							}
+							else {
+								msgf->error("Weight Map Setup Fail.", "Select Skelegons and Polygons.");
+							}
 						}
 					}
 					prog_.done();
@@ -636,7 +693,7 @@ namespace {
 		// 非連続VMAPがあるかチェック
 		static int checkVPMap(void *param, const EDPolygonInfo *p)
 		{
-			WeightNormalize *self = (WeightNormalize *)param;
+			/*WeightNormalize *self = (WeightNormalize *)param;
 			if(p->flags & EDDF_SELECT && !(p->flags & EDDF_DELETE) && p->type == LWPOLTYPE_FACE) {
 				for(int i = 0; i < p->numPnts; i++) {
 					int wmapnum = self->objf_->numVMaps( LWVMAP_WGHT );
@@ -651,7 +708,7 @@ namespace {
 						}
 					}
 				}
-			}
+			}*/
 			return 0;
 		}
 		
@@ -666,11 +723,11 @@ namespace {
 						void *wmap = meSelectPointVMap(NULL, LWVMAP_WGHT, j->c_str());
 						if(wmap) {
 							float val;
-							if(meGetPointVPMap(p->points[i], p->pol, &val)) {
+							/*if(meGetPointVPMap(p->points[i], p->pol, &val)) {
 								weights[*j].first = true;
 								weights[*j].second = val;
 							}
-							else if(meGetPointVMap(p->points[i], &val)) {
+							else */if(meGetPointVMap(p->points[i], &val)) {
 								weights[*j].first = false;
 								weights[*j].second = val;
 							}
@@ -709,7 +766,10 @@ namespace {
 					void *wmap = meSelectPointVMap(NULL, LWVMAP_WGHT, j->c_str());
 					if(wmap) {
 						float val;
-						if(meGetPointVMap(p->pnt, &val)) weights[*j] = val;
+						if(meGetPointVMap(p->pnt, &val)) {
+							if(val > 0) weights[*j] = val;
+							else weights[*j] = 0;
+						}
 					}
 				}
 				float weight_sum = 0;
@@ -717,8 +777,9 @@ namespace {
 					weight_sum += j->second;
 				}
 				for(std::map<std::string, float>::const_iterator j = weights.begin(); j != weights.end(); ++j) {
-					float weight = j->second/weight_sum;
-					if(weight>0) ret = meSetPointVMap( p->pnt, LWVMAP_WGHT, j->first.c_str(), 1, &weight );
+					float weight = 0;
+					if(weight_sum > 0) weight = j->second/weight_sum;
+					if(weight > 0) ret = meSetPointVMap( p->pnt, LWVMAP_WGHT, j->first.c_str(), 1, &weight );
 					else ret = meSetPointVMap( p->pnt, LWVMAP_WGHT, j->first.c_str(), 1, NULL );
 				}
 				if(self->prog_.step(1)) return EDERR_USERABORT;

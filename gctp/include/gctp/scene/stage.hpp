@@ -10,7 +10,6 @@
 #include <gctp/class.hpp>
 #include <gctp/db.hpp>
 #include <gctp/strutumtree.hpp>
-#include <gctp/scene/renderingtree.hpp>
 #include <gctp/signal.hpp>
 #include <gctp/tuki.hpp>
 #ifdef _MT
@@ -25,6 +24,7 @@ namespace gctp { namespace scene {
 
 	class Body;
 	class Light;
+	class DefaultSB;
 	/** ステージクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -36,12 +36,8 @@ namespace gctp { namespace scene {
 	public:
 		/// 階層ツリー
 		StrutumTree strutum_tree;
-		/// 描画ツリー
-		RenderingTree rendering_tree;
 		/// Bodyリスト
 		HandleList<Body> body_list;
-		// Cameraリスト
-		//HandleList<Camera> camera_list;
 		// Lightリスト(ModifierListと抽象化すべき？)
 		HandleList<Light> light_list;
 
@@ -56,6 +52,11 @@ namespace gctp { namespace scene {
 		 * コリジョンスロットはこれに接続する
 		 */
 		Signal1<false, float /*delta*/> postupdate_signal;
+		/** 描画シグナル
+		 *
+		 * 描画スロットはこれに接続する
+		 */
+		Signal1<false, float /*delta*/> draw_signal;
 
 		/// コンストラクタ
 		Stage();
@@ -70,11 +71,11 @@ namespace gctp { namespace scene {
 		/// 更新スロット
 		MemberSlot1<Stage, float /*delta*/, &Stage::onUpdate> update_slot;
 
-		bool onDraw() const;
+		bool onDraw(float delta) const;
 		/// 描画スロット
-		MemberSlot0<const Stage, &Stage::onDraw> draw_slot;
+		ConstMemberSlot1<const Stage, float /*delta*/, &Stage::onDraw> draw_slot;
 
-		/// カレントシーン（そのシーンのupdate、draw…などの間だけ有効）		
+		/// カレントステージ（そのステージのupdate、draw…などの間だけ有効）
 		Stage &current() { return *current_; }
 
 		/// ノード追加
@@ -87,45 +88,20 @@ namespace gctp { namespace scene {
 	
 	protected:
 		virtual bool doOnUpdate(float delta);
-		virtual bool doOnDraw() const;
+		virtual bool doOnDraw(float delta) const;
 
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
+		void show(luapp::Stack &L);
+		void hide(luapp::Stack &L);
 
 	private:
 #ifdef _MT
 		mutable Mutex monitor_;
 #endif
 		mutable Stage* backup_current_;
+		Pointer<DefaultSB> dsb_;
 		GCTP_TLS static Stage* current_;
-	};
-
-	/** Stageを描画するレンダリングノード
-	 *
-	 * とりあえず…設計が固まらないので
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 * @date 2005/03/23 3:26:15
-	 */
-	class StageRenderer : public Renderer
-	{
-	public:
-		/// コンストラクタ
-		StageRenderer() {}
-		/// コンストラクタ
-		StageRenderer(Handle<Stage> stage);
-		/// ノード到達時の処理
-		virtual bool onEnter() const;
-
-		/// 描画対象のStage
-		Handle<Stage> &stage() { return stage_; }
-		/// 描画対象のStage
-		Handle<Stage> stage() const { return stage_; }
-	
-	GCTP_DECLARE_CLASS
-
-	private:
-		Handle<Stage> stage_;
 	};
 
 }} // namespace gctp::scene
