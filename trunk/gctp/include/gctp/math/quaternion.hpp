@@ -159,7 +159,31 @@ namespace gctp { namespace math {
 			Quaternion qy = { 0, sin(yaw/_Type(2)), 0,   cos(yaw/_Type(2)) };
 			Quaternion qx = { sin(pitch/_Type(2)), 0, 0, cos(pitch/_Type(2)) };
 			Quaternion qz = { 0, 0, sin(roll/_Type(2)),  cos(roll/_Type(2)) };
-			return *this = qy * qx * qz;
+			return *this = qx * qy * qz;
+		}
+
+		/// ヨー・ピッチ・ロールで回転を設定
+		Quaternion &rot(_Type yaw, _Type pitch, _Type roll)
+		{
+			return set(yaw, pitch, roll);
+		}
+
+		/// X軸回転を設定
+		Quaternion &rotX(_Type theta)
+		{
+			return set(cos(theta/_Type(2)), sin(theta/_Type(2)), 0, 0);
+		}
+
+		/// Y軸回転を設定
+		Quaternion &rotY(_Type theta)
+		{
+			return set(cos(theta/_Type(2)), 0, sin(theta/_Type(2)), 0);
+		}
+
+		/// Z軸回転を設定
+		Quaternion &rotZ(_Type theta)
+		{
+			return set(cos(theta/_Type(2)), 0, 0, sin(theta/_Type(2)));
 		}
 
 		/// 姿勢を定義する互いに直交するベクトルから四元数を設定
@@ -219,6 +243,22 @@ namespace gctp { namespace math {
 		/// ベクトル部を返す
 		const Vector3d<_Type> &vector() const { return *reinterpret_cast<const Vector3d<_Type> *>(&x); }
 		
+		/// ヨーを返す(正規化されてること)
+		_Type yaw() const
+		{
+			return atan2(2*(y*z + w*x), w*w - x*x - y*y + z*z);
+		}
+		/// ピッチを返す(正規化されてること)
+		_Type pitch() const
+		{
+			return asin(-2*(x*z - w*y));
+		}
+		/// ロールを返す(正規化されてること)
+		_Type roll() const
+		{
+			return atan2(2*(x*y + w*z), w*w + x*x - y*y - z*z);
+		}
+
 		/// 回転軸と回転角を返す(正規化されてること)
 		_Type toAxisAngle(Vector3d<_Type> &axis_out) const
 		{
@@ -322,12 +362,12 @@ namespace gctp { namespace math {
 
 		/// ベクトル変換
 		Vector3d<_Type> transform(const Vector3d<_Type> &src) const {
-			return ((*this)*Quaternion(src)*~(*this)).vector();
+			return ((*this)*Quaternion().set(src)*~(*this)).vector();
 		}
 
 		/// ベクトル変換
 		const Quaternion &transform(Vector3d<_Type> &dst, const Vector3d<_Type> &v) const {
-			dst = ((*this)*Quaternion(v)*~(*this)).vector();
+			dst = ((*this)*Quaternion().set(v)*~(*this)).vector();
 			return *this;
 		}
 

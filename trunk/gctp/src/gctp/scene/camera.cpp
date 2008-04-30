@@ -7,7 +7,6 @@
  */
 #include "common.h"
 #include <gctp/scene/camera.hpp>
-#include <gctp/scene/stage.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/aabox.hpp>
 #include <gctp/app.hpp>
@@ -22,15 +21,21 @@ namespace gctp { namespace scene {
 		draw_slot.bind(this);
 		window_.set(0, 0);
 		subwindow_.set(0,0,1,1);
+		stance_.setDefault();
 	}
 
 	Camera* Camera::current_ = NULL;	///< カレントカメラ（そのシーンのupdate、draw…などの間だけ有効）
 
-	void Camera::newNode(Stage &stage)
+	void Camera::setStance(Stance &src)
 	{
-		Pointer<StrutumNode> node = StrutumNode::create();
+		stance_ = src;
+		if(node_) node_->val.getLCM() = stance_.toMatrix();
+	}
+
+	void Camera::attach(Handle<StrutumNode> node)
+	{
 		node_ = node;
-		stage.strutum_tree.root()->push(node);
+		if(node_) stance_ = node_->val.lcm().orthoNormal();
 	}
 
 	void Camera::activate(bool yes)
@@ -71,7 +76,10 @@ namespace gctp { namespace scene {
 
 	Matrix Camera::view() const
 	{
-		return Matrix().setView(node_->val.wtm().right(), node_->val.wtm().up(), node_->val.wtm().at(), node_->val.wtm().position());
+		Matrix m;
+		if(node_) m = node_->val.wtm().orthoNormal();
+		else m = stance_.toMatrix();
+		return Matrix().setView(m.right(), m.up(), m.at(), m.position());
 	}
 
 	Matrix Camera::projection() const
@@ -91,16 +99,12 @@ namespace gctp { namespace scene {
 
 	void Camera::update()
 	{
-		node_->val.wtm().orthoNormalize();
 		frustum_.set(view()*projection());
+		if(node_) stance_ = node_->val.lcm().orthoNormal();
 	}
 	
 	bool Camera::setUp(luapp::Stack &L)
 	{
-		if(L.top() >= 1) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
-			if(stage) newNode(*stage);
-		}
 		return true;
 	}
 
@@ -111,9 +115,47 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	void Camera::setPos(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			Stance newstance = stance();
+			newstance.position.x = (float)L[1].toNumber();
+			newstance.position.y = (float)L[2].toNumber();
+			newstance.position.z = (float)L[3].toNumber();
+			setStance(newstance);
+		}
+	}
+
+	int Camera::getPos(luapp::Stack &L)
+	{
+		Stance nowstance = stance();
+		L << nowstance.position.x << nowstance.position.y << nowstance.position.z;
+		return 3;
+	}
+
+	void Camera::setRot(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			Stance newstance = stance();
+			newstance.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+			setStance(newstance);
+		}
+	}
+
+	int Camera::getRot(luapp::Stack &L)
+	{
+		Quat q = stance().posture;
+		L << q.yaw() << q.pitch() << q.roll();
+		return 3;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Camera)
 		TUKI_METHOD(Camera, activate)
+		TUKI_METHOD(Camera, setPos)
+		TUKI_METHOD(Camera, getPos)
+		TUKI_METHOD(Camera, setRot)
+		TUKI_METHOD(Camera, getRot)
 	TUKI_IMPLEMENT_END(Camera)
 
 }} // namespace gctp::scene

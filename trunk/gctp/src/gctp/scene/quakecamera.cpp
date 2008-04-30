@@ -43,7 +43,8 @@ namespace gctp { namespace scene {
 	bool QuakeCamera::update(float delta)
 	{
 		Pointer<Camera> target = target_.lock();
-		if(target && target->node()) {
+		if(target) {
+			Stance newstance = target->stance();
 			float neck_speed = 0.01f;
 #ifdef GCTP_COORD_RH
 			yaw_ += -neck_speed*input().mouse().dx;
@@ -58,10 +59,10 @@ namespace gctp { namespace scene {
 			target->fov() += 0.0005f*input().mouse().dz;
 			if(target->fov() > g_pi) target->fov() = g_pi;
 			if(target->fov() < 0) target->fov() = 0;
-			Matrix m;
-			m.rot(yaw_, pitch_, 0);
-			target->node()->val.getLCM().at() = m.transformVector(VectorC(0, 0, 1));
-			target->node()->val.getLCM().up() = m.transformVector(VectorC(0, 1, 0));
+			float roll = 0;
+			if(input().kbd().press(DIK_Q)) roll += 1.0f;
+			if(input().kbd().press(DIK_E)) roll -= 1.0f;
+			newstance.posture = QuatC(yaw_, pitch_, roll);
 
 			if(input().kbd().push(DIK_PGUP)) speed_ += 1.0f;
 			if(input().kbd().push(DIK_PGDN)) speed_ -= 1.0f;
@@ -78,8 +79,10 @@ namespace gctp { namespace scene {
 #endif
 			if(input().kbd().press(DIK_SPACE)) dir.y += 1.0f;
 			if(input().kbd().press(DIK_LCONTROL)) dir.y -= 1.0f;
-			dir = m.rotY(yaw_).transformVector(dir);
-			target->node()->val.getLCM().position() += dir.normalize()*speed_*delta;
+			dir = Quat().rotY(yaw_).transform(dir);
+			newstance.position += dir.normalize()*speed_*delta;
+
+			target->setStance(newstance);
 		}
 		return true;
 	}
