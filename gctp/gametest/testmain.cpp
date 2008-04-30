@@ -28,238 +28,11 @@
 #include <gctp/scene/graphfile.hpp>
 //#include <ode/ode.h>
 
-//#define MOVIETEST
+#define MOVIETEST
 
 #ifdef MOVIETEST
 # include <gctp/movie/player.hpp>
 #endif
-
-#if 0
-
-class Game : public gctp::Object {
-public:
-	gctp::Context context;
-	
-	static luapp::State &lua()
-	{
-		return lua__;
-	}
-
-	static int run(const char *filename)
-	{
-		lua().open();
-		lua().registerEnv(gctp::TukiInitializer());
-		gctp::TukiRegister::registerIt(lua(), "Game");
-		gctp::Tuki<Game>::newUserData(lua(), new Game);
-		lua().global().declare("game");
-#ifndef NDEBUG
-		lua().global().declare("_DEBUG", true);
-#endif
-		int ret = 0;
-		if(!lua().run(filename)) ret = 1;
-		lua().close();
-		return ret;
-	}
-
-protected:
-	bool setUp(luapp::Stack &)
-	{
-		return false;
-	}
-
-	int run(luapp::Stack &L)
-	{
-		GCTP_TRACE("RUNNING");
-		gctp::graphic::Text text;
-		while(canContinue(L)) {
-			{
-				gctp::Profiling update_prof("update");
-				gctp::app().update_signal(gctp::app().lap);
-				if(L.top() > 0 && L[1].isTable() && L[1].toTable()["update"].isFunction()) {
-					luapp::Argument1<lua_Number> arg(gctp::app().lap);
-					L[1].toTable()["update"](luapp::Callback::dummy(), arg);
-				}
-			}
-			if(gctp::app().canDraw()) {
-				gctp::graphic::clear();
-				gctp::graphic::begin();
-				gctp::app().draw_signal();
-				text.setPos(10, 10).setColor(gctp::Color32(200, 200, 127)).setFixedPitch(true).out()
-					<< gctp::graphic::getScreenSize() << std::endl
-					<< "ＦＰＳ:" << gctp::app().fps.latestave << std::endl << std::endl
-					<< "マウス: " << gctp::input().mouse().x << "," << gctp::input().mouse().y << " : " << gctp::input().mouse().dx << "," << gctp::input().mouse().dy;
-				text.setPos(10, 500).setColor(gctp::Color32(127, 200, 127)).setBackColor(gctp::Color32(0, 0, 32)).setFixedPitch(true).out()
-					<< gctp::app().profile();
-				text.draw();
-				gctp::graphic::end();
-				gctp::app().present();
-			}
-		}
-		return 0;
-	}
-
-	static int print(luapp::Stack &L)
-	{
-		int n = lua_gettop(L);  /* number of arguments */
-		int i;
-		lua_getglobal(L, "tostring");
-		for (i=1; i<=n; i++) {
-			const char *s;
-			lua_pushvalue(L, -1);  /* function to be called */
-			lua_pushvalue(L, i);   /* value to print */
-			lua_call(L, 1, 1);
-			s = lua_tostring(L, -1);  /* get result */
-			if (s == NULL)
-			return luaL_error(L, LUA_QL("tostring") " must return a string to " LUA_QL("print"));
-			if (i>1) gctp::dbgout << "\t";
-			gctp::dbgout << s;
-			lua_pop(L, 1);  /* pop result */
-		}
-		gctp::dbgout << std::endl;
-		return 0;
-	}
-
-	int init(luapp::Stack &L)
-	{
-		gctp::graphic::setAmbient(gctp::Color(0.5f,0.5f,0.5f));
-
-		gctp::graphic::DirectionalLight light;
-		light.ambient = gctp::Color(0.3f, 0.3f, 0.3f);
-		light.diffuse = gctp::Color(1.0f, 1.0f, 1.0f);
-		light.specular = gctp::Color(0.6f, 0.6f, 0.6f);
-		light.dir = gctp::VectorC(0.0f, -1.0f, 1.0f).normal();
-		gctp::Pointer<gctp::scene::ParallelLight> pl = context.create("gctp.ParallelLight").lock();
-		if(pl) {
-			pl->set(light);
-			//pl->enter(*stage);
-		}
-
-		light.ambient = gctp::Color(0.2f, 0.2f, 0.2f);
-		light.diffuse = gctp::Color(0.5f, 0.5f, 0.5f);
-		light.specular = gctp::Color(0.0f, 0.0f, 0.0f);
-		light.dir = gctp::VectorC(1.0f, -1.0f, 0.0f).normal();
-		pl = context.create("gctp.ParallelLight").lock();
-		if(pl) {
-			pl->set(light);
-			//pl->enter(*stage);
-		}
-
-		return 0;
-	}
-
-private:
-	Game()
-	{
-	}
-
-	bool canContinue(luapp::Stack &L)
-	{
-		if(!gctp::app().canContinue()) return false;
-		if(L.top() > 0 && L[1].isTable() && L[1].toTable()["continue"].isFunction()) {
-			luapp::Return1<bool> ret;
-			L[1].toTable()["continue"](ret);
-			if(!ret.ret1) {
-				PRNN("countinue false");
-			}
-			return ret.ret1;
-		}
-		return true;
-	}
-
-	static luapp::State lua__;
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(Game)
-};
-luapp::State Game::lua__;
-GCTP_IMPLEMENT_CLASS(Game, Object)
-TUKI_IMPLEMENT_BEGIN(Game)
-	TUKI_METHOD(Game, run)
-	TUKI_METHOD(Game, print)
-	TUKI_METHOD(Game, init)
-TUKI_IMPLEMENT_END(Game)
-
-
-class TextPrinter : public gctp::Object {
-public:
-	TextPrinter()
-	{
-		draw_slot.bind(this);
-	}
-
-	bool onDraw() const
-	{
-		text_.draw();
-		return true;
-	}
-	gctp::MemberSlot0<const TextPrinter, &TextPrinter::onDraw> draw_slot;
-
-protected:
-	bool setUp(luapp::Stack &L)
-	{
-		gctp::app().draw_signal.connect(draw_slot);
-		return true;
-	}
-	void setPos(luapp::Stack &L)
-	{
-		if(L.top()==3) {
-			text_.setPos(L[2].toNumber(), L[3].toNumber());
-		}
-	}
-	void setClumpPos(luapp::Stack &L)
-	{
-		if(L.top()==3) {
-			text_.setClumpPos(L[2].toNumber(), L[3].toNumber());
-		}
-	}
-	void setColor(luapp::Stack &L)
-	{
-		if(L.top()>=5) {
-			text_.setColor(gctp::Color32(L[2].toInteger(), L[3].toInteger(), L[4].toInteger(), L[5].toInteger()));
-		}
-		else if(L.top()>=4) {
-			text_.setColor(gctp::Color32(L[2].toInteger(), L[3].toInteger(), L[4].toInteger()));
-		}
-		else if(L.top()>=2) {
-			text_.setColor(gctp::Color32(L[2].toCStr()));
-		}
-	}
-	void print(luapp::Stack &L)
-	{
-		for(int i = 2; i <= L.top(); i++) {
-			const char *s = L[i].toCStr();
-			text_.out() << (s ? s : "?");
-		}
-	}
-
-private:
-	gctp::graphic::Text text_;
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(TextPrinter)
-};
-GCTP_IMPLEMENT_CLASS(TextPrinter, gctp::Object)
-TUKI_IMPLEMENT_BEGIN_NS(Scene, TextPrinter)
-	TUKI_METHOD(TextPrinter, setPos)
-	TUKI_METHOD(TextPrinter, setClumpPos)
-	TUKI_METHOD(TextPrinter, setColor)
-	TUKI_METHOD(TextPrinter, print)
-TUKI_IMPLEMENT_END(TextPrinter)
-
-using namespace gctp;
-using namespace std;
-
-extern "C" int main(int argc, char *argv[])
-{
-	GCTP_USE_CLASS(graphic::Texture);
-	GCTP_USE_CLASS(scene::GraphFile);
-	GCTP_USE_CLASS(scene::Camera);
-	GCTP_USE_CLASS(scene::QuakeCamera);
-	GCTP_USE_CLASS(scene::Entity);
-	return Game::run("../../../media/ini.lua");
-}
-
-#else
 
 using namespace gctp;
 using namespace std;
@@ -296,7 +69,7 @@ extern "C" int main(int argc, char *argv[])
 	audio::Player se = gctp::audio::device().ready(_T("../../../media/pang.wav"));
 #ifdef MOVIETEST
 	movie::Player movie;
-	hr = movie.openForTexture(_T("../graphictest/onegoshu_trial.mpg"));
+	hr = movie.openForTexture(_T("../../../../alpha/alpha/odata/onegoshu.mpg"));
 	if(!hr) GCTP_TRACE(hr);
 	hr = movie.play();
 	if(!hr) GCTP_TRACE(hr);
@@ -317,109 +90,103 @@ extern "C" int main(int argc, char *argv[])
 	pbuf.setUp();
 	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
 	context.load(_T("Reflect.tga"));
-	Pointer<graphic::Texture> ptex = context[_T("BitmapSet4.bmp")].lock();
-	Pointer<scene::Stage> stage = context.create("gctp.Stage").lock();
-	if(stage) {
-		app().update_signal.connectOnce(stage->update_slot);
-		Pointer<scene::Camera> camera = stage->newNode(context, "gctp.Camera", _T("camera")).lock();
+	{
+		Pointer<scene::Camera> camera = context.create("gctp.Camera", _T("camera")).lock();
 		if(camera) {
-			camera->newNode(*stage);
-			camera->node()->val.getLCM() = MatrixC(
-				VectorC(1.0f, 0.0f, 0.0f),
-				VectorC(0.0f, 1.0f, 0.0f),
-				VectorC(0.0f, 0.0f, 1.0f),
-				VectorC(0.0f, 0.5f, -2.0f)
-			);
-			camera->draw_signal.connectOnce(stage->draw_slot);
+			camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
 			app().draw_signal.connectOnce(camera->draw_slot);
-		}
-		Pointer<scene::Entity> entity;
-		entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
-		if(entity) {
-			//entity->skeleton().setPosType(MotionChannel::LINEAR);
-			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
-			//entity->do_loop_ = true;
-			if(entity->mixer().isExist(0)) {
-				entity->mixer().tracks()[0].setWeight(1.0f);
-				entity->mixer().tracks()[1].setWeight(1.0f);
-				entity->mixer().tracks()[0].setLoop(true);
-				entity->mixer().tracks()[1].setLoop(true);
-				entity->mixer().tracks()[2].setLoop(true);
+			Pointer<scene::Stage> stage = context.create("gctp.Stage", _T("stage")).lock();
+			if(stage) {
+				Pointer<scene::QuakeCamera> qcam = context.create("gctp.QuakeCamera", _T("qcam")).lock();
+				if(qcam) qcam->target() = camera;
+				camera->draw_signal.connectOnce(stage->draw_slot);
+				app().update_signal.connectOnce(stage->update_slot);
+				Pointer<scene::Entity> entity;
+				entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
+				if(entity) {
+					//entity->skeleton().setPosType(MotionChannel::LINEAR);
+					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+					//entity->do_loop_ = true;
+					if(entity->mixer().isExist(0)) {
+						entity->mixer().tracks()[0].setWeight(1.0f);
+						entity->mixer().tracks()[1].setWeight(1.0f);
+						entity->mixer().tracks()[0].setLoop(true);
+						entity->mixer().tracks()[1].setLoop(true);
+						entity->mixer().tracks()[2].setLoop(true);
+					}
+				}
+
+				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("wire_test.x")).lock();
+
+				for(int i = 0; i < 20; i++) {
+					entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gradriel.x")).lock();
+					if(entity) {
+						entity->mixer().tracks()[0].setWeight(1.0f);
+						entity->mixer().tracks()[0].setLoop(true);
+						entity->getLpos().x = ((float)rand()/(float)RAND_MAX)*30.0f;
+						entity->getLpos().z = ((float)rand()/(float)RAND_MAX)*30.0f;
+					}
+				}
+
+				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
+				if(entity) {
+					if(entity->mixer().isExist(0)) {
+						entity->mixer().tracks()[0].setWeight(1.0f);
+						entity->mixer().tracks()[0].setLoop(true);
+					}
+					//entity->speed_ = 30.0f;
+					entity->getLpos().x += 2.0f;
+					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+					//entity->do_loop_ = true;
+				}
+
+				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
+				if(entity) {
+					if(entity->mixer().isExist(0)) {
+						entity->mixer().tracks()[0].setWeight(1.0f);
+						entity->mixer().tracks()[0].setLoop(true);
+					}
+					//entity->speed_ = 30.0f;
+					entity->getLpos().x -= 2.0f;
+					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+				}
+
+				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("cell.x")).lock();
+				//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("room1.x")).lock();
+
+				{
+					graphic::setAmbient(Color(0.5f,0.5f,0.5f));
+
+					graphic::DirectionalLight light;
+					light.ambient = Color(0.3f, 0.3f, 0.3f);
+					light.diffuse = Color(1.0f, 1.0f, 1.0f);
+					light.specular = Color(0.6f, 0.6f, 0.6f);
+					light.dir = VectorC(0.0f, -1.0f, 1.0f).normal();
+					Pointer<scene::ParallelLight> pl = context.create("gctp.ParallelLight").lock();
+					if(pl) {
+						pl->set(light);
+						//pl->enter(*stage);
+					}
+
+					light.ambient = Color(0.2f, 0.2f, 0.2f);
+					light.diffuse = Color(0.5f, 0.5f, 0.5f);
+					light.specular = Color(0.0f, 0.0f, 0.0f);
+					light.dir = VectorC(1.0f, -1.0f, 0.0f).normal();
+					pl = context.create("gctp.ParallelLight").lock();
+					if(pl) {
+						pl->set(light);
+						//pl->enter(*stage);
+					}
+				}
 			}
-		}
-
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("wire_test.x")).lock();
-
-		for(int i = 0; i < 20; i++) {
-			entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gradriel.x")).lock();
-			if(entity) {
-				entity->mixer().tracks()[0].setWeight(1.0f);
-				entity->mixer().tracks()[0].setLoop(true);
-				entity->getLpos().x = ((float)rand()/(float)RAND_MAX)*30.0f;
-				entity->getLpos().z = ((float)rand()/(float)RAND_MAX)*30.0f;
-			}
-		}
-
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
-		if(entity) {
-			if(entity->mixer().isExist(0)) {
-				entity->mixer().tracks()[0].setWeight(1.0f);
-				entity->mixer().tracks()[0].setLoop(true);
-			}
-			//entity->speed_ = 30.0f;
-			entity->getLpos().x += 2.0f;
-			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
-			//entity->do_loop_ = true;
-		}
-
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
-		if(entity) {
-			if(entity->mixer().isExist(0)) {
-				entity->mixer().tracks()[0].setWeight(1.0f);
-				entity->mixer().tracks()[0].setLoop(true);
-			}
-			//entity->speed_ = 30.0f;
-			entity->getLpos().x -= 2.0f;
-			//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
-		}
-
-		entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("cell.x")).lock();
-		//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("room1.x")).lock();
-
-		{
-			graphic::setAmbient(Color(0.5f,0.5f,0.5f));
-
-			graphic::DirectionalLight light;
-			light.ambient = Color(0.3f, 0.3f, 0.3f);
-			light.diffuse = Color(1.0f, 1.0f, 1.0f);
-			light.specular = Color(0.6f, 0.6f, 0.6f);
-			light.dir = VectorC(0.0f, -1.0f, 1.0f).normal();
-			Pointer<scene::ParallelLight> pl = context.create("gctp.ParallelLight").lock();
-			if(pl) {
-				pl->set(light);
-				//pl->enter(*stage);
-			}
-
-			light.ambient = Color(0.2f, 0.2f, 0.2f);
-			light.diffuse = Color(0.5f, 0.5f, 0.5f);
-			light.specular = Color(0.0f, 0.0f, 0.0f);
-			light.dir = VectorC(1.0f, -1.0f, 0.0f).normal();
-			pl = context.create("gctp.ParallelLight").lock();
-			if(pl) {
-				pl->set(light);
-				//pl->enter(*stage);
-			}
-		}
-		Pointer<scene::QuakeCamera> qcam = stage->newNode(context, "gctp.QuakeCamera", _T("qcamera")).lock();
-		if(qcam) {
-			qcam->target() = camera;
 		}
 	}
 
 	while(app().canContinue()) {
 		//if(input().kbd().press(DIK_ESCAPE)) break;
-		Pointer<scene::Camera> camera = (*stage)[_T("camera")].lock();
-		Pointer<scene::QuakeCamera> qcam = (*stage)[_T("qcamera")].lock();
+		Pointer<scene::Stage> stage = context[_T("stage")].lock();
+		Pointer<scene::Camera> camera = context[_T("camera")].lock();
+		Pointer<scene::QuakeCamera> qcam = context[_T("qcam")].lock();
 		if(camera && qcam) {
 			if(input().kbd().push(DIK_TAB)) {
 				qcam_on = !qcam_on;
@@ -428,12 +195,7 @@ extern "C" int main(int argc, char *argv[])
 				app().holdCursor(qcam_on);
 			}
 			if(input().kbd().press(DIK_HOME)) {
-				camera->node()->val.getLCM() = MatrixC(
-					VectorC(1.0f, 0.0f, 0.0f),
-					VectorC(0.0f, 1.0f, 0.0f),
-					VectorC(0.0f, 0.0f, 1.0f),
-					VectorC(0.0f, 0.5f, -2.0f)
-				);
+				camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
 				camera->fov() = g_pi/4;
 			}
 		}
@@ -480,14 +242,12 @@ extern "C" int main(int argc, char *argv[])
 		}
 //		if(input().mouse().push[0]) se.play();
 
-		//stage->onUpdate(app().lap);
 		app().update_signal(app().lap);
 
 		if(app().canDraw()) {
 			graphic::clear();
 			graphic::begin();
 
-			//stage->onDraw();
 			app().draw_signal(app().lap);
 
 			graphic::LineParticleDesc pdesc;
@@ -501,8 +261,14 @@ extern "C" int main(int argc, char *argv[])
 			pdesc.setColor(Color32(255, 255, 255));
 			pdesc.setHilight(Color32(0, 0, 0));
 			graphic::setWorld(MatrixC(true));
+
 #ifdef MOVIETEST
 			pbuf.begin(*movie.getTexture());
+			pbuf.draw(pdesc);
+			pbuf.end();
+#else
+			Pointer<graphic::Texture> ptex = context[_T("BitmapSet4.bmp")].lock();
+			pbuf.begin(*ptex);
 			pbuf.draw(pdesc);
 			pbuf.end();
 #endif
@@ -522,7 +288,7 @@ extern "C" int main(int argc, char *argv[])
 				<< _T("ピッチ:") << qcam->pitch_ << endl
 				<< _T("速度  :") << qcam->speed_ << endl
 				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
-				<< _T("位置  :") << camera->node()->val.lcm().position() << endl << endl
+				<< _T("位置  :") << camera->stance().position << endl << endl
 				<< _T("モード: ") << mesh_mode << endl << endl
 				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
 
@@ -540,16 +306,17 @@ extern "C" int main(int argc, char *argv[])
 	CoUninitialize();
 	return 0;
 }
-#endif
 
 #ifdef _DEBUG
 # pragma comment(lib, "zlibd.lib")
 # ifdef MOVIETEST
 #  pragma comment(lib, "strmbasd.lib")
+#  pragma comment(lib, "asynbasd.lib")
 # endif
 #else
 # pragma comment(lib, "zlib.lib")
 # ifdef MOVIETEST
 #  pragma comment(lib, "strmbase.lib")
+#  pragma comment(lib, "asynbase.lib")
 # endif
 #endif

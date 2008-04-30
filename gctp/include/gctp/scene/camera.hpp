@@ -1,7 +1,7 @@
 #ifndef _GCTP_SCENE_CAMERA_HPP_
 #define _GCTP_SCENE_CAMERA_HPP_
 /** @file
- * GameCatapult カメラシーンノードクラスヘッダファイル
+ * GameCatapult カメラクラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/02/08 11:18:38
@@ -16,8 +16,7 @@
 
 namespace gctp { namespace scene {
 
-	class Stage;
-	/** カメラシーンノード
+	/** カメラ
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/16 8:10:04
@@ -39,6 +38,13 @@ namespace gctp { namespace scene {
 		/// 描画スロット
 		ConstMemberSlot1<const Camera, float /*delta*/, &Camera::onDraw> draw_slot;
 
+		/// カメラ位置設定
+		void setStance(Stance &src);
+		/// 階層ノードにアタッチ
+		void attach(Handle<StrutumNode> node);
+
+		/// カメラ位置
+		const Stance &stance() const { return stance_; }
 		/// ニアクリップ
 		const float &nearclip() const { return nearclip_; }
 		/// ニアクリップ
@@ -57,8 +63,6 @@ namespace gctp { namespace scene {
 		Rectf &subwindow() { return subwindow_; }
 		/// アタッチしているノードを返す
 		Handle<StrutumNode> node() const { return node_; }
-		/// アタッチしているノードを返す
-		Handle<StrutumNode> &node() { return node_; }
 		/// 独自にウィンドウサイズを指定
 		void setWindow(float w, float h)
 		{
@@ -95,9 +99,6 @@ namespace gctp { namespace scene {
 			return frustum_.isColliding(bs);
 		}
 
-		/// 指定のステージに新たに階層ノードを作ってそれにアタッチ
-		void newNode(Stage &stage);
-
 		/// 視錘台
 		const Frustum &frustum() { return frustum_; }
 
@@ -107,16 +108,21 @@ namespace gctp { namespace scene {
 	protected:
 		bool setUp(luapp::Stack &L);
 		void activate(luapp::Stack &L);
+		void setPos(luapp::Stack &L);
+		int getPos(luapp::Stack &L);
+		void setRot(luapp::Stack &L);
+		int getRot(luapp::Stack &L);
 
 	private:
-		Handle<StrutumNode> node_;
-		
+		Stance stance_;
 		float nearclip_;
 		float farclip_;
 		float fov_;
 		Size2f window_;
 		Rectf subwindow_;
 		Frustum frustum_;
+
+		Handle<StrutumNode> node_;
 
 		mutable Camera* backup_current_;
 		GCTP_TLS static Camera* current_;

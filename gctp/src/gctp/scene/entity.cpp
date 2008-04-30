@@ -117,10 +117,10 @@ namespace gctp { namespace scene {
 
 	void Entity::enter(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
+		if(L.top() >= 1) {
+			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
 			if(stage) {
-				if(L.top() >= 3) enter(*stage, L[3].toInteger());
+				if(L.top() >= 2) enter(*stage, L[2].toInteger());
 				else enter(*stage);
 			}
 		}
@@ -128,8 +128,8 @@ namespace gctp { namespace scene {
 
 	void Entity::leave(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
+		if(L.top() >= 1) {
+			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
 			if(stage) leave(*stage);
 		}
 	}

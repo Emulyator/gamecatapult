@@ -253,7 +253,7 @@ namespace gctp { namespace graphic {
 	{
 		basic_string<_TCHAR>::size_type i = 0, size = impl_->os.tellp(), len = impl_->os.str().length();
 		if(size > len) {
-			GCTP_TRACE("Text::draw: \"! size <= len\" ("<<size<<_T("): 何も文字が書き込まれないままdrawが呼ばれたか、不正な文字が入力されました。"));
+			//GCTP_TRACE("Text::draw: \"! size <= len\" ("<<size<<_T("): 何も文字が書き込まれないままdrawが呼ばれたか、不正な文字が入力されました。"));
 			return S_FALSE;
 		}
 

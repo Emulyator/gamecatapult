@@ -36,7 +36,7 @@ namespace gctp {
 	
 		Matrix toMatrix() const
 		{
-			return Matrix().identify()*posture.inverse().toMatrix()*Matrix().trans(position);
+			return posture.toMatrix()*Matrix().trans(position);
 		}
 
 		/// ˆÊ’u

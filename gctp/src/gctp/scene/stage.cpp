@@ -72,6 +72,9 @@ namespace gctp { namespace scene {
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Stage, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Stage)
 		TUKI_METHOD(Stage, load)
+		TUKI_METHOD(Stage, activate)
+		TUKI_METHOD(Stage, show)
+		TUKI_METHOD(Stage, hide)
 	TUKI_IMPLEMENT_END(Stage)
 
 	Stage* Stage::current_ = NULL;	///< カレントステージ（そのステージのupdate、draw…などの間だけ有効）
@@ -255,6 +258,15 @@ namespace gctp { namespace scene {
 #endif
 			}
 		}
+	}
+
+	void Stage::activate(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			if(L[1].toBoolean()) app().update_signal.connectOnce(update_slot);
+			else app().update_signal.disconnect(update_slot);
+		}
+		else app().update_signal.connectOnce(update_slot);
 	}
 
 	void Stage::show(luapp::Stack &L)

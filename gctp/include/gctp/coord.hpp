@@ -29,13 +29,13 @@ namespace gctp {
 		Coord(const Matrix &src) : Stance(src), scale(src.getScaling()) {}
 
 		void setDefault() {
-			Coord::setDefault();
+			Stance::setDefault();
 			scale.x = scale.y = scale.z = 1.0f;
 		}
 
 		Matrix toMatrix() const
 		{
-			return Matrix().identify()*Matrix().scale(scale)*posture.inverse().toMatrix()*Matrix().trans(position);
+			return Matrix().scale(scale)*posture.toMatrix()*Matrix().trans(position);
 		}
 
 		/// ÉXÉPÅ[Éã
