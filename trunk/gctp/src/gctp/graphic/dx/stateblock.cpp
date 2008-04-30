@@ -67,7 +67,7 @@ namespace gctp { namespace graphic { namespace dx {
 		return sb_->apply();
 	}
 
-	HRslt StateBlockRsrc::unSet() const
+	HRslt StateBlockRsrc::unset() const
 	{
 		return sbb_->apply();
 	}

@@ -12,12 +12,12 @@ Wright's previous work on modlib.
 #ifndef LWMODLIB_H
 #define LWMODLIB_H
 
-#include <lwsdk/lwserver.h>
-#include <lwsdk/lwcmdseq.h>
-#include <lwsdk/lwmodeler.h>
-#include <lwsdk/lwhost.h>
-#include <lwsdk/lwdisplay.h>
-#include <lwsdk/lwsurf.h>
+#include <lwserver.h>
+#include <lwcmdseq.h>
+#include <lwmodeler.h>
+#include <lwhost.h>
+#include <lwdisplay.h>
+#include <lwsurf.h>
 
 
 typedef struct st_ModData {
@@ -290,7 +290,6 @@ EDError meSetPointVPMap( LWPntID id, LWPolID polid, LWID type, const char *vmapn
    int nval, float *val );
 void *meSelectPointVMap( void *data, LWID vmapid, const char *vmapname );
 int meGetPointVMap( LWPntID id, float *vmap );
-int meGetPointVPMap( LWPntID id, LWPolID polid, float *vmap );
 EDError meInitUV( float uv[ 2 ] );
 
 

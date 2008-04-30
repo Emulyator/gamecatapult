@@ -13,6 +13,9 @@
 namespace gctp { namespace scene {
 
 	/** 描画処理クラス
+	 *
+	 * これいらない。Camera/Stageの実装が素直になった結果、Light系しか意味が無く、
+	 * しかもLightなどの環境情報は各FreshがStageに問い合わせるしかないと思う。
 	 */
 	class Renderer : public Object
 	{

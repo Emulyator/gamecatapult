@@ -232,11 +232,15 @@ namespace gctp {
 		/* (const char *fname) */
 #ifdef UNICODE
 		WCStr str = L[1].toCStr();
-		L << load(str.c_str());
+		Hndl ret = load(str.c_str());
 #else
-		L << load(L[1].toCStr());
+		Hndl ret = load(L[1].toCStr());
 #endif
-		return 1;
+		if(ret) {
+			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
+			return gctp::TukiRegister::newUserData(L, ret);
+		}
+		return 0;
 	}
 	
 	int Context::create(luapp::Stack &L)
@@ -244,11 +248,15 @@ namespace gctp {
 		/* ( const char *classname, const char *name) */
 #ifdef UNICODE
 		WCStr str = L[2].toCStr();
-		L << (create(L[1].toCStr(), str.c_str()) ? true : false);
+		Hndl ret = create(L[1].toCStr(), str.c_str());
 #else
-		L << (create(L[1].toCStr(), L[2].toCStr()) ? true : false);
+		Hndl ret = create(L[1].toCStr(), L[2].toCStr());
 #endif
-		return 1;
+		if(ret) {
+			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
+			return gctp::TukiRegister::newUserData(L, ret);
+		}
+		return 0;
 	}
 
 	int Context::find(luapp::Stack &L)
@@ -261,7 +269,7 @@ namespace gctp {
 #endif
 		if(ret) {
 			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
-			return gctp::TukiRegister::newUserData(L, ret.lock());
+			return gctp::TukiRegister::newUserData(L, ret);
 		}
 		return 0;
 	}

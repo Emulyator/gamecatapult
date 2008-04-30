@@ -347,7 +347,7 @@ namespace gctp { namespace graphic {
 	{
 		draw();
 		// Restore the modified renderstates
-		sb_->unSet();
+		sb_->unset();
 		return *this;
 	}
 

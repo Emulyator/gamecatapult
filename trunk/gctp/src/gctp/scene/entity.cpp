@@ -73,7 +73,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void Entity::exit(Stage &stage)
+	void Entity::leave(Stage &stage)
 	{
 		stage.update_signal.disconnect(update_slot);
 		if(target_) {
@@ -126,18 +126,18 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void Entity::exit(luapp::Stack &L)
+	void Entity::leave(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
 			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
-			if(stage) exit(*stage);
+			if(stage) leave(*stage);
 		}
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Entity, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Entity)
 		TUKI_METHOD(Entity, enter)
-		TUKI_METHOD(Entity, exit)
+		TUKI_METHOD(Entity, leave)
 	TUKI_IMPLEMENT_END(Entity)
 	
 	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)

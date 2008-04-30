@@ -24,7 +24,6 @@ extern "C" int main(int argc, char *argv[]);
 class GameWindow
 	: public gctp::GameApp
 	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, GameWindow>
-//	, public SmartWin::HeartBeat
 {
 	typedef GameWindow Self;
 

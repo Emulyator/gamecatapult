@@ -63,7 +63,7 @@ namespace gctp { namespace graphic { namespace dx {
 		// “K—p
 		HRslt setCurrent() const;
 		// Œ³‚É–ß‚·
-		HRslt unSet() const;
+		HRslt unset() const;
 
 		virtual void record() = 0;
 

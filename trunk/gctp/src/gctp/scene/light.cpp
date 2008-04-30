@@ -96,7 +96,7 @@ namespace gctp { namespace scene {
 	void Light::appear(Stage &stage)
 	{
 		stage.strutum_tree->push(node_.get());
-		stage.rendering_tree->push(this);
+		//stage.rendering_tree->push(this);
 	}
 
 	bool Light::onEnter() const

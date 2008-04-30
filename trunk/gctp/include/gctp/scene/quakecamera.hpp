@@ -22,7 +22,7 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class QuakeLikeCamera : public Object
+	class QuakeCamera : public Object
 	{
 	public:
 		float yaw_;
@@ -32,32 +32,24 @@ namespace gctp { namespace scene {
 		/// 更新
 		bool update(float delta);
 		/// 更新スロット
-		MemberSlot1<QuakeLikeCamera, float /*delta*/, &QuakeLikeCamera::update> update_slot;
+		MemberSlot1<QuakeCamera, float /*delta*/, &QuakeCamera::update> update_slot;
 
-		QuakeLikeCamera();
-
-		void enter(Stage &stage);
-		void exit(Stage &stage);
-
-		bool enable() { return enable_; }
-		bool setEnable(bool _enable);
+		QuakeCamera();
 
 		Handle<Camera> &target() { return target_; }
 		Handle<Camera> target() const { return target_; }
+
+		void activate(bool yes);
 
 	protected:
 		Handle<Camera> target_;
 
 		bool setUp(luapp::Stack &L);
-		void enter(luapp::Stack &L);
-		void exit(luapp::Stack &L);
-		void setEnable(luapp::Stack &L);
-
-	private:
-		bool enable_;
+		void attach(luapp::Stack &L);
+		void activate(luapp::Stack &L);
 
 	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(QuakeLikeCamera)
+	TUKI_DECLARE(QuakeCamera)
 	};
 
 }} // namespace gctp::scene

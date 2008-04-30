@@ -10,6 +10,7 @@
 #include <gctp/scene/stage.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/aabox.hpp>
+#include <gctp/app.hpp>
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -18,31 +19,24 @@ namespace gctp { namespace scene {
 
 	Camera::Camera() : nearclip_(0.1f), farclip_(1000.0f), fov_(g_pi/4)
 	{
+		draw_slot.bind(this);
 		window_.set(0, 0);
 		subwindow_.set(0,0,1,1);
 	}
 
 	Camera* Camera::current_ = NULL;	///< カレントカメラ（そのシーンのupdate、draw…などの間だけ有効）
 
-	void Camera::setUp()
+	void Camera::newNode(Stage &stage)
 	{
-		node_ = StrutumNode::create();
-		node_->val.getLCM().identify();
+		Pointer<StrutumNode> node = StrutumNode::create();
+		node_ = node;
+		stage.strutum_tree.root()->push(node);
 	}
 
-	void Camera::enter(Stage &stage)
+	void Camera::activate(bool yes)
 	{
-		stage.strutum_tree.root()->push(node_);
-		Pointer<RenderingNode> rendering_node = RenderingNode::create(this);
-		rendering_node->push(Pointer<Renderer>(new StageRenderer(&stage)));
-		stage.rendering_tree.root()->push(rendering_node);
-	}
-	
-	void Camera::exit(Stage &stage)
-	{
-		stage.strutum_tree.root()->erase(node_.get());
-		RenderingNode::Itr it = stage.rendering_tree.root()->find(this);
-		stage.rendering_tree.root()->erase(it);
+		if(yes) app().draw_signal.connectOnce(draw_slot);
+		else app().draw_signal.disconnect(draw_slot);
 	}
 
 	void Camera::setToSystem() const
@@ -51,7 +45,7 @@ namespace gctp { namespace scene {
 		graphic::setProjection(projection());
 	}
 
-	bool Camera::onEnter() const
+	bool Camera::begin() const
 	{
 		backup_current_ = current_;
 		current_ = const_cast<Camera *>(this);
@@ -60,10 +54,18 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool Camera::onLeave() const
+	bool Camera::end() const
 	{
 		current_ = backup_current_;
 		if(current_) current_->setToSystem();
+		return true;
+	}
+
+	bool Camera::onDraw(float delta) const
+	{
+		begin();
+		const_cast<Camera *>(this)->draw_signal(delta);
+		end();
 		return true;
 	}
 
@@ -95,30 +97,23 @@ namespace gctp { namespace scene {
 	
 	bool Camera::setUp(luapp::Stack &L)
 	{
-		if(L.top()==0) setUp();
+		if(L.top() >= 1) {
+			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
+			if(stage) newNode(*stage);
+		}
 		return true;
 	}
 
-	void Camera::enter(luapp::Stack &L)
+	void Camera::activate(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
-			if(stage) enter(*stage);
-		}
-	}
-
-	void Camera::exit(luapp::Stack &L)
-	{
-		if(L.top() >= 2) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[2]);
-			if(stage) exit(*stage);
+		if(L.top() >= 1) {
+			activate(L[1].toBoolean());
 		}
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Camera)
-		TUKI_METHOD(Camera, enter)
-		TUKI_METHOD(Camera, exit)
+		TUKI_METHOD(Camera, activate)
 	TUKI_IMPLEMENT_END(Camera)
 
 }} // namespace gctp::scene

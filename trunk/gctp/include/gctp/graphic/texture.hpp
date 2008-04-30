@@ -50,7 +50,7 @@ namespace gctp { namespace graphic {
 		/// カレントか？
 		bool isCurrent(uint index) const;
 		/// テクスチャを無効に
-		static HRslt unSet(uint index);
+		static HRslt unset(uint index);
 
 		int format() const;
 		Point2 size() const;
