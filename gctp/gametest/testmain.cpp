@@ -26,12 +26,16 @@
 #include <gctp/scene/motionmixer.hpp>
 #include <gctp/scene/light.hpp>
 #include <gctp/scene/graphfile.hpp>
-//#include <ode/ode.h>
 
-#define MOVIETEST
+//#define MOVIETEST
+#define PHYSICSTEST
 
 #ifdef MOVIETEST
 # include <gctp/movie/player.hpp>
+#endif
+
+#ifdef PHYSICSTEST
+# include <btBulletDynamicsCommon.h> // for Bullet
 #endif
 
 using namespace gctp;
@@ -44,8 +48,45 @@ namespace {
 		PRNN("clicked "<<p<<","<<(int)button<<","<<(int)opt);
 		return true;
 	}
+#ifdef PHYSICSTEST
+	// 箱追加
+	void addBox(btDynamicsWorld *phy_world, btAlignedObjectArray<btCollisionShape *> &phy_collision_shapes
+		, HandleList<scene::Entity> &boxlist, Context &context, scene::Stage &stage, const btVector3 &v)
+	{
+		if(phy_world->getCollisionObjectArray().size() < 100) {
+			Handle<scene::Entity> entity = newEntity(context, stage, "gctp.Entity", 0, _T("gradriel.x"));
+			if(entity) {
+				boxlist.push_back(entity);
+				AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
+
+				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
+				phy_collision_shapes.push_back(col_shape);
+				
+				btTransform start_transform;
+				start_transform.setIdentity();
+
+				btScalar mass(10);
+				
+				bool is_dynamic = (mass != 0.f);
+				btVector3 local_inertia(0, 0, 0);
+				
+				if(is_dynamic) col_shape->calculateLocalInertia(mass, local_inertia);
+
+				start_transform.setOrigin(v);
+
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
+				btRigidBody *body = new btRigidBody(rbinfo);
+
+				phy_world->addRigidBody(body);
+			}
+		}
+	}
+#endif
 
 } // anonymous namespace
+
 
 extern "C" int main(int argc, char *argv[])
 {
@@ -74,7 +115,62 @@ extern "C" int main(int argc, char *argv[])
 	hr = movie.play();
 	if(!hr) GCTP_TRACE(hr);
 #endif
-	// ルートスクリプト実行
+
+#ifdef PHYSICSTEST
+	btDefaultCollisionConfiguration				*phy_collision_configuration;
+	btCollisionDispatcher						*phy_dispatcher;
+	btConstraintSolver							*phy_solver;
+	btBroadphaseInterface						*phy_overlapping_pair_cache;
+	btDynamicsWorld								*phy_world;			// 物理エンジンを適用するシーン
+	btAlignedObjectArray<btCollisionShape *>	phy_collision_shapes;
+
+	btCollisionShape							*phy_ground;		// 地平面
+	HandleList<scene::Entity> box_list;
+
+	phy_collision_configuration = new btDefaultCollisionConfiguration();
+
+	phy_dispatcher = new btCollisionDispatcher(phy_collision_configuration);
+	
+	// 物理シミュレーションする空間のサイズの定義
+	// シミュレーションするShapeの限度
+	btVector3 worldAabbMin(-10000,-10000,-10000);
+	btVector3 worldAabbMax(10000,10000,10000);
+	phy_overlapping_pair_cache = new btAxisSweep3(worldAabbMin,worldAabbMax,100);
+
+	// ソルバー
+	btSequentialImpulseConstraintSolver *sol = new btSequentialImpulseConstraintSolver;
+	phy_solver = sol;
+
+	// シミュレーションするワールドの生成
+	phy_world = new btDiscreteDynamicsWorld(phy_dispatcher, phy_overlapping_pair_cache, phy_solver, phy_collision_configuration);
+
+	// 地平面の生成
+	{
+		btCollisionShape *ground_shape = new btStaticPlaneShape(btVector3(0,1,0),0);
+		phy_collision_shapes.push_back(ground_shape);
+
+		btTransform ground_transform;
+		ground_transform.setIdentity();
+		ground_transform.setOrigin(btVector3(0, -3, 0));
+
+		btScalar mass(0.);
+
+		// rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool is_dynamic = (mass != 0.f);
+
+		btVector3 local_inertia(0, 0, 0);
+		if(is_dynamic) ground_shape->calculateLocalInertia(mass, local_inertia);
+
+		// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState *my_motion_state = new btDefaultMotionState(ground_transform);
+		btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, ground_shape, local_inertia);
+		btRigidBody *body = new btRigidBody(rbinfo);
+
+		// add the body to the dynamics world
+		phy_world->addRigidBody(body);
+	}
+#endif
+
 	graphic::Text text;
 
 	bool qcam_on = false;
@@ -242,6 +338,25 @@ extern "C" int main(int argc, char *argv[])
 		}
 //		if(input().mouse().push[0]) se.play();
 
+#ifdef PHYSICSTEST
+		if(phy_world) {
+			if(input().kbd().push(DIK_B)) {
+				addBox(phy_world, phy_collision_shapes, box_list, context, *stage, btVector3(0, 2, 0));
+			}
+			// シミュレーションを進める
+			phy_world->stepSimulation(app().lap);
+			// 結果を適用
+			int ii = 1;
+			for(HandleList<scene::Entity>::iterator i = box_list.begin(); i != box_list.end() && ii < phy_world->getCollisionObjectArray().size(); ++i, ++ii)
+			{
+				float mat[16];
+				phy_world->getCollisionObjectArray()[ii]->getWorldTransform().getOpenGLMatrix(mat);
+				memcpy(&(*i)->getLCM(), mat, sizeof(float)*16);
+				AABox aabb = (*i)->target()->fleshies().front()->model()->getAABB();
+				(*i)->getLCM() = Matrix().trans(-aabb.center())*(*i)->lcm();
+			}
+		}
+#endif
 		app().update_signal(app().lap);
 
 		if(app().canDraw()) {
@@ -284,6 +399,7 @@ extern "C" int main(int argc, char *argv[])
 				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
 				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
 			text.out()
+				<< _T("箱　  :") << box_list.size() << endl
 				<< _T("ヨー  :") << qcam->yaw_ << endl
 				<< _T("ピッチ:") << qcam->pitch_ << endl
 				<< _T("速度  :") << qcam->speed_ << endl
@@ -303,6 +419,31 @@ extern "C" int main(int argc, char *argv[])
 			app().present();
 		}
 	}
+
+#ifdef PHYSICSTEST
+	for(int i = phy_world->getNumCollisionObjects()-1; i >= 0; i--)
+	{
+		btCollisionObject *obj = phy_world->getCollisionObjectArray()[i];
+		btRigidBody *body = btRigidBody::upcast(obj);
+		if(body && body->getMotionState())
+		{
+			delete body->getMotionState();
+		}
+		phy_world->removeCollisionObject( obj );
+		delete obj;
+	}
+
+	for(int i = 0; i < phy_collision_shapes.size(); i++)
+	{
+		delete phy_collision_shapes[i];
+	}
+
+	delete phy_overlapping_pair_cache;
+	delete phy_dispatcher;
+	delete phy_solver;
+	delete phy_world;
+	delete phy_collision_configuration;
+#endif
 	CoUninitialize();
 	return 0;
 }
@@ -313,10 +454,20 @@ extern "C" int main(int argc, char *argv[])
 #  pragma comment(lib, "strmbasd.lib")
 #  pragma comment(lib, "asynbasd.lib")
 # endif
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "libbulletdynamics_d.lib")
+#  pragma comment(lib, "libbulletcollision_d.lib")
+#  pragma comment(lib, "libbulletmath_d.lib")
+# endif
 #else
 # pragma comment(lib, "zlib.lib")
 # ifdef MOVIETEST
 #  pragma comment(lib, "strmbase.lib")
 #  pragma comment(lib, "asynbase.lib")
+# endif
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "libbulletdynamics.lib")
+#  pragma comment(lib, "libbulletcollision.lib")
+#  pragma comment(lib, "libbulletmath.lib")
 # endif
 #endif

@@ -607,7 +607,7 @@ namespace {
 
 	bool startupdialog(Widget *parent, bool &is_fs, uint &mode)
 	{
-		StartupDialog dlg(true, parent);
+		StartupDialog dlg(false, parent);
 
 		int mode_num = (int)graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes.size();
 		for(int i = 0; i < mode_num; i++) {
