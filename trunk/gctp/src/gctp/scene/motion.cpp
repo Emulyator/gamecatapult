@@ -60,7 +60,7 @@ namespace gctp { namespace scene {
 				else {
 					((YPRKeys *)ks)->getKeyData(v, is_open, keytime);
 				}
-				stance.posture = QuatC(v);
+				stance.posture = QuatC(v.x, v.y, v.z);
 			}
 			else if(ks->type()==Keys::POSITION) {
 				Vector v;
@@ -138,7 +138,7 @@ namespace gctp { namespace scene {
 				else {
 					((YPRKeys *)ks)->getKeyData(v, is_open, keytime);
 				}
-				coord.posture = QuatC(v);
+				coord.posture = QuatC(v.x, v.y, v.z);
 			}
 			else if(ks->type()==Keys::POSITION) {
 				Vector v;
@@ -203,7 +203,7 @@ namespace gctp { namespace scene {
 				else {
 					((PostureKeys *)ks)->getKeyData(q, is_open, keytime);
 				}
-				mat *= q.inverse().toMatrix();
+				mat *= q.toMatrix();
 			}
 			else if(ks->type()==Keys::YPR) {
 				Vector v;

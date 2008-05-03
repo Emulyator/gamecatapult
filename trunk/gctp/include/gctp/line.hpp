@@ -17,11 +17,21 @@ namespace gctp {
 
 	/// 直線クラス
 	struct Line {
-		Vector	s;	///< 始点
+		Vector	s;	///< 通過点
 		Vector	v;	///< 方向ベクトル
 
-		Line() {}
-		Line(const Vector &_s, const Vector &_v) : s(_s), v(_v) {}
+		Line &set(const Vector &_s, const Vector &_v)
+		{
+			s = _s;
+			v = _v;
+			return *this;
+		}
+	};
+	struct LineC : Line {
+		LineC(const Vector &_s, const Vector &_v)
+		{
+			s = _s; v = _v;
+		}
 	};
 
 	/// レイクラス
@@ -29,11 +39,21 @@ namespace gctp {
 		Vector	s;	///< 始点
 		Vector	v;	///< 方向ベクトル
 
-		RayLine() {}
-		RayLine(const Vector &_s, const Vector &_v) : s(_s), v(_v) {}
+		RayLine &set(const Vector &_s, const Vector &_v)
+		{
+			s = _s;
+			v = _v;
+			return *this;
+		}
 
 		Line &toLine() { return *(Line *)this; }
 		const Line &toLine() const { return *(Line *)this; }
+	};
+	struct RayLineC : RayLine {
+		RayLineC(const Vector &_s, const Vector &_v)
+		{
+			s = _s; v = _v;
+		}
 	};
 
 	/// 線分クラス
@@ -41,13 +61,24 @@ namespace gctp {
 		Vector	s;	///< 始点
 		Vector	e;	///< 終点
 
-		LineSeg() {}
-		LineSeg(const Vector &_s, const Vector &_e) : s(_s), e(_e) {}
+		LineSeg &set(const Vector &_s, const Vector &_e)
+		{
+			s = _s;
+			e = _e;
+			return *this;
+		}
 
-		Line toLine() const { return Line(s, e-s); }
+		Line toLine() const { return LineC(s, e-s); }
+		RayLine toRayLine() const { return RayLineC(s, e-s); }
 		Vector direction() const { return e - s; }
 		float length2() const { return direction().length2(); }
 		float length() const { return direction().length(); }
+	};
+	struct LineSegC : LineSeg {
+		LineSegC(const Vector &_s, const Vector &_e)
+		{
+			s = _s; e = _e;
+		}
 	};
 
 	//@{

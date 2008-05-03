@@ -189,7 +189,7 @@ namespace gctp { namespace math {
 		}
 
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		operator const D3DXVECTOR2 &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -226,7 +226,6 @@ namespace gctp { namespace math {
 	/// コンストラクタ付版
 	template<typename _Type>
 	struct Vector2dC : Vector2d<_Type> {
-		Vector2dC() {}
 		Vector2dC(const _Type *p)
 		{
 			set(p);
@@ -240,7 +239,7 @@ namespace gctp { namespace math {
 		{
 			set(src);
 		}
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		Vector2dC(const D3DXVECTOR2 &src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));

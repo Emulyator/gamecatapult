@@ -13,14 +13,14 @@
 #include <gctp/buffer.hpp>
 
 namespace gctp {
-	
+
 	class ZipFileImpl;
 	/// ì«Ç›çûÇ›ÇÃÇ›
 	class ZipFile {
 	public:
 		ZipFile();
 		~ZipFile();
-
+		
 		bool open(const _TCHAR *zipname);
 		void close();
 		bool seekFile(const _TCHAR *fname);
@@ -29,7 +29,7 @@ namespace gctp {
 		void closeFile();
 		int readFile(void *b, size_t s);
 		Buffer getFileBlock(const _TCHAR *fname);
-
+		
 	private:
 		ZipFileImpl *impl_;
 	};

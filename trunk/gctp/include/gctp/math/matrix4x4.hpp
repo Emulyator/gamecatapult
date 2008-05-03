@@ -151,30 +151,30 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		/// 演算子
 		Vector4d<_Type> operator*(const Vector4d<_Type> &rhs) const {
 			return Vector4dC<_Type>(
-				_11*_src.x+_12*_src.y+_13*_src.z+_14*_src.w,
-				_21*_src.x+_22*_src.y+_23*_src.z+_24*_src.w,
-				_31*_src.x+_32*_src.y+_33*_src.z+_34*_src.w,
-				_41*_src.x+_42*_src.y+_43*_src.z+_44*_src.w
+				_11*rhs.x+_12*rhs.y+_13*rhs.z+_14*rhs.w,
+				_21*rhs.x+_22*rhs.y+_23*rhs.z+_24*rhs.w,
+				_31*rhs.x+_32*rhs.y+_33*rhs.z+_34*rhs.w,
+				_41*rhs.x+_42*rhs.y+_43*rhs.z+_44*rhs.w
 			);
 		}
 
 		/// 演算子
 		Vector3d<_Type> operator*(const Vector3d<_Type> &rhs) const {
-			_Type invw = _Type(1)/(_41*_src.x+_42*_src.y+_43*_src.z+_44);
+			_Type invw = _Type(1)/(_41*rhs.x+_42*rhs.y+_43*rhs.z+_44);
 			return Vector3dC<_Type>(
-				(_11*_src.x+_12*_src.y+_13*_src.z+_14)*invw,
-				(_21*_src.x+_22*_src.y+_23*_src.z+_24)*invw,
-				(_31*_src.x+_32*_src.y+_33*_src.z+_34)*invw
+				(_11*rhs.x+_12*rhs.y+_13*rhs.z+_14)*invw,
+				(_21*rhs.x+_22*rhs.y+_23*rhs.z+_24)*invw,
+				(_31*rhs.x+_32*rhs.y+_33*rhs.z+_34)*invw
 			);
 		}
 
 		/// 平面の変換
 		Plane3d<_Type> operator*(const Plane3d<_Type> &rhs) const {
 			return Plane3dC<_Type>(
-				_11*_src.a+_12*_src.b+_13*_src.c+_14*_src.d,
-				_21*_src.a+_22*_src.b+_23*_src.c+_24*_src.d,
-				_31*_src.a+_32*_src.b+_33*_src.c+_34*_src.d,
-				_41*_src.a+_42*_src.b+_43*_src.c+_44*_src.d
+				_11*rhs.a+_12*rhs.b+_13*rhs.c+_14*rhs.d,
+				_21*rhs.a+_22*rhs.b+_23*rhs.c+_24*rhs.d,
+				_31*rhs.a+_32*rhs.b+_33*rhs.c+_34*rhs.d,
+				_41*rhs.a+_42*rhs.b+_43*rhs.c+_44*rhs.d
 			);
 		}
 
@@ -460,7 +460,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return *this;
 		}
 
-		/// ベクトル変換（w=0として射影）
+		/// ベクトル変換（w=0として変換）
 		Vector3d<_Type> transformVector(const Vector3d<_Type> &rhs) const {
 			return Vector3dC<_Type>(
 				_11*rhs.x+_12*rhs.y+_13*rhs.z,
@@ -469,7 +469,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			);
 		}
 
-		/// ベクトル変換（w=0として射影）
+		/// ベクトル変換（w=0として変換）
 		const Matrix4x4 &transformVector(Vector3d<_Type> &dst, const Vector3d<_Type> &src) const {
 			dst.x = _11*src.x+_12*src.y+_13*src.z;
 			dst.y = _21*src.x+_22*src.y+_23*src.z;
@@ -764,7 +764,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		operator const D3DXMATRIX &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -829,8 +829,6 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 	template<typename _Type>
 	struct Matrix4x4C : Matrix4x4<_Type> {
 		/// コンストラクタ
-		Matrix4x4C() {}
-		/// コンストラクタ
 		explicit Matrix4x4C(bool ident)
 		{
 			if(ident) identify();
@@ -863,7 +861,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		Matrix4x4C(const D3DXMATRIX &src)
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));

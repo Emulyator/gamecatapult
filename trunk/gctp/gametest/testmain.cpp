@@ -105,8 +105,8 @@ extern "C" int main(int argc, char *argv[])
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
 
-	audio::Player bgm = gctp::audio::device().ready(_T("../../../media/hugeraw.wav"));
-	bgm.play(true);
+	//audio::Player bgm = gctp::audio::device().ready(_T("../../../media/hugeraw.wav"));
+	//bgm.play(true);
 	audio::Player se = gctp::audio::device().ready(_T("../../../media/pang.wav"));
 #ifdef MOVIETEST
 	movie::Player movie;
@@ -132,9 +132,9 @@ extern "C" int main(int argc, char *argv[])
 	phy_dispatcher = new btCollisionDispatcher(phy_collision_configuration);
 	
 	// 物理シミュレーションする空間のサイズの定義
-	// シミュレーションするShapeの限度
 	btVector3 worldAabbMin(-10000,-10000,-10000);
 	btVector3 worldAabbMax(10000,10000,10000);
+	// シミュレーションするShapeの限度
 	phy_overlapping_pair_cache = new btAxisSweep3(worldAabbMin,worldAabbMax,100);
 
 	// ソルバー

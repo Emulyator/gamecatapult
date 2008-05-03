@@ -838,7 +838,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\include\gctp\math\matrix4x3.hpp"
+					RelativePath="..\..\..\include\gctp\math\matrix3x4.hpp"
 					>
 				</File>
 				<File

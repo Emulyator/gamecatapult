@@ -181,20 +181,17 @@ namespace gctp {
 			return ptrs_.end();
 		}
 
-	GCTP_DECLARE_CLASS
-	public:
 		virtual void serialize(Serializer &);
 
-	public:
+	protected:
 		// luapp
 		bool setUp(luapp::Stack &L);
 		int load(luapp::Stack &L);
 		int create(luapp::Stack &L);
 		int find(luapp::Stack &L);
 
-	TUKI_DECLARE(Context)
-
 		friend Context &context();
+
 	private:
 		bool is_open_;
 		PtrList ptrs_;
@@ -202,6 +199,9 @@ namespace gctp {
 		Context *prev_;
 
 		static Context *current_;
+
+	GCTP_DECLARE_CLASS
+	TUKI_DECLARE(Context)
 	};
 
 	/// カレントコンテキスト

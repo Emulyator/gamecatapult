@@ -1,5 +1,5 @@
-#ifndef _GCTP_MATH_MATRIX4X3_HPP_
-#define _GCTP_MATH_MATRIX4X3_HPP_
+#ifndef _GCTP_MATH_MATRIX3X4_HPP_
+#define _GCTP_MATH_MATRIX3X4_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
@@ -72,18 +72,18 @@ namespace gctp { namespace math {
 
 		/// 演算子
 		Matrix3x4 &operator+=(const Matrix3x4 &src) {
-			right4d()+=src.right4d();
-			up4d()+=src.up4d();
-			at4d()+=src.at4d();
-			position4d()+=src.position4d();
+			right()+=src.right();
+			up()+=src.up();
+			at()+=src.at();
+			position()+=src.position();
 			return *this;
 		}
 		/// 演算子
 		Matrix3x4 &operator-=(const Matrix3x4 &src) {
-			right4d()-=src.right4d();
-			up4d()-=src.up4d();
-			at4d()-=src.at4d();
-			position4d()-=src.position4d();
+			right()-=src.right();
+			up()-=src.up();
+			at()-=src.at();
+			position()-=src.position();
 			return *this;
 		}
 		/// 演算子
@@ -109,12 +109,12 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 演算子
 		Matrix3x4 &operator*=(_Type src) {
-			right4d()*=src; up4d()*=src; at4d()*=src; position4d()*=src;
+			right()*=src; up()*=src; at()*=src; position()*=src;
 			return *this;
 		}
 		/// 演算子
 		Matrix3x4 &operator/=(_Type src) {
-			right4d()/=src; up4d()/=src; at4d()/=src; position4d()/=src;
+			right()/=src; up()/=src; at()/=src; position()/=src;
 			return *this;
 		}
 
@@ -146,16 +146,16 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		/// 演算子
 		Vector4d<_Type> operator*(const Vector4d<_Type> &rhs) const {
 			return Vector4dC<_Type>(
-				_11*_src.x+_12*_src.y+_13*_src.z+_14*_src.w,
-				_21*_src.x+_22*_src.y+_23*_src.z+_24*_src.w,
-				_31*_src.x+_32*_src.y+_33*_src.z+_34*_src.w,
-				_41*_src.x+_42*_src.y+_43*_src.z+_44*_src.w
+				_11*_src.x+_12*_src.y+_13*_src.z,
+				_21*_src.x+_22*_src.y+_23*_src.z,
+				_31*_src.x+_32*_src.y+_33*_src.z,
+				_41*_src.x+_42*_src.y+_43*_src.z+_src.w
 			);
 		}
 
 		/// 演算子
 		Vector3d<_Type> operator*(const Vector3d<_Type> &rhs) const {
-			_Type invw = _Type(1)/(_41*_src.x+_42*_src.y+_43*_src.z+_44);
+			_Type invw = _Type(1)/(_41*_src.x+_42*_src.y+_43*_src.z+1);
 			return Vector3dC<_Type>(
 				(_11*_src.x+_12*_src.y+_13*_src.z+_14)*invw,
 				(_21*_src.x+_22*_src.y+_23*_src.z+_24)*invw,
@@ -166,10 +166,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		/// 平面の変換
 		Plane3d<_Type> operator*(const Plane3d<_Type> &rhs) const {
 			return Plane3dC<_Type>(
-				_11*_src.a+_12*_src.b+_13*_src.c+_14*_src.d,
-				_21*_src.a+_22*_src.b+_23*_src.c+_24*_src.d,
-				_31*_src.a+_32*_src.b+_33*_src.c+_34*_src.d,
-				_41*_src.a+_42*_src.b+_43*_src.c+_44*_src.d
+				_11*_src.a+_12*_src.b+_13*_src.c,
+				_21*_src.a+_22*_src.b+_23*_src.c,
+				_31*_src.a+_32*_src.b+_33*_src.c,
+				_41*_src.a+_42*_src.b+_43*_src.c+_src.d
 			);
 		}
 
@@ -198,23 +198,6 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		Vector3d<_Type> &position() { return *reinterpret_cast<Vector3d<_Type> *>(m[3]); }
 		/// 平行移動成分
 		const Vector3d<_Type> &position() const { return *reinterpret_cast<const Vector3d<_Type> *>(m[3]); }
-
-		/// Ｘ軸
-		Vector4d<_Type> &right4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[0]); }
-		/// Ｘ軸
-		const Vector4d<_Type> &right4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[0]); }
-		/// Ｙ軸
-		Vector4d<_Type> &up4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[1]); }
-		/// Ｙ軸
-		const Vector4d<_Type> &up4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[1]); }
-		/// Ｚ軸
-		Vector4d<_Type> &at4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[2]); }
-		/// Ｚ軸
-		const Vector4d<_Type> &at4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[2]); }
-		/// 平行移動成分
-		Vector4d<_Type> &position4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[3]); }
-		/// 平行移動成分
-		const Vector4d<_Type> &position4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[3]); }
 
 		/// スケールを抽出
 		Vector3d<_Type> getScaling() const { return Vector(right().length(),up().length(),at().length()); }
@@ -691,27 +674,12 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return *this;
 		}
 
-		/// Catmull-Rom
-		static _Type getCatmullRom(_Type x0, _Type x1, _Type x2, _Type x3, _Type t)
-		{
-			static const Matrix3x4 m = {
-				-_Type(1)/_Type(2),  _Type(3)/_Type(2), -_Type(3)/_Type(2),  _Type(1)/_Type(2),
-				 _Type(2)/_Type(2), -_Type(5)/_Type(2),  _Type(4)/_Type(2), -_Type(1)/_Type(2),
-				-_Type(1)/_Type(2),  _Type(0),           _Type(1)/_Type(2),  _Type(0),
-				 _Type(0),           _Type(1),           _Type(0),           _Type(0)
-			};
-			_Type t2 = t*t;
-			Vector4d<_Type> vt = {t2*t, t2, t, _Type(1)};
-			vt = m * vt;
-			return x0 * vt.x + x1 * vt.y + x2 * vt.z + x3 * vt.w;
-		}
-
 		/// ４点で補間した値をセット
 		Matrix3x4 &set4PInterpolation(const Matrix3x4& prev, const Matrix3x4& begin, const Matrix3x4& end, const Matrix3x4& next, _Type t)
 		{
 			for(int i = 0; i < 4; i++) {
-				for(int j = 0; j < 4; j++) {
-					m[i][j] = getCatmullRom(prev.m[i][j], begin.m[i][j], end.m[i][j], next.m[i][j], t);
+				for(int j = 0; j < 3; j++) {
+					m[i][j] = Matrix4x4<_Type>::getCatmullRom(prev.m[i][j], begin.m[i][j], end.m[i][j], next.m[i][j], t);
 				}
 			}
 			return *this;
@@ -750,8 +718,6 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 	template<typename _Type>
 	struct Matrix3x4C : Matrix3x4<_Type> {
 		/// コンストラクタ
-		Matrix3x4C() {}
-		/// コンストラクタ
 		explicit Matrix3x4C(bool ident)
 		{
 			if(ident) identify();
@@ -766,15 +732,13 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		Matrix3x4C(
 			_Type _11, _Type _12, _Type _13, _Type _14,
 			_Type _21, _Type _22, _Type _23, _Type _24,
-			_Type _31, _Type _32, _Type _33, _Type _34,
-			_Type _41, _Type _42, _Type _43, _Type _44
+			_Type _31, _Type _32, _Type _33, _Type _34
 		)
 		{
 			set(
 				_11, _12, _13, _14,
 				_21, _22, _23, _24,
-				_31, _32, _33, _34,
-				_41, _42, _43, _44
+				_31, _32, _33, _34
 			);
 		}
 	};

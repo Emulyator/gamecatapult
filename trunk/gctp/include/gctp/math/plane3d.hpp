@@ -82,7 +82,7 @@ namespace gctp { namespace math {
 		}
 
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		operator const D3DXPLANE &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -117,13 +117,12 @@ namespace gctp { namespace math {
 
 	template<typename _Type>
 	struct Plane3dC : Plane3d<_Type> {
-		Plane3dC() {}
-		explicit Plane3dC(const _Type *pf) { set(pf[0], pf[1], pf[2], pf[3]); }
+		explicit Plane3dC(const _Type *pf) { set(pf); }
 		Plane3dC(_Type a, _Type b, _Type c, _Type d) { set(a, b, c, d); }
 		Plane3dC(const Vector3d<_Type> &pos, const Vector3d<_Type> &vec) { set(pos, vec); }
 		Plane3dC(const Vector3d<_Type> &p1, const Vector3d<_Type> &p2, const Vector3d<_Type> &p3) { set(p1, p2, p3); }
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		Plane3dC(const D3DXPLANE &src) { set(src.a, src.b, src.c, src.d); }
 #endif
 	};

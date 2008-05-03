@@ -366,9 +366,9 @@ namespace gctp { namespace graphic {
 				for(uint i = 0; i < lightNum(); i++) {
 					DirectionalLight light;
 					if(getLight(i, light)) {
-						hr = (*brush)->SetVector( "lightDir", Vector4C(-light.dir, 0));
+						hr = (*brush)->SetVector("lightDir", Vector4C(-light.dir, 0));
 						if(!hr) GCTP_TRACE(hr);
-						hr = (*brush)->SetVector( "lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
+						hr = (*brush)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
 						if(!hr) GCTP_TRACE(hr);
 						break;
 					}
