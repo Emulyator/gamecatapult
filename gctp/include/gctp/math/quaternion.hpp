@@ -17,6 +17,7 @@
 #include <gctp/math/vector3d.hpp>
 #include <gctp/math/vector4d.hpp>
 #include <gctp/math/matrix4x4.hpp>
+#include <gctp/math/matrix3x4.hpp>
 #include <gctp/math/matrix3x3.hpp>
 
 namespace gctp { namespace math {
@@ -83,7 +84,7 @@ namespace gctp { namespace math {
 				z = (mat._21 - mat._12)*s;
 			}
 			else {
-				_Type maxm = std::max(std::max(mat._11, mat._22), mat._33);
+				_Type maxm = (std::max)((std::max)(mat._11, mat._22), mat._33);
 				if(maxm == mat._11) {
 					s = sqrt(mat._11 - (mat._22 + mat._33) + _Type(1));
 					x = s*_Type(0.5);
@@ -268,8 +269,8 @@ namespace gctp { namespace math {
 			axis_out.z = z * invscale;
 			return _Type(2) * acos(w);
 		}
-		/// âÒì]é≤Ç∆âÒì]äpÇï‘Ç∑(ê≥ãKâªÇ≥ÇÍÇƒÇÈÇ±Ç∆)
-		Matrix4x4<_Type> toMatrix() const
+		/// çsóÒÇï‘Ç∑(ê≥ãKâªÇ≥ÇÍÇƒÇÈÇ±Ç∆)
+		Matrix4x4<_Type> toMatrix4x4() const
 		{
 			_Type w2 = w*w;
 			_Type x2 = x*x;
@@ -287,6 +288,49 @@ namespace gctp { namespace math {
 				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2, _Type(0),
 				_Type(0),          _Type(0),          _Type(0),          _Type(1)
 			);
+		}
+		/// çsóÒÇï‘Ç∑(ê≥ãKâªÇ≥ÇÍÇƒÇÈÇ±Ç∆)
+		Matrix3x4<_Type> toMatrix3x4() const
+		{
+			_Type w2 = w*w;
+			_Type x2 = x*x;
+			_Type y2 = y*y;
+			_Type z2 = z*z;
+			_Type _2xy = _Type(2)*x*y;
+			_Type _2wz = _Type(2)*w*z;
+			_Type _2xz = _Type(2)*x*z;
+			_Type _2wy = _Type(2)*w*y;
+			_Type _2yz = _Type(2)*y*z;
+			_Type _2wx = _Type(2)*w*x;
+			return Matrix3x4C<_Type>(
+				w2 + x2 - y2 - z2, _2xy - _2wz,       _2xz + _2wy,       _Type(0),
+				_2xy + _2wz,       w2 - x2 + y2 - z2, _2yz - _2wx,       _Type(0),
+				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2, _Type(0)
+			);
+		}
+		/// çsóÒÇï‘Ç∑(ê≥ãKâªÇ≥ÇÍÇƒÇÈÇ±Ç∆)
+		Matrix3x3<_Type> toMatrix3x3() const
+		{
+			_Type w2 = w*w;
+			_Type x2 = x*x;
+			_Type y2 = y*y;
+			_Type z2 = z*z;
+			_Type _2xy = _Type(2)*x*y;
+			_Type _2wz = _Type(2)*w*z;
+			_Type _2xz = _Type(2)*x*z;
+			_Type _2wy = _Type(2)*w*y;
+			_Type _2yz = _Type(2)*y*z;
+			_Type _2wx = _Type(2)*w*x;
+			return Matrix3x3C<_Type>(
+				w2 + x2 - y2 - z2, _2xy - _2wz,       _2xz + _2wy,
+				_2xy + _2wz,       w2 - x2 + y2 - z2, _2yz - _2wx,
+				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2
+			);
+		}
+		/// çsóÒÇï‘Ç∑(ê≥ãKâªÇ≥ÇÍÇƒÇÈÇ±Ç∆)
+		Matrix4x4<_Type> toMatrix() const
+		{
+			return toMatrix4x4();
 		}
 
 		/// íPà ÉNÉHÅ[É^ÉjÉIÉìÇ…

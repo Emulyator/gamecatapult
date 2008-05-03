@@ -92,6 +92,7 @@ namespace gctp { namespace scene {
 
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
+		void newNode(luapp::Stack &L);
 		void activate(luapp::Stack &L);
 		void show(luapp::Stack &L);
 		void hide(luapp::Stack &L);

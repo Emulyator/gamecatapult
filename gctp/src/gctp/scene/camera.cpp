@@ -16,7 +16,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	Camera::Camera() : nearclip_(0.1f), farclip_(1000.0f), fov_(g_pi/4)
+	Camera::Camera() : nearclip_(1.0f), farclip_(100.0f), fov_(g_pi/4)
 	{
 		draw_slot.bind(this);
 		window_.set(0, 0);

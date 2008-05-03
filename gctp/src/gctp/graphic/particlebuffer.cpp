@@ -69,7 +69,7 @@ namespace gctp { namespace graphic {
 	}
 
 	struct ParticleBuffer::LVertex {
-		D3DXVECTOR3 p; D3DCOLOR color; D3DCOLOR high; float tu, tv;
+		D3DVECTOR p; D3DCOLOR color; D3DCOLOR high; float tu, tv;
 		void set(Vector pos, Color32 col, Color32 hi, Point2f uv)
 		{
 			p = pos; color = col; high = hi; tu = uv.x; tv = uv.y;
