@@ -89,10 +89,7 @@ namespace gctp { namespace scene {
 
 	bool QuakeCamera::setUp(luapp::Stack &L)
 	{
-		if(L.top() >= 1) {
-			target_ = tuki_cast<Camera>(L[1]);
-		}
-		return true;
+		return false;
 	}
 	
 	void QuakeCamera::attach(luapp::Stack &L)

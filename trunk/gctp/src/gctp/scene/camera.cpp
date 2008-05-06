@@ -105,7 +105,8 @@ namespace gctp { namespace scene {
 	
 	bool Camera::setUp(luapp::Stack &L)
 	{
-		return true;
+		// Context:create‚Å»ì‚·‚é
+		return false;
 	}
 
 	void Camera::activate(luapp::Stack &L)

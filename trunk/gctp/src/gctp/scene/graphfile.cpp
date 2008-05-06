@@ -289,9 +289,10 @@ namespace gctp { namespace scene {
 					for(uint i = 0; i < anim_keys->num; i++) {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val.w = anim_keys->keys[i].val.w;
-						(*w)[i].val.x = anim_keys->keys[i].val.x;
-						(*w)[i].val.y = anim_keys->keys[i].val.y;
-						(*w)[i].val.z = anim_keys->keys[i].val.z;
+						// ‚È‚º”½“]‚ª•K—v‚È‚ñ‚¾H
+						(*w)[i].val.x = -anim_keys->keys[i].val.x;
+						(*w)[i].val.y = -anim_keys->keys[i].val.y;
+						(*w)[i].val.z = -anim_keys->keys[i].val.z;
 					}
 					self.setKeys(w);
 					//PRNN("PostureKey read");

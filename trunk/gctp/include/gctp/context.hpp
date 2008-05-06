@@ -189,6 +189,9 @@ namespace gctp {
 		int load(luapp::Stack &L);
 		int create(luapp::Stack &L);
 		int find(luapp::Stack &L);
+		int pairs(luapp::Stack &L);
+		int ipairs(luapp::Stack &L);
+		static int current(luapp::Stack &L);
 
 		friend Context &context();
 
@@ -200,6 +203,19 @@ namespace gctp {
 
 		static Context *current_;
 
+		struct LuaPair {
+			DB *db;
+			DB::Index::iterator i;
+		};
+		struct LuaIPair {
+			int n;
+			PtrList *list;
+			PtrList::iterator i;
+		};
+		static int _pair_next(lua_State *l);
+		static int _pair_gc(lua_State *l);
+		static int _ipair_next(lua_State *l);
+		static int _ipair_gc(lua_State *l);
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(Context)
 	};

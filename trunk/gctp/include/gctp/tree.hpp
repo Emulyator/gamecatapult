@@ -109,33 +109,43 @@ namespace gctp {
 		TreeNodeBase *older_;
 		Pointer<TreeNodeBase> younger_;
 
+		static TreeNodeBase *_next_DF2(TreeNodeBase *root, TreeNodeBase *cur)
+		{
+			if(cur->younger_) return cur->younger_.get();
+			else if(cur->parent_ && cur->parent_ != root) return _next_DF2(root, cur->parent_);
+			return 0;
+		}
 		static TreeNodeBase *_next_DF(TreeNodeBase *root, TreeNodeBase *cur)
 		{
-			if(cur->parent_ && cur->parent_->younger_) return cur->parent_->younger_.get();
-			else if(cur->parent_ && cur->parent_ != root) return _next_DF(root, cur->parent_);
-			return 0;
+			if(cur->children_) return cur->children_.get();
+			else return _next_DF2(root, cur);
 		}
 		static TreeNodeBase *_prev_DF(TreeNodeBase *root, TreeNodeBase *cur)
 		{
-			if(cur->parent_ && !cur->parent_->_isFront()) return cur->parent_->older_;
+			if(cur->older_) return cur->older_;
 			else if(cur->parent_ && cur->parent_ != root) return _prev_DF(root, cur->parent_);
+			return 0;
+		}
+		static const TreeNodeBase *_next_DF2(const TreeNodeBase *root, const TreeNodeBase *cur)
+		{
+			if(cur->younger_) return cur->younger_.get();
+			else if(cur->parent_ && cur->parent_ != root) return _next_DF2(root, cur->parent_);
 			return 0;
 		}
 		static const TreeNodeBase *_next_DF(const TreeNodeBase *root, const TreeNodeBase *cur)
 		{
-			if(cur->parent_ && cur->parent_->younger_) return cur->parent_->younger_.get();
-			else if(cur->parent_ && cur->parent_ != root) return _next_DF(root, cur->parent_);
-			return 0;
+			if(cur->children_) return cur->children_.get();
+			else return _next_DF2(root, cur);
 		}
 		static const TreeNodeBase *_prev_DF(const TreeNodeBase *root, const TreeNodeBase *cur)
 		{
-			if(cur->parent_ && !cur->parent_->_isFront()) return cur->parent_->older_;
+			if(cur->older_) return cur->older_;
 			else if(cur->parent_ && cur->parent_ != root) return _prev_DF(root, cur->parent_);
 			return 0;
 		}
 		static TreeNodeBase *_next_WF(TreeNodeBase *root, TreeNodeBase *cur)
 		{
-			if(cur->younger_ && cur->younger_->children_) return cur->younger_->children_.get();
+			if(cur->younger_) return cur->younger_.get();
 			else if(cur->younger_) return _next_WF(root, cur->younger_.get());
 			else if(cur->parent_ && cur->parent_ != root) return _next_WF(root, cur->parent_);
 			return 0;
@@ -388,67 +398,35 @@ namespace gctp {
 		};
 
 		/// [‚³—Dæ’TõƒCƒeƒŒ[ƒ^
-		struct DFItr : boost::iterator_adaptor<DFItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct DFItr : boost::iterator_adaptor<DFItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>
 		{
 			TreeNode *root_;
-			DFItr( TreeNode* root, TreeNode* p ) : boost::iterator_adaptor<DFItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ), root_(root) {}
-			TreeNode *_next(TreeNodeBase *cur)
-			{
-				return reinterpret_cast<TreeNode *>(_next_DF(root_, cur));
-			}
-			TreeNode *_prev(TreeNodeBase *cur)
-			{
-				return reinterpret_cast<TreeNode *>(_prev_DF(root_, cur));
-			}
+			DFItr(TreeNode *root, TreeNode *p) : boost::iterator_adaptor<DFItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			void increment()
 			{
-				if(base()->children_) base_reference() = &base()->front();
-				else base_reference() = _next(base());
-			}
-			void decrement()
-			{
-				if(base()->children_) base_reference() = &base()->back();
-				else base_reference() = _prev(base());
+				base_reference() = reinterpret_cast<TreeNode *>(_next_DF(root_, base()));
 			}
 		};
 
 		/// [‚³—Dæ’TõƒCƒeƒŒ[ƒ^
-		struct ConstDFItr : boost::iterator_adaptor<ConstDFItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct ConstDFItr : boost::iterator_adaptor<ConstDFItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>
 		{
 			const TreeNode *root_;
-			ConstDFItr( const TreeNode* root, const TreeNode* p ) : boost::iterator_adaptor<ConstDFItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ), root_(root) {}
-			const TreeNode *_next(const TreeNodeBase *cur)
-			{
-				return reinterpret_cast<const TreeNode *>(_next_DF(root_, cur));
-			}
-			const TreeNode *_prev(const TreeNodeBase *cur)
-			{
-				return reinterpret_cast<const TreeNode *>(_prev_DF(root_, cur));
-			}
+			ConstDFItr(const TreeNode *root, const TreeNode *p) : boost::iterator_adaptor<ConstDFItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			void increment()
 			{
-				if(base()->children_) base_reference() = &base()->front();
-				else base_reference() = _next(base());
-			}
-			void decrement()
-			{
-				if(base()->children_) base_reference() = &base()->back();
-				else base_reference() = _prev(base());
+				base_reference() = reinterpret_cast<const TreeNode *>(_next_DF(root_, base()));
 			}
 		};
 
 		/// •—Dæ’TõƒCƒeƒŒ[ƒ^
-		struct WFItr : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct WFItr : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::forward_traversal_tag>
 		{
 			TreeNode *root_;
-			WFItr( TreeNode* root, TreeNode* p ) : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ), root_(root) {}
+			WFItr( TreeNode* root, TreeNode* p ) : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			TreeNode *_next(TreeNodeBase *cur)
 			{
 				return reinterpret_cast<TreeNode *>(_next_WF(root_, cur));
-			}
-			TreeNode *_prev(TreeNodeBase *cur)
-			{
-				return reinterpret_cast<TreeNode *>(_prev_WF(root_, cur));
 			}
 			void increment()
 			{
@@ -456,37 +434,21 @@ namespace gctp {
 				else if(base()->parent_) base_reference() = _next(base()->parent_);
 				else base_reference() = 0;
 			}
-			void decrement()
-			{
-				if(!base()->_isFront()) base_reference() = reinterpret_cast<TreeNode*>(base()->older_);
-				else if(base()->parent_) base_reference() = _prev(base()->parent_);
-				else base_reference() = 0;
-			}
 		};
 
 		/// •—Dæ’TõƒCƒeƒŒ[ƒ^
-		struct ConstWFItr : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct ConstWFItr : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::forward_traversal_tag>
 		{
 			const TreeNode *root_;
-			ConstWFItr( const TreeNode* root, const TreeNode* p ) : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ), root_(root) {}
+			ConstWFItr( const TreeNode* root, const TreeNode* p ) : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			const TreeNode *_next(const TreeNodeBase *cur)
 			{
 				return reinterpret_cast<const TreeNode *>(_next_WF(root_, cur));
-			}
-			const TreeNode *_prev(const TreeNodeBase *cur)
-			{
-				return reinterpret_cast<const TreeNode *>(_prev_WF(root_, cur));
 			}
 			void increment()
 			{
 				if(base()->younger_) base_reference() = reinterpret_cast<const TreeNode*>(base()->younger_.get());
 				else if(base()->parent_) base_reference() = _next(base()->parent_);
-				else base_reference() = 0;
-			}
-			void decrement()
-			{
-				if(!base()->_isFront()) base_reference() = reinterpret_cast<const TreeNode*>(base()->older_);
-				else if(base()->parent_) base_reference() = _prev(base()->parent_);
 				else base_reference() = 0;
 			}
 		};

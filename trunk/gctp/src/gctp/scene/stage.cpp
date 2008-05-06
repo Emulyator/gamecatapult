@@ -88,15 +88,6 @@ namespace gctp { namespace scene {
 		dsb_->setUp();
 	}
 
-	bool Stage::insert(const Hndl hndl, const _TCHAR *key)
-	{
-		if(hndl) {
-			if(key) return DB::insert(key, hndl);
-			else return true;
-		}
-		return false;
-	}
-
 	void Stage::setUp(const _TCHAR *filename)
 	{
 		// XFileからLightNodeやCameraやEntityをセットアップする
@@ -191,59 +182,10 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	/** 新規シーンノード製作
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/02/16 1:48:39
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	Hndl Stage::newNode(Context &context, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
-	{
-		if(srcfilename) context.load(srcfilename);
-		Ptr ret = context.create(classname).lock();
-		if(ret) {
-			//if(srcfilename) ret->setUp(srcfilename);
-			//ret->chain(*this);
-			insert(ret, name);
-		}
-		return ret.get();
-	}
-
-	/** 新規シーンノード製作
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/02/16 1:48:39
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	Hndl Stage::newNode(Context &context, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
-	{
-		if(srcfilename) context.load(srcfilename);
-		Ptr ret = context.create(typeinfo).lock();
-		if(ret) {
-			//if(srcfilename) ret->setUp(srcfilename);
-			//ret->chain(*this);
-			insert(ret, name);
-		}
-		return ret.get();
-	}
-
 	bool Stage::setUp(luapp::Stack &L)
 	{
-		if(L.top() >= 1) {
-			const char *fname = L[1].toCStr();
-			if(fname) {
-#ifdef UNICODE
-				WCStr str = L[1].toCStr();
-				context().load(str.c_str());
-				setUp(str.c_str());
-#else
-				context().load(fname);
-				setUp(fname);
-#endif
-			}
-		}
-		app().update_signal.connectOnce(update_slot);
-		return true;
+		// Context:createで製作する
+		return false;
 	}
 
 	void Stage::load(luapp::Stack &L)
@@ -251,8 +193,7 @@ namespace gctp { namespace scene {
 		if(L.top() >= 1) {
 			if(L[1].isString()) {
 #ifdef UNICODE
-				WCStr str = L[1].toCStr();
-				setUp(str.c_str());
+				setUp(WCStr(L[1].toCStr()).c_str());
 #else
 				setUp(L[1].toCStr());
 #endif
