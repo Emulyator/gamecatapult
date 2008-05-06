@@ -401,8 +401,11 @@ namespace gctp {
 		if(lua_iscfunction(L, -1) && lua_tocfunction(L, -1) == &TukiRegister::deleteThis) {
 			lua_pop(L, 2);
 			// tukiオブジェクトの証
-			struct UserdataType { Ptr pT; } *ud = static_cast<UserdataType*>(lua_touserdata(L, iud));
-			if(ud) return ud->pT.get();
+			struct UserdataType { Ptr pT; Hndl hT; } *ud = static_cast<UserdataType*>(lua_touserdata(L, iud));
+			if(ud) {
+				if(ud->pT) return ud->pT.get();  // pointer to T object
+				if(ud->hT) return ud->hT.get();  // pointer to T object
+			}
 		}
 		else lua_pop(L, 2);
 		return 0;

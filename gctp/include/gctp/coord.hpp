@@ -26,7 +26,7 @@ namespace gctp {
 		Coord() {}
 		Coord(const Vector &position, const Quat &posture = QuatC(true), const Vector &scale = VectorC(1.0f, 1.0f, 1.0f))
 			: Stance(position, posture), scale(scale) {}
-		Coord(const Matrix &src) : Stance(src), scale(src.getScaling()) {}
+		Coord(const Matrix &src) : Stance(src), scale(src.getScale()) {}
 
 		void setDefault() {
 			Stance::setDefault();

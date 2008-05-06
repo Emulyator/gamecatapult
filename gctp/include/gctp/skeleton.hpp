@@ -103,12 +103,13 @@ namespace gctp {
 			_PrintVisitor(std::basic_ostream<E, T> &os, const Skeleton &skel, int indent) : os_(os), skel_(skel), indent_(indent) {}
 			bool operator()(const NodeType &n)
 			{
-				for(int i = 0; i < indent_; i++) os << "\t";
-				const char *nodename = src.getName(n);
-				if(nodename) os_ << nodename << std::endl;
+				for(int i = 0; i < indent_; i++) os_ << "\t";
+				const char *nodename = skel_.getName(n);
+				if(nodename) os_ << "nodename : " << nodename << std::endl;
+				else os_ << "nodename : NO NAME" << std::endl;
 				os_ << *n << endl;
 				indent_++;
-				n.visitChidrenConst(*this);
+				n.visitChildrenConst(*this);
 				indent_--;
 				return true;
 			}
@@ -119,7 +120,7 @@ namespace gctp {
 		template<class E, class T>
 		void printIndented(std::basic_ostream<E, T> & os, int indent) const
 		{
-			_PrintVisitor visitor(os, *this, indent);
+			_PrintVisitor<E, T> visitor(os, *this, indent);
 			visit(visitor);
 		}
 		
@@ -127,7 +128,7 @@ namespace gctp {
 		template<class E, class T>
 		void print(std::basic_ostream<E, T> & os) const
 		{
-			printIndented(os, 0);
+			printIndented<E, T>(os, 0);
 		}
 	};
 
@@ -144,6 +145,6 @@ namespace gctp {
 		return os;
 	}
 
-} // namespace gctp
+ } // namespace gctp
 
 #endif //_GCTP_SKELETON_HPP_

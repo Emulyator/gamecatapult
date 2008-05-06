@@ -11,6 +11,7 @@
 #include <gctp/fileserver.hpp>
 #include <gctp/turi.hpp>
 #include <gctp/db.hpp>
+#include <gctp/cstr.hpp>
 
 using namespace std;
 
@@ -283,10 +284,101 @@ namespace gctp {
 		return 0;
 	}
 
+	int Context::current(luapp::Stack &L)
+	{
+		return gctp::TukiRegister::newUserData(L, Hndl(current_));
+	}
+
+	int Context::pairs(luapp::Stack &L)
+	{
+		LuaPair *ud = new(lua_newuserdata(L, sizeof(LuaPair))) LuaPair;
+		ud->db = &db_; ud->i = db_.begin();
+		lua_newtable(L);                // mt for method table
+		lua_pushliteral(L, "__call");
+		lua_pushcfunction(L, _pair_next);
+		lua_settable(L, -3);
+		lua_pushliteral(L, "__gc");
+		lua_pushcfunction(L, _pair_gc);
+		lua_settable(L, -3);
+		lua_setmetatable(L, -2);
+		return 1;
+	}
+
+	int Context::_pair_next(lua_State *l)
+	{
+		LuaPair *ud = static_cast<LuaPair *>(lua_touserdata(l, 1));
+		if(ud && ud->db && ud->i != ud->db->end()) {
+			luapp::Stack L(l);
+#ifdef UNICODE
+			L << CStr(ud->i->first.c_str()).c_str();
+#else
+			L << ud->i->first.c_str();
+#endif
+			int r = gctp::TukiRegister::newUserData(L, ud->i->second);
+			if(r == 0) {
+				L << ud->i->second.get();
+				r = 1;
+			}
+			++ud->i;
+			return 1+r;
+		}
+		return 0;
+	}
+
+	int Context::_pair_gc(lua_State *l)
+	{
+		LuaPair *ud = static_cast<LuaPair *>(lua_touserdata(l, -1));
+		if(ud) ud->~LuaPair();
+		return 0;
+	}
+
+	int Context::ipairs(luapp::Stack &L)
+	{
+		LuaIPair *ud = new(lua_newuserdata(L, sizeof(LuaIPair))) LuaIPair;
+		ud->n = 1; ud->list = &ptrs_; ud->i = ptrs_.begin();
+		lua_newtable(L);
+		lua_pushliteral(L, "__call");
+		lua_pushcfunction(L, _ipair_next);
+		lua_settable(L, -3);
+		lua_pushliteral(L, "__gc");
+		lua_pushcfunction(L, _ipair_gc);
+		lua_settable(L, -3);
+		lua_setmetatable(L, -2);
+		return 1;
+	}
+
+	int Context::_ipair_next(lua_State *l)
+	{
+		LuaIPair *ud = static_cast<LuaIPair *>(lua_touserdata(l, 1));
+		if(ud && ud->list && ud->i != ud->list->end()) {
+			luapp::Stack L(l);
+			L << ud->n;
+			int r = gctp::TukiRegister::newUserData(L, *ud->i);
+			if(r == 0) {
+				L << ud->i->get();
+				r = 1;
+			}
+			++ud->i;
+			ud->n++;
+			return 1+r;
+		}
+		return 0;
+	}
+
+	int Context::_ipair_gc(lua_State *l)
+	{
+		LuaIPair *ud = static_cast<LuaIPair *>(lua_touserdata(l, -1));
+		if(ud) ud->~LuaIPair();
+		return 0;
+	}
+
 	TUKI_IMPLEMENT_BEGIN_NS(gctp, Context)
 		TUKI_METHOD(Context, load)
 		TUKI_METHOD(Context, create)
 		TUKI_METHOD(Context, find)
+		TUKI_METHOD(Context, pairs)
+		TUKI_METHOD(Context, ipairs)
+		TUKI_METHOD(Context, current)
 	TUKI_IMPLEMENT_END(Context)
 
 } // namespace gctp

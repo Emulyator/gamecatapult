@@ -94,6 +94,7 @@ extern "C" int main(int argc, char *argv[])
 	GCTP_USE_CLASS(scene::GraphFile);
 	GCTP_USE_CLASS(graphic::Texture);
 	GCTP_USE_CLASS(scene::QuakeCamera);
+	GCTP_USE_CLASS(scene::Stage);
 	GCTP_USE_CLASS(scene::Entity);
 	const char *mesh_mode = "Vertex Shader";
 	HRslt hr;
@@ -215,13 +216,19 @@ extern "C" int main(int argc, char *argv[])
 				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("wire_test.x")).lock();
 
 				for(int i = 0; i < 20; i++) {
-					entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gradriel.x")).lock();
+					entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("tiny.x")).lock();
 					if(entity) {
-						entity->mixer().tracks()[0].setWeight(1.0f);
-						entity->mixer().tracks()[0].setLoop(true);
-						entity->getLpos().x = ((float)rand()/(float)RAND_MAX)*30.0f;
-						entity->getLpos().z = ((float)rand()/(float)RAND_MAX)*30.0f;
+						if(entity->mixer().isExist(0)) {
+							entity->mixer().tracks()[0].setWeight(1.0f);
+							entity->mixer().tracks()[0].setLoop(true);
+							entity->getLCM() = Matrix().scale(0.01f, 0.01f, 0.01f).setPos(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
+							//entity->getLpos() = VectorC(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
+						}
 					}
+				}
+				{
+					AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
+					PRNN(aabb.upper << std::endl << aabb.lower);
 				}
 
 				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
@@ -295,7 +302,7 @@ extern "C" int main(int argc, char *argv[])
 				camera->fov() = g_pi/4;
 			}
 		}
-		Pointer<scene::Entity> chr = (*stage)[_T("chara")].lock();
+		Pointer<scene::Entity> chr = context[_T("chara")].lock();
 		if(chr) {
 			if(input().kbd().push(DIK_NUMPADPLUS)||input().kbd().push(DIK_COMMA)) chr->mixer().setSpeed(chr->mixer().speed()+0.1f);
 			if(input().kbd().push(DIK_NUMPADMINUS)||input().kbd().push(DIK_PERIOD)) chr->mixer().setSpeed(chr->mixer().speed()-0.1f);

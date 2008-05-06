@@ -87,10 +87,15 @@ namespace gctp { namespace scene {
 
 	protected:
 		bool setUp(luapp::Stack &L);
+		void load(luapp::Stack &L);
 		void enter(luapp::Stack &L);
 		void leave(luapp::Stack &L);
-		void setPos(luapp::Stack &L);
-		void getPos(luapp::Stack &L);
+		void setPosition(luapp::Stack &L);
+		int getPosition(luapp::Stack &L);
+		void setPosture(luapp::Stack &L);
+		int getPosture(luapp::Stack &L);
+		void setScale(luapp::Stack &L);
+		int getScale(luapp::Stack &L);
 		
 		virtual bool doOnUpdate(float delta);
 		Pointer<MotionMixer> mixer_;

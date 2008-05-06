@@ -222,7 +222,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		const Vector4d<_Type> &position4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[3]); }
 
 		/// スケールを抽出
-		Vector3d<_Type> getScaling() const {
+		Vector3d<_Type> getScale() const {
 			return Vector3d<_Type>().set(right().length(),up().length(),at().length());
 		}
 

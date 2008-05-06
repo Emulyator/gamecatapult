@@ -31,7 +31,7 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 1:05:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Stage : public Object, public DB
+	class Stage : public Object
 	{
 	public:
 		/// 階層ツリー
@@ -61,9 +61,6 @@ namespace gctp { namespace scene {
 		/// コンストラクタ
 		Stage();
 
-		/// DBに登録
-		bool insert(const Hndl hndl, const _TCHAR *key);
-
 		/// ファイルからセットアップ
 		virtual void setUp(const _TCHAR *filename);
 
@@ -78,11 +75,6 @@ namespace gctp { namespace scene {
 		/// カレントステージ（そのステージのupdate、draw…などの間だけ有効）
 		Stage &current() { return *current_; }
 
-		/// ノード追加
-		Hndl newNode(Context &context, const char *classname, const _TCHAR *name = 0, const _TCHAR *srcfilename = 0);
-		/// ノード追加
-		Hndl newNode(Context &context, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name = 0, const _TCHAR *srcfilename = 0);
-
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(Stage)
 	
@@ -92,7 +84,6 @@ namespace gctp { namespace scene {
 
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
-		void newNode(luapp::Stack &L);
 		void activate(luapp::Stack &L);
 		void show(luapp::Stack &L);
 		void hide(luapp::Stack &L);

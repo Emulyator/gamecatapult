@@ -48,10 +48,7 @@ namespace gctp { namespace scene {
 					}
 					else {
 						pbody = *i;
-						if(pbody) {
-							setUp(pbody);
-							//PRNN(*pbody);
-						}
+						if(pbody) setUp(pbody);
 					}
 				}
 			}
@@ -93,26 +90,44 @@ namespace gctp { namespace scene {
 			mixer_->update(delta);
 			if(target_) mixer_->apply(*target_);
 		}
-		//body_.root()->val.getLTM() = stance_;
 		return true;
 	}
 
 	bool Entity::setUp(luapp::Stack &L)
 	{
-		if(L.top()>=1) {
-			const char *fname = L[1].toCStr();
-			if(fname) {
+		// Stage:newNode‚Å»ì‚·‚é
+		return false;
+	}
+
+	void Entity::load(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<Context> _context = tuki_cast<Context>(L[1]);
+			if(_context) {
+				if(L.top() >= 2) {
 #ifdef UNICODE
-				WCStr fn = fname;
-				context().load(fn.c_str());
-				setUp(fn.c_str());
+					WCStr srcfilename(L[2].toCStr());
+					_context->load(srcfilename.c_str());
+					setUp(srcfilename.c_str());
 #else
-				context().load(fname);
-				setUp(fname);
+					const char *srcfilename = L[2].toCStr();
+					_context->load(srcfilename);
+					setUp(srcfilename);
+#endif
+				}
+			}
+			else {
+#ifdef UNICODE
+				WCStr srcfilename(L[1].toCStr());
+				context().load(srcfilename.c_str());
+				setUp(srcfilename.c_str());
+#else
+				const char *srcfilename = L[1].toCStr();
+				context().load(srcfilename);
+				setUp(srcfilename);
 #endif
 			}
 		}
-		return true;
 	}
 
 	void Entity::enter(luapp::Stack &L)
@@ -134,10 +149,78 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	void Entity::setPosition(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(target_ && *target_) (*target_)->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[1].toNumber(),(float)L[1].toNumber()));
+		}
+	}
+
+	int Entity::getPosition(luapp::Stack &L)
+	{
+		if(target_ && *target_) {
+			Vector v = (*target_)->val.lcm().position();
+			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
+	}
+
+	void Entity::setPosture(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(target_ && *target_) {
+				Coord c = (*target_)->val.lcm();
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+				(*target_)->val.getLCM() = c.toMatrix();
+			}
+		}
+	}
+
+	int Entity::getPosture(luapp::Stack &L)
+	{
+		if(target_ && *target_) {
+			Coord c = (*target_)->val.lcm();
+			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
+			return 3;
+		}
+		return 0;
+	}
+
+	void Entity::setScale(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(target_ && *target_) {
+				Coord c = (*target_)->val.lcm();
+				c.scale.x = (float)L[1].toNumber();
+				c.scale.y = (float)L[2].toNumber();
+				c.scale.z = (float)L[3].toNumber();
+				(*target_)->val.getLCM() = c.toMatrix();
+			}
+		}
+	}
+
+	int Entity::getScale(luapp::Stack &L)
+	{
+		if(target_ && *target_) {
+			Vector v = (*target_)->val.lcm().getScale();
+			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Entity, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Entity)
+		TUKI_METHOD(Entity, load)
 		TUKI_METHOD(Entity, enter)
 		TUKI_METHOD(Entity, leave)
+		TUKI_METHOD(Entity, setPosition)
+		TUKI_METHOD(Entity, getPosition)
+		TUKI_METHOD(Entity, setPosture)
+		TUKI_METHOD(Entity, getPosture)
+		TUKI_METHOD(Entity, setScale)
+		TUKI_METHOD(Entity, getScale)
 	TUKI_IMPLEMENT_END(Entity)
 	
 	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
@@ -145,11 +228,10 @@ namespace gctp { namespace scene {
 		if(srcfilename) {
 			if(!context.load(srcfilename)) return Handle<Entity>();
 		}
-		Pointer<Entity> ret = context.create(classname).lock();
+		Pointer<Entity> ret = context.create(classname, name).lock();
 		if(ret) {
 			if(srcfilename) ret->setUp(srcfilename);
 			ret->enter(stage);
-			stage.insert(ret, name);
 		}
 		return ret;
 	}
@@ -157,11 +239,10 @@ namespace gctp { namespace scene {
 	Handle<Entity> newEntity(Context &context, Stage &stage, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) context.load(srcfilename);
-		Pointer<Entity> ret = context.create(typeinfo).lock();
+		Pointer<Entity> ret = context.create(typeinfo, name).lock();
 		if(ret) {
 			if(srcfilename) ret->setUp(srcfilename);
 			ret->enter(stage);
-			stage.insert(ret, name);
 		}
 		return ret.get();
 	}

@@ -55,10 +55,8 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
-	/** ワイヤモデル製作
+	/** ブラシ設定
 	 *
-	 * あくまで表示物はModel、という設計を守るための暫定処置…
-	 * もっとスマートな手段を考えましょう
 	 */
 	void Model::setBrush(Handle<Brush> brush)
 	{
@@ -1278,8 +1276,7 @@ namespace gctp { namespace graphic {
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 				for(ulong i = 0; i < attr_num_; i++) {
 					if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
-					for(ulong j = 0; j < pal_size_; j++)
-					{
+					for(ulong j = 0; j < pal_size_; j++) {
 						DWORD matid = bonecb[i].BoneId[j];
 						if(matid != UINT_MAX) {
 							Pointer<Skeleton::NodeType> node = tree.get(owner_.bonename(matid));
@@ -1410,6 +1407,18 @@ namespace gctp { namespace graphic {
 				pDeclCur++;
 			}
 
+			/*for(ulong i = 0; i < attr_num_; i++) {
+				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
+				for(ulong j = 0; j < pal_size_; j++) {
+					DWORD matid = bonecb[i].BoneId[j];
+					if(matid != UINT_MAX) {
+						const char *name = owner_.bonename(matid);
+						if(name) PRNN("bonename "<<i<<","<<j<<","<<matid<<" "<<name);
+						else PRNN("bonename "<<i<<","<<j<<","<<matid<<" ???");
+					}
+				}
+			}*/
+
 			hr = mesh_->UpdateSemantics(pDecl);
 			if(!hr) return hr;
 
@@ -1461,14 +1470,14 @@ namespace gctp { namespace graphic {
 				}
 
 				{
-					D3DXMATRIXA16 proj_mat;
-					dev->GetTransform(D3DTS_PROJECTION, &proj_mat);
-					hr = (*brush_)->SetMatrix("mViewProj", &proj_mat);
+					D3DXMATRIXA16 mat;
+					D3DXMATRIXA16 view_proj_mat;
+					dev->GetTransform(D3DTS_VIEW, &view_proj_mat);
+					dev->GetTransform(D3DTS_PROJECTION, &mat);
+					D3DXMatrixMultiply(&view_proj_mat, &view_proj_mat, &mat);
+					hr = (*brush_)->SetMatrix("mViewProj", &view_proj_mat);
 					if(!hr) GCTP_TRACE(hr);
 				}
-
-				D3DXMATRIXA16 view_mat;
-				dev->GetTransform(D3DTS_VIEW, &view_mat);
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 				D3DXMATRIX *bm_buf = const_cast< D3DXMATRIX * >(&bone_matricies_[0]);
 
@@ -1482,10 +1491,7 @@ namespace gctp { namespace graphic {
 							DWORD matid = bonecb[i].BoneId[j];
 							if(matid != UINT_MAX) {
 								Pointer<Skeleton::NodeType> node = tree.get(owner_.bonename(matid));
-								if(node) {
-									D3DXMatrixMultiply(&bm_buf[j], *owner_.bone(matid), node->val.wtm());
-									D3DXMatrixMultiply(&bm_buf[j], &bm_buf[j], &view_mat);
-								}
+								if(node) D3DXMatrixMultiply(&bm_buf[j], *owner_.bone(matid), node->val.wtm());
 							}
 						}
 						hr = (*brush_)->SetMatrixArray("mWorldMatrixArray", &bone_matricies_[0], pal_size_);
@@ -1502,7 +1508,7 @@ namespace gctp { namespace graphic {
 						hr = (*brush_)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&owner_.mtrls[bonecb[i].AttribId].diffuse);
 						if(!hr) GCTP_TRACE(hr);
 
-						hr = (*brush_)->SetInt( "CurNumBones", max_face_infl_ -1);
+						hr = (*brush_)->SetInt( "CurNumBones", max_face_infl_-1);
 						if(!hr) GCTP_TRACE(hr);
 
 						Pointer<Texture> tex = owner_.mtrls[bonecb[i].AttribId].tex.get();
