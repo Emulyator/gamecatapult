@@ -7,8 +7,9 @@
  * @date 2004/01/29 18:43:01
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <gctp/pointer.hpp>
+#include <gctp/class.hpp>
 #include <gctp/scene/motion.hpp>
+#include <gctp/tuki.hpp>
 
 namespace gctp {
 	class Skeleton;
@@ -125,9 +126,26 @@ namespace gctp { namespace scene {
 		float speed() const { return speed_; }
 		float setSpeed(float speed) { std::swap(speed_, speed); return speed; }
 
+	protected:
+		bool setUp(luapp::Stack &L);
+		void setMasterSpeed(luapp::Stack &L);
+		int getMasterSpeed(luapp::Stack &L);
+		int trackNum(luapp::Stack &L);
+		void setKeyTime(luapp::Stack &L);
+		int getKeyTime(luapp::Stack &L);
+		void setWeight(luapp::Stack &L);
+		int getWeight(luapp::Stack &L);
+		void setSpeed(luapp::Stack &L);
+		int getSpeed(luapp::Stack &L);
+		void setLoop(luapp::Stack &L);
+		int getLoop(luapp::Stack &L);
+
 	private:
 		float speed_;
 		MotionTrackVector tracks_;
+
+	GCTP_DECLARE_CLASS
+	TUKI_DECLARE(MotionMixer)
 	};
 
 }} // namespace gctp

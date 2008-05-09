@@ -31,18 +31,20 @@ namespace gctp { namespace scene {
 	 */
 	HRslt MotionTrack::update(float delta)
 	{
-		Pointer<Motion> motion = motion_.lock();
-		forward_ = (speed_*delta >= 0);
-		keytime_ += speed_*delta;
-		if(do_loop_) {
-			keytime_ = fmodf(keytime_, motion->time());
-			if(keytime_ < 0) keytime_ += motion->time();
+		if(speed_!=0) {
+			Pointer<Motion> motion = motion_.lock();
+			forward_ = (speed_*delta >= 0);
+			keytime_ += speed_*delta;
+			if(do_loop_) {
+				keytime_ = fmodf(keytime_, motion->time());
+				if(keytime_ < 0) keytime_ += motion->time();
+			}
+			else if(keytime_ < 0) keytime_ = 0;
+			else if(keytime_ > motion->time()) keytime_ = motion->time();
+			speed_ += accel_*fabsf(delta);
+			weight_ += weight_delta_*fabsf(delta);
+			weight_ = clump(weight_, 0.0f, 1.0f);
 		}
-		else if(keytime_ < 0) keytime_ = 0;
-		else if(keytime_ > motion->time()) keytime_ = motion->time();
-		speed_ += accel_*fabsf(delta);
-		weight_ += weight_delta_*fabsf(delta);
-		weight_ = clump(weight_, 0.0f, 1.0f);
 		return S_OK;
 	}
 
@@ -64,11 +66,10 @@ namespace gctp { namespace scene {
 					(*j)->get(work_.stance(), custom_postype_, custom_is_open_, keytime_*ticks_per_sec);
 				}
 				work_.is_valid = true;
-				return true;
 			}
 		}
-		work_.is_valid = false;
-		return false;
+		else work_.is_valid = false;
+		return work_.is_valid;
 	}
 
 	/** Coordにモーションを適用
@@ -89,11 +90,10 @@ namespace gctp { namespace scene {
 					(*j)->get(work_.coord(), custom_postype_, custom_is_open_, keytime_*ticks_per_sec);
 				}
 				work_.is_valid = true;
-				return true;
 			}
 		}
-		work_.is_valid = false;
-		return false;
+		else work_.is_valid = false;
+		return work_.is_valid;
 	}
 
 	/** Matrixにモーションを適用
@@ -121,11 +121,10 @@ namespace gctp { namespace scene {
 					work_.matrix() = coord.toMatrix();
 				}
 				work_.is_valid = true;
-				return true;
 			}
 		}
-		work_.is_valid = false;
-		return false;
+		else work_.is_valid = false;
+		return work_.is_valid;
 	}
 
 	MotionMixer::MotionMixer() : speed_(1.0f) {}
@@ -257,5 +256,119 @@ namespace gctp { namespace scene {
 			}
 		}
 	}
+
+	bool MotionMixer::setUp(luapp::Stack &L)
+	{
+		// Entityからの取得のみ
+		return false;
+	}
+
+	void MotionMixer::setMasterSpeed(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			speed_ = (float)L[2].toNumber();
+		}
+	}
+
+	int MotionMixer::getMasterSpeed(luapp::Stack &L)
+	{
+		L << speed_;
+		return 1;
+	}
+
+	int MotionMixer::trackNum(luapp::Stack &L)
+	{
+		L << (int)tracks().size();
+		return 1;
+	}
+
+	void MotionMixer::setKeyTime(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			tracks()[L[1].toInteger()].setKeytime((float)L[2].toNumber());
+		}
+		else if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setKeytime(0);
+		}
+	}
+
+	int MotionMixer::getKeyTime(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			L << tracks()[L[1].toInteger()].keytime();
+			return 1;
+		}
+		return 0;
+	}
+
+	void MotionMixer::setWeight(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			tracks()[L[1].toInteger()].setWeight((float)L[2].toNumber());
+		}
+		else if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setWeight(0);
+		}
+	}
+
+	int MotionMixer::getWeight(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			L << tracks()[L[1].toInteger()].weight();
+			return 1;
+		}
+		return 0;
+	}
+
+	void MotionMixer::setSpeed(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			tracks()[L[1].toInteger()].setSpeed((float)L[2].toNumber());
+		}
+		else if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setSpeed(0);
+		}
+	}
+
+	int MotionMixer::getSpeed(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			L << tracks()[L[1].toInteger()].speed();
+			return 1;
+		}
+		return 0;
+	}
+
+	void MotionMixer::setLoop(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			tracks()[L[1].toInteger()].setLoop(L[2].toBoolean());
+		}
+		else if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setLoop(false);
+		}
+	}
+
+	int MotionMixer::getLoop(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			L << tracks()[L[1].toInteger()].doLoop();
+			return 1;
+		}
+		return 0;
+	}
+
+	GCTP_IMPLEMENT_CLASS_NS(gctp, MotionMixer, Object);
+	TUKI_IMPLEMENT_BEGIN_NS(Scene, MotionMixer)
+		TUKI_METHOD(MotionMixer, trackNum)
+		TUKI_METHOD(MotionMixer, setMasterSpeed)
+		TUKI_METHOD(MotionMixer, getMasterSpeed)
+		TUKI_METHOD(MotionMixer, setWeight)
+		TUKI_METHOD(MotionMixer, getWeight)
+		TUKI_METHOD(MotionMixer, setSpeed)
+		TUKI_METHOD(MotionMixer, getSpeed)
+		TUKI_METHOD(MotionMixer, setLoop)
+		TUKI_METHOD(MotionMixer, getLoop)
+	TUKI_IMPLEMENT_END(MotionMixer)
 
 }} // namespace gctp

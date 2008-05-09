@@ -96,6 +96,7 @@ namespace gctp { namespace scene {
 		int getPosture(luapp::Stack &L);
 		void setScale(luapp::Stack &L);
 		int getScale(luapp::Stack &L);
+		int getMotionMixer(luapp::Stack &L);
 		
 		virtual bool doOnUpdate(float delta);
 		Pointer<MotionMixer> mixer_;

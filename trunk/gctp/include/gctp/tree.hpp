@@ -120,12 +120,6 @@ namespace gctp {
 			if(cur->children_) return cur->children_.get();
 			else return _next_DF2(root, cur);
 		}
-		static TreeNodeBase *_prev_DF(TreeNodeBase *root, TreeNodeBase *cur)
-		{
-			if(cur->older_) return cur->older_;
-			else if(cur->parent_ && cur->parent_ != root) return _prev_DF(root, cur->parent_);
-			return 0;
-		}
 		static const TreeNodeBase *_next_DF2(const TreeNodeBase *root, const TreeNodeBase *cur)
 		{
 			if(cur->younger_) return cur->younger_.get();
@@ -136,40 +130,6 @@ namespace gctp {
 		{
 			if(cur->children_) return cur->children_.get();
 			else return _next_DF2(root, cur);
-		}
-		static const TreeNodeBase *_prev_DF(const TreeNodeBase *root, const TreeNodeBase *cur)
-		{
-			if(cur->older_) return cur->older_;
-			else if(cur->parent_ && cur->parent_ != root) return _prev_DF(root, cur->parent_);
-			return 0;
-		}
-		static TreeNodeBase *_next_WF(TreeNodeBase *root, TreeNodeBase *cur)
-		{
-			if(cur->younger_) return cur->younger_.get();
-			else if(cur->younger_) return _next_WF(root, cur->younger_.get());
-			else if(cur->parent_ && cur->parent_ != root) return _next_WF(root, cur->parent_);
-			return 0;
-		}
-		static TreeNodeBase *_prev_WF(TreeNodeBase *root, TreeNodeBase *cur)
-		{
-			if(!cur->_isFront() && cur->older_->children_) return cur->older_->children_.get();
-			else if(!cur->_isFront()) return _prev_WF(root, cur->older_);
-			else if(cur->parent_ && cur->parent_ != root) return _prev_WF(root, cur->parent_);
-			return 0;
-		}
-		static const TreeNodeBase *_next_WF(const TreeNodeBase *root, const TreeNodeBase *cur)
-		{
-			if(cur->younger_ && cur->younger_->children_) return cur->younger_->children_.get();
-			else if(cur->younger_) return _next_WF(root, cur->younger_.get());
-			else if(cur->parent_ && cur->parent_ != root) return _next_WF(root, cur->parent_);
-			return 0;
-		}
-		static const TreeNodeBase *_prev_WF(const TreeNodeBase *root, const TreeNodeBase *cur)
-		{
-			if(!cur->_isFront() && cur->older_->children_) return cur->older_->children_.get();
-			else if(!cur->_isFront()) return _prev_WF(root, cur->older_);
-			else if(cur->parent_ && cur->parent_ != root) return _prev_WF(root, cur->parent_);
-			return 0;
 		}
 		// 先端か？
 		bool _isFront() const
@@ -223,13 +183,30 @@ namespace gctp {
 			return node_ != rhs.node_; 
 		}
 	};
+	struct TreeTraverseIteratorBase {
+		typedef size_t                     size_type;
+		typedef ptrdiff_t                  difference_type;
+		typedef forward_iterator_tag       iterator_category;
+
+		const TreeNodeBase *node_;
+
+		TreeIteratorBase(const TreeNodeBase *node) : node_(node) {}
+		TreeIteratorBase() {}
+
+		bool operator==(const TreeIteratorBase &rhs) const { 
+			return node_ == rhs.node_;
+		}
+		bool operator!=(const TreeIteratorBase &rhs) const { 
+			return node_ != rhs.node_; 
+		}
+	};
 	struct TreeSiblingIteratorBase : public TreeIteratorBase {
 		TreeSiblingIteratorBase(const TreeNodeBase *node) : TreeIteratorBase(node) {}
 		TreeSiblingIteratorBase() {}
 		void increment() { node_ = node_->younger_.get(); }
 		void decrement() { node_ = node_->older_; }
 	};
-	struct TreeDFIteratorBase : public TreeIteratorBase {
+	struct TreeTraverseIteratorBase : public TreeTraverseIteratorBase {
 		const TreeNodeBase *root_;
 		TreeChildIteratorBase(const TreeNodeBase *root, const TreeNodeBase *node) : TreeIteratorBase(node), root_(root) {}
 		TreeChildIteratorBase() {}
@@ -237,28 +214,6 @@ namespace gctp {
 		{ 
 			if(node_->children_) node_ = &node_->front();
 			else node_ = TreeNodeBase::_next_DF(root_, node_);
-		}
-		void decrement()
-		{
-			if(node_->children_) node_ = &node_->back();
-			else node_ = TreeNodeBase::_prev_DF(root_, node_);
-		}
-	};
-	struct TreeWFIteratorBase : public TreeIteratorBase {
-		const TreeNodeBase *root_;
-		TreeChildIteratorBase(const TreeNodeBase *root, const TreeNodeBase *node) : TreeIteratorBase(node), root_(root) {}
-		TreeChildIteratorBase() {}
-		void increment()
-		{
-			if(node_->younger_) node_ = node_->younger_.get();
-			else if(node_->parent_) node_ = TreeNodeBase::_next_WF(root_, node_->parent_);
-			else node_ = 0;
-		}
-		void decrement()
-		{
-			if(!node_->_isFront()) node_ = node_->older_;
-			else if(node_->parent_) node_ = TreeNodeBase::_prev_WF(root_, node_->parent_);
-			else node_ = 0;
 		}
 	};
 	template<typename _NodeType, typename _BaseType>
@@ -369,39 +324,35 @@ namespace gctp {
 #endif
 #ifdef GCTP_DONT_USE_BOOST_ITERATOR_ADAPTOR
 		/// 兄弟イテレータ
-		typedef TreeNodeIterator<TreeNode, TreeSiblingIteratorBase> Itr;
+		typedef TreeNodeIterator<TreeNode, TreeSiblingIteratorBase> SiblingItr;
 		/// 兄弟イテレータ
-		typedef ConstTreeNodeIterator<TreeNode, TreeSiblingIteratorBase> ConstItr;
+		typedef ConstTreeNodeIterator<TreeNode, TreeSiblingIteratorBase> ConstSiblingItr;
 		/// 深さ優先探索イテレータ
-		typedef TreeNodeIterator<TreeNode, TreeDFIteratorBase> DFItr;
+		typedef TreeNodeIterator<TreeNode, TreeTraverseIteratorBase> TraverseItr;
 		/// 深さ優先探索イテレータ
-		typedef ConstTreeNodeIterator<TreeNode, TreeDFIteratorBase> ConstDFItr;
-		/// 幅優先探索イテレータ
-		typedef TreeNodeIterator<TreeNode, TreeWFIteratorBase> WFItr;
-		/// 幅優先探索イテレータ
-		typedef ConstTreeNodeIterator<TreeNode, TreeWFIteratorBase> ConstWFItr;
+		typedef ConstTreeNodeIterator<TreeNode, TreeTraverseIteratorBase> ConstTraverseItr;
 #else
 		/// 兄弟イテレータ
-		struct Itr : boost::iterator_adaptor<Itr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct SiblingItr : boost::iterator_adaptor<SiblingItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
 		{
-			Itr( TreeNode* p ) : boost::iterator_adaptor<Itr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ) {}
+			SiblingItr( TreeNode* p ) : boost::iterator_adaptor<SiblingItr, TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ) {}
 			void increment() { base_reference() = reinterpret_cast<TreeNode*>(base()->younger_.get()); }
 			void decrement() { if(base()->_isFront()) base_reference() = 0; else base_reference() = reinterpret_cast<TreeNode*>(base()->older_); }
 		};
 
 		/// 兄弟イテレータ
-		struct ConstItr : boost::iterator_adaptor<ConstItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
+		struct ConstSiblingItr : boost::iterator_adaptor<ConstSiblingItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>
 		{
-			ConstItr( const TreeNode* p ) : boost::iterator_adaptor<ConstItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ) {}
+			ConstSiblingItr( const TreeNode* p ) : boost::iterator_adaptor<ConstSiblingItr, const TreeNode*, boost::use_default, boost::bidirectional_traversal_tag>( p ) {}
 			void increment() { base_reference() = reinterpret_cast<const TreeNode *>(base()->younger_.get()); }
 			void decrement() { if(base()->_isFront()) base_reference() = 0; else base_reference() = reinterpret_cast<const TreeNode *>(base()->older_); }
 		};
 
 		/// 深さ優先探索イテレータ
-		struct DFItr : boost::iterator_adaptor<DFItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>
+		struct TraverseItr : boost::iterator_adaptor<TraverseItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>
 		{
 			TreeNode *root_;
-			DFItr(TreeNode *root, TreeNode *p) : boost::iterator_adaptor<DFItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
+			TraverseItr(TreeNode *root, TreeNode *p) : boost::iterator_adaptor<TraverseItr, TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			void increment()
 			{
 				base_reference() = reinterpret_cast<TreeNode *>(_next_DF(root_, base()));
@@ -409,76 +360,33 @@ namespace gctp {
 		};
 
 		/// 深さ優先探索イテレータ
-		struct ConstDFItr : boost::iterator_adaptor<ConstDFItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>
+		struct ConstTraverseItr : boost::iterator_adaptor<ConstTraverseItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>
 		{
 			const TreeNode *root_;
-			ConstDFItr(const TreeNode *root, const TreeNode *p) : boost::iterator_adaptor<ConstDFItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
+			ConstTraverseItr(const TreeNode *root, const TreeNode *p) : boost::iterator_adaptor<ConstTraverseItr, const TreeNode *, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
 			void increment()
 			{
 				base_reference() = reinterpret_cast<const TreeNode *>(_next_DF(root_, base()));
 			}
 		};
-
-		/// 幅優先探索イテレータ
-		struct WFItr : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::forward_traversal_tag>
-		{
-			TreeNode *root_;
-			WFItr( TreeNode* root, TreeNode* p ) : boost::iterator_adaptor<WFItr, TreeNode*, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
-			TreeNode *_next(TreeNodeBase *cur)
-			{
-				return reinterpret_cast<TreeNode *>(_next_WF(root_, cur));
-			}
-			void increment()
-			{
-				if(base()->younger_) base_reference() = reinterpret_cast<TreeNode*>(base()->younger_.get());
-				else if(base()->parent_) base_reference() = _next(base()->parent_);
-				else base_reference() = 0;
-			}
-		};
-
-		/// 幅優先探索イテレータ
-		struct ConstWFItr : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::forward_traversal_tag>
-		{
-			const TreeNode *root_;
-			ConstWFItr( const TreeNode* root, const TreeNode* p ) : boost::iterator_adaptor<ConstWFItr, const TreeNode*, boost::use_default, boost::forward_traversal_tag>( p ), root_(root) {}
-			const TreeNode *_next(const TreeNodeBase *cur)
-			{
-				return reinterpret_cast<const TreeNode *>(_next_WF(root_, cur));
-			}
-			void increment()
-			{
-				if(base()->younger_) base_reference() = reinterpret_cast<const TreeNode*>(base()->younger_.get());
-				else if(base()->parent_) base_reference() = _next(base()->parent_);
-				else base_reference() = 0;
-			}
-		};
 #endif
 		/// 子リストの最初を指すイテレータを返す
-		Itr begin() { return Itr(reinterpret_cast<TreeNode *>(TreeNodeBase::begin())); }
+		SiblingItr begin() { return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::begin())); }
 		/// 子リストの終端を指すイテレータを返す
-		Itr end() { return Itr(reinterpret_cast<TreeNode *>(TreeNodeBase::end())); }
+		SiblingItr end() { return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::end())); }
 		/// 子リストの最初を指すイテレータを返す
-		ConstItr begin() const { return ConstItr(reinterpret_cast<const TreeNode *>(TreeNodeBase::begin())); }
+		ConstSiblingItr begin() const { return ConstSiblingItr(reinterpret_cast<const TreeNode *>(TreeNodeBase::begin())); }
 		/// 子リストの終端を指すイテレータを返す
-		ConstItr end() const { return ConstItr(reinterpret_cast<const TreeNode *>(TreeNodeBase::end())); }
+		ConstSiblingItr end() const { return ConstSiblingItr(reinterpret_cast<const TreeNode *>(TreeNodeBase::end())); }
 
 		/// 深さ優先探索の最初を指すイテレータを返す
-		DFItr beginDF() { return DFItr(this, this); }
+		TraverseItr beginTraverse() { return TraverseItr(this, this); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		DFItr endDF() { return DFItr(this, 0); }
+		TraverseItr endTraverse() { return TraverseItr(this, 0); }
 		/// 深さ優先探索の最初を指すイテレータを返す
-		ConstDFItr beginDF() const { return ConstDFItr(this, this); }
+		ConstTraverseItr beginTraverse() const { return ConstTraverseItr(this, this); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		ConstDFItr endDF() const { return ConstDFItr(this, 0); }
-
-		/// 深さ優先探索の最初を指すイテレータを返す
-		WFItr beginWF() { return WFItr(this, this); }
-		/// 深さ優先探索の終端を指すイテレータを返す
-		WFItr endWF() { return WFItr(this, 0); }
-		/// 深さ優先探索の最初を指すイテレータを返す
-		ConstWFItr beginWF() const { return ConstWFItr(this, this); }
-		/// 深さ優先探索の終端を指すイテレータを返す
-		ConstWFItr endWF() const { return ConstWFItr(this, 0); }
+		ConstTraverseItr endTraverse() const { return ConstTraverseItr(this, 0); }
 
 		/// 格納している値
 		T val;
@@ -498,49 +406,49 @@ namespace gctp {
 		}
 		
 		/// posの直前に子を挿入
-		void insert(Itr pos, Pointer<TreeNode> node)
+		void insert(SiblingItr pos, Pointer<TreeNode> node)
 		{
 			/// デバッグ版では本とは渡されたイテレータが本当に自分の子か調べたほうが良いな
 			TreeNodeBase::insert(&*pos, node);
 		}
 		/// posの直前に子を挿入
-		Itr insert(Itr pos, const ValueType &val)
+		SiblingItr insert(SiblingItr pos, const ValueType &val)
 		{
 			TreeNode *ret = new(allocator()) TreeNode(val);
 			insert(pos, ret);
-			return Itr(ret);
+			return SiblingItr(ret);
 		}
 		/// posの直前に子を挿入
-		Itr insert(Itr pos)
+		SiblingItr insert(SiblingItr pos)
 		{
 			TreeNode *ret = new(allocator()) TreeNode();
 			insert(pos, ret);
-			return Itr(ret);
+			return SiblingItr(ret);
 		}
 		/// posを削除し、直後のItrを返す
-		Itr erase(Itr pos)
+		SiblingItr erase(SiblingItr pos)
 		{
-			return Itr(reinterpret_cast<TreeNode *>(TreeNodeBase::erase(&*pos)));
+			return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::erase(&*pos)));
 		}
 		/// 子に追加
-		Itr push(Pointer<TreeNode> node)
+		SiblingItr push(Pointer<TreeNode> node)
 		{
 			TreeNodeBase::push(node);
-			return Itr(node.get());
+			return SiblingItr(node.get());
 		}
 		/// 子に追加
-		Itr push(const ValueType &val)
+		SiblingItr push(const ValueType &val)
 		{
 			TreeNode *ret = new(allocator()) TreeNode(val);
 			push(ret);
-			return Itr(ret);
+			return SiblingItr(ret);
 		}
 		/// 子に追加
-		Itr push()
+		SiblingItr push()
 		{
 			TreeNode *ret = new(allocator()) TreeNode();
 			push(ret);
-			return Itr(ret);
+			return SiblingItr(ret);
 		}
 
 		struct FindValuePred {
@@ -553,12 +461,12 @@ namespace gctp {
 		};
 
 		/// 検索
-		Itr find(const T &val)
+		SiblingItr find(const T &val)
 		{
 			return std::find_if(begin(), end(), FindValuePred(val));
 		}
 		/// 検索
-		ConstItr find(const T &val) const
+		ConstSiblingItr find(const T &val) const
 		{
 			return std::find_if(begin(), end(), FindValuePred(val));
 		}
@@ -567,7 +475,7 @@ namespace gctp {
 		Pointer<TreeNode> dup() const
 		{
 			Pointer<TreeNode> ret = new(allocator()) TreeNode(val);
-			for(TreeNode::ConstItr it = begin(); it != end(); ++it) {
+			for(TreeNode::ConstSiblingItr it = begin(); it != end(); ++it) {
 				ret->push(it->dup());
 			}
 			return ret;
@@ -578,7 +486,7 @@ namespace gctp {
 		{
 			for(int i = 0; i < indent; i++) os << "\t";
 			os << val << std::endl;
-			for(TreeNode::ConstItr it = begin(); it != end(); ++it) {
+			for(TreeNode::ConstSiblingItr it = begin(); it != end(); ++it) {
 				it->printIndented(os, indent+1);
 			}
 		}
@@ -592,7 +500,7 @@ namespace gctp {
 		 */
 		bool visitChildren(Visitor visitor)
 		{
-			for(Itr it = begin(); it != end(); ++it) {
+			for(SiblingItr it = begin(); it != end(); ++it) {
 				if(!visitor(*it)) return false;
 			}
 			return true;
@@ -607,7 +515,7 @@ namespace gctp {
 		 */
 		bool visitChildrenConst(ConstVisitor visitor) const
 		{
-			for(ConstItr it = begin(); it != end(); ++it) {
+			for(ConstSiblingItr it = begin(); it != end(); ++it) {
 				if(!visitor(*it)) return false;
 			}
 			return true;
@@ -658,17 +566,15 @@ namespace gctp {
 	template<class T, class Alloc = std::allocator<T> >
 	class Tree : public Pointer< TreeNode<T, Alloc> > {
 	public:
-		typedef TreeNode<T, Alloc>				NodeType;
-		typedef Pointer<NodeType>				NodePtr;
-		typedef typename NodeType::ValueType	ValueType;
-		typedef typename NodeType::Itr			Itr;
-		typedef typename NodeType::ConstItr		ConstItr;
-		typedef typename NodeType::DFItr		DFItr;
-		typedef typename NodeType::ConstDFItr	ConstDFItr;
-		typedef typename NodeType::WFItr		WFItr;
-		typedef typename NodeType::ConstWFItr	ConstWFItr;
-		typedef typename NodeType::Visitor		Visitor;
-		typedef typename NodeType::ConstVisitor	ConstVisitor;
+		typedef TreeNode<T, Alloc>						NodeType;
+		typedef Pointer<NodeType>						NodePtr;
+		typedef typename NodeType::ValueType			ValueType;
+		typedef typename NodeType::SiblingItr			SiblingItr;
+		typedef typename NodeType::ConstSiblingItr		ConstSiblingItr;
+		typedef typename NodeType::TraverseItr			TraverseItr;
+		typedef typename NodeType::ConstTraverseItr		ConstTraverseItr;
+		typedef typename NodeType::Visitor				Visitor;
+		typedef typename NodeType::ConstVisitor			ConstVisitor;
 
 		/// ツリーノードハンドル
 		struct NodeHandle
@@ -730,36 +636,27 @@ namespace gctp {
 		}
 
 		/// 子リストの最初を指すイテレータを返す
-		Itr begin() { return Itr(get()); }
+		SiblingItr begin() { return SiblingItr(get()); }
 		/// 子リストの終端を指すイテレータを返す
-		Itr end() { return Itr(0); }
+		SiblingItr end() { return SiblingItr(0); }
 		/// 子リストの最初を指すイテレータを返す
-		ConstItr begin() const { return ConstItr(get()->children_.get()); }
+		ConstSiblingItr begin() const { return ConstSiblingItr(get()->children_.get()); }
 		/// 子リストの終端を指すイテレータを返す
-		ConstItr end() const { return ConstItr(0); }
+		ConstSiblingItr end() const { return ConstSiblingItr(0); }
 
 		/// 深さ優先探索の最初を指すイテレータを返す
-		DFItr beginDF() { return DFItr(get(), get()); }
+		TraverseItr beginTraverse() { return TraverseItr(get(), get()); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		DFItr endDF() { return DFItr(get(), 0); }
+		TraverseItr endTraverse() { return TraverseItr(get(), 0); }
 		/// 深さ優先探索の最初を指すイテレータを返す
-		ConstDFItr beginDF() const { return ConstDFItr(get(), get()); }
+		ConstTraverseItr beginTraverse() const { return ConstTraverseItr(get(), get()); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		ConstDFItr endDF() const { return ConstDFItr(get(), 0); }
-
-		/// 深さ優先探索の最初を指すイテレータを返す
-		WFItr beginWF() { return WFItr(get(), get()); }
-		/// 深さ優先探索の終端を指すイテレータを返す
-		WFItr endWF() { return WFItr(get(), 0); }
-		/// 深さ優先探索の最初を指すイテレータを返す
-		ConstWFItr beginWF() const { return ConstWFItr(get(), get()); }
-		/// 深さ優先探索の終端を指すイテレータを返す
-		ConstWFItr endWF() const { return ConstWFItr(get(), 0); }
+		ConstTraverseItr endTraverse() const { return ConstTraverseItr(get(), 0); }
 
 		/// ルートをさすイテレータ
-		Itr root() { return Itr(get()); }
+		SiblingItr root() { return SiblingItr(get()); }
 		/// ルートをさすイテレータ
-		ConstItr root() const { return ConstItr(get()); }
+		ConstSiblingItr root() const { return ConstSiblingItr(get()); }
 
 		/// ルートがあるか？
 		bool empty() const { return !get(); }

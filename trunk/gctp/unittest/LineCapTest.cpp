@@ -29,7 +29,7 @@ public:
 //CUPPA:decl=+
   void testDistance() {
 //    CPPUNIT_FAIL("no implementation");
-	  LineSeg s1(VectorC(1,1,0),VectorC(1,1,1)), s2(VectorC(-1,-2,0),VectorC(-1,-1,0));
+	  LineSegC s1(VectorC(1,1,0),VectorC(1,1,1)), s2(VectorC(-1,-2,0),VectorC(-1,-1,0));
 	  float t1, t2;
 	  float l = distance(s1, s2, &t1, &t2);
       CPPUNIT_ASSERT_DOUBLES_EQUAL(t1, 0.0f, 0.00001f);

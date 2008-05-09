@@ -86,14 +86,14 @@ namespace gctp {
 
 	StrutumTree &StrutumTree::setTransform()
 	{
-		//for_each(beginDF(), endDF(), transformVisitor); // “®‚¢‚Ä‚È‚¢‚¶‚á‚ñ
-		visit(transformVisitor_);
+		for_each(beginTraverse(), endTraverse(), transformVisitor); // “®‚¢‚Ä‚È‚¢‚¶‚á‚ñ
+		//visit(transformVisitor_);
 		return *this;
 	}
 
 	StrutumTree &StrutumTree::setIdentity()
 	{
-		for_each(beginWF(), endWF(), identifyVisitor);
+		for_each(beginTraverse(), endTraverse(), identifyVisitor);
 		return *this;
 	}
 

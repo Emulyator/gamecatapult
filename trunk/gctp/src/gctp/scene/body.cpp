@@ -29,8 +29,8 @@ namespace gctp { namespace scene {
 		Pointer<Body> ret = new Body();
 		if(ret) {
 			ret->copy(*this);
-			ConstDFItr sit = beginDF();
-			for(DFItr dit = ret->beginDF(); dit != ret->endDF(); ++dit, ++sit) {
+			ConstTraverseItr sit = beginTraverse();
+			for(TraverseItr dit = ret->beginTraverse(); dit != ret->endTraverse(); ++dit, ++sit) {
 				for(PointerList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
 					if((*i)->node().lock().get() == &*sit) {
 						Pointer<Flesh> flesh = new Flesh;
