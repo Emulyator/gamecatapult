@@ -26,8 +26,8 @@ namespace gctp {
 	{
 		*this = StrutumTree(src.StrutumTree::dup());
 		index.clear();
-		ConstDFItr sit = src.beginDF();
-		for(DFItr dit = beginDF(); dit != endDF(); ++dit, ++sit) {
+		ConstTraverseItr sit = src.beginTraverse();
+		for(TraverseItr dit = beginTraverse(); dit != endTraverse(); ++dit, ++sit) {
 			const char *nodename = src.getName(*sit);
 			if(nodename) index[nodename] = &*dit;
 		}
@@ -44,8 +44,8 @@ namespace gctp {
 		if(empty()) setUp();
 		if(!empty() && !src.empty()) {
 			StrutumTree::merge(src);
-			ConstDFItr sit = src.beginDF();
-			for(DFItr dit = back().beginDF(); dit != back().endDF(); ++dit, ++sit) {
+			ConstTraverseItr sit = src.beginTraverse();
+			for(TraverseItr dit = back().beginTraverse(); dit != back().endTraverse(); ++dit, ++sit) {
 				const char *nodename = src.getName(*sit);
 				if(nodename) index[nodename] = &*dit;
 			}

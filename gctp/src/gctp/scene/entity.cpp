@@ -210,6 +210,15 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	int Entity::getMotionMixer(luapp::Stack &L)
+	{
+		if(mixer_) {
+			TukiRegister::newUserData(L, Hndl(mixer_.get()));
+			return 1;
+		}
+		return 0;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Entity, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Entity)
 		TUKI_METHOD(Entity, load)
@@ -221,6 +230,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getPosture)
 		TUKI_METHOD(Entity, setScale)
 		TUKI_METHOD(Entity, getScale)
+		TUKI_METHOD(Entity, getMotionMixer)
 	TUKI_IMPLEMENT_END(Entity)
 	
 	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)

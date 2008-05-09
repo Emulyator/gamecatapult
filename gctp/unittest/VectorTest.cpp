@@ -75,10 +75,10 @@ public:
 	  PRNN("Tree");
 	  Tree<Foo> tree(VectorC(0,0,0));
 	  PRNN("???");
-	  Tree<Foo>::Itr i = tree.root();
+	  Tree<Foo>::SiblingItr i = tree.root();
 	  i->push(VectorC(0,0,1));
 	  PRNN("???");
-	  Tree<Foo>::Itr ii = i->push(VectorC(0,1,0));
+	  Tree<Foo>::SiblingItr ii = i->push(VectorC(0,1,0));
 	  PRNN("???");
 	  i->push(VectorC(1,0,0));
 	  PRNN("???");

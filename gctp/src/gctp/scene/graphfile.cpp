@@ -458,6 +458,10 @@ namespace gctp { namespace scene {
 			else if(DXFILEOBJ_AnimTicksPerSecond == cur.type()) {
 				//PRNN("DXFILEOBJ_AnimTicksPerSecond found");
 				work.ticks_per_sec = *(DWORD *)cur.data();
+				for(PtrList::iterator i = self.begin(); i != self.end(); ++i) {
+					Pointer<Motion> w = (*i);
+					if(w) w->setTicksPerSec(static_cast<float>(work.ticks_per_sec));
+				}
 			}
 			else if(TID_D3DRMAnimationSet == cur.type()) {
 				//PRNN("TID_D3DRMAnimationSet found");
