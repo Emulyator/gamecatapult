@@ -93,7 +93,7 @@ namespace gctp { namespace scene {
 
 	Size2f Camera::screen() const
 	{
-		if(doFitToScreen()) return Vector2C(graphic::getViewPort().size());
+		if(isFittedToScreen()) return Vector2C(graphic::getViewPort().size());
 		else return window_;
 	}
 
@@ -116,7 +116,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void Camera::setPos(luapp::Stack &L)
+	void Camera::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
 			Stance newstance = stance();
@@ -127,14 +127,14 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	int Camera::getPos(luapp::Stack &L)
+	int Camera::getPosition(luapp::Stack &L)
 	{
 		Stance nowstance = stance();
 		L << nowstance.position.x << nowstance.position.y << nowstance.position.z;
 		return 3;
 	}
 
-	void Camera::setRot(luapp::Stack &L)
+	void Camera::setPosture(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
 			Stance newstance = stance();
@@ -143,7 +143,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	int Camera::getRot(luapp::Stack &L)
+	int Camera::getPosture(luapp::Stack &L)
 	{
 		Quat q = stance().posture;
 		L << q.yaw() << q.pitch() << q.roll();
@@ -153,10 +153,10 @@ namespace gctp { namespace scene {
 	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Camera)
 		TUKI_METHOD(Camera, activate)
-		TUKI_METHOD(Camera, setPos)
-		TUKI_METHOD(Camera, getPos)
-		TUKI_METHOD(Camera, setRot)
-		TUKI_METHOD(Camera, getRot)
+		TUKI_METHOD(Camera, setPosition)
+		TUKI_METHOD(Camera, getPosition)
+		TUKI_METHOD(Camera, setPosture)
+		TUKI_METHOD(Camera, getPosture)
 	TUKI_IMPLEMENT_END(Camera)
 
 }} // namespace gctp::scene

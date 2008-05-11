@@ -200,7 +200,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		const Vector3d<_Type> &position() const { return *reinterpret_cast<const Vector3d<_Type> *>(m[3]); }
 
 		/// スケールを抽出
-		Vector3d<_Type> getScaling() const { return Vector(right().length(),up().length(),at().length()); }
+		Vector3d<_Type> getScale() const { return Vector(right().length(),up().length(),at().length()); }
 
 		/// 単位行列に
 		Matrix3x4 &identify() {

@@ -72,7 +72,7 @@ namespace gctp { namespace scene {
 		/// 現在のスクリーンからアスペクトを設定(デフォルト)
 		void fitToScreen() { window_.x = 0; }
 		/// 投影サイズがレンダーターゲットと一致しているか？
-		bool doFitToScreen() const { return window_.x == 0 || window_.y == 0; }
+		bool isFittedToScreen() const { return window_.x == 0 || window_.y == 0; }
 		/// 投影モードか？
 		bool isPerspective() const { return fov_ > 0; }
 
@@ -108,10 +108,10 @@ namespace gctp { namespace scene {
 	protected:
 		bool setUp(luapp::Stack &L);
 		void activate(luapp::Stack &L);
-		void setPos(luapp::Stack &L);
-		int getPos(luapp::Stack &L);
-		void setRot(luapp::Stack &L);
-		int getRot(luapp::Stack &L);
+		void setPosition(luapp::Stack &L);
+		int getPosition(luapp::Stack &L);
+		void setPosture(luapp::Stack &L);
+		int getPosture(luapp::Stack &L);
 
 	private:
 		Stance stance_;

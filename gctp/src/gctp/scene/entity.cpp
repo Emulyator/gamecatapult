@@ -189,12 +189,17 @@ namespace gctp { namespace scene {
 
 	void Entity::setScale(luapp::Stack &L)
 	{
-		if(L.top() >= 3) {
-			if(target_ && *target_) {
+		if(target_ && *target_) {
+			if(L.top() >= 3) {
 				Coord c = (*target_)->val.lcm();
 				c.scale.x = (float)L[1].toNumber();
 				c.scale.y = (float)L[2].toNumber();
 				c.scale.z = (float)L[3].toNumber();
+				(*target_)->val.getLCM() = c.toMatrix();
+			}
+			else if(L.top() >= 1) {
+				Coord c = (*target_)->val.lcm();
+				c.scale.x = c.scale.y = c.scale.z = (float)L[1].toNumber();
 				(*target_)->val.getLCM() = c.toMatrix();
 			}
 		}
