@@ -268,7 +268,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gctp\scene\renderingtree.cpp"
+				RelativePath="..\..\..\src\gctp\scene\rendertree.cpp"
 				>
 			</File>
 			<File
@@ -362,11 +362,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\scene\renderingnode.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\scene\renderingtree.hpp"
+				RelativePath="..\..\..\include\gctp\scene\rendertree.hpp"
 				>
 			</File>
 			<File

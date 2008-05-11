@@ -1,7 +1,7 @@
-#ifndef _GCTP_SCENE_RENDERINGTREE_HPP_
-#define _GCTP_SCENE_RENDERINGTREE_HPP_
+#ifndef _GCTP_SCENE_RENDERTREE_HPP_
+#define _GCTP_SCENE_RENDERTREE_HPP_
 /** @file
- * GameCatapult レンダリングツリークラス
+ * GameCatapult レンダーツリークラス
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/01/29 18:43:01
@@ -13,22 +13,22 @@
 namespace gctp { namespace scene {
 
 	/// レンダーノード
-	typedef TreeNode< Pointer<Renderer> > RenderingNode;
+	typedef TreeNode< Pointer<Renderer> > RenderNode;
 
-	/** レンダリングツリークラス
+	/** レンダーツリークラス
 	 *
 	 * Pointer<Renderer>のTreeである点に注意
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/29 18:38:41
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class RenderingTree : public Object, public Tree< Pointer<Renderer> >
+	class RenderTree : public Object, public Tree< Pointer<Renderer> >
 	{
 	public:
 		/// デフォルトコンストラクタ
-		RenderingTree() {}
+		RenderTree() {}
 		/// コンストラクタ
-		RenderingTree(Tree< Pointer<Renderer> > const & src) : Tree< Pointer<Renderer> >(src) {}
+		RenderTree(Tree< Pointer<Renderer> > const & src) : Tree< Pointer<Renderer> >(src) {}
 		
 		/// ルート製作
 		void setUp(const Pointer<Renderer> renderer)
@@ -37,10 +37,10 @@ namespace gctp { namespace scene {
 		}
 
 		/// 結合
-		void merge(const RenderingTree &src);
+		void merge(const RenderTree &src);
 
 		/// ノードを辿って描画
-		void draw() const;
+		void draw(float delta) const;
 	
 	GCTP_DECLARE_CLASS
 	};
