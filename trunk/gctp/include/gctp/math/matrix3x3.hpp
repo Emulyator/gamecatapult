@@ -133,7 +133,7 @@ namespace gctp { namespace math {
 		}
 
 		/// スケールを抽出
-		Vector2d<_Type> getScaling() const { return Vector2d<_Type>(right().length(),up().length()); }
+		Vector2d<_Type> getScale() const { return Vector2d<_Type>(right().length(),up().length()); }
 
 		/// キャスト演算ども
 		operator _Type* () { return &_11; }

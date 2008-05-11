@@ -84,7 +84,7 @@ namespace gctp { namespace math {
 		}
 
 		/// スケールを抽出
-		Vector2<_Type> getScaling() const { return (Vector2<_Type>){right().length(), up().length()}; }
+		Vector2<_Type> getScale() const { return (Vector2<_Type>){right().length(), up().length()}; }
 
 		/// キャスト演算ども
 		operator _Type* () { return &m[0][0]; }

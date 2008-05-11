@@ -67,7 +67,7 @@ namespace gctp {
 
 	enum XKeyType {
 		XKEY_POSTURE	= 0,
-		XKEY_SCALING	= 1,
+		XKEY_SCALE		= 1,
 		XKEY_POSITION	= 2,
 		XKEY_YPR		= 3,	// ３が謎だが…オイラー角用だったのかな？
 		XKEY_MATRIX		= 4		// SkinnedMeshのソースでは4になっている……が、ヘルプでは３だ 4でイイらしい……
@@ -98,10 +98,10 @@ namespace gctp {
 	};
 
 	typedef XKey<XQuaternion>	XPostureKey;
-	typedef XKey<D3DXVECTOR3>	XScalingKey, XPositionKey, XYPRKey;
+	typedef XKey<D3DXVECTOR3>	XScaleKey, XPositionKey, XYPRKey;
 	typedef XKey<D3DXMATRIX>	XMatrixKey;
 	typedef TXKeys<XPostureKey>	XPostureKeys;
-	typedef TXKeys<XScalingKey>	XScalingKeys, XPositionKeys, XYPRKeys;
+	typedef TXKeys<XScaleKey>	XScaleKeys, XPositionKeys, XYPRKeys;
 	typedef TXKeys<XMatrixKey>	XMatrixKeys;
 
 	struct XVerticies {
@@ -268,7 +268,7 @@ namespace gctp {
 
 		const XAnimOption *animoption() const { return reinterpret_cast<const XAnimOption *>(data()); }
 		const XKeys *keys() const { return reinterpret_cast<const XKeys *>(data()); }
-		const XScalingKeys *sclkeys() const { return reinterpret_cast<const XScalingKeys *>(data()); }
+		const XScaleKeys *sclkeys() const { return reinterpret_cast<const XScaleKeys *>(data()); }
 		const XPostureKeys *posturekeys() const { return reinterpret_cast<const XPostureKeys *>(data()); }
 		const XYPRKeys *yprkeys() const { return reinterpret_cast<const XYPRKeys *>(data()); }
 		const XPositionKeys *positionkeys() const { return reinterpret_cast<const XPositionKeys *>(data()); }

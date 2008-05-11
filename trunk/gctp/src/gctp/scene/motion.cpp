@@ -101,16 +101,16 @@ namespace gctp { namespace scene {
 			else postype = custom_postype;
 			if(custom_is_open == DEFAULT_ISOPEN) is_open = isOpen();
 			else is_open = (custom_is_open == OPEN);
-			if(ks->type()==Keys::SCALING) {
+			if(ks->type()==Keys::SCALE) {
 				Vector v;
 				if(SPLINE==postype) {
-					((ScalingKeys *)ks)->get4PInterpolation(v, is_open, keytime);
+					((ScaleKeys *)ks)->get4PInterpolation(v, is_open, keytime);
 				}
 				else if(LINEAR==postype) {
-					((ScalingKeys *)ks)->get2PInterpolation(v, is_open, keytime);
+					((ScaleKeys *)ks)->get2PInterpolation(v, is_open, keytime);
 				}
 				else {
-					((ScalingKeys *)ks)->getKeyData(v, is_open, keytime);
+					((ScaleKeys *)ks)->getKeyData(v, is_open, keytime);
 				}
 				coord.scale = v;
 			}
@@ -179,16 +179,16 @@ namespace gctp { namespace scene {
 			else postype = custom_postype;
 			if(custom_is_open == DEFAULT_ISOPEN) is_open = isOpen();
 			else is_open = (custom_is_open==OPEN);
-			if(ks->type()==Keys::SCALING) {
+			if(ks->type()==Keys::SCALE) {
 				Vector v;
 				if(SPLINE==postype) {
-					((ScalingKeys *)ks)->get4PInterpolation(v, is_open, keytime);
+					((ScaleKeys *)ks)->get4PInterpolation(v, is_open, keytime);
 				}
 				else if(LINEAR==postype) {
-					((ScalingKeys *)ks)->get2PInterpolation(v, is_open, keytime);
+					((ScaleKeys *)ks)->get2PInterpolation(v, is_open, keytime);
 				}
 				else {
-					((ScalingKeys *)ks)->getKeyData(v, is_open, keytime);
+					((ScaleKeys *)ks)->getKeyData(v, is_open, keytime);
 				}
 				mat *= Matrix().scale(v);
 			}

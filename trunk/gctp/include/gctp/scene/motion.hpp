@@ -66,7 +66,7 @@ namespace gctp { namespace scene {
 		class Keys {
 		public:
 			enum Type {
-				SCALING,
+				SCALE,
 				POSTURE,
 				YPR,
 				POSITION,
@@ -197,7 +197,7 @@ namespace gctp { namespace scene {
 		/** @name アニメーションキー配列クラス
 		 */
 		/* @{ */
-		typedef KeyArray<TKey<Vector>,Vector> ScalingKeys;
+		typedef KeyArray<TKey<Vector>,Vector> ScaleKeys;
 		typedef KeyArray<TKey<Quat>,Quat> PostureKeys;
 		typedef KeyArray<TKey<Vector>,Vector> YPRKeys;
 		typedef KeyArray<TKey<Vector>,Vector> PositionKeys;

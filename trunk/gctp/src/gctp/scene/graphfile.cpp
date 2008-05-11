@@ -271,16 +271,16 @@ namespace gctp { namespace scene {
 			HRslt hr;
 			const XKeys *keys = dat.keys();
 			if(keys) {
-				if(keys->type == XKEY_SCALING) {
-					const XScalingKeys *anim_keys = dat.sclkeys();
-					MotionChannel::ScalingKeys *w = new MotionChannel::ScalingKeys(MotionChannel::Keys::SCALING, anim_keys->num);
+				if(keys->type == XKEY_SCALE) {
+					const XScaleKeys *anim_keys = dat.sclkeys();
+					MotionChannel::ScaleKeys *w = new MotionChannel::ScaleKeys(MotionChannel::Keys::SCALE, anim_keys->num);
 					//ŒÂ”•ªƒRƒs[
 					for(uint i = 0; i < anim_keys->num; i++) {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val = VectorC(anim_keys->keys[i].val);
 					}
 					self.setKeys(w);
-					//PRNN("ScalingKey read");
+					//PRNN("ScaleKey read");
 				}
 				else if(keys->type == XKEY_POSTURE) {
 					const XPostureKeys *anim_keys = dat.posturekeys();
