@@ -22,7 +22,7 @@ namespace gctp { namespace scene {
 		Renderer() {}
 
 		/// ノード到達時の処理(返り値は、子を実行するか否か)
-		virtual bool onEnter(float /*delta*/) const { return true; }
+		virtual bool onReach(float /*delta*/) const { return true; }
 		/// ノード離脱時の処理(返り値は、実行を続行するか否か)
 		virtual bool onLeave(float /*delta*/) const { return true; }
 

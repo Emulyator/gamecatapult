@@ -25,7 +25,7 @@ namespace gctp {
 namespace gctp { namespace graphic {
 
 	class Texture;
-	class Brush;
+	class Shader;
 
 	/** D3DXメッシュ頂点データのロックと自動開放
 	 *
@@ -244,16 +244,16 @@ namespace gctp { namespace graphic {
 		/// 頂点シェーダースキンモデル化
 		HRslt useVS();
 		/// HLSLによるスキンモデル化
-		HRslt useBrush();
+		HRslt useShader();
 
 		/// D3DXメッシュを返す
 		ID3DXMeshPtr mesh() const { return mesh_; }
 		/// D3DXスキン情報を返す
 		ID3DXSkinInfoPtr skin() const { return skin_; }
-		/// 使用するgctp::Brushを返す
-		Handle<Brush> brush() const { return brush_; }
-		/// 使用するgctp::Brushを設定する
-		void setBrush(Handle<Brush> brush);
+		/// 使用するgctp::Shaderを返す
+		Handle<Shader> shader() const { return shader_; }
+		/// 使用するgctp::Shaderを設定する
+		void setShader(Handle<Shader> shader);
 
 		/// ボーン名
 		const char *bonename(uint i) { if(skin_) return skin_->GetBoneName(i); else return NULL; }
@@ -286,7 +286,7 @@ namespace gctp { namespace graphic {
 	private:
 		Pointer<ModelDetail> detail_;
 		Pointer<WireMesh>    wire_; // あくまで表示物はModel、という設計を守るための暫定処置…
-		Handle<Brush> brush_;
+		mutable Handle<Shader> shader_;
 		Sphere bs_;
 		int offset_;
 	};

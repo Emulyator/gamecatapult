@@ -7,12 +7,11 @@
  */
 #include "common.h"
 #include <gctp/scene/rendertree.hpp>
+#include <gctp/app.hpp>
 
 using namespace std;
 
 namespace gctp { namespace scene {
-
-	GCTP_IMPLEMENT_CLASS_NS(gctp, RenderTree, Object);
 
 	/** 指定の階層ツリーの複製を、子ノードに連結。
 	 *
@@ -22,26 +21,183 @@ namespace gctp { namespace scene {
 	 */
 	void RenderTree::merge(const RenderTree &src)
 	{
-		get()->push(src->dup());
+		TreeType::get()->push(src->dup());
 	}
 
 	namespace {
 		class RenderVisitor {
 		public:
-			RenderVisitor(float delta) : delta_(delta) {}
+			bool need_clean;
+			RenderVisitor(float delta) : need_clean(false), delta_(delta) {}
 			bool operator()(const RenderTree::NodeType &n)
 			{
-				if(n.val->onEnter(delta_)) n.visitChildrenConst(*this);
-				return n.val->onLeave(delta_);
+				if(n.val) {
+					if(n.val->onReach(delta_)) n.visitChildrenConst(*this);
+					return n.val->onLeave(delta_);
+				}
+				else need_clean = true;
+				return true;
 			}
 		private:
 			float delta_;
 		};
 	}
 
-	void RenderTree::draw(float delta) const
+	bool RenderTree::draw(float delta) const
 	{
-		visit(RenderVisitor(delta));
+		RenderVisitor visitor(delta);
+		visit(visitor);
+		if(visitor.need_clean) const_cast<RenderTree *>(this)->clean();
+		return true;
 	}
+
+	void RenderTree::clean()
+	{
+		for(TraverseItr i = beginTraverse(); i != endTraverse();)
+		{
+			if(i->val) ++i;
+			else i = Tree< Handle<Renderer> >::erase(i);
+		}
+	}
+
+	bool RenderTree::setUp(luapp::Stack &L)
+	{
+		// Context:createで製作する
+		return false;
+	}
+
+	/*
+	 * @code
+camera = context:create("gctp.Camera")
+shadow = context:create("xxxx.my.ShadowRenderer") -- （例）シャドウマップレンダラー
+useshadow = context:create("xxxx.my.ShadowedRenderer") -- （例）シャドウマップ参照レンダラー
+world = context:create("gctp.World")
+rendertree = context:create("gctp.RenderTree")
+rendertree:set({
+	-- 名前→レンダラー→子の順
+	
+	-- 無名ノード（もっともrootとしてアクセスできる）
+	camera,
+	{
+		-- 名前付きノード
+		"shadowmap",
+		shadow,
+		{
+			world
+		},
+		-- 名前付きノード
+		"mainnode",
+		useshadow,
+		{
+			world
+		}
+	},
+	-- ルートノードは一個。
+	{
+		--これは無視される
+	}
+})
+rendertree:replace("mainnode", { world }) -- 名前をつけとくと後で操作できる
+rendertree:erase("shadowmap") -- 名前をつけとくと後で操作できる
+	 * @endcode
+	 */
+	int RenderTree::set(luapp::Stack &L)
+	{
+		if(L.top() >= 1 && L[1].isTable()) {
+			int i = 1;
+			if(set(L[1].toTable(), 0, i)) return 0;
+			else {
+				L << "description error";
+				return 1;
+			}
+		}
+		return 0;
+	}
+
+	bool RenderTree::set(const luapp::Table &tbl, RenderNode *parent_node, int &i)
+	{
+		const char *name = 0;
+		if(tbl[i].isString()) name = tbl[i++].toCStr();
+		Handle<Renderer> renderer = tuki_cast<Renderer>(tbl[i]);
+		if(renderer) {
+			i++;
+			RenderNode *it;
+			if(parent_node) {
+				it = parent_node->push(renderer);
+			}
+			else {
+				setUp(renderer);
+				it = root();
+			}
+			if(it) {
+				if(name && strlen(name)) index[name] = it;
+				if(tbl[i].isTable()) {
+					luapp::Table child = tbl[i++];
+					int ii = 1;
+					set(child, it, ii);
+				}
+			}
+		}
+		else return false;
+		if(parent_node && !tbl[i].isNil()) return set(tbl, parent_node, i);
+		return true;
+	}
+
+	namespace {
+		class MakeTableVisitor {
+		public:
+			MakeTableVisitor(const RenderTree &tree, luapp::Stack &L) : tree_(tree), L_(L), count_(1) {}
+			bool operator()(const RenderTree::NodeType &n)
+			{
+				if(n.val) {
+					const char *name = tree_.getName(n);
+					if(name && strlen(name)) {
+						lua_pushstring(L_, name);
+						lua_rawseti(L_, -2, count_++);
+					}
+					TukiRegister::newUserData(L_, n.val);
+					lua_rawseti(L_, -2, count_++);
+					if(!n.empty()) {
+						lua_newtable(L_);
+						lua_rawseti(L_, -2, count_);
+						lua_rawgeti(L_, -1, count_++);
+						n.visitChildrenConst(MakeTableVisitor(tree_, L_));
+						lua_pop(L_, 1);
+					}
+				}
+				return true;
+			}
+		private:
+			const RenderTree &tree_;
+			luapp::Stack &L_;
+			int count_;
+		};
+	}
+
+	int RenderTree::get(luapp::Stack &L)
+	{
+		MakeTableVisitor visitor(*this, L);
+		lua_newtable(L);
+		visit(visitor);
+		return 1;
+	}
+
+	void RenderTree::show(luapp::Stack &L)
+	{
+		app().draw_signal.connectOnce(draw_slot);
+	}
+
+	void RenderTree::hide(luapp::Stack &L)
+	{
+		app().draw_signal.disconnect(draw_slot);
+	}
+
+	GCTP_IMPLEMENT_CLASS_NS(gctp, RenderTree, Object);
+	TUKI_IMPLEMENT_BEGIN_NS(Scene, RenderTree)
+		TUKI_METHOD(RenderTree, set)
+		TUKI_METHOD(RenderTree, get)
+		TUKI_METHOD(RenderTree, show)
+		TUKI_METHOD(RenderTree, hide)
+	TUKI_IMPLEMENT_END(RenderTree)
 
 }} // namespace gctp::scene

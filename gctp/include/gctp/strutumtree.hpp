@@ -29,12 +29,12 @@ namespace gctp {
 		/// デフォルトコンストラクタ
 		StrutumTree() {}
 		/// コンストラクタ
-		StrutumTree(Tree<Strutum> const & src) : Tree<Strutum>(src) {}
+		explicit StrutumTree(Tree<Strutum> const & src) : Tree<Strutum>(src) {}
 
 		/// ルート製作
 		void setUp(const Matrix &val = MatrixC(true))
 		{
-			*this = Tree<Strutum>(val);
+			*this = StrutumTree(Tree<Strutum>(val));
 		}
 
 		/// 結合

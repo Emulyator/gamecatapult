@@ -10,7 +10,7 @@
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
-#include <gctp/scene/stage.hpp>
+#include <gctp/scene/world.hpp>
 #include <gctp/scene/motion.hpp>
 #include <gctp/scene/motionmixer.hpp>
 #include <gctp/graphic/model.hpp>
@@ -55,27 +55,27 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void Entity::enter(Stage &stage)
+	void Entity::enter(World &world)
 	{
-		enter(stage, 0);
+		enter(world, 0);
 	}
 
-	void Entity::enter(Stage &stage, int16_t update_pri)
+	void Entity::enter(World &world, int16_t update_pri)
 	{
 		update_slot.setPriority(update_pri);
-		stage.update_signal.connectOnce(update_slot);
+		world.update_signal.connectOnce(update_slot);
 		if(target_) {
-			stage.body_list.push_back(target_);
-			stage.strutum_tree.root()->push(*target_);
+			world.body_list.push_back(target_);
+			world.strutum_tree.root()->push(*target_);
 		}
 	}
 
-	void Entity::leave(Stage &stage)
+	void Entity::exit(World &world)
 	{
-		stage.update_signal.disconnect(update_slot);
+		world.update_signal.disconnect(update_slot);
 		if(target_) {
-			stage.body_list.erase(remove(stage.body_list.begin(), stage.body_list.end(), target_), stage.body_list.end());
-			stage.strutum_tree.root()->erase(target_->root());
+			world.body_list.erase(remove(world.body_list.begin(), world.body_list.end(), target_), world.body_list.end());
+			world.strutum_tree.root()->erase(target_->root());
 		}
 	}
 
@@ -95,7 +95,7 @@ namespace gctp { namespace scene {
 
 	bool Entity::setUp(luapp::Stack &L)
 	{
-		// Stage:newNode‚Å»ì‚·‚é
+		// World:newNode‚Å»ì‚·‚é
 		return false;
 	}
 
@@ -133,7 +133,7 @@ namespace gctp { namespace scene {
 	void Entity::enter(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
+			Pointer<World> stage = tuki_cast<World>(L[1]);
 			if(stage) {
 				if(L.top() >= 2) enter(*stage, L[2].toInteger());
 				else enter(*stage);
@@ -141,11 +141,11 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void Entity::leave(luapp::Stack &L)
+	void Entity::exit(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			Pointer<Stage> stage = tuki_cast<Stage>(L[1]);
-			if(stage) leave(*stage);
+			Pointer<World> stage = tuki_cast<World>(L[1]);
+			if(stage) exit(*stage);
 		}
 	}
 
@@ -228,7 +228,7 @@ namespace gctp { namespace scene {
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Entity)
 		TUKI_METHOD(Entity, load)
 		TUKI_METHOD(Entity, enter)
-		TUKI_METHOD(Entity, leave)
+		TUKI_METHOD(Entity, exit)
 		TUKI_METHOD(Entity, setPosition)
 		TUKI_METHOD(Entity, getPosition)
 		TUKI_METHOD(Entity, setPosture)
@@ -238,7 +238,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getMotionMixer)
 	TUKI_IMPLEMENT_END(Entity)
 	
-	Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
+	Handle<Entity> newEntity(Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) {
 			if(!context.load(srcfilename)) return Handle<Entity>();
@@ -246,18 +246,18 @@ namespace gctp { namespace scene {
 		Pointer<Entity> ret = context.create(classname, name).lock();
 		if(ret) {
 			if(srcfilename) ret->setUp(srcfilename);
-			ret->enter(stage);
+			ret->enter(world);
 		}
 		return ret;
 	}
 
-	Handle<Entity> newEntity(Context &context, Stage &stage, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
+	Handle<Entity> newEntity(Context &context, World &world, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) context.load(srcfilename);
 		Pointer<Entity> ret = context.create(typeinfo, name).lock();
 		if(ret) {
 			if(srcfilename) ret->setUp(srcfilename);
-			ret->enter(stage);
+			ret->enter(world);
 		}
 		return ret.get();
 	}

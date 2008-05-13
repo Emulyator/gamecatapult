@@ -14,7 +14,6 @@
 namespace gctp { namespace scene {
 
 	class Camera;
-	class Stage;
 	/** Quake型カメラ
 	 *
 	 * シーンカメラノードにアタッチするビヘイビア

@@ -9,11 +9,15 @@
  */
 #include <gctp/scene/renderer.hpp>
 #include <gctp/tree.hpp>
+#include <gctp/tuki.hpp>
+#include <gctp/stringmap.hpp>
+#include <gctp/signal.hpp>
+#include <iosfwd>               // for std::basic_ostream
 
 namespace gctp { namespace scene {
 
 	/// レンダーノード
-	typedef TreeNode< Pointer<Renderer> > RenderNode;
+	typedef TreeNode< Handle<Renderer> > RenderNode;
 
 	/** レンダーツリークラス
 	 *
@@ -22,29 +26,75 @@ namespace gctp { namespace scene {
 	 * @date 2004/01/29 18:38:41
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class RenderTree : public Object, public Tree< Pointer<Renderer> >
+	class RenderTree : public Object, public Tree< Handle<Renderer> >
 	{
 	public:
+		typedef Tree< Handle<Renderer> > TreeType;
+
 		/// デフォルトコンストラクタ
-		RenderTree() {}
+		RenderTree() { draw_slot.bind(this); }
 		/// コンストラクタ
-		RenderTree(Tree< Pointer<Renderer> > const & src) : Tree< Pointer<Renderer> >(src) {}
+		explicit RenderTree(Tree< Handle<Renderer> > const & src) : Tree< Handle<Renderer> >(src) { draw_slot.bind(this); }
 		
 		/// ルート製作
-		void setUp(const Pointer<Renderer> renderer)
+		void setUp(const Handle<Renderer> renderer)
 		{
-			*this = Tree< Pointer<Renderer> >(renderer);
+			*this = RenderTree(Tree< Handle<Renderer> >(renderer));
+			draw_slot.bind(this);
 		}
 
 		/// 結合
 		void merge(const RenderTree &src);
 
+		/// 参照切れノードを削除
+		void clean();
+		
 		/// ノードを辿って描画
-		void draw(float delta) const;
-	
+		bool draw(float delta) const;
+		
+		/// 描画スロット
+		ConstMemberSlot1<const RenderTree, float /*delta*/, &RenderTree::draw> draw_slot;
+
+		typedef StringMap<NodeType *> NodeIndex;
+		NodeIndex index;
+		
+		/// 名前によるノード検索
+		NodeType *get(const char *name) const {
+			return index.get(name);
+		}
+		/// 名前によるノード検索
+		NodeType *get(const CStr name) const {
+			return index.get(name);
+		}
+		/// 名前によるノード検索
+		NodeType *operator[](const char *name) const {
+			return get(name);
+		}
+		/// 名前によるノード検索
+		NodeType *operator[](const CStr name) const {
+			return get(name);
+		}
+
+		/// ノードから名前を検索
+		const char *getName(const NodeType &node) const {
+			for(NodeIndex::const_iterator i = index.begin(); i != index.end(); ++i) {
+				if(i->second == reinterpret_cast<const void *const>(&node)) return i->first.c_str();
+			}
+			return 0;
+		}
+
+	protected:
+		bool setUp(luapp::Stack &L);
+		int set(luapp::Stack &L);
+		bool set(const luapp::Table &tbl, RenderNode *parent_node, int &i);
+		int get(luapp::Stack &L);
+		void show(luapp::Stack &L);
+		void hide(luapp::Stack &L);
+
 	GCTP_DECLARE_CLASS
+	TUKI_DECLARE(RenderTree)
 	};
 
 }} // namespace gctp::scene
 
-#endif //_GCTP_SCENE_RENDERINGTREE_HPP_
+#endif //_GCTP_SCENE_RENDERTREE_HPP_

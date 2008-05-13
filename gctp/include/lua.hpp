@@ -978,6 +978,9 @@ namespace luapp {
 		const Table &key() const {
 			return key_;
 		}
+		const Table &value() const {
+			return dereference();
+		}
 	private:
 		Table key_;
 		Table value_;
@@ -1136,6 +1139,11 @@ namespace luapp {
 		inline void setTable(int index = LUA_GLOBALSINDEX)
 		{
 			lua_settable(lua_, index);
+		}
+
+		inline void newTable()
+		{
+			lua_newtable(lua_);
 		}
 
 		inline void pushRegistry(const char *v)

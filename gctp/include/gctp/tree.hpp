@@ -62,6 +62,20 @@ namespace gctp {
 			return end();
 		}
 
+		/// posを削除し、直後のItrを返す
+		TreeNodeBase *eraseTraverse(TreeNodeBase *root, TreeNodeBase *pos)
+		{
+			if(pos != end()) {
+				TreeNodeBase *ret = pos->younger_.get();
+				if(ret) {
+					pos->remove();
+					return ret;
+				}
+				else return _next_DF2(root, pos);
+			}
+			return end();
+		}
+
 		/// 自分をはずす
 		void remove()
 		{
@@ -394,7 +408,7 @@ namespace gctp {
 		/// コンストラクタ
 		TreeNode() : TreeNodeBase() {}
 		/// コンストラクタ
-		TreeNode(const T &_val) : TreeNodeBase(), val(_val) {}
+		explicit TreeNode(const T &_val) : TreeNodeBase(), val(_val) {}
 
 		/// 格納している値を返す
 		Reference operator*() {
@@ -430,25 +444,30 @@ namespace gctp {
 		{
 			return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::erase(&*pos)));
 		}
-		/// 子に追加
-		SiblingItr push(Pointer<TreeNode> node)
+		/// posを削除し、直後のItrを返す
+		TraverseItr erase(TraverseItr pos)
 		{
-			TreeNodeBase::push(node);
-			return SiblingItr(node.get());
+			return TraverseItr(pos.root_, reinterpret_cast<TreeNode *>(TreeNodeBase::eraseTraverse(pos.root_, &*pos)));
 		}
 		/// 子に追加
-		SiblingItr push(const ValueType &val)
+		TreeNode *push(Pointer<TreeNode> node)
+		{
+			TreeNodeBase::push(node);
+			return node.get();
+		}
+		/// 子に追加
+		TreeNode *push(const ValueType &val)
 		{
 			TreeNode *ret = new(allocator()) TreeNode(val);
 			push(ret);
-			return SiblingItr(ret);
+			return ret;
 		}
 		/// 子に追加
-		SiblingItr push()
+		TreeNode *push()
 		{
 			TreeNode *ret = new(allocator()) TreeNode();
 			push(ret);
-			return SiblingItr(ret);
+			return ret;
 		}
 
 		struct FindValuePred {
@@ -568,6 +587,7 @@ namespace gctp {
 	public:
 		typedef TreeNode<T, Alloc>						NodeType;
 		typedef Pointer<NodeType>						NodePtr;
+		typedef Handle<NodeType>						NodeHndl;
 		typedef typename NodeType::ValueType			ValueType;
 		typedef typename NodeType::SiblingItr			SiblingItr;
 		typedef typename NodeType::ConstSiblingItr		ConstSiblingItr;
@@ -614,9 +634,9 @@ namespace gctp {
 		/// デフォルトコンストラクタ
 		Tree() {}
 		/// コンストラクタ
-		Tree(const ValueType &val) : NodePtr(NodeType::create(val)) {}
+		explicit Tree(const ValueType &val) : NodePtr(NodeType::create(val)) {}
 		/// コンストラクタ
-		Tree(NodePtr const & rhs): NodePtr(rhs) {}
+		explicit Tree(NodePtr const & rhs): NodePtr(rhs) {}
 
 		/** visitor呼び出し
 		 *
@@ -653,10 +673,21 @@ namespace gctp {
 		/// 深さ優先探索の終端を指すイテレータを返す
 		ConstTraverseItr endTraverse() const { return ConstTraverseItr(get(), 0); }
 
+		/// posを削除し、直後のItrを返す
+		SiblingItr erase(SiblingItr pos)
+		{
+			return get()->erase(pos);
+		}
+		/// posを削除し、直後のItrを返す
+		TraverseItr erase(TraverseItr pos)
+		{
+			return get()->erase(pos);
+		}
+
 		/// ルートをさすイテレータ
-		SiblingItr root() { return SiblingItr(get()); }
+		NodeType *root() { return get(); }
 		/// ルートをさすイテレータ
-		ConstSiblingItr root() const { return ConstSiblingItr(get()); }
+		const NodeType *root() const { return get(); }
 
 		/// ルートがあるか？
 		bool empty() const { return !get(); }

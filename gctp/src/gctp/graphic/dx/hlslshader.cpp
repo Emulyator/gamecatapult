@@ -1,5 +1,5 @@
 /** @file
- * GameCatapult シェーダーリソースクラス
+ * GameCatapult HLSLシェーダーリソースクラス
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/07/15 3:31:38
@@ -8,8 +8,8 @@
 #include "common.h"
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
+#include <gctp/graphic/dx/hlslshader.hpp>
 #include <gctp/graphic/rsrc.hpp>
-#include <gctp/graphic/brush.hpp>
 #include <gctp/extension.hpp>
 #include <gctp/buffer.hpp>
 #include <gctp/dxcomptrs.hpp>
@@ -17,11 +17,11 @@
 
 using namespace std;
 
-namespace gctp { namespace graphic {
+namespace gctp { namespace graphic { namespace dx {
 
 	namespace {
 
-		GCTP_REGISTER_REALIZER(fx, Brush);
+		GCTP_REGISTER_REALIZER(fx, HLSLShader);
 		
 		// SkinnedMesh.fx
 		const char skinned_mesh_fx[] =
@@ -143,10 +143,10 @@ namespace gctp { namespace graphic {
 		};
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Brush, Object);
+	GCTP_IMPLEMENT_CLASS_NS(gctp, HLSLShader, Shader);
 
 	/// シェーダーファイルから読みこみ
-	HRslt Brush::setUp(const _TCHAR *fname)
+	HRslt HLSLShader::setUp(const _TCHAR *fname)
 	{
 		DWORD dwShaderFlags = 0;
 #ifdef GCTP_DEBUG
@@ -193,7 +193,7 @@ namespace gctp { namespace graphic {
 	}
 
 	/// メモリ内シェーダーファイルから読みこみ
-	HRslt Brush::setUp(BufferPtr buffer)
+	HRslt HLSLShader::setUp(BufferPtr buffer)
 	{
 		DWORD dwShaderFlags = 0;
 #ifdef GCTP_DEBUG
@@ -221,39 +221,39 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
-	HRslt Brush::restore()
+	HRslt HLSLShader::restore()
 	{
 		if( ptr_ ) return ptr_->OnResetDevice();
 		return S_OK;
 	}
 
-	void Brush::cleanUp()
+	void HLSLShader::cleanUp()
 	{
 		if( ptr_ ) ptr_->OnLostDevice();
 	}
 
-	HRslt Brush::begin(uint &passnum) const
+	HRslt HLSLShader::begin() const
 	{
-		if(ptr_) return ptr_->Begin(&passnum, 0/*D3DXFX_DONOTSAVESTATE*/);
+		if(ptr_) return ptr_->Begin(&passnum_, 0/*D3DXFX_DONOTSAVESTATE*/);
 		return E_POINTER;
 	}
 
-	HRslt Brush::end() const
+	HRslt HLSLShader::end() const
 	{
 		if(ptr_) return ptr_->End();
 		return E_POINTER;
 	}
 
-	HRslt Brush::beginPass(uint passno) const
+	HRslt HLSLShader::beginPass(uint passno) const
 	{
 		if(ptr_) return ptr_->BeginPass(passno);
 		return E_POINTER;
 	}
 
-	HRslt Brush::endPass() const
+	HRslt HLSLShader::endPass() const
 	{
 		if(ptr_) return ptr_->EndPass();
 		return E_POINTER;
 	}
 
-}} // namespace gctp
+}}} // namespace gctp
