@@ -8,7 +8,6 @@
 #include "common.h"
 #include <gctp/scene/quakecamera.hpp>
 #include <gctp/scene/camera.hpp>
-#include <gctp/scene/stage.hpp>
 #include <gctp/input.hpp>
 #include <gctp/app.hpp>
 #include <gctp/dbgout.hpp>

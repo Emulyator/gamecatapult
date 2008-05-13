@@ -7,7 +7,7 @@
  */
 #include "common.h"
 #include <gctp/scene/light.hpp>
-#include <gctp/scene/stage.hpp>
+#include <gctp/scene/world.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/light.hpp>
 #include <gctp/dbgout.hpp>
@@ -25,7 +25,7 @@ namespace gctp { namespace scene {
 		color_ = color;
 	}
 
-	bool AmbientLight::onEnter() const
+	bool AmbientLight::onReach() const
 	{
 		graphic::setAmbient(color_);
 		return true;
@@ -43,7 +43,7 @@ namespace gctp { namespace scene {
 		light_ = light;
 	}
 
-	bool ParallelLight::onEnter() const
+	bool ParallelLight::onReach() const
 	{
 		graphic::pushLight(light_);
 		return true;
@@ -93,13 +93,13 @@ namespace gctp { namespace scene {
 		node_ = StrutumNode::create();
 	}
 
-	void Light::appear(Stage &stage)
+	void Light::enter(World &world)
 	{
-		stage.strutum_tree->push(node_.get());
-		//stage.rendering_tree->push(this);
+		world.strutum_tree->push(node_.get());
+		//world.rendering_tree->push(this);
 	}
 
-	bool Light::onEnter() const
+	bool Light::onReach() const
 	{
 		switch(type_) {
 		case POINT:	{

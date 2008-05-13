@@ -18,7 +18,7 @@ namespace gctp {
 
 namespace gctp { namespace scene {
 
-	class Stage;
+	class World;
 	class Motion;
 	class MotionMixer;
 	/** エンティティクラス
@@ -41,11 +41,11 @@ namespace gctp { namespace scene {
 		void setUp(const _TCHAR *filename);
 
 		/// 登場
-		void enter(Stage &stage);
+		void enter(World &world);
 		/// プライオリティーを指定してステージ登場
-		void enter(Stage &stage, int16_t update_pri);
+		void enter(World &world, int16_t update_pri);
 		/// 退場
-		void leave(Stage &stage);
+		void exit(World &world);
 
 		/// スケルトンがあるか？
 		bool hasSkeleton() { return target_; }
@@ -89,7 +89,7 @@ namespace gctp { namespace scene {
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
 		void enter(luapp::Stack &L);
-		void leave(luapp::Stack &L);
+		void exit(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
 		void setPosture(luapp::Stack &L);
@@ -107,9 +107,9 @@ namespace gctp { namespace scene {
 	};
 
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, Stage &stage, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename);
+	extern Handle<Entity> newEntity(Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename);
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, Stage &stage, const std::type_info &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename);
+	extern Handle<Entity> newEntity(Context &context, World &world, const std::type_info &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename);
 
 }} // namespace gctp::scene
 

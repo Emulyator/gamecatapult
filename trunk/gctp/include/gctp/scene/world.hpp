@@ -1,7 +1,7 @@
-#ifndef _GCTP_SCENE_STAGE_HPP_
-#define _GCTP_SCENE_STAGE_HPP_
+#ifndef _GCTP_SCENE_WORLD_HPP_
+#define _GCTP_SCENE_WORLD_HPP_
 /** @file
- * GameCatapult ステージクラスヘッダファイル
+ * GameCatapult ワールドクラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/02/08 11:18:38
@@ -12,6 +12,7 @@
 #include <gctp/strutumtree.hpp>
 #include <gctp/signal.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/scene/renderer.hpp>
 #ifdef _MT
 #include <gctp/mutex.hpp>
 #endif
@@ -25,13 +26,13 @@ namespace gctp { namespace scene {
 	class Body;
 	class Light;
 	class DefaultSB;
-	/** ステージクラス
+	/** ワールドクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/16 1:05:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Stage : public Object
+	class World : public Renderer
 	{
 	public:
 		/// 階層ツリー
@@ -52,51 +53,42 @@ namespace gctp { namespace scene {
 		 * コリジョンスロットはこれに接続する
 		 */
 		Signal1<false, float /*delta*/> postupdate_signal;
-		/** 描画シグナル
-		 *
-		 * 描画スロットはこれに接続する
-		 */
-		Signal1<false, float /*delta*/> draw_signal;
 
 		/// コンストラクタ
-		Stage();
+		World();
 
 		/// ファイルからセットアップ
 		virtual void setUp(const _TCHAR *filename);
 
 		bool onUpdate(float delta);
 		/// 更新スロット
-		MemberSlot1<Stage, float /*delta*/, &Stage::onUpdate> update_slot;
+		MemberSlot1<World, float /*delta*/, &World::onUpdate> update_slot;
 
-		bool onDraw(float delta) const;
-		/// 描画スロット
-		ConstMemberSlot1<const Stage, float /*delta*/, &Stage::onDraw> draw_slot;
+		virtual bool onReach(float delta) const;
+		virtual bool onLeave(float delta) const;
 
 		/// カレントステージ（そのステージのupdate、draw…などの間だけ有効）
-		Stage &current() { return *current_; }
+		World &current() { return *current_; }
 
 	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(Stage)
+	TUKI_DECLARE(World)
 	
 	protected:
 		virtual bool doOnUpdate(float delta);
-		virtual bool doOnDraw(float delta) const;
 
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
 		void activate(luapp::Stack &L);
-		void show(luapp::Stack &L);
-		void hide(luapp::Stack &L);
 
 	private:
 #ifdef _MT
 		mutable Mutex monitor_;
 #endif
-		mutable Stage* backup_current_;
+		mutable World* backup_current_;
 		Pointer<DefaultSB> dsb_;
-		GCTP_TLS static Stage* current_;
+		GCTP_TLS static World* current_;
 	};
 
 }} // namespace gctp::scene
 
-#endif //_GCTP_SCENE_STAGE_HPP_
+#endif // _GCTP_SCENE_WORLD_HPP_

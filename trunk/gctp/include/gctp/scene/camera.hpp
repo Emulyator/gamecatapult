@@ -8,11 +8,11 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/class.hpp>
-#include <gctp/signal.hpp>
 #include <gctp/types.hpp>
 #include <gctp/strutumnode.hpp>
 #include <gctp/frustum.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/scene/renderer.hpp>
 
 namespace gctp { namespace scene {
 
@@ -22,21 +22,14 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Camera : public Object
+	class Camera : public Renderer
 	{
 	public:
 		/// コンストラクタ
 		Camera();
 
-		/// 有効化・無効化（App::draw_signalに連結するかどうか）
-		void activate(bool yes);
-
-		/// 描画シグナル
-		Signal1<false, float /*delta*/> draw_signal;
-
-		bool onDraw(float delta) const;
-		/// 描画スロット
-		ConstMemberSlot1<const Camera, float /*delta*/, &Camera::onDraw> draw_slot;
+		virtual bool onReach(float delta) const;
+		virtual bool onLeave(float delta) const;
 
 		/// カメラ位置設定
 		void setStance(Stance &src);
@@ -86,9 +79,9 @@ namespace gctp { namespace scene {
 		/// カメラをグラフィックシステムに設定
 		void setToSystem() const;
 		/// カメラ設定開始
-		bool begin() const;
+		void begin() const;
 		/// カメラ設定終了
-		bool end() const;
+		void end() const;
 
 		/// カレントカメラ（このカメラの子レンダリング要素にのみ有効）		
 		static Camera &current() { return *current_; }

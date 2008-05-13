@@ -10,12 +10,13 @@
 #include "common.h"
 #include <gctp/graphic/model.hpp>
 #include <gctp/graphic/texture.hpp>
-#include <gctp/graphic/brush.hpp>
+#include <gctp/graphic/shader.hpp>
 #include <gctp/graphic/light.hpp>
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/graphic/vertexbuffer.hpp>
 #include <gctp/graphic/indexbuffer.hpp>
 #include <gctp/graphic/dx/device.hpp>
+#include <gctp/graphic/dx/hlslshader.hpp>
 #include <gctp/dbgout.hpp>
 #include <rmxfguid.h>
 
@@ -37,7 +38,7 @@ namespace gctp { namespace graphic {
 		skin_ = skin;
 		adjc_ = adjc;
 		
-		if(isSkin() && !isSkinned()) useBrush(); // デフォルトでHLSL
+		if(isSkin() && !isSkinned()) useShader(); // デフォルトでHLSL
 		updateBS();
 	}
 
@@ -58,9 +59,9 @@ namespace gctp { namespace graphic {
 	/** ブラシ設定
 	 *
 	 */
-	void Model::setBrush(Handle<Brush> brush)
+	void Model::setShader(Handle<Shader> shader)
 	{
-		brush_ = brush;
+		shader_ = shader;
 	}
 
 	/** モデルを複写
@@ -250,15 +251,15 @@ namespace gctp { namespace graphic {
 	{
 		HRslt hr;
 		if(wire_) {
-			if(brush_ && *brush_) {
-				Brush &brush = const_cast<Brush &>(*brush_);
+			Handle<dx::HLSLShader> shader = shader_;
+			if(shader && *shader) {
 				Matrix wv = mat*getView();
-//				hr = brush->SetMatrix("WorldView", &wv);
-				hr = brush->SetMatrix("g_mWorldView", wv);
+//				hr = (*shader)->SetMatrix("WorldView", &wv);
+				hr = (*shader)->SetMatrix("g_mWorldView", wv);
 				if(!hr) GCTP_TRACE(hr);
-//				hr = brush->SetMatrix("Projection", &getProjection());
+//				hr = (*shader)->SetMatrix("Projection", &getProjection());
 				Matrix wvp = wv*getProjection();
-				hr = brush->SetMatrix("g_mWorldViewProjection", wvp);
+				hr = (*shader)->SetMatrix("g_mWorldViewProjection", wvp);
 				if(!hr) GCTP_TRACE(hr);
 			}
 			else {
@@ -268,18 +269,17 @@ namespace gctp { namespace graphic {
 			if(mtrls.size() > 0) {
 				for(uint i = 0; i < mtrls.size(); i++) {
 					device().setMaterial(mtrls[i]);
-					uint passnum;
-					Handle<Brush> &brush = const_cast< Handle<Brush> &>(brush_);
-					if(brush && (hr = brush->begin( passnum ))) {
-						for(uint ipass = 0; ipass < passnum; ipass++) {
-							hr = brush->beginPass( ipass );
+					Handle<dx::HLSLShader> shader = shader_;
+					if(shader && (hr = shader->begin())) {
+						for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
+							hr = shader->beginPass( ipass );
 							if(!hr) GCTP_TRACE(hr);
 							hr = wire_->draw(i);
 							if(!hr) GCTP_TRACE(hr);
-							hr = brush->endPass();
+							hr = shader->endPass();
 							if(!hr) GCTP_TRACE(hr);
 						}
-						hr = brush->end();
+						hr = shader->end();
 						if(!hr) GCTP_TRACE(hr);
 					}
 					else hr = wire_->draw(i);
@@ -296,15 +296,15 @@ namespace gctp { namespace graphic {
 			}
 		}
 		if(mesh_) {
-			if(brush_ && *brush_) {
-				Brush &brush = const_cast<Brush &>(*brush_);
+			Handle<dx::HLSLShader> shader = shader_;
+			if(shader && *shader) {
 				Matrix wv = mat*getView();
-//				hr = brush->SetMatrix("WorldView", &wv);
-				hr = brush->SetMatrix("g_mWorldView", wv);
+//				hr = (*shader)->SetMatrix("WorldView", &wv);
+				hr = (*shader)->SetMatrix("g_mWorldView", wv);
 				if(!hr) GCTP_TRACE(hr);
-//				hr = brush->SetMatrix("Projection", &getProjection());
+//				hr = (*shader)->SetMatrix("Projection", &getProjection());
 				Matrix wvp = wv*getProjection();
-				hr = brush->SetMatrix("g_mWorldViewProjection", wvp);
+				hr = (*shader)->SetMatrix("g_mWorldViewProjection", wvp);
 				if(!hr) GCTP_TRACE(hr);
 			}
 			else {
@@ -315,18 +315,16 @@ namespace gctp { namespace graphic {
 			}
 			for(uint i = 0; i < mtrls.size(); i++) {
 				device().setMaterial(mtrls[i]);
-				uint passnum;
-				Handle<Brush> &brush = const_cast<Handle<Brush>&>(brush_);
-				if(brush && (hr = brush->begin( passnum ))) {
-					for(uint ipass = 0; ipass < passnum; ipass++) {
-						hr = brush->beginPass( ipass );
+				if(shader_ && (hr = shader_->begin())) {
+					for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
+						hr = shader_->beginPass( ipass );
 						if(!hr) GCTP_TRACE(hr);
 						hr = mesh_->DrawSubset(i);
 						if(!hr) GCTP_TRACE(hr);
-						hr = brush->endPass();
+						hr = shader_->endPass();
 						if(!hr) GCTP_TRACE(hr);
 					}
-					hr = brush->end();
+					hr = shader_->end();
 					if(!hr) GCTP_TRACE(hr);
 				}
 				else hr = mesh_->DrawSubset(i);
@@ -352,21 +350,21 @@ namespace gctp { namespace graphic {
 		HRslt hr;
 		if(mesh_) {
 			device().setMaterial(mtrls[mtrlno]);
-			Handle<Brush> &brush = const_cast<Handle<Brush>&>(brush_);
-			if(brush && *brush) {
-//				hr = (*brush)->SetMatrix("WorldView", &(mat*getView()));
-				hr = (*brush)->SetMatrix("WorldView", mat);
+			Handle<dx::HLSLShader> shader = shader_;
+			if(shader && *shader) {
+//				hr = (*shader)->SetMatrix("WorldView", &(mat*getView()));
+				hr = (*shader)->SetMatrix("WorldView", mat);
 				if(!hr) GCTP_TRACE(hr);
-				hr = (*brush)->SetMatrix("Projection", getProjection());
+				hr = (*shader)->SetMatrix("Projection", getProjection());
 				if(!hr) GCTP_TRACE(hr);
 
 				// ライトスタック上の、最初のディレクショナルライトを採用
 				for(uint i = 0; i < lightNum(); i++) {
 					DirectionalLight light;
 					if(getLight(i, light)) {
-						hr = (*brush)->SetVector("lightDir", Vector4C(-light.dir, 0));
+						hr = (*shader)->SetVector("lightDir", Vector4C(-light.dir, 0));
 						if(!hr) GCTP_TRACE(hr);
-						hr = (*brush)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
+						hr = (*shader)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
 						if(!hr) GCTP_TRACE(hr);
 						break;
 					}
@@ -378,17 +376,16 @@ namespace gctp { namespace graphic {
 				dev->SetVertexShader(NULL);
 				dev->SetTransform(D3DTS_WORLD, mat);
 			}
-			uint passnum;
-			if(brush && (hr = brush->begin( passnum ))) {
-				for(uint ipass = 0; ipass < passnum; ipass++) {
-					hr = brush->beginPass( ipass );
+			if(shader && (hr = shader->begin())) {
+				for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
+					hr = shader->beginPass( ipass );
 					if(!hr) GCTP_TRACE(hr);
 					hr = mesh_->DrawSubset(mtrlno);
 					if(!hr) GCTP_TRACE(hr);
-					hr = brush->endPass();
+					hr = shader->endPass();
 					if(!hr) GCTP_TRACE(hr);
 				}
-				hr = brush->end();
+				hr = shader->end();
 				if(!hr) GCTP_TRACE(hr);
 			}
 			else hr = mesh_->DrawSubset(mtrlno);
@@ -518,18 +515,17 @@ namespace gctp { namespace graphic {
 					if(mtrlno != -1 && attr_tbl_[i].AttribId != static_cast<uint>(mtrlno)) break;
 					device().setMaterial(owner_.mtrls[attr_tbl_[i].AttribId]);
 					
-					uint passnum;
-					Pointer<Brush> brush = owner_.brush().get();
-					if(brush && (hr = brush->begin( passnum ))) {
-						for(uint ipass = 0; ipass < passnum; ipass++) {
-							hr = brush->beginPass( ipass );
+					Pointer<Shader> shader = owner_.shader().get();
+					if(shader && (hr = shader->begin())) {
+						for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
+							hr = shader->beginPass( ipass );
 							if(!hr) GCTP_TRACE(hr);
 							hr = mesh_->DrawSubset(attr_tbl_[i].AttribId);
 							if(!hr) GCTP_TRACE(hr);
-							hr = brush->endPass();
+							hr = shader->endPass();
 							if(!hr) GCTP_TRACE(hr);
 						}
-						hr = brush->end();
+						hr = shader->end();
 						if(!hr) GCTP_TRACE(hr);
 					}
 					else hr = mesh_->DrawSubset(attr_tbl_[i].AttribId);
@@ -1323,21 +1319,21 @@ namespace gctp { namespace graphic {
 
 
 	/// HLSL式スキンモデルクラス
-	class BrushSkinModel : public ModelDetail
+	class ShaderSkinModel : public ModelDetail
 	{
 	public:
 		enum { MAX_MATRICIES = 26 }; // 実際はもっと使えるんだけど…
 		// asm型に比べて不便かも
 
-		BrushSkinModel(Model &owner)
+		ShaderSkinModel(Model &owner)
 			: ModelDetail(owner), is_use_sw_(false), pal_size_(0), max_face_infl_(0), attr_num_(0)
 		{
 		}
 
 		HRslt setUp()
 		{
-			if(owner_.brush()) brush_ = owner_.brush().get();
-			else brush_ = graphic::createOnDB<Brush>(_T("skinnedmesh.fx"));
+			if(owner_.shader()) shader_ = owner_.shader().get();
+			else shader_ = graphic::createOnDB<dx::HLSLShader>(_T("skinnedmesh.fx"));
 
 			HRslt hr;
 			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
@@ -1442,7 +1438,8 @@ namespace gctp { namespace graphic {
 		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
 		{
 			HRslt hr;
-			if(mesh_ && brush_) {
+			Handle<dx::HLSLShader> shader = shader_;
+			if(mesh_ && shader) {
 				IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
@@ -1461,9 +1458,9 @@ namespace gctp { namespace graphic {
 				for(uint i = 0; i < lightNum(); i++) {
 					DirectionalLight light;
 					if(getLight(i, light)) {
-						hr = (*brush_)->SetVector("lhtDir", Vector4C(-light.dir, 0));
+						hr = (*shader)->SetVector("lhtDir", Vector4C(-light.dir, 0));
 						if(!hr) GCTP_TRACE(hr);
-						hr = (*brush_)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
+						hr = (*shader)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
 						if(!hr) GCTP_TRACE(hr);
 						break;
 					}
@@ -1475,7 +1472,7 @@ namespace gctp { namespace graphic {
 					dev->GetTransform(D3DTS_VIEW, &view_proj_mat);
 					dev->GetTransform(D3DTS_PROJECTION, &mat);
 					D3DXMatrixMultiply(&view_proj_mat, &view_proj_mat, &mat);
-					hr = (*brush_)->SetMatrix("mViewProj", &view_proj_mat);
+					hr = (*shader)->SetMatrix("mViewProj", &view_proj_mat);
 					if(!hr) GCTP_TRACE(hr);
 				}
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
@@ -1484,8 +1481,7 @@ namespace gctp { namespace graphic {
 				for(ulong i = 0; i < attr_num_; i++) {
 					if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
 					
-	                uint passnum;
-					if(hr = brush_->begin( passnum )) {
+					if(hr = shader_->begin()) {
 						for(ulong j = 0; j < pal_size_; j++)
 						{
 							DWORD matid = bonecb[i].BoneId[j];
@@ -1494,7 +1490,7 @@ namespace gctp { namespace graphic {
 								if(node) D3DXMatrixMultiply(&bm_buf[j], *owner_.bone(matid), node->val.wtm());
 							}
 						}
-						hr = (*brush_)->SetMatrixArray("mWorldMatrixArray", &bone_matricies_[0], pal_size_);
+						hr = (*shader)->SetMatrixArray("mWorldMatrixArray", &bone_matricies_[0], pal_size_);
 						if(!hr) {
 							PRNN(pal_size_);
 							GCTP_TRACE(hr);
@@ -1502,32 +1498,32 @@ namespace gctp { namespace graphic {
 
 						// Sum of all ambient and emissive contribution
 						Color amb_emm = owner_.mtrls[bonecb[i].AttribId].ambient*getAmbient()+owner_.mtrls[bonecb[i].AttribId].emissive;
-						hr = (*brush_)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
+						hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
 						if(!hr) GCTP_TRACE(hr);
 						// set material color properties 
-						hr = (*brush_)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&owner_.mtrls[bonecb[i].AttribId].diffuse);
+						hr = (*shader)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&owner_.mtrls[bonecb[i].AttribId].diffuse);
 						if(!hr) GCTP_TRACE(hr);
 
-						hr = (*brush_)->SetInt( "CurNumBones", max_face_infl_-1);
+						hr = (*shader)->SetInt( "CurNumBones", max_face_infl_-1);
 						if(!hr) GCTP_TRACE(hr);
 
 						Pointer<Texture> tex = owner_.mtrls[bonecb[i].AttribId].tex.get();
 						if(tex) dev->SetTexture(0, *tex);
 						else dev->SetTexture(0, NULL);
 
-						for(uint ipass = 0; ipass < passnum; ipass++) {
-							hr = brush_->beginPass( ipass );
+						for(uint ipass = 0; ipass < shader_->passnum(); ipass++) {
+							hr = shader_->beginPass( ipass );
 							if(!hr) GCTP_TRACE(hr);
 							hr = mesh_->DrawSubset(i);
 							if(!hr) {
 								GCTP_TRACE(hr);
-								PRNN("i = "<<i<<";"<<"ipass = "<<ipass<<";"<<"passnum = "<<passnum);
+								PRNN("i = "<<i<<";"<<"ipass = "<<ipass<<";"<<"passnum = "<<shader_->passnum());
 							}
-							hr = brush_->endPass();
+							hr = shader_->endPass();
 							if(!hr) GCTP_TRACE(hr);
 						}
 
-						hr = brush_->end();
+						hr = shader_->end();
 						if(!hr) GCTP_TRACE(hr);
 					}
 					else GCTP_TRACE(hr);
@@ -1544,7 +1540,7 @@ namespace gctp { namespace graphic {
 		ulong					attr_num_;
 		ID3DXBufferPtr			bonecb_; // ボーンの組み合わせデータ
 		ID3DXMeshPtr			mesh_;
-		mutable Pointer<Brush>	brush_;
+		mutable Pointer<Shader>	shader_;
 		vector<D3DXMATRIX>		bone_matricies_;
 	};
 
@@ -1600,9 +1596,9 @@ namespace gctp { namespace graphic {
 
 	/** HLSLによるスキンに変換
 	 */
-	HRslt Model::useBrush()
+	HRslt Model::useShader()
 	{
-		CREATE_DETAIL(BrushSkinModel);
+		CREATE_DETAIL(ShaderSkinModel);
 	}
 
 	namespace {

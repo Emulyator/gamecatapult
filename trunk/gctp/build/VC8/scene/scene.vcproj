@@ -272,10 +272,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gctp\scene\stage.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -302,6 +298,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\scene\world.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
@@ -366,7 +366,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\gctp\scene\stage.hpp"
+				RelativePath="..\..\..\include\gctp\scene\world.hpp"
 				>
 			</File>
 		</Filter>

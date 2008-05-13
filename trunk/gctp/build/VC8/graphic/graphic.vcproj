@@ -225,7 +225,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\gctp\graphic\brush.cpp"
+				RelativePath="..\..\..\src\gctp\graphic\asciifonttexture.cpp"
 				>
 			</File>
 			<File
@@ -270,6 +270,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\graphic\rsrc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\graphic\shader.cpp"
 				>
 			</File>
 			<File
@@ -351,6 +355,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\..\src\gctp\graphic\dx\hlslshader.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\gctp\graphic\dx\stateblock.cpp"
 					>
 					<FileConfiguration
@@ -420,7 +428,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\include\gctp\graphic\brush.hpp"
+				RelativePath="..\..\..\include\gctp\graphic\asciifonttexture.hpp"
 				>
 			</File>
 			<File
@@ -472,6 +480,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\graphic\shader.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\graphic\spritebuffer.hpp"
 				>
 			</File>
@@ -496,6 +508,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\include\gctp\graphic\dx\fvf.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\graphic\dx\hlslshader.hpp"
 					>
 				</File>
 				<File

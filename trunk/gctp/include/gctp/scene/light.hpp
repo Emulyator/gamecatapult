@@ -14,7 +14,7 @@
 
 namespace gctp { namespace scene {
 
-	class Stage;
+	class World;
 	/** 環境光オブジェクト
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -28,9 +28,9 @@ namespace gctp { namespace scene {
 		AmbientLight(const Color &color);
 		
 		void set(const Color &color);
-		virtual bool onEnter() const;
+		virtual bool onReach() const;
 
-		void appear(Stage &stage);
+		void enter(World &world);
 
 	GCTP_DECLARE_CLASS
 
@@ -52,9 +52,9 @@ namespace gctp { namespace scene {
 		
 		void set(const graphic::DirectionalLight &light);
 
-		virtual bool onEnter() const;
+		virtual bool onReach() const;
 
-		void appear(Stage &stage);
+		void enter(World &world);
 
 	GCTP_DECLARE_CLASS
 
@@ -86,12 +86,12 @@ namespace gctp { namespace scene {
 
 		void setUp();
 
-		void appear(Stage &stage);
+		void enter(World &world);
 
 		/// アタッチしているノード
 		Handle<StrutumNode> node() const { return node_; }
 		
-		virtual bool onEnter() const;
+		virtual bool onReach() const;
 
 	GCTP_DECLARE_CLASS
 

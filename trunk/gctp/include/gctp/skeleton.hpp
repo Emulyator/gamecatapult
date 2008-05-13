@@ -27,7 +27,7 @@ namespace gctp {
 	{
 	public:
 		Skeleton() {}
-		Skeleton(const StrutumTree &src) : StrutumTree(src) {}
+		explicit Skeleton(const StrutumTree &src) : StrutumTree(src) {}
 
 		/// 複製
 		void copy(const Skeleton &src);
@@ -45,24 +45,24 @@ namespace gctp {
 		}
 
 		/// 子ノード製作
-		NodePtr add(NodeType &parent, const char *name = NULL, const Matrix *_new = 0);
+		NodeType *add(NodeType &parent, const char *name = NULL, const Matrix *_new = 0);
 		/// 子ノード製作
-		NodePtr add(NodeType &parent, const CStr name, const Matrix *_new = 0);
+		NodeType *add(NodeType &parent, const CStr name, const Matrix *_new = 0);
 
 		/// 名前によるノード検索
-		NodePtr get(const char *name) const {
+		NodeType *get(const char *name) const {
 			return index.get(name);
 		}
 		/// 名前によるノード検索
-		NodePtr get(const CStr name) const {
+		NodeType *get(const CStr name) const {
 			return index.get(name);
 		}
 		/// 名前によるノード検索
-		NodePtr operator[](const char *name) const {
+		NodeType *operator[](const char *name) const {
 			return get(name);
 		}
 		/// 名前によるノード検索
-		NodePtr operator[](const CStr name) const {
+		NodeType *operator[](const CStr name) const {
 			return get(name);
 		}
 

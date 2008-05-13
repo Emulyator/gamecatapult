@@ -10,9 +10,10 @@
 #include <gctp/vector.hpp>
 #include <gctp/xfile.hpp>
 #include <gctp/graphic/model.hpp>
-#include <gctp/graphic/brush.hpp>
+#include <gctp/graphic/shader.hpp>
 #include <gctp/graphic/texture.hpp>
 #include <gctp/graphic/dx/device.hpp>
+#include <gctp/graphic/dx/hlslshader.hpp>
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
@@ -138,15 +139,15 @@ namespace gctp { namespace scene {
 #ifdef UNICODE
 						WCStr fname = effect->pEffectFilename;
 						context().load(fname.c_str());
-						Handle<graphic::Brush> brush = context()[fname.c_str()];
+						Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
 #else
 						context().load(effect->pEffectFilename);
-						Handle<graphic::Brush> brush = context()[effect->pEffectFilename];
+						Handle<graphic::dx::HLSLShader> shader = context()[effect->pEffectFilename];
 #endif
-						if(brush) {
-							model.setBrush(brush);
+						if(shader) {
+							model.setShader(shader);
 							for(DWORD i = 0; i < effect->NumDefaults; i++) {
-								(*brush)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
+								(*shader)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
 							}
 						}
 					}

@@ -18,7 +18,6 @@ namespace gctp { namespace scene {
 
 	Camera::Camera() : nearclip_(1.0f), farclip_(100.0f), fov_(g_pi/4)
 	{
-		draw_slot.bind(this);
 		window_.set(0, 0);
 		subwindow_.set(0,0,1,1);
 		stance_.setDefault();
@@ -38,38 +37,34 @@ namespace gctp { namespace scene {
 		if(node_) stance_ = node_->val.lcm().orthoNormal();
 	}
 
-	void Camera::activate(bool yes)
-	{
-		if(yes) app().draw_signal.connectOnce(draw_slot);
-		else app().draw_signal.disconnect(draw_slot);
-	}
-
 	void Camera::setToSystem() const
 	{
 		graphic::setView(view());
 		graphic::setProjection(projection());
 	}
 
-	bool Camera::begin() const
+	void Camera::begin() const
 	{
 		backup_current_ = current_;
 		current_ = const_cast<Camera *>(this);
 		current_->update();
 		setToSystem();
-		return true;
 	}
 
-	bool Camera::end() const
+	void Camera::end() const
 	{
 		current_ = backup_current_;
 		if(current_) current_->setToSystem();
+	}
+
+	bool Camera::onReach(float delta) const
+	{
+		begin();
 		return true;
 	}
 
-	bool Camera::onDraw(float delta) const
+	bool Camera::onLeave(float delta) const
 	{
-		begin();
-		const_cast<Camera *>(this)->draw_signal(delta);
 		end();
 		return true;
 	}
@@ -109,13 +104,6 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
-	void Camera::activate(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			activate(L[1].toBoolean());
-		}
-	}
-
 	void Camera::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
@@ -150,9 +138,8 @@ namespace gctp { namespace scene {
 		return 3;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Object);
+	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS(Scene, Camera)
-		TUKI_METHOD(Camera, activate)
 		TUKI_METHOD(Camera, setPosition)
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)

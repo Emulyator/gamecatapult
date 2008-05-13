@@ -24,7 +24,7 @@ namespace gctp {
 	 */
 	void Skeleton::copy(const Skeleton &src)
 	{
-		*this = StrutumTree(src.StrutumTree::dup());
+		*this = Skeleton(StrutumTree(src.StrutumTree::dup()));
 		index.clear();
 		ConstTraverseItr sit = src.beginTraverse();
 		for(TraverseItr dit = beginTraverse(); dit != endTraverse(); ++dit, ++sit) {
@@ -58,7 +58,7 @@ namespace gctp {
 	 * Nodeのaddメソッドで直接子を追加することも出来るが、その場合Hierarchyのgetメソッドで
 	 * 名前による検索が出来なくなるので注意。
 	 */
-	Skeleton::NodePtr Skeleton::add(NodeType &parent, const char *name, const Matrix *_new)
+	Skeleton::NodeType *Skeleton::add(NodeType &parent, const char *name, const Matrix *_new)
 	{
 		if(_new) parent.push(Strutum(*_new));
 		else parent.push();
@@ -72,7 +72,7 @@ namespace gctp {
 	 * Nodeのaddメソッドで直接子を追加することも出来るが、その場合Hierarchyのgetメソッドで
 	 * 名前による検索が出来なくなるので注意。
 	 */
-	Skeleton::NodePtr Skeleton::add(NodeType &parent, const CStr name, const Matrix *_new)
+	Skeleton::NodeType *Skeleton::add(NodeType &parent, const CStr name, const Matrix *_new)
 	{
 		if(_new) parent.push(Strutum(*_new));
 		else parent.push();
@@ -89,7 +89,7 @@ namespace gctp {
 	Skeleton &Skeleton::sync(const Skeleton &src)
 	{
 		for(NodeIndex::const_iterator i = src.index.begin(); i != src.index.end(); ++i) {
-			NodePtr node = get(i->first);
+			NodeType *node = get(i->first);
 			if(node) node->val = reinterpret_cast<NodeType *>(i->second)->val;
 		}
 		return *this;
