@@ -1,7 +1,3 @@
-register 'io'
-register 'table'
-register 'string'
-
 function printf(...) io.write(string.format(...)) end
 
 function Account:show()

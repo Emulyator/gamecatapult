@@ -19,7 +19,7 @@ using namespace std;
 namespace core {
 //CUPPA:namespace=-
 
-using namespace gctp;
+	using namespace gctp;
 
 	class ContextTestFoo : public Object {
 	public:
@@ -82,9 +82,9 @@ public:
 		  f << "wwwwwwwwwwww";
 	  }
 	  fileserver().mount(_T("."));
-	  Context root;
+	  gctp::core::Context root;
 	  {
-		  Context mycontext;
+		  gctp::core::Context mycontext;
 		  mycontext.load(_T("context.ext"));
 		  ContextTestFoo::Hndl h = context()[_T("context.ext")];
 		  CPPUNIT_ASSERT(h);

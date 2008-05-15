@@ -108,8 +108,8 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, QuakeCamera, Object);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, QuakeCamera)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, QuakeCamera)
 		TUKI_METHOD(QuakeCamera, attach)
 		TUKI_METHOD(QuakeCamera, activate)
 	TUKI_IMPLEMENT_END(QuakeCamera)

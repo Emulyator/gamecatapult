@@ -1,5 +1,5 @@
-#ifndef _GCTP_MODEL_HPP_
-#define _GCTP_MODEL_HPP_
+#ifndef _GCTP_GRAPHIC_MODEL_HPP_
+#define _GCTP_GRAPHIC_MODEL_HPP_
 /** @file
  * GameCatapult モデルクラスヘッダファイル
  *
@@ -184,11 +184,6 @@ namespace gctp { namespace graphic {
 		/// マテリアルを指定して描画
 		HRslt draw(const Skeleton &skel, int mtrlno) const;
 
-		/// (半透明体などの）遅延描画登録
-		void drawLater(const Matrix &mat) const;
-		/// (半透明体などの）遅延描画登録
-		void drawLater(const Skeleton &skel) const;
-
 		/// マテリアルリスト
 		std::vector< Material >	mtrls;
 		/// 面接続情報
@@ -293,4 +288,4 @@ namespace gctp { namespace graphic {
 
 }} //namespace gctp
 
-#endif //_GCTP_MODEL_HPP_
+#endif //_GCTP_GRAPHIC_MODEL_HPP_

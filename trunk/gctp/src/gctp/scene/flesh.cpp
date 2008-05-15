@@ -16,7 +16,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Flesh, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Flesh, Object);
 
 	HRslt Flesh::setUp(Handle<graphic::Model> model, Handle<StrutumNode> node)
 	{

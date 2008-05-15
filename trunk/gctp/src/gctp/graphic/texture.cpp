@@ -51,7 +51,7 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Texture, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, Texture, Object);
 
 	Texture::Texture(bool no_scaling) : type_(NONE), no_scaling_(no_scaling)
 	{

@@ -192,8 +192,8 @@ rendertree:erase("shadowmap") -- ñºëOÇÇ¬ÇØÇ∆Ç≠Ç∆å„Ç≈ëÄçÏÇ≈Ç´ÇÈ
 		app().draw_signal.disconnect(draw_slot);
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, RenderTree, Object);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, RenderTree)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, RenderTree, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, RenderTree)
 		TUKI_METHOD(RenderTree, set)
 		TUKI_METHOD(RenderTree, get)
 		TUKI_METHOD(RenderTree, show)

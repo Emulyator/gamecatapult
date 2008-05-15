@@ -102,7 +102,7 @@ namespace gctp { namespace scene {
 	void Entity::load(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			Pointer<Context> _context = tuki_cast<Context>(L[1]);
+			Pointer<core::Context> _context = tuki_cast<core::Context>(L[1]);
 			if(_context) {
 				if(L.top() >= 2) {
 #ifdef UNICODE
@@ -133,10 +133,10 @@ namespace gctp { namespace scene {
 	void Entity::enter(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			Pointer<World> stage = tuki_cast<World>(L[1]);
-			if(stage) {
-				if(L.top() >= 2) enter(*stage, L[2].toInteger());
-				else enter(*stage);
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) {
+				if(L.top() >= 2) enter(*world, L[2].toInteger());
+				else enter(*world);
 			}
 		}
 	}
@@ -144,8 +144,8 @@ namespace gctp { namespace scene {
 	void Entity::exit(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			Pointer<World> stage = tuki_cast<World>(L[1]);
-			if(stage) exit(*stage);
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) exit(*world);
 		}
 	}
 
@@ -224,8 +224,8 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Entity, Object);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, Entity)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Entity, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Entity)
 		TUKI_METHOD(Entity, load)
 		TUKI_METHOD(Entity, enter)
 		TUKI_METHOD(Entity, exit)
@@ -238,7 +238,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getMotionMixer)
 	TUKI_IMPLEMENT_END(Entity)
 	
-	Handle<Entity> newEntity(Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
+	Handle<Entity> newEntity(core::Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) {
 			if(!context.load(srcfilename)) return Handle<Entity>();
@@ -251,7 +251,7 @@ namespace gctp { namespace scene {
 		return ret;
 	}
 
-	Handle<Entity> newEntity(Context &context, World &world, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
+	Handle<Entity> newEntity(core::Context &context, World &world, const GCTP_TYPEINFO &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename)
 	{
 		if(srcfilename) context.load(srcfilename);
 		Pointer<Entity> ret = context.create(typeinfo, name).lock();

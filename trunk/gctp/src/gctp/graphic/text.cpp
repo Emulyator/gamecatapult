@@ -170,7 +170,7 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Text, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, Text, Object);
 	
 	using namespace detail;
 

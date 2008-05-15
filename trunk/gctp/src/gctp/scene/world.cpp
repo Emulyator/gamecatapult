@@ -69,8 +69,8 @@ namespace gctp { namespace scene {
 		}
 	};
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, World, Renderer);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, World)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, World, Renderer);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, World)
 		TUKI_METHOD(World, load)
 		TUKI_METHOD(World, activate)
 	TUKI_IMPLEMENT_END(World)

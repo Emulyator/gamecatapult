@@ -108,7 +108,7 @@ namespace gctp {
 			}
 		};
 
-		// gar
+		// gcar
 		class Gcar : public FileServer::Volume {
 		public:
 			static bool isExistEx(const _TCHAR *volume_name, std::basic_string<_TCHAR> &filename, std::basic_string<_TCHAR> &currentdir)
@@ -153,7 +153,7 @@ namespace gctp {
 					//PRNN("gcar currentdir "<<currentdir_);
 					if(key) gcar_.setKey(key);
 					gcar_.open(filename_.c_str());
-					assert(gcar_.is_open());
+					assert(gcar_.isOpen());
 				}
 			}
 			virtual int find(const _TCHAR *fname)
@@ -176,36 +176,27 @@ namespace gctp {
 
 			class GcarFile : public AbstractFile {
 			public:
-				GcarFile() : filter_(0) {}
-				~GcarFile()
-				{
-					if(filter_) {
-						file_.rdbuf(file_.filebuf());
-						delete filter_;
-					}
-				}
 				virtual int size() const
 				{
 					return entry_.size;
 				}
 				virtual int seek(int pos)
 				{
-					file_.seekg(std::min<std::streamoff>(entry_.pos+entry_.size, entry_.pos + pos));
-					return file_.tellg();
+					((File &)file_).seekg(std::min<std::streamoff>(entry_.pos+entry_.size, entry_.pos + pos));
+					return ((File &)file_).tellg();
 				}
 				virtual int read(void *p, size_t s)
 				{
-					std::streamoff n = file_.tellg();
+					std::streamoff n = ((File &)file_).tellg();
 					std::streamoff end = (std::streamoff)(entry_.pos+entry_.size);
 					s = std::min<size_t>(std::max<std::streamoff>(end-n,0),s);
 					if(s > 0) {
-						file_.read(p, (int)s);
+						((File &)file_).read(p, (int)s);
 					}
 					return (int)s;
 				}
 				ArchiveEntry entry_;
-				File file_;
-				cryptfilter *filter_;
+				ArchiveReader file_;
 			};
 			virtual AbstractFilePtr createAbstractFile(const _TCHAR *fname)
 			{
@@ -214,14 +205,11 @@ namespace gctp {
 				if(!entry) return 0;
 				Pointer<GcarFile> ret = new GcarFile;
 				ret->file_.open(filename_.c_str());
-				if(!ret->file_.is_open()) ret = 0;
+				if(!ret->file_.isOpen()) ret = 0;
 				else {
 					ret->entry_ = *entry;
-					ret->file_.seekg(entry->pos);
-					if(gcar_.flags() & Archive::FLAG_CRYPTED) {
-						ret->filter_ = new cryptfilter(*gcar_.crypt());
-						ret->filter_->open(ret->file_.rdbuf(ret->filter_), std::ios::in);
-					}
+					ret->file_.setKey(gcar_);
+					ret->file_.seek(entry);
 				}
 				return ret;
 			}

@@ -19,7 +19,7 @@ using namespace std;
 
 namespace gctp { namespace graphic {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, AsciiFontTexture, Texture);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, AsciiFontTexture, Texture);
 
 	namespace detail {
 		struct AsciiAttr {

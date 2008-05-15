@@ -16,7 +16,7 @@ using namespace std;
 
 namespace gctp { namespace graphic {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, DepthStencil, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, DepthStencil, Object);
 
 	DepthStencil::DepthStencil() : org_format_(-1)
 	{

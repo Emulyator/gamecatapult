@@ -51,6 +51,7 @@ namespace gctp {
 		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
 		static int newUserData(lua_State *l, Ptr pobj);
 		static int newUserData(lua_State *l, Hndl hobj);
+		static int luaRegisterPackage(lua_State *L);
 		static int luaRegister(lua_State *L);
 		static int luaTableDump(lua_State *L);
 		static int luaTableLoad(lua_State *L);
@@ -81,7 +82,7 @@ namespace gctp {
 	public:
 		void operator()(lua_State *lua) const
 		{
-			luaopen_base(lua);
+			luaL_openlibs(lua);
 			TukiRegister::registerMe(lua);
 		}
 	};

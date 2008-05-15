@@ -49,29 +49,35 @@ namespace gctp {
 			bool operator>(const EntryAttr &rhs) const { return pos>rhs.pos; }
 			bool operator>=(const EntryAttr &rhs) const { return pos>=rhs.pos; }
 		};
+
+		enum CryptState {
+			KEEP,
+			CRYPT,
+			UNCRYPT
+		};
+
 		/// 編集中エントリのリスト
 		typedef std::list<EntryAttr> List;
 		/// Listのiterator
 		typedef List::iterator ListItr;
 
 		/// デフォルトコンストラクタ
-		explicit ArchiveEditable(bool crypt = false) : alignment_(crypt ? 8 : 4), crypt_(crypt) {}
+		ArchiveEditable() {}
 		/// コンストラクタ
-		ArchiveEditable(const _TCHAR *fn, const char *key, bool crypt = false) : alignment_(crypt ? 8 : 4), crypt_(crypt)
+		explicit ArchiveEditable(const _TCHAR *fn, const char *key = 0, CryptState crypt_state = KEEP)
 		{
-			setKey(key);
-			open(fn);
+			open(fn, key, crypt_state);
 		}
 		/// アライメントを指定(0にそろえられる下位ビット数で指定)
 		void setAlign(int bit)
 		{
 			alignment_ = 1<<bit;
-			if(crypt_ && alignment_ < 8) alignment_ = 8;
+			if(crypt_state_ == CRYPT && alignment_ < 8) alignment_ = 8;
 		}
 		/// 開く
-		void open(const _TCHAR *fn);
+		void open(const _TCHAR *fn, const char *key = 0, CryptState crypt_state = KEEP);
 		/// 新規製作
-		void openAsNew(const _TCHAR *fn);
+		void openAsNew(const _TCHAR *fn, const char *key = 0);
 		/// エントリ追加
 		void add(const _TCHAR *fn);
 		/// 更新日付を無視し、強制再構築
@@ -101,7 +107,7 @@ namespace gctp {
 			return i;
 		}
 		int alignment_;
-		bool crypt_;
+		CryptState crypt_state_;
 		int align(int n) { return Archive::align(n, alignment_); }
 	private:
 		int index_page_size_;

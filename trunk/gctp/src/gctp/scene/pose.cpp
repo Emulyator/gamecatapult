@@ -13,7 +13,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Pose, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Pose, Object);
 
 	/** “¯‚¶ƒ{[ƒ“–¼‚à‚ÂPose‚ğ»ì
 	 *

@@ -31,7 +31,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, AmbientLight, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, AmbientLight, Object);
 
 
 	ParallelLight::ParallelLight() {}
@@ -49,7 +49,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, ParallelLight, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, ParallelLight, Object);
 
 
 	Light::Light() {}
@@ -136,6 +136,6 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Light, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Light, Object);
 
 }} // namespace gctp::scene

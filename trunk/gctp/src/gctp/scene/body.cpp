@@ -15,7 +15,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Body, Skeleton);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Body, Skeleton);
 
 	/** Bodyをインスタンス用にディープコピー返す
 	 *
