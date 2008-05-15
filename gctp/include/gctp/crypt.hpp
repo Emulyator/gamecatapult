@@ -58,6 +58,12 @@ namespace gctp {
 		{
 			Word word0;
 			Word word1;
+			DWord &operator ^=(const DWord &rhs)
+			{
+				word0.word ^= rhs.word0.word;
+				word1.word ^= rhs.word1.word;
+				return *this;
+			}
 		};
 
 	private:
@@ -473,6 +479,45 @@ namespace gctp {
 			DWord *work = reinterpret_cast<DWord *>(dst);
 			for(size_t i=0; i<len; i++) {
 				deBF(work->word0, work->word1);
+				work++;
+			}
+			return true;
+		}
+
+		/// à√çÜâª
+		bool encodeCBC(DWord &vector, void *dst, size_t len) const
+		{
+			if(len&0x7) {
+				//std::cerr << "\aBlowfish requires the input to be a multiple of 8 bytes (64bits) to work.\n";
+				return false;
+			}
+
+			len >>= 3;
+			DWord *work = reinterpret_cast<DWord *>(dst);
+			for(size_t i=0; i<len; i++) {
+				*work ^= vector;
+				enBF(work->word0, work->word1);
+				vector = *work;
+				work++;
+			}
+			return true;
+		}
+
+		/// ïúçÜ
+		bool decodeCBC(DWord &vector, void *dst, size_t len) const
+		{
+			if(len&0x7) {
+				// std::cerr << "\aBlowfish requires the input to be a multiple of 8 bytes (64bits) to work.\n";
+				return false;
+			}
+
+			len >>= 3;
+			DWord *work = reinterpret_cast<DWord *>(dst);
+			for(size_t i=0; i<len; i++) {
+				DWord _vector = vector;
+				vector = *work;
+				deBF(work->word0, work->word1);
+				*work ^= _vector;
 				work++;
 			}
 			return true;

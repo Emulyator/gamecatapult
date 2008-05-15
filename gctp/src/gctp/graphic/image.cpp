@@ -31,7 +31,7 @@ namespace gctp { namespace graphic {
 
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Image, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, Image, Object);
 
 	/// ‰æ‘œƒtƒ@ƒCƒ‹‚©‚ç“Ç‚Ý‚±‚Ý
 	HRslt Image::setUp(const _TCHAR *fname)

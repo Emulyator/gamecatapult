@@ -18,7 +18,9 @@
 #endif
 
 namespace gctp {
-	class Context;
+	namespace core {
+		class Context;
+	}
 }
 
 namespace gctp { namespace scene {
@@ -67,7 +69,7 @@ namespace gctp { namespace scene {
 		virtual bool onReach(float delta) const;
 		virtual bool onLeave(float delta) const;
 
-		/// カレントステージ（そのステージのupdate、draw…などの間だけ有効）
+		/// カレントワールド（そのワールドのupdate、draw…などの間だけ有効）
 		World &current() { return *current_; }
 
 	GCTP_DECLARE_CLASS

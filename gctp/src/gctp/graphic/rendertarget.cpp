@@ -20,7 +20,7 @@ using namespace std;
 
 namespace gctp { namespace graphic {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, RenderTarget, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, RenderTarget, Object);
 
 	RenderTarget::RenderTarget() : index_for_system_(0)
 	{

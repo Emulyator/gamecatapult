@@ -20,7 +20,7 @@ using namespace std;
 
 namespace gctp { namespace graphic {
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, FontTexture, Texture);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, FontTexture, Texture);
 
 	namespace {
 		

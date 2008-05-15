@@ -1,2 +1,41 @@
 D3DXを追い出して、Vector Math Libraryに移行する。
 3D幾何演算をすべてOpenGL方式にする。
+
+
+nパスレンダどうする
+
+ShadowMap...
+SetShadowMapPass
+	model->draw()
+		-> model->shader->setPass("MakeShadow")
+			-> drawSubset
+
+SetUseShadowMapPass
+	model->draw()
+		-> model->shader->setPass("UseShadow")
+			-> drawSubset
+
+ :
+ :
+
+適合するパスがなかったら、描画しない？
+
+それでじゅうぶん？
+
+  問題は、DXのインターフェースではただのパス番号
+      パス識別→パス番号のDBが必要？
+
+GeneralPassRenderer
+  -> Set sbDefault
+
+
+マテリアルソートは？
+Worldが受け持つ
+	→全Bodyの全Fleshを検査して、
+	Shader
+	  ShaderParam
+	     Mesh(Zソートなし)
+	     Mesh(半透明体Zソート)
+    の独自レンダーツリーを構築
+    enter/exitのタイミングで再構築
+    Zソートは毎回

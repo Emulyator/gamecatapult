@@ -13,7 +13,9 @@
 #include <gctp/tuki.hpp>
 
 namespace gctp {
-	class Context;
+	namespace core {
+		class Context;
+	}
 }
 
 namespace gctp { namespace scene {
@@ -107,9 +109,9 @@ namespace gctp { namespace scene {
 	};
 
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename);
+	extern Handle<Entity> newEntity(core::Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename);
 	/// エンティティーをシーンに追加
-	extern Handle<Entity> newEntity(Context &context, World &world, const std::type_info &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename);
+	extern Handle<Entity> newEntity(core::Context &context, World &world, const std::type_info &typeinfo, const _TCHAR *name, const _TCHAR *srcfilename);
 
 }} // namespace gctp::scene
 

@@ -138,8 +138,8 @@ namespace gctp { namespace scene {
 		return 3;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Camera, Renderer);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, Camera)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Camera, Renderer);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Camera)
 		TUKI_METHOD(Camera, setPosition)
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)

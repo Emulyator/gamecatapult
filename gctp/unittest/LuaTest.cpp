@@ -313,7 +313,7 @@ public:
   void testTuki() {
 	luapp::State lua(registers);
 	bool lua_run_ok = lua.run(string(
-		"register('モジュール')\n"
+		"require('モジュール')\n"
 		"print('こんにちわ！')\n"
 		"a = モジュール.名無し()\n"
 		"a:deposit(100)\n"
@@ -340,7 +340,7 @@ public:
 	{
 		luapp::State lua(ini);
 		bool lua_run_ok = lua.run(string(
-			"register('モジュール')\n"
+			"require('モジュール')\n"
 			"t = {a = 10, b = true, o = モジュール.名無し(), tt = {ee = 'wwww'}, c = 'abracadabra'}\n"
 			"tuki_dump('tukidumptest', t)\n"
 			));

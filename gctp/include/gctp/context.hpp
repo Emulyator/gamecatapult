@@ -1,5 +1,5 @@
-#ifndef _GCTP_CONTEXT_HPP_
-#define _GCTP_CONTEXT_HPP_
+#ifndef _GCTP_CORE_CONTEXT_HPP_
+#define _GCTP_CORE_CONTEXT_HPP_
 #include <gctp/config.hpp>
 #ifdef GCTP_ONCE
 #pragma once
@@ -19,8 +19,10 @@
 #include <tchar.h>
 
 namespace gctp {
-
 	class Serializer;
+}
+
+namespace gctp { namespace core {
 
 	/** リソースコンテキストクラス
 	 *
@@ -183,6 +185,13 @@ namespace gctp {
 
 		virtual void serialize(Serializer &);
 
+		/// カレントコンテキストを返す
+		inline static Context &current()
+		{
+			GCTP_ASSERT(current_);
+			return *current_;
+		}
+
 	protected:
 		// luapp
 		bool setUp(luapp::Stack &L);
@@ -192,8 +201,6 @@ namespace gctp {
 		int pairs(luapp::Stack &L);
 		int ipairs(luapp::Stack &L);
 		static int current(luapp::Stack &L);
-
-		friend Context &context();
 
 	private:
 		bool is_open_;
@@ -220,13 +227,14 @@ namespace gctp {
 	TUKI_DECLARE(Context)
 	};
 
+}} // namespace gctp.core
+
+namespace gctp {
 	/// カレントコンテキスト
-	inline Context &context()
+	inline core::Context &context()
 	{
-		GCTP_ASSERT(Context::current_);
-		return *Context::current_;
+		return core::Context::current();
 	}
+}
 
-} // namespace gctp
-
-#endif //_GCTP_CONTEXT_HPP_
+#endif //_GCTP_CORE_CONTEXT_HPP_

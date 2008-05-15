@@ -143,7 +143,7 @@ namespace gctp { namespace graphic { namespace dx {
 		};
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, HLSLShader, Shader);
+	GCTP_IMPLEMENT_CLASS_NS3(gctp, graphic, dx, HLSLShader, Shader);
 
 	/// シェーダーファイルから読みこみ
 	HRslt HLSLShader::setUp(const _TCHAR *fname)

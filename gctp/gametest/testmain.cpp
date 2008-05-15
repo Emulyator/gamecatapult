@@ -20,12 +20,13 @@
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/camera.hpp>
 #include <gctp/scene/quakecamera.hpp>
-#include <gctp/scene/stage.hpp>
+#include <gctp/scene/world.hpp>
 #include <gctp/scene/entity.hpp>
 #include <gctp/scene/motion.hpp>
 #include <gctp/scene/motionmixer.hpp>
 #include <gctp/scene/light.hpp>
 #include <gctp/scene/graphfile.hpp>
+#include <gctp/scene/rendertree.hpp>
 
 //#define MOVIETEST
 #define PHYSICSTEST
@@ -51,10 +52,10 @@ namespace {
 #ifdef PHYSICSTEST
 	// 箱追加
 	void addBox(btDynamicsWorld *phy_world, btAlignedObjectArray<btCollisionShape *> &phy_collision_shapes
-		, HandleList<scene::Entity> &boxlist, Context &context, scene::Stage &stage, const btVector3 &v)
+		, HandleList<scene::Entity> &boxlist, Context &context, scene::World &world, const btVector3 &v)
 	{
 		if(phy_world->getCollisionObjectArray().size() < 100) {
-			Handle<scene::Entity> entity = newEntity(context, stage, "gctp.Entity", 0, _T("gradriel.x"));
+			Handle<scene::Entity> entity = newEntity(context, world, "gctp.Entity", 0, _T("gradriel.x"));
 			if(entity) {
 				boxlist.push_back(entity);
 				AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
@@ -90,12 +91,13 @@ namespace {
 
 extern "C" int main(int argc, char *argv[])
 {
+	GCTP_USE_CLASS(graphic::Texture);
 	GCTP_USE_CLASS(scene::Camera);
 	GCTP_USE_CLASS(scene::GraphFile);
-	GCTP_USE_CLASS(graphic::Texture);
 	GCTP_USE_CLASS(scene::QuakeCamera);
-	GCTP_USE_CLASS(scene::Stage);
+	GCTP_USE_CLASS(scene::World);
 	GCTP_USE_CLASS(scene::Entity);
+	GCTP_USE_CLASS(scene::RenderTree);
 	const char *mesh_mode = "Vertex Shader";
 	HRslt hr;
 
@@ -187,19 +189,21 @@ extern "C" int main(int argc, char *argv[])
 	pbuf.setUp();
 	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
 	context.load(_T("Reflect.tga"));
-	{
+	Pointer<scene::RenderTree> rtree = context.create("gctp.RenderTree", _T("rt")).lock();
+	if(rtree) {
+		app().draw_signal.connectOnce(rtree->draw_slot);
 		Pointer<scene::Camera> camera = context.create("gctp.Camera", _T("camera")).lock();
 		if(camera) {
+			rtree->setUp(camera);
 			camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
-			app().draw_signal.connectOnce(camera->draw_slot);
-			Pointer<scene::Stage> stage = context.create("gctp.Stage", _T("stage")).lock();
-			if(stage) {
+			Handle<scene::World> world = context.create("gctp.World", _T("world")).lock();
+			if(world) {
+				rtree->root()->push(world);
 				Pointer<scene::QuakeCamera> qcam = context.create("gctp.QuakeCamera", _T("qcam")).lock();
 				if(qcam) qcam->target() = camera;
-				camera->draw_signal.connectOnce(stage->draw_slot);
-				app().update_signal.connectOnce(stage->update_slot);
+				app().update_signal.connectOnce(world->update_slot);
 				Pointer<scene::Entity> entity;
-				entity = newEntity(context, *stage, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
+				entity = newEntity(context, *world, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
 				if(entity) {
 					//entity->skeleton().setPosType(MotionChannel::LINEAR);
 					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
@@ -213,10 +217,10 @@ extern "C" int main(int argc, char *argv[])
 					}
 				}
 
-				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("wire_test.x")).lock();
+				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("wire_test.x")).lock();
 
 				for(int i = 0; i < 20; i++) {
-					entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("tiny.x")).lock();
+					entity = newEntity(context, *world, "gctp.Entity", NULL, _T("tiny.x")).lock();
 					if(entity) {
 						if(entity->mixer().isExist(0)) {
 							entity->mixer().tracks()[0].setWeight(1.0f);
@@ -231,7 +235,7 @@ extern "C" int main(int argc, char *argv[])
 					PRNN(aabb.upper << std::endl << aabb.lower);
 				}
 
-				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
+				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
 				if(entity) {
 					if(entity->mixer().isExist(0)) {
 						entity->mixer().tracks()[0].setWeight(1.0f);
@@ -243,7 +247,7 @@ extern "C" int main(int argc, char *argv[])
 					//entity->do_loop_ = true;
 				}
 
-				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
+				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
 				if(entity) {
 					if(entity->mixer().isExist(0)) {
 						entity->mixer().tracks()[0].setWeight(1.0f);
@@ -254,8 +258,8 @@ extern "C" int main(int argc, char *argv[])
 					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 				}
 
-				entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("cell.x")).lock();
-				//entity = newEntity(context, *stage, "gctp.Entity", NULL, _T("room1.x")).lock();
+				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("cell.x")).lock();
+				//entity = newEntity(context, *world, "gctp.Entity", NULL, _T("room1.x")).lock();
 
 				{
 					graphic::setAmbient(Color(0.5f,0.5f,0.5f));
@@ -268,7 +272,7 @@ extern "C" int main(int argc, char *argv[])
 					Pointer<scene::ParallelLight> pl = context.create("gctp.ParallelLight").lock();
 					if(pl) {
 						pl->set(light);
-						//pl->enter(*stage);
+						//pl->enter(*world);
 					}
 
 					light.ambient = Color(0.2f, 0.2f, 0.2f);
@@ -278,7 +282,7 @@ extern "C" int main(int argc, char *argv[])
 					pl = context.create("gctp.ParallelLight").lock();
 					if(pl) {
 						pl->set(light);
-						//pl->enter(*stage);
+						//pl->enter(*world);
 					}
 				}
 			}
@@ -287,7 +291,7 @@ extern "C" int main(int argc, char *argv[])
 
 	while(app().canContinue()) {
 		//if(input().kbd().press(DIK_ESCAPE)) break;
-		Pointer<scene::Stage> stage = context[_T("stage")].lock();
+		Pointer<scene::World> world = context[_T("world")].lock();
 		Pointer<scene::Camera> camera = context[_T("camera")].lock();
 		Pointer<scene::QuakeCamera> qcam = context[_T("qcam")].lock();
 		if(camera && qcam) {
@@ -340,7 +344,7 @@ extern "C" int main(int argc, char *argv[])
 			else if(input().kbd().push(DIK_2)) { mesh_mode = "Indexed"; hr = chr->target().lock()->fleshies().front()->model().lock()->useIndexed(); }
 			else if(input().kbd().push(DIK_3)) { mesh_mode = "Blended"; hr = chr->target().lock()->fleshies().front()->model().lock()->useBlended(); }
 			else if(input().kbd().push(DIK_4)) { mesh_mode = "Vertex Shader"; hr = chr->target().lock()->fleshies().front()->model().lock()->useVS(); }
-			else if(input().kbd().push(DIK_5)) { mesh_mode = "HLSL"; hr = chr->target().lock()->fleshies().front()->model().lock()->useBrush(); }
+			else if(input().kbd().push(DIK_5)) { mesh_mode = "HLSL"; hr = chr->target().lock()->fleshies().front()->model().lock()->useShader(); }
 			if(!hr) GCTP_TRACE(hr);
 		}
 //		if(input().mouse().push[0]) se.play();
@@ -348,7 +352,7 @@ extern "C" int main(int argc, char *argv[])
 #ifdef PHYSICSTEST
 		if(phy_world) {
 			if(input().kbd().push(DIK_B)) {
-				addBox(phy_world, phy_collision_shapes, box_list, context, *stage, btVector3(0, 2, 0));
+				addBox(phy_world, phy_collision_shapes, box_list, context, *world, btVector3(0, 2, 0));
 			}
 			// シミュレーションを進める
 			phy_world->stepSimulation(app().lap);

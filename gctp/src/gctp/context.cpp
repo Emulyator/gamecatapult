@@ -15,9 +15,7 @@
 
 using namespace std;
 
-namespace gctp {
-
-	GCTP_IMPLEMENT_CLASS_NS(gctp, Context, Object);
+namespace gctp { namespace core {
 
 	Context::Context(bool do_open) : is_open_(false)
 	{
@@ -239,10 +237,7 @@ namespace gctp {
 			ret = load(L[1].toCStr());
 #endif
 		}
-		if(ret) {
-			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
-			return gctp::TukiRegister::newUserData(L, ret);
-		}
+		if(ret) return gctp::TukiRegister::newUserData(L, ret);
 		return 0;
 	}
 	
@@ -260,10 +255,7 @@ namespace gctp {
 		else if(L.top() >= 1) {
 			ret = create(L[1].toCStr(), 0);
 		}
-		if(ret) {
-			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
-			return gctp::TukiRegister::newUserData(L, ret);
-		}
+		if(ret) return gctp::TukiRegister::newUserData(L, ret);
 		return 0;
 	}
 
@@ -277,10 +269,7 @@ namespace gctp {
 			ret = find(L[1].toCStr());
 #endif
 		}
-		if(ret) {
-			gctp::TukiRegister::registerIt(L, GCTP_TYPEID(*ret));
-			return gctp::TukiRegister::newUserData(L, ret);
-		}
+		if(ret) return gctp::TukiRegister::newUserData(L, ret);
 		return 0;
 	}
 
@@ -372,7 +361,8 @@ namespace gctp {
 		return 0;
 	}
 
-	TUKI_IMPLEMENT_BEGIN_NS(gctp, Context)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, core, Context, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, core, Context)
 		TUKI_METHOD(Context, load)
 		TUKI_METHOD(Context, create)
 		TUKI_METHOD(Context, find)
@@ -381,4 +371,4 @@ namespace gctp {
 		TUKI_METHOD(Context, current)
 	TUKI_IMPLEMENT_END(Context)
 
-} // namespace gctp
+}} // namespace gctp

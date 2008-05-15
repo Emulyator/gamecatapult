@@ -37,7 +37,7 @@ namespace gctp { namespace graphic {
 		return *this;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, SpriteBuffer, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, SpriteBuffer, Object);
 	
 	class SpriteSB : public dx::StateBlockRsrc {
 	public:

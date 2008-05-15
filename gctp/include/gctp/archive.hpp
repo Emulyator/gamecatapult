@@ -36,7 +36,7 @@ namespace gctp {
 		long	pos;
 
 		ArchiveEntry() {}
-		ArchiveEntry(const _TCHAR *fn) : id(fn) {}
+		explicit ArchiveEntry(const _TCHAR *fn) : id(fn) {}
 		bool operator<(const ArchiveEntry &rhs) const
 		{
 			return id < rhs.id;
@@ -55,6 +55,8 @@ namespace gctp {
 		return os<<ae.id.c_str()<<" "<<ts<<"\tsize "<<ae.size<<", offset "<<ae.pos;
 	}
 
+	class Archive;
+
 	/** アーカイブファイルクラス
 	 *
 	 * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
@@ -63,70 +65,52 @@ namespace gctp {
 	 *
 	 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
 	 */
-	class Archive : protected File
+	class ArchiveReader : protected File
 	{
 	public:
+		/// フラグ
 		enum Flags {
 			FLAG_CRYPTED = 1,
 		};
 
-		/// アーカイブ内のファイル情報の索引を表すクラス
-		typedef std::set<ArchiveEntry> Index;
-		/// Indexのiterator
-		typedef Index::iterator IndexItr;
-
 		/// デフォルトコンストラクタ
-		Archive() : index_size_(0), flags_(0), filter_(0), crypt_(0) {}
+		ArchiveReader() : flags_(0), filter_(0), crypt_(0) {}
 		/// アーカイブファイル名を指定して開く
-		explicit Archive(const _TCHAR *fn, const char *key = 0) : index_size_(0), flags_(0), filter_(0), crypt_(0)
+		explicit ArchiveReader(const _TCHAR *fn, const char *key = 0) : flags_(0), filter_(0), crypt_(0), iv_(0)
 		{
 			setKey(key);
 			open(fn);
 		}
-		~Archive()
+		~ArchiveReader()
 		{
 			if(filter_) {
 				rdbuf(filebuf());
 				delete filter_;
 				delete crypt_;
+				delete iv_;
 			}
 		}
 
 		/// アーカイブファイル名を指定して開く
-		void open(const _TCHAR *fn);
+		void open(const _TCHAR *fn) { File::open(fn); }
 		/// 開いているか？
-		bool is_open() { return File::is_open(); }
-		/// 閉じる
+		bool isOpen() { return File::is_open(); }
+		/// アーカイブを閉じる
 		void close() { File::close(); }
 		/// アーカイブファイルの長さ
 		int length() { return File::length(); }
-		/// エントリ取得
-		ArchiveEntry *get(const _TCHAR *fn);
 		/// エントリ先頭にシーク
-		Archive &seek(const ArchiveEntry *entry);
-		/// エントリ先頭にシーク
-		Archive &seek(const _TCHAR *fn);
+		ArchiveReader &seek(const ArchiveEntry *entry);
 		/// 内部のファイルを別ファイルに抽出
-		Archive &extract(const _TCHAR *fn, const _TCHAR *entryname);
-		/// 内部のファイルを別ファイルに抽出
-		Archive &extract(const _TCHAR *fn, const ArchiveEntry *entry);
-		/// すべての内部ファイルを別ファイルに抽出
-		Archive &extract();
+		ArchiveReader &extract(const _TCHAR *fn, const ArchiveEntry *entry);
 		/// 読み込み
-		Archive &read(void *dst, const _TCHAR *fn);
+		ArchiveReader &read(void *dst, const ArchiveEntry *entry);
 		/// 読み込み
-		Archive &read(void *dst, const ArchiveEntry *entry);
-		/// 読み込み
-		Archive &read(void *dst, const int size);
-		/// 内部ファイルをBufferで返す
-		BufferPtr load(const _TCHAR *fn);
+		ArchiveReader &read(void *dst, const int size);
 		/// 内部ファイルをBufferで返す
 		BufferPtr load(const ArchiveEntry *entry);
 		/// 指定サイズ読み込んでBufferで返す
 		BufferPtr load(const int size);
-		/// 索引をコンソールに出力
-		void printIndex(std::ostream &os);
-		//void printIndex(std::basic_ostream<_TCHAR> &os);
 		/// 作業バッファサイズ設定
 		void setWorkBufferSize(int size)
 		{
@@ -134,17 +118,91 @@ namespace gctp {
 		}
 		/// 暗号化キーをセット
 		void setKey(const char *key);
-		Crypt *crypt() { return crypt_; }
+		/// 暗号情報をコピー
+		void setKey(const Archive &src);
+		/// フラグ @see Flags
 		int flags() { return flags_; }
+
+	protected:
+		int flags_;
+		cbccryptfilter *filter_;
+		Crypt *crypt_;
+		Crypt::DWord *iv_;
+		static int align(int n, int alignment) { return ((n+alignment-1)/alignment)*alignment; }
+		void preseek(const ArchiveEntry &entry);
+	};
+
+	/** アーカイブファイルクラス
+	 *
+	 * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
+	 * @date 2002/12/31 16:49:24
+	 * $Id: archive.hpp,v 1.4 2005/07/01 05:13:06 takasugi Exp $
+	 *
+	 * Copyright (C) 2001,2002 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
+	 */
+	class Archive : public ArchiveReader
+	{
+	public:
+		/// アーカイブ内のファイル情報の索引を表すクラス
+		typedef std::set<ArchiveEntry> Index;
+		/// Indexのiterator
+		typedef Index::iterator IndexItr;
+
+		/// デフォルトコンストラクタ
+		Archive() : index_size_(0) {}
+		/// アーカイブファイル名を指定して開く
+		explicit Archive(const _TCHAR *fn, const char *key = 0) : ArchiveReader(fn, key), index_size_(0)
+		{
+			if(!readIndex()) close();
+		}
+
+		/// アーカイブファイル名を指定して開く
+		void open(const _TCHAR *fn);
+		/// エントリ取得
+		ArchiveEntry *get(const _TCHAR *fn);
+		/// エントリ先頭にシーク
+		Archive &seek(const _TCHAR *fn);
+		/// 内部のファイルを別ファイルに抽出
+		Archive &extract(const _TCHAR *fn, const _TCHAR *entryname);
+		/// すべての内部ファイルを別ファイルに抽出
+		Archive &extract();
+		/// 読み込み
+		Archive &read(void *dst, const _TCHAR *fn);
+		/// 内部ファイルをBufferで返す
+		BufferPtr load(const _TCHAR *fn);
+		/// 索引をコンソールに出力
+		void printIndex(std::ostream &os);
+
+		/// エントリ先頭にシーク
+		Archive &seek(const ArchiveEntry *entry)
+		{
+			ArchiveReader::seek(entry);
+			return *this;
+		}
+		/// 内部のファイルを別ファイルに抽出
+		Archive &extract(const _TCHAR *fn, const ArchiveEntry *entry)
+		{
+			ArchiveReader::extract(fn, entry);
+			return *this;
+		}
+		/// 読み込み
+		Archive &read(void *dst, const ArchiveEntry *entry)
+		{
+			ArchiveReader::read(dst, entry);
+			return *this;
+		}
+		/// 読み込み
+		Archive &read(void *dst, const int size)
+		{
+			ArchiveReader::read(dst, size);
+			return *this;
+		}
 
 	protected:
 		Index index_; // 読み出しのときの索引
 		bool readIndex();
 		int index_size_; // Index index_のサイズではなく、オープンした時点でのファイル上のインデックスデータのサイズ。
-		int flags_;
-		cryptfilter *filter_;
-		Crypt *crypt_;
-		static int align(int n, int alignment) { return ((n+alignment-1)/alignment)*alignment; }
+		Crypt::DWord index_iv_;
 	};
 
 } // namespace gctp

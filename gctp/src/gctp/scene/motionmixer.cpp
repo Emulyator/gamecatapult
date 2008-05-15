@@ -358,8 +358,8 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS(gctp, MotionMixer, Object);
-	TUKI_IMPLEMENT_BEGIN_NS(Scene, MotionMixer)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, MotionMixer, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, MotionMixer)
 		TUKI_METHOD(MotionMixer, trackNum)
 		TUKI_METHOD(MotionMixer, setMasterSpeed)
 		TUKI_METHOD(MotionMixer, getMasterSpeed)

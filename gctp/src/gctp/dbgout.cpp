@@ -14,7 +14,6 @@ using namespace std;
 
 namespace gctp {
 
-#if GCTP_DBGOUT
 	static debuggeroutbuf<_TCHAR> _dbgout_buf;
 	basic_ostream<_TCHAR> dbgout(&_dbgout_buf);		// デバッガアウトプットストリーム
 
@@ -26,11 +25,8 @@ namespace gctp {
 	{
 		_dbgout_buf.eraseSyncBuf(sync_buf);
 	}
-#endif
 
-#if GCTP_LOGFILE
 	//basic_ofstream<_TCHAR> logfile(_T("log.txt"));		// ログファイルストリーム
 	basic_ofstream<_TCHAR> logfile;
-#endif
 
 };	// namespace gctp

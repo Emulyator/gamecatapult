@@ -163,6 +163,21 @@ namespace gctp {
 	{
 	}
 
+	int TukiRegister::luaRegisterPackage(lua_State *l)
+	{
+		std::string str = luapp::State(l)[1].toString();
+		str += ". ";
+		str.at(str.length()-1) = static_cast<char>(1);
+		TukiMap::iterator i = registry().lower_bound(str.c_str());
+		str.at(str.length()-1) = static_cast<char>(-1);
+		TukiMap::iterator end = registry().upper_bound(str.c_str());
+		for(; i != end; ++i) {
+			RegisterFunc f = (RegisterFunc)(i->second);
+			if(f) f(l);
+		}
+		return 0;
+	}
+
 	void TukiRegister::registerIt(lua_State *l, const char *name)
 	{
 		RegisterFunc f = registry().get(name);
@@ -229,15 +244,7 @@ namespace gctp {
 	{
 		luapp::Stack L(l);
 		const char *name = L[1].toCStr();
-		/*if(LStr("coroutine") == name) luaopen_base(l); // 現在分かれて無いので。将来的には分かれるんじゃないかな
-		else*/ if(LStr("table") == name) luaopen_table(l);
-		else if(LStr("string") == name) luaopen_string(l);
-		else if(LStr("math") == name) luaopen_math(l);
-		else if(LStr("debug") == name) luaopen_debug(l);
-		else if(LStr("io") == name) luaopen_io(l);
-		else if(LStr("os") == name) luaopen_os(l);
-		else if(LStr("package") == name) luaopen_package(l);
-		else registerIt(l, name);
+		registerIt(l, name);
 		return 0;
 	}
 
@@ -270,9 +277,29 @@ namespace gctp {
 		return 0;
 	}
 
-	void TukiRegister::registerMe(lua_State *L)
+	namespace {
+		void setBatchLoaderToPreload(luapp::Stack &L, luapp::Table &preload, std::string &name)
+		{
+			std::string::size_type n = name.rfind(".");
+			if(n != std::string::npos) {
+				name.erase(n);
+				if(preload[name.c_str()].isNil()) preload.declare(name.c_str(), TukiRegister::luaRegisterPackage);
+				setBatchLoaderToPreload(L, preload, name);
+			}
+		}
+	}
+
+	void TukiRegister::registerMe(lua_State *l)
 	{
-		lua_register(L, "register", luaRegister);
+		luapp::Stack L(l);
+		luapp::Table preload = L.global()["package"]["preload"];
+		for(TukiMap::const_iterator i = registry().begin(); i != registry().end(); ++i)
+		{
+			preload.declare(i->first.c_str(), i->second);
+			std::string name = i->first.c_str();
+			setBatchLoaderToPreload(L, preload, name);
+		}
+		//lua_register(L, "require", luaRegister); // 標準のrequireを置き換えてしまう...ってのもありかなぁ（特にコンシューマ）
 		lua_register(L, "tuki_dump", luaTableDump);
 		lua_register(L, "tuki_load", luaTableLoad);
 	}

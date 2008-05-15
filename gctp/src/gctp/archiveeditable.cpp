@@ -23,21 +23,31 @@ using namespace std;
 
 namespace gctp {
 
-	void ArchiveEditable::open(const _TCHAR *fn)
+	void ArchiveEditable::open(const _TCHAR *fn, const char *key, CryptState crypt_state)
 	{
 		File::open(fn, File::WRITE);
+		setKey(key);
+		if(iv_) index_iv_ = *iv_;
 		if(readIndex()) {
-			if(flags_ & FLAG_CRYPTED) {
-				crypt_ = true;
+			crypt_state_ = crypt_state;
+			if(crypt_state_ == KEEP) {
+				if(flags_ & FLAG_CRYPTED) crypt_state_ = CRYPT;
+				else crypt_state_ = UNCRYPT;
 			}
+			setAlign(2);
 			setUpList();
 		}
 		else close();
 	}
 
-	void ArchiveEditable::openAsNew(const _TCHAR *fn)
+	void ArchiveEditable::openAsNew(const _TCHAR *fn, const char *key)
 	{
 		File::open(fn, File::NEW);
+		setKey(key);
+		if(iv_) index_iv_ = *iv_;
+		if(key) crypt_state_ = CRYPT;
+		else crypt_state_ = UNCRYPT;
+		setAlign(2);
 		setUpList();
 	}
 
@@ -134,7 +144,7 @@ namespace gctp {
 //		if(diff_index_real_size > 0) File::remove(0, diff_index_real_size);
 //		if(diff_index_real_size < 0) File::insert(0, -diff_index_real_size);
 		int ret = align(index_size);
-		if(crypt_ && filter_) {
+		if(crypt_state_ == CRYPT && filter_) {
 			// 暗号化の場合オフセットが特殊
 			ret = align(align(index_size-sizeof(int)*3)+sizeof(int)*3);
 		}
@@ -180,8 +190,9 @@ namespace gctp {
 				{
 					i->pos = ret;
 					ret += align(i->size);
+					preseek(*i);
 					File::seekp(i->pos);
-					if(crypt_ && filter_) {
+					if(crypt_state_ == CRYPT && filter_) {
 						filter_->open(rdbuf(filter_));
 					}
 					if(i->strm) (*this) << i->strm->rdbuf();
@@ -213,11 +224,15 @@ namespace gctp {
 		if(filter_) filter_->close();
 		rdbuf(filebuf());
 		File::seekp(0);
-		if(crypt_ && filter_) {
+		if(crypt_state_ == CRYPT && filter_) {
 			flags_ |= FLAG_CRYPTED;
 		}
+		else {
+			flags_ = 0;
+		}
 		(*this) << (int)_SWAP_('GCAR') << index_size_ << flags_;
-		if(crypt_ && filter_) {
+		if(crypt_state_ == CRYPT && filter_) {
+			*iv_ = index_iv_;
 			filter_->open(rdbuf(filter_));
 		}
 		for(ListItr i = list_.begin(); i != list_.end(); i++) {
