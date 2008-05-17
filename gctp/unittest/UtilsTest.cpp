@@ -51,6 +51,12 @@ public:
 
 //CUPPA:decl=+
   void testQuadFunc() {
+	  uint32_t l,li;
+	  l = quadlevel(UINT_MAX, li);
+	  PRNN(_T("UINT_MAXのレベル:")<<l<<","<<li);
+	  l = quadlevel(UINT_MAX-1, li);
+	  PRNN(_T("UINT_MAX-1のレベル:")<<l<<","<<li);
+	  // -1はlocalidx0。これだと、-1を無効値とみなさないことにほとんど意味はないな。。。
 	  CPPUNIT_ASSERT(quadsq(0)==1);
 	  CPPUNIT_ASSERT(quadsq(1)==4);
 	  CPPUNIT_ASSERT(quadsq(2)==16);
