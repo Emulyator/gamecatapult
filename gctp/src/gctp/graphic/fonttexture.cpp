@@ -458,7 +458,7 @@ namespace gctp { namespace graphic {
 				if(_font->cellsize()+1 < maxCellSize()) {
 					int level = AllocBitMap<LEVEL>::blockToLevel(toBlockSize(_font->cellsize()+1));
 					Attr attr;
-					if(alloc(level, attr.idx)) {
+					if(attr.idx = alloc(level)) {
 						attr.priority = 8;
 						AllocBitMap<LEVEL>::Block block;
 						block.set(attr.idx);
@@ -473,7 +473,7 @@ namespace gctp { namespace graphic {
 						detail_->map_[Figure(_font.get(), c)] = attr;
 					}
 					else {
-						PRNN("文字がキャッシュできなかった : '"<<charToStr(c)<<"'");
+						PRNN(T("文字がキャッシュできなかった : '")<<charToStr(c)<<"'");
 					}
 				}
 			}
@@ -487,11 +487,12 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-	bool FontTexture::alloc(uint32_t level, uint32_t &index)
+	uint32_t FontTexture::alloc(uint32_t level)
 	{
 		int threshold = 1;
-		while(!detail_->alloc_.alloc(level, index)) {
-			if(threshold > 8) return false;
+		uint32_t ret = 0;
+		while(!(ret = detail_->alloc_.alloc(level))) {
+			if(threshold > 8) return 0;
 			for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
 				if(i->second.priority<threshold) {
 					detail_->alloc_.free(i->second.idx);
@@ -501,7 +502,7 @@ namespace gctp { namespace graphic {
 			}
 			threshold++;
 		}
-		return true;
+		return ret;
 	}
 
 	void FontTexture::end()

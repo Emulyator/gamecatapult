@@ -36,7 +36,7 @@ namespace gctp {
 	inline unsigned int octprog(unsigned int level)
 	{
 		unsigned int ret = 1;
-		while(level>0) ret += octcube(level--);
+		while(level>0) ret += octcube(--level);
 		return ret;
 	}
 
@@ -46,14 +46,14 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline Point3 octpos(unsigned int idx)
+	inline Point3 octlocalpos(unsigned int localidx)
 	{
 		Point3 ret = {0, 0, 0};
-		for(unsigned int i = 0; idx; i++) {
-			if(idx&1) ret.x += 1<<i;
-			if(idx&2) ret.y += 1<<i;
-			if(idx&4) ret.z += 1<<i;
-			idx>>=3;
+		for(unsigned int i = 0; localidx; i++) {
+			if(localidx&1) ret.x += 1<<i;
+			if(localidx&2) ret.y += 1<<i;
+			if(localidx&4) ret.z += 1<<i;
+			localidx>>=3;
 		}
 		return ret;
 	}
@@ -64,7 +64,7 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline unsigned int octidx(const Point3 &p)
+	inline unsigned int octlocalidx(const Point3 &p)
 	{
 		unsigned int ret = 0, level = intlog2((std::max)((std::max)((std::max)(p.x, p.y),p.z), 0));
 		for(unsigned int i = 0; i < level; i++) {
@@ -85,18 +85,23 @@ namespace gctp {
 	 */
 	inline unsigned int octlevel(unsigned int idx, unsigned int &localidx)
 	{
-		unsigned int ret = 0;
-		unsigned int volume = octcube(ret);
-		while(idx > volume) {
-			idx -= volume;
-			volume = octcube(++ret);
+		if(idx > 0) {
+			unsigned int ret = 0;
+			unsigned int volume = 1;
+			idx--;
+			while(idx > volume) {
+				idx -= volume;
+				volume = octcube(++ret);
+			}
+			if(idx == volume) {
+				ret++;
+				localidx = 0;
+			}
+			else localidx = idx;
+			return ret;
 		}
-		if(idx == volume) {
-			ret++;
-			localidx = 0;
-		}
-		else localidx = idx;
-		return ret;
+		localidx = 0;
+		return 0;
 	}
 
 	/** 指定レベルの八分木セル体積
@@ -105,9 +110,9 @@ namespace gctp {
 	 * @date 2004/07/19 20:18:53
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<unsigned int _N> class OctCube {
+	template<unsigned int _LEVEL> class OctCube {
 	public:
-		enum { value = (1<<(3*_N)) };
+		enum { value = (1<<(3*_LEVEL)) };
 	};
 	/** 指定レベルの八分木累積長
 	 *
@@ -115,9 +120,15 @@ namespace gctp {
 	 * @date 2004/07/19 20:18:53
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<unsigned int _N> class OctProg {
+	template<unsigned int _LEVEL> class OctProg {
 	public:
-		enum { value = OctCube<_N>::value + OctCube<_N-1>::value };
+		enum { value = OctCube<_LEVEL-1>::value + OctProg<_LEVEL-2>::value };
+	};
+
+	template<>
+	class OctProg<1> {
+	public:
+		enum { value = 2 };
 	};
 
 	template<>

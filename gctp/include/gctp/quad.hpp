@@ -7,6 +7,20 @@
 /** @file
  * 四分木を扱うためのユーティリティー関数
  *
+ * 四文木序数は0を無効値として、
+ * @pre
+| 1 |
+
+| 2 | 3 |
+| 4 | 5 |
+
+|  6 |  7 | 10 | 11 |
+|  8 |  9 | 12 | 13 |
+| 14 | 15 | 18 | 19 |
+| 16 | 17 | 20 | 21 |
+   :
+ * @endpre
+ * となるようなもの。
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/07/15 2:42:16
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -104,7 +118,7 @@ namespace gctp {
 	inline unsigned int quadprog(unsigned int level)
 	{
 		unsigned int ret = 1;
-		while(level>0) ret += quadsq(level--);
+		while(level>0) ret += quadsq(--level);
 		return ret;
 	}
 
@@ -114,13 +128,13 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline Point2 quadpos(unsigned int idx)
+	inline Point2 quadlocalpos(unsigned int localidx)
 	{
 		Point2 ret = {0, 0};
-		for(unsigned int i = 0; idx; i++) {
-			if(idx&1) ret.x += 1<<i; 
-			if(idx&2) ret.y += 1<<i;
-			idx>>=2;
+		for(unsigned int i = 0; localidx; i++) {
+			if(localidx&1) ret.x += 1<<i;
+			if(localidx&2) ret.y += 1<<i;
+			localidx>>=2;
 		}
 		return ret;
 	}
@@ -131,7 +145,7 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline unsigned int quadidx(const Point2 &p)
+	inline unsigned int quadlocalidx(const Point2 &p)
 	{
 		unsigned int ret = 0, level = intlog2((std::max)((std::max)(p.x, p.y), 0));
 		for(unsigned int i = 0; i < level; i++) {
@@ -151,18 +165,23 @@ namespace gctp {
 	 */
 	inline unsigned int quadlevel(unsigned int idx, unsigned int &localidx)
 	{
-		unsigned int ret = 0;
-		unsigned int area = quadsq(ret);
-		while(idx > area) {
-			idx -= area;
-			area = quadsq(++ret);
+		if(idx > 0) {
+			unsigned int ret = 0;
+			unsigned int area = 1;
+			idx--;
+			while(idx > area) {
+				idx -= area;
+				area = quadsq(++ret);
+			}
+			if(idx == area) {
+				ret++;
+				localidx = 0;
+			}
+			else localidx = idx;
+			return ret;
 		}
-		if(idx == area) {
-			ret++;
-			localidx = 0;
-		}
-		else localidx = idx;
-		return ret;
+		localidx = 0;
+		return 0;
 	}
 
 	/** 指定レベルの四分木セル面積
@@ -171,19 +190,26 @@ namespace gctp {
 	 * @date 2004/07/19 20:18:53
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<int _N> class QuadSq {
+	template<int _LEVEL> class QuadSq {
 	public:
-		enum { value = (1<<(2*_N)) };
+		enum { value = (1<<(2*_LEVEL)) };
 	};
+
 	/** 指定レベルの四分木累積長
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/07/19 20:18:53
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	template<int _N> class QuadProg {
+	template<unsigned int _LEVEL> class QuadProg {
 	public:
-		enum { value = QuadSq<_N>::value + QuadProg<_N-1>::value };
+		enum { value = QuadSq<_LEVEL-1>::value + QuadProg<_LEVEL-2>::value };
+	};
+
+	template<>
+	class QuadProg<1> {
+	public:
+		enum { value = 2 };
 	};
 
 	template<>
