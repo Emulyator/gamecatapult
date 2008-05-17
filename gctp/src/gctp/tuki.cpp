@@ -20,6 +20,7 @@ namespace gctp {
 
 	namespace {
 
+		const char *UNKNOWNNAME = "gctp.Object";
 		typedef void (*RegisterFunc)(lua_State *);
 		typedef StaticStringMap<RegisterFunc> TukiMap;
 		typedef TypeMap<const char *> TukiTypeMap;
@@ -205,36 +206,17 @@ namespace gctp {
 	}
 
 	/// 型不明の状態から、Luaにさらす
-	int TukiRegister::newUserData(lua_State *l, Ptr pobj)
-	{
-		if(pobj) {
-			const char *luaname = typeRegistry().get(GCTP_TYPEID(*pobj));
-			if(luaname) {
-				struct UserdataType { Ptr p; Hndl h; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
-				if(ud) {
-					ud->p = pobj;  // store pointer to object in userdata
-					luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
-					lua_setmetatable(l, -2);
-					return 1;  // userdata containing pointer to T object
-				}
-			}
-		}
-		return 0;
-	}
-
-	/// 型不明の状態から、Luaにさらす
-	int TukiRegister::newUserData(lua_State *l, Hndl hobj)
+	int TukiRegister::push(lua_State *l, Hndl hobj)
 	{
 		if(hobj) {
 			const char *luaname = typeRegistry().get(GCTP_TYPEID(*hobj));
-			if(luaname) {
-				struct UserdataType { Ptr p; Hndl h; } *ud = new(lua_newuserdata(l, sizeof(UserdataType))) UserdataType;
-				if(ud) {
-					ud->h = hobj;  // store pointer to object in userdata
-					luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
-					lua_setmetatable(l, -2);
-					return 1;  // userdata containing pointer to T object
-				}
+			if(!luaname) luaname = UNKNOWNNAME;
+			UserData *ud = new(lua_newuserdata(l, sizeof(UserData))) UserData;
+			if(ud) {
+				ud->h = hobj;  // store pointer to object in userdata
+				luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
+				lua_setmetatable(l, -2);
+				return 1;  // userdata containing pointer to T object
 			}
 		}
 		return 0;
@@ -299,6 +281,8 @@ namespace gctp {
 			std::string name = i->first.c_str();
 			setBatchLoaderToPreload(L, preload, name);
 		}
+		// 汎用メタテーブル定義
+		TukiRegister::registerObject(l, UNKNOWNNAME, 0, toString, 0);
 		//lua_register(L, "require", luaRegister); // 標準のrequireを置き換えてしまう...ってのもありかなぁ（特にコンシューマ）
 		lua_register(L, "tuki_dump", luaTableDump);
 		lua_register(L, "tuki_load", luaTableLoad);
@@ -345,7 +329,8 @@ namespace gctp {
 		}
 	}
 	
-	void TukiRegister::registerObject(lua_State *L, const char *name
+	void TukiRegister::registerObject(lua_State *L
+			, const char *name
 			, const lua_CFunction f_new
 			, const lua_CFunction f_tostring
 			, const MemberRegisterer reg_mem)
@@ -377,17 +362,19 @@ namespace gctp {
 		lua_settable(L, methods);
 		
 		lua_newtable(L);                // mt for method table
-		int mt = lua_gettop(L);
-		lua_pushliteral(L, "__call");
-		lua_pushcfunction(L, f_new);
-		lua_pushliteral(L, "new");
-		lua_pushvalue(L, -2);           // dup new_T function
-		lua_settable(L, methods);       // add new_T to method table
-		lua_settable(L, mt);            // mt.__call = new_T
+		if(f_new) {
+			int mt = lua_gettop(L);
+			lua_pushliteral(L, "__call");
+			lua_pushcfunction(L, f_new);
+			lua_pushliteral(L, "new");
+			lua_pushvalue(L, -2);		// dup new_T function
+			lua_settable(L, methods);	// add new_T to method table
+			lua_settable(L, mt);		// mt.__call = new_T
+		}
 		lua_setmetatable(L, methods);
 
 		// fill method table with methods from class T
-		reg_mem(L, methods);
+		if(reg_mem) reg_mem(L, methods);
 
 		lua_pop(L, 2);  // drop metatable and method table
 	}
@@ -395,7 +382,7 @@ namespace gctp {
 	// garbage collection metamethod
 	int TukiRegister::deleteThis(lua_State *L)
 	{
-		struct UserdataType { Ptr p; Hndl h; } *ud = static_cast<UserdataType*>(lua_touserdata(L, 1));
+		UserData *ud = static_cast<UserData *>(lua_touserdata(L, 1));
 		if(ud) {
 			// これをキーしたレジストリエントリがあったら削除
 			void *p = ud->p.get();
@@ -428,13 +415,26 @@ namespace gctp {
 		if(lua_iscfunction(L, -1) && lua_tocfunction(L, -1) == &TukiRegister::deleteThis) {
 			lua_pop(L, 2);
 			// tukiオブジェクトの証
-			struct UserdataType { Ptr pT; Hndl hT; } *ud = static_cast<UserdataType*>(lua_touserdata(L, iud));
+			UserData *ud = static_cast<UserData *>(lua_touserdata(L, iud));
 			if(ud) {
-				if(ud->pT) return ud->pT.get();  // pointer to T object
-				if(ud->hT) return ud->hT.get();  // pointer to T object
+				if(ud->p) return ud->p.get();  // pointer to T object
+				if(ud->h) return ud->h.get();  // pointer to T object
 			}
 		}
 		else lua_pop(L, 2);
+		return 0;
+	}
+
+	int TukiRegister::toString(lua_State *L)
+	{
+		Object *p = check(L, 1);
+		if(p) {
+			char buff[256];
+			sprintf(buff, "%p", p);
+			lua_checkstack(L, 1);
+			lua_pushfstring(L, "%s (%s)", UNKNOWNNAME, buff);
+			return 1;
+		}
 		return 0;
 	}
 

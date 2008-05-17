@@ -218,7 +218,7 @@ namespace gctp { namespace scene {
 	int Entity::getMotionMixer(luapp::Stack &L)
 	{
 		if(mixer_) {
-			TukiRegister::newUserData(L, Hndl(mixer_.get()));
+			TukiRegister::push(L, Hndl(mixer_.get()));
 			return 1;
 		}
 		return 0;

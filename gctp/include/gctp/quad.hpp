@@ -17,7 +17,7 @@
 namespace gctp {
 
 #ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
-	template<typename _INT, int BIT>
+	template<typename _INT, unsigned int BIT>
 	class IntLog2 {
 	public:
 		static _INT value(_INT x)
@@ -49,7 +49,7 @@ namespace gctp {
 		return IntLog2<_INT, sizeof(_INT)*8>::value(x);
 	}
 #else
-	typedef int IntLog2Type;
+	typedef unsigned int IntLog2Type;
 	
 	template<int BIT>
 	class IntLog2 {
@@ -90,7 +90,7 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline int quadsq(int level)
+	inline unsigned int quadsq(unsigned int level)
 	{
 		return 1<<(2*level);
 	}
@@ -101,10 +101,10 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline int quadprog(int level)
+	inline unsigned int quadprog(unsigned int level)
 	{
-		int ret = 0;
-		while(level>=0) ret += quadsq(level--);
+		unsigned int ret = 1;
+		while(level>0) ret += quadsq(level--);
 		return ret;
 	}
 
@@ -114,10 +114,10 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline Point2 quadpos(int idx)
+	inline Point2 quadpos(unsigned int idx)
 	{
 		Point2 ret = {0, 0};
-		for(int i = 0; idx; i++) {
+		for(unsigned int i = 0; idx; i++) {
 			if(idx&1) ret.x += 1<<i; 
 			if(idx&2) ret.y += 1<<i;
 			idx>>=2;
@@ -131,11 +131,11 @@ namespace gctp {
 	 * @date 2004/07/19 5:05:51
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline int quadidx(const Point2 &p)
+	inline unsigned int quadidx(const Point2 &p)
 	{
-		int ret = 0, level = intlog2(std::max<int>(p.x, p.y));
-		for(int i = 0; i < level; i++) {
-			int w = 0;
+		unsigned int ret = 0, level = intlog2((std::max)((std::max)(p.x, p.y), 0));
+		for(unsigned int i = 0; i < level; i++) {
+			unsigned int w = 0;
 			if(p.x&(1<<i)) w |= 1;
 			if(p.y&(1<<i)) w |= 2;
 			ret |= w<<(2*i);
@@ -149,11 +149,16 @@ namespace gctp {
 	 * @date 2004/07/24 11:55:36
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	inline int quadlevel(int idx, int &localidx)
+	inline unsigned int quadlevel(unsigned int idx, unsigned int &localidx)
 	{
-		int ret = 0;
-		while(idx >= quadsq(ret)) idx -= quadsq(ret++);
-		localidx = idx;
+		unsigned int ret = 0;
+		unsigned int area = quadsq(ret);
+		while(idx > area) {
+			idx -= area;
+			area = quadsq(++ret);
+		}
+		if(idx == area) localidx = 0;
+		else localidx = idx;
 		return ret;
 	}
 

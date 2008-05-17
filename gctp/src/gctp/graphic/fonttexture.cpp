@@ -35,7 +35,7 @@ namespace gctp { namespace graphic {
 			}
 		};
 		struct Attr {
-			int idx;
+			uint32_t idx;
 			Size2 size;
 			int priority;
 		};
@@ -458,8 +458,7 @@ namespace gctp { namespace graphic {
 				if(_font->cellsize()+1 < maxCellSize()) {
 					int level = AllocBitMap<LEVEL>::blockToLevel(toBlockSize(_font->cellsize()+1));
 					Attr attr;
-					attr.idx = alloc(level);
-					if(attr.idx != -1) {
+					if(alloc(level, attr.idx)) {
 						attr.priority = 8;
 						AllocBitMap<LEVEL>::Block block;
 						block.set(attr.idx);
@@ -481,18 +480,18 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-	void FontTexture::gabage()
+	void FontTexture::aging()
 	{
 		for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end(); i++) {
 			if(i->second.priority > 0) i->second.priority--;
 		}
 	}
 
-	int FontTexture::alloc(int level)
+	bool FontTexture::alloc(uint32_t level, uint32_t &index)
 	{
 		int threshold = 1;
-		int ret = detail_->alloc_.alloc(level);
-		while(ret < 0 && threshold < 9) {
+		while(!detail_->alloc_.alloc(level, index)) {
+			if(threshold > 8) return false;
 			for(FigureMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
 				if(i->second.priority<threshold) {
 					detail_->alloc_.free(i->second.idx);
@@ -500,10 +499,9 @@ namespace gctp { namespace graphic {
 				}
 				else i++;
 			}
-			ret = detail_->alloc_.alloc(level);
 			threshold++;
 		}
-		return ret;
+		return true;
 	}
 
 	void FontTexture::end()

@@ -109,8 +109,8 @@ namespace gctp { namespace graphic {
 		/// Ascii文字を一度にキャッシュ
 		void cache(const Handle<Font> font);
 
-		/// 領域のガベージ
-		void gabage();
+		/// 領域の使用カウンタを減算
+		void aging();
 
 		/// アスキー文字が収まる最少の幅を計算
 		static uint getSmallestWidth(const Font &font, uint unit);
@@ -118,7 +118,7 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	private:
-		int alloc(int level);
+		bool alloc(uint32_t level, uint32_t &index);
 		HRslt setUp(detail::AsciiAttr &attr, const Font &font, ulong width, ulong height, int ofsx = 0, int ofsy = 0);
 		boost::scoped_ptr<detail::AsciiFontTextureDetail> detail_;
 		//float scale_;

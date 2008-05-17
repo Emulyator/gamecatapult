@@ -52,10 +52,10 @@ namespace {
 #ifdef PHYSICSTEST
 	// 箱追加
 	void addBox(btDynamicsWorld *phy_world, btAlignedObjectArray<btCollisionShape *> &phy_collision_shapes
-		, HandleList<scene::Entity> &boxlist, Context &context, scene::World &world, const btVector3 &v)
+		, HandleList<scene::Entity> &boxlist, core::Context &context, scene::World &world, const btVector3 &v)
 	{
 		if(phy_world->getCollisionObjectArray().size() < 100) {
-			Handle<scene::Entity> entity = newEntity(context, world, "gctp.Entity", 0, _T("gradriel.x"));
+			Handle<scene::Entity> entity = newEntity(context, world, "gctp.scene.Entity", 0, _T("gradriel.x"));
 			if(entity) {
 				boxlist.push_back(entity);
 				AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
@@ -103,7 +103,7 @@ extern "C" int main(int argc, char *argv[])
 
 	CoInitialize(0);
 	fileserver().mount(_T("../../../media"));
-	Context context;
+	core::Context context;
 
 	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
@@ -189,21 +189,21 @@ extern "C" int main(int argc, char *argv[])
 	pbuf.setUp();
 	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
 	context.load(_T("Reflect.tga"));
-	Pointer<scene::RenderTree> rtree = context.create("gctp.RenderTree", _T("rt")).lock();
+	Pointer<scene::RenderTree> rtree = context.create("gctp.scene.RenderTree", _T("rt")).lock();
 	if(rtree) {
 		app().draw_signal.connectOnce(rtree->draw_slot);
-		Pointer<scene::Camera> camera = context.create("gctp.Camera", _T("camera")).lock();
+		Pointer<scene::Camera> camera = context.create("gctp.scene.Camera", _T("camera")).lock();
 		if(camera) {
 			rtree->setUp(camera);
 			camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
-			Handle<scene::World> world = context.create("gctp.World", _T("world")).lock();
+			Handle<scene::World> world = context.create("gctp.scene.World", _T("world")).lock();
 			if(world) {
 				rtree->root()->push(world);
-				Pointer<scene::QuakeCamera> qcam = context.create("gctp.QuakeCamera", _T("qcam")).lock();
+				Pointer<scene::QuakeCamera> qcam = context.create("gctp.scene.QuakeCamera", _T("qcam")).lock();
 				if(qcam) qcam->target() = camera;
 				app().update_signal.connectOnce(world->update_slot);
 				Pointer<scene::Entity> entity;
-				entity = newEntity(context, *world, "gctp.Entity", _T("chara"), _T("gradriel.x")).lock();
+				entity = newEntity(context, *world, "gctp.scene.Entity", _T("chara"), _T("gradriel.x")).lock();
 				if(entity) {
 					//entity->skeleton().setPosType(MotionChannel::LINEAR);
 					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
@@ -217,10 +217,10 @@ extern "C" int main(int argc, char *argv[])
 					}
 				}
 
-				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("wire_test.x")).lock();
+				entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("wire_test.x")).lock();
 
 				for(int i = 0; i < 20; i++) {
-					entity = newEntity(context, *world, "gctp.Entity", NULL, _T("tiny.x")).lock();
+					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("tiny.x")).lock();
 					if(entity) {
 						if(entity->mixer().isExist(0)) {
 							entity->mixer().tracks()[0].setWeight(1.0f);
@@ -235,7 +235,7 @@ extern "C" int main(int argc, char *argv[])
 					PRNN(aabb.upper << std::endl << aabb.lower);
 				}
 
-				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("gctp_gun.x")).lock();
+				entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("gctp_gun.x")).lock();
 				if(entity) {
 					if(entity->mixer().isExist(0)) {
 						entity->mixer().tracks()[0].setWeight(1.0f);
@@ -247,7 +247,7 @@ extern "C" int main(int argc, char *argv[])
 					//entity->do_loop_ = true;
 				}
 
-				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("gctp_base.x")).lock();
+				entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("gctp_base.x")).lock();
 				if(entity) {
 					if(entity->mixer().isExist(0)) {
 						entity->mixer().tracks()[0].setWeight(1.0f);
@@ -258,7 +258,7 @@ extern "C" int main(int argc, char *argv[])
 					//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 				}
 
-				entity = newEntity(context, *world, "gctp.Entity", NULL, _T("cell.x")).lock();
+				entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("cell.x")).lock();
 				//entity = newEntity(context, *world, "gctp.Entity", NULL, _T("room1.x")).lock();
 
 				{
@@ -269,7 +269,7 @@ extern "C" int main(int argc, char *argv[])
 					light.diffuse = Color(1.0f, 1.0f, 1.0f);
 					light.specular = Color(0.6f, 0.6f, 0.6f);
 					light.dir = VectorC(0.0f, -1.0f, 1.0f).normal();
-					Pointer<scene::ParallelLight> pl = context.create("gctp.ParallelLight").lock();
+					Pointer<scene::ParallelLight> pl = context.create("gctp.scene.ParallelLight").lock();
 					if(pl) {
 						pl->set(light);
 						//pl->enter(*world);
@@ -279,7 +279,7 @@ extern "C" int main(int argc, char *argv[])
 					light.diffuse = Color(0.5f, 0.5f, 0.5f);
 					light.specular = Color(0.0f, 0.0f, 0.0f);
 					light.dir = VectorC(1.0f, -1.0f, 0.0f).normal();
-					pl = context.create("gctp.ParallelLight").lock();
+					pl = context.create("gctp.scene.ParallelLight").lock();
 					if(pl) {
 						pl->set(light);
 						//pl->enter(*world);
@@ -410,7 +410,9 @@ extern "C" int main(int argc, char *argv[])
 				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
 				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
 			text.out()
+#ifdef PHYSICSTEST
 				<< _T("箱　  :") << box_list.size() << endl
+#endif
 				<< _T("ヨー  :") << qcam->yaw_ << endl
 				<< _T("ピッチ:") << qcam->pitch_ << endl
 				<< _T("速度  :") << qcam->speed_ << endl
