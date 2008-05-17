@@ -157,7 +157,10 @@ namespace gctp {
 			idx -= area;
 			area = quadsq(++ret);
 		}
-		if(idx == area) localidx = 0;
+		if(idx == area) {
+			ret++;
+			localidx = 0;
+		}
 		else localidx = idx;
 		return ret;
 	}

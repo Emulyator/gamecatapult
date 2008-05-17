@@ -91,7 +91,10 @@ namespace gctp {
 			idx -= volume;
 			volume = octcube(++ret);
 		}
-		if(idx == volume) localidx = 0;
+		if(idx == volume) {
+			ret++;
+			localidx = 0;
+		}
 		else localidx = idx;
 		return ret;
 	}
