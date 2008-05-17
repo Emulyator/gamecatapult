@@ -43,15 +43,21 @@ namespace gctp {
 			/// 四分木を幅優先トラバースしたときの序数から変換
 			void set(unsigned int idx)
 			{
-				unsigned int level = quadlevel(idx, idx);
-				w = 1<<(_LEVEL-level);
-				pos = quadpos(idx)*static_cast<float>(w);
+				if(idx > 0) {
+					unsigned int level = quadlevel(idx, idx);
+					w = 1<<(_LEVEL-level);
+					pos = quadlocalpos(idx)*static_cast<float>(w);
+				}
+				else w = 0;
 			}
 			/// 四分木を幅優先トラバースしたときの序数に変換
 			unsigned int index() const
 			{
-				unsigned int level = blockToLevel(w);
-				return (level>0 ? quadprog(level-1) : 0)+quadidx(pos/static_cast<float>(w));
+				if(w > 0) {
+					unsigned int level = blockToLevel(w);
+					return quadprog(level)+quadlocalidx(pos/static_cast<float>(w));
+				}
+				return 0;
 			}
 			bool operator ! () const { return w <= 0; }
 			operator bool() const { return w > 0; }
@@ -64,23 +70,22 @@ namespace gctp {
 		 * Block.w==0は空き領域なし
 		 *
 		 * @param level レベル
-		 * @param ret 確保した序数(関数の返り値がtrueのとき有効な値が入る)
-		 * @return 確保できたか？
+		 * @return 確保した序数(失敗は無効値の0)
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/07/18 5:43:13
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		bool alloc(unsigned int level, unsigned int &ret)
+		unsigned int alloc(unsigned int level)
 		{
 			unsigned int w = quadsq(_LEVEL-level);
-			ret = level > 0 ? quadprog(level-1) : 0;
+			unsigned int ret = quadprog(level);
 			for(unsigned int i = 0; i < QuadSq<_LEVEL>::value; i+=w, ret++) {
 				if(!alloc_map_[i]) {
 					for(unsigned int j = 0; j < w; j++) alloc_map_.set(i+j);
-					return true;
+					return ret;
 				}
 			}
-			return false;
+			return 0;
 		}
 
 		/** 指定領域のビットを伏せる
@@ -90,10 +95,12 @@ namespace gctp {
 		 */
 		void free(unsigned int idx)
 		{
-			unsigned int level = 0;
-			while(idx >= quadsq(level)) idx -= quadsq(level++);
-			unsigned int w = quadsq(_LEVEL-level);
-			for(unsigned int i = 0; i < w; i++) alloc_map_.set(idx*w+i, false);
+			if(idx > 0) {
+				unsigned int level = 0;
+				level = quadlevel(idx, idx);
+				unsigned int w = quadsq(_LEVEL-level);
+				for(unsigned int i = 0; i < w; i++) alloc_map_.set(idx*w+i, false);
+			}
 		}
 
 		/** 指定領域が空いているか？
@@ -103,8 +110,9 @@ namespace gctp {
 		 */
 		bool isFree(unsigned int idx)
 		{
+			if(idx == 0) return false;
 			unsigned int level = 0;
-			while(idx >= quadsq(level)) idx -= quadsq(level++);
+			level = quadlevel(idx, idx);
 			unsigned int w = quadsq(_LEVEL-level);
 			for(unsigned int i = 0; i < w; i++) {
 				if(alloc_map_[idx*w+i]) return false;

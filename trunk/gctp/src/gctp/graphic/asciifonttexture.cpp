@@ -418,7 +418,7 @@ namespace gctp { namespace graphic {
 				Pointer<Font> _font = font.lock();
 				int level = AllocBitMap<LEVEL>::blockToLevel(toBlockSize(getSmallestWidth(*_font, cellSize())));
 				uint32_t idx;
-				if(alloc(level, idx)) {
+				if(idx = alloc(level)) {
 					detail::AsciiAttr &attr = detail_->map_[font];
 					attr.idx = idx;
 					attr.priority = 8;
@@ -439,11 +439,12 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-	bool AsciiFontTexture::alloc(uint32_t level, uint32_t &index)
+	uint32_t AsciiFontTexture::alloc(uint32_t level)
 	{
 		int threshold = 1;
-		while(!detail_->alloc_.alloc(level, index)) {
-			if(threshold > 8) return false;
+		uint32_t ret = 0;
+		while(!(ret = detail_->alloc_.alloc(level))) {
+			if(threshold > 8) return 0;
 			for(AsciiAttrMap::iterator i = detail_->map_.begin(); i != detail_->map_.end();) {
 				if(i->second.priority<threshold) {
 					detail_->alloc_.free(i->second.idx);
@@ -453,7 +454,7 @@ namespace gctp { namespace graphic {
 			}
 			threshold++;
 		}
-		return true;
+		return ret;
 	}
 
 	/** 文字をレンダしてテクスチャに転送

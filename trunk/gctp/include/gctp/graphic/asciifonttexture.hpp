@@ -118,7 +118,7 @@ namespace gctp { namespace graphic {
 	GCTP_DECLARE_CLASS
 
 	private:
-		bool alloc(uint32_t level, uint32_t &index);
+		uint32_t alloc(uint32_t level);
 		HRslt setUp(detail::AsciiAttr &attr, const Font &font, ulong width, ulong height, int ofsx = 0, int ofsy = 0);
 		boost::scoped_ptr<detail::AsciiFontTextureDetail> detail_;
 		//float scale_;
