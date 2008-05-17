@@ -44,13 +44,17 @@ namespace gctp {
 			const char *name;
 			lua_CFunction func;
 		};
+		// Userdataとして制作される型
+		struct UserData {
+			Ptr p;
+			Hndl h;
+		};
 		TukiRegister(const char *luaname, const GCTP_TYPEINFO &type, void (*register_func)(lua_State *L));
 		TukiRegister(const char *luaname, void (*register_func)(lua_State *L));
 		void useTuki();
 		static void registerIt(lua_State *l, const char *name);
 		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
-		static int newUserData(lua_State *l, Ptr pobj);
-		static int newUserData(lua_State *l, Hndl hobj);
+		static int push(lua_State *l, Hndl hobj);
 		static int luaRegisterPackage(lua_State *L);
 		static int luaRegister(lua_State *L);
 		static int luaTableDump(lua_State *L);
@@ -58,14 +62,14 @@ namespace gctp {
 		static void registerMe(lua_State *L);
 		static int registerTable(lua_State *L, const char *name);
 		static void registerFuncs(lua_State *L, const char *name, const Func *funcs);
-		static void registerObject(lua_State *L, const char *name
-			, const lua_CFunction f_new
-			, const lua_CFunction f_tostring
-			, const MemberRegisterer reg_mem);
+		static void registerObject(lua_State *L, const char *name, const lua_CFunction f_new, const lua_CFunction f_tostring, const MemberRegisterer reg_mem);
 		// garbage collection metamethod
 		static int deleteThis(lua_State *L);
 		// Tukiオブジェクトかどうか検査
 		static Object *check(lua_State *L, int narg);
+	private:
+		// 汎用メタテーブル構築用
+		static int toString(lua_State *L);
 	};
 
 	/** Tukiのregister機能とtuki_dump/tuki_loadを登録するInitializer
@@ -116,19 +120,15 @@ namespace gctp {
 				MemberFunctionSelfReturn	selffunc_;
 				luapp::Function				sfunc_;
 			};
-
 			Method(const char *name, MemberFunction method) : type_(MEMBER), name_(name), mfunc_(method) {}
 			Method(const char *name, MemberFunctionSelfReturn method) : type_(SELF), name_(name), selffunc_(method) {}
 			Method(const char *name, luapp::Function method) : type_(STATIC), name_(name), sfunc_(method) {}
 			Method() : type_(NONE), name_(0), sfunc_(0) {}
 		};
 		// Userdataとして制作される型
-		struct UserData {
-			UserData() {}
-			explicit UserData(Pointer<T> p) : pT(p) {}
-			explicit UserData(Handle<T> p) : hT(p) {}
-			Pointer<T> pT;
-			Handle<T> hT;
+		struct UserData : TukiRegister::UserData {
+			Pointer<T> &pointer() { return reinterpret_cast<Pointer<T> &>(p); }
+			Handle<T> &handle() { return reinterpret_cast<Handle<T> &>(h); }
 		};
 
 		static void registerMe(lua_State *L)
@@ -138,56 +138,10 @@ namespace gctp {
 
 		// get userdata from Lua stack and return pointer to T object
 		static T *check(lua_State *L, int narg) {
-			UserData *ud = static_cast<UserData*>(luaL_checkudata(L, narg, T::lua_name__));
+			UserData *ud = static_cast<UserData *>(luaL_checkudata(L, narg, T::lua_name__));
 			if(ud) {
-				if(ud->pT) return ud->pT.get();  // pointer to T object
-				if(ud->hT) return ud->hT.get();  // pointer to T object
-			}
-			return 0;
-		}
-
-		/** push onto the Lua stack a userdata containing a pointer to T object
-		 *
-		 * C++側で制作したオブジェクトをLuaにさらすには、これを使う。
-		 * @code
-   Pointer<Foo> foo = new Foo;
-   Tuki<Foo>::newUserData(L, foo); // Fooのメタテーブル
-   L.global().declare("foo"); // グローバルの変数'foo'としてアクセスできる。
-		 * @endcode
-		 */
-		static int newUserData(lua_State *L, Ptr pobj) {
-			Pointer<T> p = pobj;
-			if(p) {
-				UserData *ud = new(lua_newuserdata(L, sizeof(UserData))) UserData;
-				if(ud) {
-					ud->pT = p;  // store pointer to object in userdata
-					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
-					lua_setmetatable(L, -2);
-					return 1;  // userdata containing pointer to T object
-				}
-			}
-			return 0;
-		}
-		
-		/** push onto the Lua stack a userdata containing a pointer to T object
-		 *
-		 * C++側で制作したオブジェクトをLuaにさらすには、これを使う。
-		 * @code
-   Pointer<Foo> foo = new Foo;
-   Tuki<Foo>::newUserData(L, Handle<Foo>(foo)); // Fooのメタテーブル
-   L.global().declare("foo"); // グローバルの変数'foo'としてアクセスできる。
-		 * @endcode
-		 */
-		static int newUserData(lua_State *L, Hndl hobj) {
-			Handle<T> h = hobj;
-			if(h) {
-				UserData *ud = new(lua_newuserdata(L, sizeof(UserData))) UserData;
-				if(ud) {
-					ud->hT = h;  // store pointer to object in userdata
-					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
-					lua_setmetatable(L, -2);
-					return 1;  // userdata containing pointer to T object
-				}
+				if(ud->p) return ud->pointer().get();  // pointer to T object
+				if(ud->h) return ud->handle().get();  // pointer to T object
 			}
 			return 0;
 		}
@@ -249,10 +203,9 @@ namespace gctp {
 			Pointer<T> p = Factory::create(GCTP_TYPEID(T));  // call constructor for T objects
 			luapp::Stack lua(L);
 			if(p && p->setUp(lua)) {
-				UserData *ud = static_cast<UserData*>(lua_newuserdata(L, sizeof(UserData)));
+				UserData *ud = new (lua_newuserdata(L, sizeof(UserData))) UserData;
 				if(ud) {
-					memset(ud, 0, sizeof(UserData));
-					ud->pT = p;  // store pointer to object in userdata
+					ud->pointer() = p;  // store pointer to object in userdata
 					luaL_getmetatable(L, T::lua_name__);  // lookup metatable in Lua registry
 					lua_setmetatable(L, -2);
 					return 1;  // userdata containing pointer to T object

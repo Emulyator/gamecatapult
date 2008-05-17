@@ -155,7 +155,7 @@ rendertree:erase("shadowmap") -- –¼‘O‚ğ‚Â‚¯‚Æ‚­‚ÆŒã‚Å‘€ì‚Å‚«‚é
 						lua_pushstring(L_, name);
 						lua_rawseti(L_, -2, count_++);
 					}
-					TukiRegister::newUserData(L_, n.val);
+					TukiRegister::push(L_, n.val);
 					lua_rawseti(L_, -2, count_++);
 					if(!n.empty()) {
 						lua_newtable(L_);

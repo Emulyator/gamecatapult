@@ -121,13 +121,13 @@ namespace gctp { namespace graphic {
 		/// 袋文字、影文字のときの輪郭色。標準で黒
 		static void setShadowColor(Color32 bkcolor);
 
-		/// 領域のガベージ
-		void gabage();
+		/// 領域の使用カウンタを減算
+		void aging();
 
 	GCTP_DECLARE_CLASS
 
 	private:
-		int alloc(int level);
+		bool alloc(uint32_t level, uint32_t &index);
 		Pointer<detail::DrawContext> cntx_;
 		boost::scoped_ptr<detail::FontTextureDetail> detail_;
 	};

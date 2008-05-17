@@ -237,7 +237,7 @@ namespace gctp { namespace core {
 			ret = load(L[1].toCStr());
 #endif
 		}
-		if(ret) return gctp::TukiRegister::newUserData(L, ret);
+		if(ret) return gctp::TukiRegister::push(L, ret);
 		return 0;
 	}
 	
@@ -255,7 +255,7 @@ namespace gctp { namespace core {
 		else if(L.top() >= 1) {
 			ret = create(L[1].toCStr(), 0);
 		}
-		if(ret) return gctp::TukiRegister::newUserData(L, ret);
+		if(ret) return gctp::TukiRegister::push(L, ret);
 		return 0;
 	}
 
@@ -269,13 +269,13 @@ namespace gctp { namespace core {
 			ret = find(L[1].toCStr());
 #endif
 		}
-		if(ret) return gctp::TukiRegister::newUserData(L, ret);
+		if(ret) return gctp::TukiRegister::push(L, ret);
 		return 0;
 	}
 
 	int Context::current(luapp::Stack &L)
 	{
-		return gctp::TukiRegister::newUserData(L, Hndl(current_));
+		return gctp::TukiRegister::push(L, Hndl(current_));
 	}
 
 	int Context::pairs(luapp::Stack &L)
@@ -303,7 +303,7 @@ namespace gctp { namespace core {
 #else
 			L << ud->i->first.c_str();
 #endif
-			int r = gctp::TukiRegister::newUserData(L, ud->i->second);
+			int r = gctp::TukiRegister::push(L, ud->i->second);
 			if(r == 0) {
 				L << ud->i->second.get();
 				r = 1;
@@ -342,7 +342,7 @@ namespace gctp { namespace core {
 		if(ud && ud->list && ud->i != ud->list->end()) {
 			luapp::Stack L(l);
 			L << ud->n;
-			int r = gctp::TukiRegister::newUserData(L, *ud->i);
+			int r = gctp::TukiRegister::push(L, *ud->i);
 			if(r == 0) {
 				L << ud->i->get();
 				r = 1;

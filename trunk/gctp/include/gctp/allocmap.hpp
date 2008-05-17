@@ -32,26 +32,26 @@ namespace gctp {
 		//typedef std::bitset<QuadProg<_LEVEL-1>::value> OrBitSet;
 
 		/// ブロック幅からレベル数に変換
-		static int blockToLevel(int w)
+		static unsigned int blockToLevel(unsigned int w)
 		{
 			return _LEVEL-intlog2(w-1);
 		}
 
 		struct Block {
 			Point2 pos;
-			int w;
+			unsigned int w;
 			/// 四分木を幅優先トラバースしたときの序数から変換
-			void set(int idx)
+			void set(unsigned int idx)
 			{
-				int level = quadlevel(idx, idx);
+				unsigned int level = quadlevel(idx, idx);
 				w = 1<<(_LEVEL-level);
-				pos = quadpos(idx)*(float)w;
+				pos = quadpos(idx)*static_cast<float>(w);
 			}
 			/// 四分木を幅優先トラバースしたときの序数に変換
-			int index() const
+			unsigned int index() const
 			{
-				int level = blockToLevel(w);
-				return (level>0 ? quadprog(level-1) : 0)+quadidx(pos/(float)w);
+				unsigned int level = blockToLevel(w);
+				return (level>0 ? quadprog(level-1) : 0)+quadidx(pos/static_cast<float>(w));
 			}
 			bool operator ! () const { return w <= 0; }
 			operator bool() const { return w > 0; }
@@ -63,21 +63,24 @@ namespace gctp {
 		 *
 		 * Block.w==0は空き領域なし
 		 *
+		 * @param level レベル
+		 * @param ret 確保した序数(関数の返り値がtrueのとき有効な値が入る)
+		 * @return 確保できたか？
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/07/18 5:43:13
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		int alloc(int level)
+		bool alloc(unsigned int level, unsigned int &ret)
 		{
-			int w = quadsq(_LEVEL-level);
-			int ret = level > 0 ? quadprog(level-1) : 0;
-			for(int i = 0; i < QuadSq<_LEVEL>::value; i+=w, ret++) {
+			unsigned int w = quadsq(_LEVEL-level);
+			ret = level > 0 ? quadprog(level-1) : 0;
+			for(unsigned int i = 0; i < QuadSq<_LEVEL>::value; i+=w, ret++) {
 				if(!alloc_map_[i]) {
-					for(int j = 0; j < w; j++) alloc_map_.set(i+j);
-					return ret;
+					for(unsigned int j = 0; j < w; j++) alloc_map_.set(i+j);
+					return true;
 				}
 			}
-			return -1;
+			return false;
 		}
 
 		/** 指定領域のビットを伏せる
@@ -85,12 +88,12 @@ namespace gctp {
 		 * @date 2004/07/18 5:43:13
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		void free(int idx)
+		void free(unsigned int idx)
 		{
-			int level = 0;
+			unsigned int level = 0;
 			while(idx >= quadsq(level)) idx -= quadsq(level++);
-			int w = quadsq(_LEVEL-level);
-			for(int i = 0; i < w; i++) alloc_map_.set(idx*w+i, false);
+			unsigned int w = quadsq(_LEVEL-level);
+			for(unsigned int i = 0; i < w; i++) alloc_map_.set(idx*w+i, false);
 		}
 
 		/** 指定領域が空いているか？
@@ -98,12 +101,12 @@ namespace gctp {
 		 * @date 2004/07/18 5:43:13
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		bool isFree(int idx)
+		bool isFree(unsigned int idx)
 		{
-			int level = 0;
+			unsigned int level = 0;
 			while(idx >= quadsq(level)) idx -= quadsq(level++);
-			int w = quadsq(_LEVEL-level);
-			for(int i = 0; i < w; i++) {
+			unsigned int w = quadsq(_LEVEL-level);
+			for(unsigned int i = 0; i < w; i++) {
 				if(alloc_map_[idx*w+i]) return false;
 			}
 			return true;
