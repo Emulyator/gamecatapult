@@ -9,11 +9,14 @@
  *
  * 四文木序数は0を無効値として、
  * @pre
+ level 0
 | 1 |
 
+ level 1
 | 2 | 3 |
 | 4 | 5 |
 
+ level 2
 |  6 |  7 | 10 | 11 |
 |  8 |  9 | 12 | 13 |
 | 14 | 15 | 18 | 19 |
@@ -65,7 +68,7 @@ namespace gctp {
 #else
 	typedef unsigned int IntLog2Type;
 	
-	template<int BIT>
+	template<unsigned int BIT>
 	class IntLog2 {
 	public:
 		static IntLog2Type value(IntLog2Type x)
@@ -97,6 +100,17 @@ namespace gctp {
 		return IntLog2<sizeof(_Int)*8>::value(x);
 	}
 #endif
+
+	/** 四分木のその深度における幅
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/07/19 5:05:51
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	inline unsigned int quadwidth(unsigned int level)
+	{
+		return 1<<level;
+	}
 
 	/** 四分木の深度からセル面積を求める
 	 *
@@ -184,6 +198,17 @@ namespace gctp {
 		return 0;
 	}
 
+	/** レベル数とレベル内の序数から四分木序数に変換
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/07/24 11:55:36
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	inline unsigned int quadindex(unsigned int level, unsigned int localidx)
+	{
+		return quadprog(level)+localidx;
+	}
+
 	/** 指定レベルの四分木セル面積
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -217,6 +242,20 @@ namespace gctp {
 	public:
 		enum { value = 1 };
 	};
+
+	/** 二つの四文木序数の積
+	 *
+	 * 重なっていた場合はどちらか小さいほう（序数の大きいほう）
+	 *
+	 * 重なっていなければ0が返る
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/07/19 20:18:53
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	int quadand(unsigned int lhs, unsigned int rhs)
+	{
+		return 0;
+	}
 
 } //namespace gctp
 

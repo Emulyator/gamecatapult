@@ -75,6 +75,12 @@ public:
 	  CPPUNIT_ASSERT(quadlocalidx(Point2C(1, 4))==33);
 	  CPPUNIT_ASSERT(quadlocalidx(Point2C(5, 6))==57);
 	  CPPUNIT_ASSERT(quadlocalidx(Point2C(9, 1))==67);
+	  for(int i = 0; i < 3; i++) {
+		  for(unsigned int j = 0; j < quadsq(i); j++) {
+			  Point2 pos = quadlocalpos(j);
+			  PRNN("quad "<< quadindex(i, j) << " (" << j << "):" << pos.x << "," << pos.y);
+		  }
+	  }
   }
   void testOctFunc() {
 	  CPPUNIT_ASSERT(octcube(0)==1);
@@ -85,9 +91,11 @@ public:
 	  CPPUNIT_ASSERT(octprog(1)==2);
 	  CPPUNIT_ASSERT(octprog(2)==10);
 	  CPPUNIT_ASSERT(octprog(3)==74);
-	  for(int i = 0; i < 256; i++) {
-		  Point3 pos = octlocalpos(i);
-		  PRNN(i << ":" << pos.x << "," << pos.y << "," << pos.z);
+	  for(int i = 0; i < 3; i++) {
+		  for(unsigned int j = 0; j < octcube(i); j++) {
+			  Point3 pos = octlocalpos(j);
+			  PRNN("oct "<< octindex(i, j) << " (" << j << "):" << pos.x << "," << pos.y << "," << pos.z);
+		  }
 	  }
 	  CPPUNIT_ASSERT(octlocalpos(0)==Point3C(0, 0, 0));
 /*	  CPPUNIT_ASSERT(octpos(6)==Point3(2, 1));

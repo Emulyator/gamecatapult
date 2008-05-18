@@ -15,7 +15,6 @@
 #else
 #include <boost/pool/singleton_pool.hpp>
 #endif
-#include <list>
 
 using namespace std;
 

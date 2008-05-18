@@ -16,6 +16,18 @@
 
 namespace gctp {
 
+	/** 八分木のその深度における幅
+	 *
+	 * quadwidthとまったくいっしょ
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/07/19 5:05:51
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	inline unsigned int octwidth(unsigned int level)
+	{
+		return 1<<level;
+	}
+
 	/** 八分木の深度からセル体積を求める
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -102,6 +114,17 @@ namespace gctp {
 		}
 		localidx = 0;
 		return 0;
+	}
+
+	/** レベル数とレベル内の序数から八分木序数に変換
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/07/24 11:55:36
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	inline unsigned int octindex(unsigned int level, unsigned int localidx)
+	{
+		return octprog(level)+localidx;
 	}
 
 	/** 指定レベルの八分木セル体積

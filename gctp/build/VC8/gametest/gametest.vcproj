@@ -187,11 +187,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\gametest\main.cpp"
+				RelativePath="..\..\..\gametest\gametest.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gametest\testmain.cpp"
+				RelativePath="..\..\..\gametest\main.cpp"
 				>
 			</File>
 		</Filter>

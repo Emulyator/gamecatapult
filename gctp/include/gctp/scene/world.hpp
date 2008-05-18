@@ -12,7 +12,6 @@
 #include <gctp/strutumtree.hpp>
 #include <gctp/signal.hpp>
 #include <gctp/tuki.hpp>
-#include <gctp/scene/renderer.hpp>
 #ifdef _MT
 #include <gctp/mutex.hpp>
 #endif
@@ -27,14 +26,13 @@ namespace gctp { namespace scene {
 
 	class Body;
 	class Light;
-	class DefaultSB;
 	/** ワールドクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/16 1:05:32
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class World : public Renderer
+	class World : public Object
 	{
 	public:
 		/// 階層ツリー
@@ -66,8 +64,13 @@ namespace gctp { namespace scene {
 		/// 更新スロット
 		MemberSlot1<World, float /*delta*/, &World::onUpdate> update_slot;
 
-		virtual bool onReach(float delta) const;
-		virtual bool onLeave(float delta) const;
+		/// 描画・更新開始処理
+		void begin() const;
+		/// 描画・更新終了処理
+		void end() const;
+
+		/// （標準の）描画処理
+		void draw() const;
 
 		/// カレントワールド（そのワールドのupdate、draw…などの間だけ有効）
 		World &current() { return *current_; }
@@ -87,7 +90,6 @@ namespace gctp { namespace scene {
 		mutable Mutex monitor_;
 #endif
 		mutable World* backup_current_;
-		Pointer<DefaultSB> dsb_;
 		GCTP_TLS static World* current_;
 	};
 

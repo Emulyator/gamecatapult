@@ -7,7 +7,7 @@
 /**@file
  * ポインター志向の双方向リスト
  *
- * コンテンツの確保を行わないリストクラス。\n
+ * コンテンツの確保を行わないリストクラス。@n
  * アロケータの指定は、ノードの確保方法の指定を意味する。
  * コンテンツそのものを含有して欲しいなら、std::listを使う。
  *
@@ -16,7 +16,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  * @date 2005/04/07 3:24:01
  */
-#include <gctp/pointer.hpp>
+#include <gctp/object.hpp>
 #include <boost/iterator_adaptors.hpp>
 #include <boost/iterator/reverse_iterator.hpp>
 
@@ -34,9 +34,9 @@ namespace gctp {
 	protected:
 		struct Node;
 	public:
-		struct Itr : boost::iterator_adaptor<Itr, Node*, void *&, boost::bidirectional_traversal_tag> {
+		struct Itr : boost::iterator_adaptor<Itr, Node *, void *, boost::bidirectional_traversal_tag> {
 			friend List;
-			Itr( Node* p ) : boost::iterator_adaptor<Itr, Node*, void *&, boost::bidirectional_traversal_tag>( p ) {}
+			Itr( Node *p ) : boost::iterator_adaptor<Itr, Node *, void *, boost::bidirectional_traversal_tag>( p ) {}
 			void increment() { base_reference() = base()->next; }
 			void decrement() { base_reference() = base()->prev; }
 			reference dereference() const { return base_reference()->p; }
@@ -44,12 +44,12 @@ namespace gctp {
 
 		typedef boost::reverse_iterator<Itr> RItr;
 
-		struct ConstItr : boost::iterator_adaptor<ConstItr, const Node *, void *, boost::bidirectional_traversal_tag> {
+		struct ConstItr : boost::iterator_adaptor<ConstItr, const Node *, void * const, boost::bidirectional_traversal_tag> {
 			friend List;
-			ConstItr( const Node *p ) : boost::iterator_adaptor<ConstItr, const Node *, void *, boost::bidirectional_traversal_tag>( p ) {}
+			ConstItr( const Node *p ) : boost::iterator_adaptor<ConstItr, const Node *, void * const, boost::bidirectional_traversal_tag>( p ) {}
 			void increment() { base_reference() = base()->next; }
 			void decrement() { base_reference() = base()->prev; }
-			reference dereference() const { return const_cast<Node *>(base_reference())->p; }
+			reference dereference() const { return base_reference()->p; }
 		};
 
 		typedef boost::reverse_iterator<ConstItr> ConstRItr;

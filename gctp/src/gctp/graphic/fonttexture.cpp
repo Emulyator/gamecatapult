@@ -473,7 +473,7 @@ namespace gctp { namespace graphic {
 						detail_->map_[Figure(_font.get(), c)] = attr;
 					}
 					else {
-						PRNN(T("文字がキャッシュできなかった : '")<<charToStr(c)<<"'");
+						PRNN(_T("文字がキャッシュできなかった : '")<<charToStr(c)<<"'");
 					}
 				}
 			}

@@ -117,7 +117,6 @@
 				PrecompiledHeaderThrough="common.h"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -303,6 +302,10 @@
 				RelativePath="..\..\..\src\gctp\scene\world.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\scene\worldrenderer.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -367,6 +370,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\world.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\worldrenderer.hpp"
 				>
 			</File>
 		</Filter>
