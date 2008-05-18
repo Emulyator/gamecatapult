@@ -144,7 +144,7 @@ namespace gctp { namespace graphic { namespace dx {
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS3(gctp, graphic, dx, HLSLShader, Shader);
-
+	
 	/// シェーダーファイルから読みこみ
 	HRslt HLSLShader::setUp(const _TCHAR *fname)
 	{
@@ -209,16 +209,23 @@ namespace gctp { namespace graphic { namespace dx {
 				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
-		if(hr) {
-			D3DXHANDLE tech;
-			hr = ptr_->FindNextValidTechnique(NULL, &tech);
-			if(hr) {
-				ptr_->SetTechnique(tech);
-				return hr;
-			}
-		}
 		GCTP_TRACE(hr);
 		return hr;
+	}
+
+	bool HLSLShader::hasTechnique(const char *name) const
+	{
+		D3DXHANDLE prev = 0;
+		D3DXHANDLE tech;
+		while(true) {
+			HRslt hr = ptr_->FindNextValidTechnique(prev, &tech);
+			if(hr) {
+				if(strncmp(tech, name, 256) == 0) return true;
+				prev = tech;
+			}
+			else break;
+		}
+		return false;
 	}
 
 	HRslt HLSLShader::restore()
@@ -234,7 +241,22 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt HLSLShader::begin() const
 	{
-		if(ptr_) return ptr_->Begin(&passnum_, 0/*D3DXFX_DONOTSAVESTATE*/);
+		if(ptr_) {
+			HRslt hr;
+			D3DXHANDLE tech;
+			if(current_technique_) tech = current_technique_;
+			else hr = ptr_->FindNextValidTechnique(NULL, &tech);
+			if(!hr) {
+				GCTP_TRACE(hr);
+				return hr;
+			}
+			hr = ptr_->SetTechnique(tech);
+			if(!hr) {
+				GCTP_TRACE(hr);
+				return hr;
+			}
+			return ptr_->Begin(&passnum_, 0/*D3DXFX_DONOTSAVESTATE*/);
+		}
 		return E_POINTER;
 	}
 

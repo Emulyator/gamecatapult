@@ -31,6 +31,8 @@ namespace gctp { namespace graphic { namespace dx {
 		operator const ID3DXEffect *() const { return ptr_; }
 		ID3DXEffect *get() const { return ptr_; }
 
+		/// 指定のテクニックがあるか？
+		virtual bool hasTechnique(const char *name) const;
 		/// 適用開始
 		virtual HRslt begin() const;
 		/// 適用終了

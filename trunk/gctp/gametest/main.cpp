@@ -1,689 +1,492 @@
-/**@file
- * 統合テスト
- * 
- * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
- * @date 2004/01/26 23:18:14
- * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
- */
 #include "stdafx.h"
-
-#include "resource.h"
 #include <gctp/dbgout.hpp>
-#include <gctp/cmdline.hpp>
-#include <gctp/timer.hpp>
-#include <gctp/graphic/dx/device.hpp>
-#include <gctp/graphic/texture.hpp>
-#include <gctp/audio.hpp>
-#include <gctp/input.hpp>
 #include <gctp/app.hpp>
+#include <gctp/tuki.hpp>
+#include <gctp/fileserver.hpp>
+#include <gctp/graphic.hpp>
+#include <gctp/audio.hpp>
+#include <gctp/context.hpp>
+#include <gctp/font.hpp>
+#include <gctp/input.hpp>
+#include <gctp/color.hpp>
+#include <gctp/skeleton.hpp>
+#include <gctp/profiler.hpp>
+#include <gctp/graphic/fonttexture.hpp>
+#include <gctp/graphic/spritebuffer.hpp>
+#include <gctp/graphic/particlebuffer.hpp>
+#include <gctp/graphic/text.hpp>
+#include <gctp/graphic/model.hpp>
+#include <gctp/graphic/dx/device.hpp>
+#include <gctp/scene/flesh.hpp>
+#include <gctp/scene/camera.hpp>
+#include <gctp/scene/quakecamera.hpp>
+#include <gctp/scene/world.hpp>
+#include <gctp/scene/entity.hpp>
+#include <gctp/scene/motion.hpp>
+#include <gctp/scene/motionmixer.hpp>
+#include <gctp/scene/light.hpp>
+#include <gctp/scene/graphfile.hpp>
+#include <gctp/scene/rendertree.hpp>
+#include <gctp/scene/worldrenderer.hpp>
 
-#include <mbstring.h>
+//#define MOVIETEST
+#define PHYSICSTEST
 
-extern "C" int main(int argc, char *argv[]);
+#ifdef MOVIETEST
+# include <gctp/movie/player.hpp>
+#endif
 
-class GameWindow
-	: public gctp::GameApp
-	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, GameWindow>
-{
-	typedef GameWindow Self;
+#ifdef PHYSICSTEST
+# include <btBulletDynamicsCommon.h> // for Bullet
+#endif
 
-	sw::BitmapPtr bitmap_;
-	WidgetStaticPtr banner_;
+using namespace gctp;
+using namespace std;
 
-public:
-	GameWindow()
-		: is_fs_(false), mode_(0), is_closing_(false), device_ok_(true)
-		, cursor_(::LoadCursor(NULL, IDC_ARROW)), is_cursor_visible_(true), do_hold_cursor_(false), do_close_(false), can_change_mode_(true)
-		, is_suspending_(false), req_suspend_(false)
-	{}
+namespace {
 
-	void splash(const _TCHAR *title, DWORD bitmap_rc)
+	bool test(Point2 p, uint8_t button, uint8_t opt)
 	{
-		sw::BitmapPtr bitmap_ = sw::BitmapPtr(new sw::Bitmap(bitmap_rc));
-		sw::Point screen = getDesktopSize();
-		sw::Point sz = bitmap_->getBitmapSize();
-		{
-			Seed cs;
-			cs.style = WS_POPUP|WS_BORDER;
-			cs.exStyle = 0;
-			cs.location = sw::Rectangle((screen.x-sz.x)/2, (screen.y-sz.y)/2, sz.x, sz.y);
-			createWindow(cs);
-			setText(title);
-		}
-		{
-			WidgetStatic::Seed cs;
-			cs.style = SS_BITMAP | WS_VISIBLE;
-			cs.location = sw::Rectangle(0, 0, sz.x, sz.y);
-			banner_ = createStatic(cs);
-			banner_->setBitmap(bitmap_);
-		}
-		animateBlend( true, 500 );
-		animateBlend( true, 500 ); // 何で二度やらないと上手くいかない場合があるんだ？
-	}
-
-	void setUp(bool is_fs, gctp::uint mode_no)
-	{
-		banner_->setVisible(false);
-		gctp::HRslt hr;
-		const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_no];
-		{
-			style_backup_ = WS_OVERLAPPED|WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
-			exstyle_backup_ = 0;
-			sw::Point screen = getDesktopSize();
-			RECT rc = {0, 0, mode.Width, mode.Height};
-			::AdjustWindowRectEx(&rc, style_backup_, FALSE, exstyle_backup_);
-			DWORD width = rc.right-rc.left;
-			DWORD height = rc.bottom-rc.top;
-			location_backup_ = sw::Rectangle((screen.x-width)/2, (screen.y-height)/2, width, height);
-		}
-		if(is_fs) {
-			::SetWindowLong(handle(), GWL_STYLE, 0);
-			::SetWindowLong(handle(), GWL_EXSTYLE, 0);
-			setBounds(0, 0, mode.Width, mode.Height);
-			if(getParent()) hr = g_.open(handle(), getParent()->handle(), 0, mode_no);
-			else hr = g_.open(handle(), 0, mode_no);
-			maximize();
-		}
-		else {
-			::SetWindowLong(handle(), GWL_STYLE, style_backup_);
-			::SetWindowLong(handle(), GWL_EXSTYLE, exstyle_backup_);
-			setBounds(location_backup_);
-			if(getParent()) hr = g_.open(handle(), getParent()->handle());
-			else hr = g_.open(handle());
-		}
-		is_fs_ = is_fs;
-		mode_ = mode_no;
-		if(!hr) {
-			GCTP_TRACE(hr);
-			close();
-			return;
-		}
-		hr = a_.open(handle());
-		if(!hr) {
-			GCTP_TRACE(hr);
-			close();
-			return;
-		}
-		hr = i_.setUp(handle());
-		if(!hr) {
-			GCTP_TRACE(hr);
-			close();
-			return;
-		}
-		
-		g_.setCurrent();
-		a_.setCurrent();
-		i_.setCurrent();
-		setCurrent();
-
-		// handlers
-		onClosing( &Self::doOnClosing );
-		onSized( &Self::doOnResized );
-		onLeftMouseUp( &Self::doOnLeftMouseUp );
-		onLeftMouseDown( &Self::doOnLeftMouseDown );
-		onMiddleMouseUp( &Self::doOnMiddleMouseUp );
-		onMiddleMouseDown( &Self::doOnMiddleMouseDown );
-		onRightMouseUp( &Self::doOnRightMouseUp );
-		onRightMouseDown( &Self::doOnRightMouseDown );
-		onLeftMouseDblClick( &Self::doOnLeftMouseDblClick );
-		onRightMouseDblClick( &Self::doOnRightMouseDblClick );
-		onMouseMove( &Self::doOnMouseMove );
-		onKeyPressed( &Self::doOnKeyPressed );
-		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
-		onRaw( &Self::doOnSysChar, sw::Message(WM_SYSCHAR) );
-
-		//sw::Application::instance().setHeartBeatFunction(this);
-		game_thread_ = fork( SmartUtil::tstring(_T("GameThread")), &Self::runInThread );
-	}
-
-	bool reset()
-	{
-		gctp::HRslt hr;
-		if(is_fs_) {
-			hr = g_.open(handle(), 0, mode_);
-			if(!hr) {
-				PRNN("フルスクリーンで製作できませんでした。:"<<hr);
-				is_fs_ = false;
-				hr = g_.open(handle());
-			}
-		}
-		else {
-			hr = g_.open(handle());
-		}
-		return hr;
-	}
-
-	virtual HWND getHandle() const
-	{
-		return handle();
-	}
-
-	virtual bool canContinue()
-	{
-		::Sleep(0); // yield
-		if(req_suspend_) {
-			req_suspend_ = false;
-			is_suspending_ = true;
-			while(is_suspending_) ::Sleep(10);
-		}
-		if(!is_closing_ && g_.isOpen() && GameApp::canContinue()) {
-			g_.setCurrent();
-			a_.setCurrent();
-			i_.setCurrent();
-			if(::IsWindow(handle())) i_.update();
-			return true;
-		}
-		return false;
-	}
-
-	virtual bool canDraw()
-	{
-		if(GameApp::canDraw() && !::IsIconic(handle()) && device_ok_) {
-			g_.setCurrent();
-			gctp::HRslt hr = g_.impl()->TestCooperativeLevel();
-			if(hr) return true;
-			else device_ok_ = false;
-		}
-		if(!device_ok_) ::SendMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatusをさせるために
-		D3DRASTER_STATUS status;
-		D3DDISPLAYMODE mode;
-		if(gctp::HRslt(g_.impl()->GetRasterStatus(0, &status))&&gctp::HRslt(g_.impl()->GetDisplayMode(0, &mode))) {
-			if(!status.InVBlank && status.ScanLine < mode.Height) {
-				if(mode.RefreshRate==0) mode.RefreshRate = 60; // 面倒なので60Hzと仮定
-				DWORD sleeptime = (DWORD)(((mode.Height-status.ScanLine)*1000)/(mode.Height * (mode.RefreshRate/2)));
-				//PRNN("sleeptime "<<sleeptime<<","<<mode.Height<<","<<status.ScanLine<<","<<mode.RefreshRate);
-				if(sleeptime) ::Sleep(sleeptime);
-			}
-		}
-		return false;
-	}
-
-	virtual void present()
-	{
-		if(device_ok_) {
-			gctp::HRslt hr = g_.present();
-			if(!hr) {
-				hr = g_.impl()->TestCooperativeLevel();
-				if(!hr) device_ok_ = false;
-			}
-			GameApp::present();
-		}
-	}
-
-	virtual void showCursor(bool yes) { is_cursor_visible_ = yes; }
-	virtual void holdCursor(bool yes) { do_hold_cursor_ = yes; }
-
-protected:
-	bool doOnClosing()
-	{
-		is_closing_ = true;
-		game_thread_.resume();
-		sw::Utilities::Thread::waitForObject(game_thread_);
-
-		g_.close();
-		a_.close();
-		i_.tearDown();
+		PRNN("clicked "<<p<<","<<(int)button<<","<<(int)opt);
 		return true;
 	}
-
-	void doOnResized(const sw::WidgetSizedEventResult & sz)
+#ifdef PHYSICSTEST
+	// 箱追加
+	void addBox(btDynamicsWorld *phy_world, btAlignedObjectArray<btCollisionShape *> &phy_collision_shapes
+		, HandleList<scene::Entity> &boxlist, core::Context &context, scene::World &world, const btVector3 &v)
 	{
-		GCTP_TRACE("onResized "<<sz.newSize.x<<","<<sz.newSize.y);
-	}
+		if(phy_world->getCollisionObjectArray().size() < 100) {
+			Handle<scene::Entity> entity = newEntity(context, world, "gctp.scene.Entity", 0, _T("gradriel.x"));
+			if(entity) {
+				boxlist.push_back(entity);
+				AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
 
-	HRESULT doOnSetCursor(LPARAM lParam, WPARAM wParam)
-	{
-		checkDeviceStatus();
-		if(LOWORD(lParam) == HTCLIENT) {
-			if(is_cursor_visible_) {
-				if(cursor_) ::SetCursor(cursor_);
-			}
-			else {
-				::SetCursor(NULL);
-			}
-		}
-		return S_OK;
-	}
+				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
+				phy_collision_shapes.push_back(col_shape);
+				
+				btTransform start_transform;
+				start_transform.setIdentity();
 
-	bool doOnKeyPressed(int key)
-	{
-		return false;
-	}
+				btScalar mass(10);
+				
+				bool is_dynamic = (mass != 0.f);
+				btVector3 local_inertia(0, 0, 0);
+				
+				if(is_dynamic) col_shape->calculateLocalInertia(mass, local_inertia);
 
-	HRESULT doOnSysChar(LPARAM lparam, WPARAM vkey)
-	{
-		if(vkey == VK_RETURN && can_change_mode_) toggleFullscreen();
-		return S_OK;
-	}
+				start_transform.setOrigin(v);
 
-	void doOnLeftMouseDown(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
-	}
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
+				btRigidBody *body = new btRigidBody(rbinfo);
 
-	void doOnLeftMouseUp(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
-	}
-
-	void doOnMiddleMouseDown(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
-	}
-
-	void doOnMiddleMouseUp(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
-	}
-
-	void doOnRightMouseDown(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
-	}
-
-	void doOnRightMouseUp(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
-	}
-
-	void doOnLeftMouseDblClick(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
-	}
-
-	void doOnRightMouseDblClick(const sw::MouseEventResult &mouse)
-	{
-		gctp::uint8_t opt = 0;
-		switch(mouse.ButtonPressed) {
-			case sw::MouseEventResult::RIGHT: opt |= gctp::GUIEvents::RB; break;
-			case sw::MouseEventResult::MIDDLE: opt |= gctp::GUIEvents::MB; break;
-			case sw::MouseEventResult::LEFT: opt |= gctp::GUIEvents::LB; break;
-		}
-		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
-		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
-		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
-	}
-
-	void doOnMouseMove(const sw::MouseEventResult &mouse)
-	{
-		i_.mouse().setPoint(mouse.pos.x, mouse.pos.y);
-		if(do_hold_cursor_ /*&& ::GetFocus() == m_hWnd*/) {
-			if(mouse.pos.x < getSize().x/3
-			|| mouse.pos.x > getSize().x*2/3
-			|| mouse.pos.y < getSize().y/3
-			|| mouse.pos.y > getSize().y*2/3)
-			{
-				sw::Point center = getPosition();
-				center.x += getSize().x/2;
-				center.y += getSize().y/2;
-				::SetCursorPos(center.x, center.y);
+				phy_world->addRigidBody(body);
 			}
 		}
 	}
+#endif
 
-	// ウィンドウモードとＦＳの切り替え
-	void toggleFullscreen()
-	{
-		if(!is_closing_) {
-			PRNN("###########toggleFullscreen");
-			req_suspend_ = true;
-			is_suspending_ = false;
-			for(int i = 0; i < 50; i++) {
-				if(is_suspending_) break;
-				::Sleep(100);
-			}
-			if(!is_suspending_) {
-				req_suspend_ = false;
-				is_suspending_ = false;
-				PRNN("Game Thread do not response.");
-				return;
-			}
-			//game_thread_.suspend();
-			g_.cleanUp();
-			if(is_fs_) {
-				restore();
-			}
-			else {
-				location_backup_ = getBounds();
-				style_backup_ = ::GetWindowLong(handle(), GWL_STYLE);
-				exstyle_backup_ = ::GetWindowLong(handle(), GWL_EXSTYLE);
-				const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_];
-				setBounds(0, 0, mode.Width, mode.Height, false);
-				::SetWindowLong(handle(), GWL_STYLE, 0);
-				::SetWindowLong(handle(), GWL_EXSTYLE, 0);
-			}
-			is_fs_ = !is_fs_;
-			if(reset()) {
-				if(is_fs_) {
-					maximize();
-				}
-				else {
-					::SetWindowLong(handle(), GWL_STYLE, style_backup_);
-					::SetWindowLong(handle(), GWL_EXSTYLE, exstyle_backup_);
-					setBounds(location_backup_);
-				}
-				g_.restore();
-				PRNN("toggle done! "<<((is_fs_)?"true":"false"));
-				is_suspending_ = false;
-				//game_thread_.resume();
-			}
-		}
-	}
+} // anonymous namespace
+
+
+extern "C" int main(int argc, char *argv[])
+{
+	GCTP_USE_CLASS(graphic::Texture);
+	GCTP_USE_CLASS(scene::Camera);
+	GCTP_USE_CLASS(scene::GraphFile);
+	GCTP_USE_CLASS(scene::QuakeCamera);
+	GCTP_USE_CLASS(scene::World);
+	GCTP_USE_CLASS(scene::Entity);
+	GCTP_USE_CLASS(scene::RenderTree);
+	GCTP_USE_CLASS(scene::WorldRenderer);
+	const char *mesh_mode = "Vertex Shader";
+	HRslt hr;
+
+	CoInitialize(0);
+	fileserver().mount(_T("../../../media"));
+	core::Context context;
+
+	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
+	app().guievents().dblclick_signal.connect(test_slot);
+
+	//audio::Player bgm = gctp::audio::device().ready(_T("../../../media/hugeraw.wav"));
+	//bgm.play(true);
+	audio::Player se = gctp::audio::device().ready(_T("../../../media/pang.wav"));
+#ifdef MOVIETEST
+	movie::Player movie;
+	hr = movie.openForTexture(_T("../../../../alpha/alpha/odata/onegoshu.mpg"));
+	if(!hr) GCTP_TRACE(hr);
+	hr = movie.play();
+	if(!hr) GCTP_TRACE(hr);
+#endif
+
+#ifdef PHYSICSTEST
+	btDefaultCollisionConfiguration				*phy_collision_configuration;
+	btCollisionDispatcher						*phy_dispatcher;
+	btConstraintSolver							*phy_solver;
+	btBroadphaseInterface						*phy_overlapping_pair_cache;
+	btDynamicsWorld								*phy_world;			// 物理エンジンを適用するシーン
+	btAlignedObjectArray<btCollisionShape *>	phy_collision_shapes;
+
+	btCollisionShape							*phy_ground;		// 地平面
+	HandleList<scene::Entity> box_list;
+
+	phy_collision_configuration = new btDefaultCollisionConfiguration();
+
+	phy_dispatcher = new btCollisionDispatcher(phy_collision_configuration);
 	
-	void checkDeviceStatus()
+	// 物理シミュレーションする空間のサイズの定義
+	btVector3 worldAabbMin(-10000,-10000,-10000);
+	btVector3 worldAabbMax(10000,10000,10000);
+	// シミュレーションするShapeの限度
+	phy_overlapping_pair_cache = new btAxisSweep3(worldAabbMin,worldAabbMax,100);
+
+	// ソルバー
+	btSequentialImpulseConstraintSolver *sol = new btSequentialImpulseConstraintSolver;
+	phy_solver = sol;
+
+	// シミュレーションするワールドの生成
+	phy_world = new btDiscreteDynamicsWorld(phy_dispatcher, phy_overlapping_pair_cache, phy_solver, phy_collision_configuration);
+
+	// 地平面の生成
 	{
-		if(!is_closing_) {
-			if(do_close_) {
-				do_close_ = false;
-				close();
-				return;
-			}
-			if(!device_ok_) {
-				gctp::HRslt hr = g_.impl()->TestCooperativeLevel();
-				if(hr == D3DERR_DEVICENOTRESET) {
-					g_.cleanUp();
-					if(reset()) {
-						g_.restore();
-						PRNN("restore! "<<((is_fs_)?"true":"false"));
-						device_ok_ = true;
+		btCollisionShape *ground_shape = new btStaticPlaneShape(btVector3(0,1,0),0);
+		phy_collision_shapes.push_back(ground_shape);
+
+		btTransform ground_transform;
+		ground_transform.setIdentity();
+		ground_transform.setOrigin(btVector3(0, -3, 0));
+
+		btScalar mass(0.);
+
+		// rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool is_dynamic = (mass != 0.f);
+
+		btVector3 local_inertia(0, 0, 0);
+		if(is_dynamic) ground_shape->calculateLocalInertia(mass, local_inertia);
+
+		// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState *my_motion_state = new btDefaultMotionState(ground_transform);
+		btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, ground_shape, local_inertia);
+		btRigidBody *body = new btRigidBody(rbinfo);
+
+		// add the body to the dynamics world
+		phy_world->addRigidBody(body);
+	}
+#endif
+
+	graphic::Text text;
+
+	bool qcam_on = false;
+	graphic::SpriteBuffer spr;
+	spr.setUp();
+	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // どうすっかな。。。
+	fonttex->setUp(512, 512);
+	Pointer<Font> font = new gctp::Font;
+	font->setUp(_T(",10,BOLD|FIXEDPITCH"));
+	Pointer<Font> font2 = new gctp::Font;
+	font2->setUp(_T(",12,NORMAL"));
+	graphic::ParticleBuffer pbuf;
+	pbuf.setUp();
+	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
+	context.load(_T("Reflect.tga"));
+	Pointer<scene::RenderTree> rtree = context.create("gctp.scene.RenderTree", _T("rt")).lock();
+	if(rtree) {
+		app().draw_signal.connectOnce(rtree->draw_slot);
+		Pointer<scene::Camera> camera = context.create("gctp.scene.Camera", _T("camera")).lock();
+		if(camera) {
+			rtree->setUp(camera);
+			camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
+			Handle<scene::WorldRenderer> wr = context.create("gctp.scene.WorldRenderer");
+			if(wr) {
+				rtree->root()->push(wr);
+				Handle<scene::World> world = context.create("gctp.scene.World", _T("world"));
+				if(world) {
+					wr->add(world);
+					Pointer<scene::QuakeCamera> qcam = context.create("gctp.scene.QuakeCamera", _T("qcam")).lock();
+					if(qcam) qcam->target() = camera;
+					app().update_signal.connectOnce(world->update_slot);
+					Pointer<scene::Entity> entity;
+					entity = newEntity(context, *world, "gctp.scene.Entity", _T("chara"), _T("gradriel.x")).lock();
+					if(entity) {
+						//entity->skeleton().setPosType(MotionChannel::LINEAR);
+						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+						//entity->do_loop_ = true;
+						if(entity->mixer().isExist(0)) {
+							entity->mixer().tracks()[0].setWeight(1.0f);
+							entity->mixer().tracks()[1].setWeight(1.0f);
+							entity->mixer().tracks()[0].setLoop(true);
+							entity->mixer().tracks()[1].setLoop(true);
+							entity->mixer().tracks()[2].setLoop(true);
+						}
+					}
+
+					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("wire_test.x")).lock();
+
+					for(int i = 0; i < 20; i++) {
+						entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("tiny.x")).lock();
+						if(entity) {
+							if(entity->mixer().isExist(0)) {
+								entity->mixer().tracks()[0].setWeight(1.0f);
+								entity->mixer().tracks()[0].setLoop(true);
+								entity->getLCM() = Matrix().scale(0.01f, 0.01f, 0.01f).setPos(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
+								//entity->getLpos() = VectorC(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
+							}
+						}
+					}
+					{
+						AABox aabb = entity->target()->fleshies().front()->model()->getAABB();
+						PRNN(aabb.upper << std::endl << aabb.lower);
+					}
+
+					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("gctp_gun.x")).lock();
+					if(entity) {
+						if(entity->mixer().isExist(0)) {
+							entity->mixer().tracks()[0].setWeight(1.0f);
+							entity->mixer().tracks()[0].setLoop(true);
+						}
+						//entity->speed_ = 30.0f;
+						entity->getLpos().x += 2.0f;
+						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+						//entity->do_loop_ = true;
+					}
+
+					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("gctp_base.x")).lock();
+					if(entity) {
+						if(entity->mixer().isExist(0)) {
+							entity->mixer().tracks()[0].setWeight(1.0f);
+							entity->mixer().tracks()[0].setLoop(true);
+						}
+						//entity->speed_ = 30.0f;
+						entity->getLpos().x -= 2.0f;
+						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
+					}
+
+					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("cell.x")).lock();
+					//entity = newEntity(context, *world, "gctp.Entity", NULL, _T("room1.x")).lock();
+
+					{
+						graphic::setAmbient(Color(0.5f,0.5f,0.5f));
+
+						graphic::DirectionalLight light;
+						light.ambient = Color(0.3f, 0.3f, 0.3f);
+						light.diffuse = Color(1.0f, 1.0f, 1.0f);
+						light.specular = Color(0.6f, 0.6f, 0.6f);
+						light.dir = VectorC(0.0f, -1.0f, 1.0f).normal();
+						Pointer<scene::ParallelLight> pl = context.create("gctp.scene.ParallelLight").lock();
+						if(pl) {
+							pl->set(light);
+							//pl->enter(*world);
+						}
+
+						light.ambient = Color(0.2f, 0.2f, 0.2f);
+						light.diffuse = Color(0.5f, 0.5f, 0.5f);
+						light.specular = Color(0.0f, 0.0f, 0.0f);
+						light.dir = VectorC(1.0f, -1.0f, 0.0f).normal();
+						pl = context.create("gctp.scene.ParallelLight").lock();
+						if(pl) {
+							pl->set(light);
+							//pl->enter(*world);
+						}
 					}
 				}
 			}
 		}
 	}
 
-	virtual void tick()
-	{
-		checkDeviceStatus();
-	}
-
-	unsigned long runInThread( SmartUtil::tstring & message )
-	{
-		setCurrent();
-		g_.setCurrent();
-		a_.setCurrent();
-		i_.setCurrent();
-		gctp::CmdLine arg(sw::Application::instance().getCommandLine().getParamsRaw());
-		unsigned long ret = (unsigned long)main(arg.argc(), arg.argv());
-		if(!is_closing_) do_close_ = true;
-		return ret;
-	}
-
-private:
-	gctp::graphic::Device g_;
-	gctp::audio::Device a_;
-	gctp::Input i_;
-	sw::Utilities::Thread game_thread_;
-
-	HCURSOR cursor_;
-	bool is_fs_;
-	gctp::uint mode_;
-	bool is_cursor_visible_;
-	bool do_hold_cursor_;
-	bool is_closing_;
-	bool do_close_;
-	bool device_ok_;
-	bool can_change_mode_;
-	bool is_suspending_;
-	bool req_suspend_;
-	SmartWin::Rectangle location_backup_;
-	DWORD style_backup_;
-	DWORD exstyle_backup_;
-};
-
-class StartupDialog
-	: public SmartWin::WidgetFactory<SmartWin::WidgetModalDialog, StartupDialog, SmartWin::MessageMapPolicyModalDialogWidget>
-{
-	typedef StartupDialog Self;
-
-public:
-	std::vector<DWORD> modes;
-	bool is_fs;
-	int mode;
-
-	StartupDialog(bool is_fs, Widget *parent = 0)
-		: Widget( parent ), is_fs(is_fs), mode(0)
-	{
-		onInitDialog(&StartupDialog::setUp);
-	}
-
-	bool setUp()
-	{
-		screens_ = subclassComboBox( IDC_SCREENLIST );
-
-		//fullscreen_ = subclassRadioButton( IDC_RADIO_FSMODE );
-		::CheckRadioButton(handle(), IDC_RADIO_FSMODE, IDC_RADIO_WNDMODE, (is_fs)?IDC_RADIO_FSMODE:IDC_RADIO_WNDMODE);
-		
-		for(DWORD i = 0; i < modes.size(); i++) {
-			const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes[modes[i]];
-			addToComboBox(modes[i], mode.Width, mode.Height, mode.Format, mode.RefreshRate);
-		}
-		if(screens_->getCount()>0) screens_->setSelectedIndex(0);
-		else screens_->setEnabled(false);
-
-		WidgetButtonPtr btn;
-		btn = subclassButton( IDOK );
-		if(screens_->getCount()==0) btn->setEnabled(false);
-		else {
-			btn->onClicked( &Self::doOnOk );
-			btn->setFocus();
-		}
-		btn = subclassButton( IDCANCEL );
-		btn->onClicked( &Self::doOnCancel );
-		if(screens_->getCount()==0) btn->setFocus();
-
-		setVisible(true);
-		return true;
-	}
-
-private:
-	void addToComboBox(DWORD data, DWORD width, DWORD height, DWORD format, DWORD refresh_rate)
-	{
-		_TCHAR *str;
-		switch(format) {
-		case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-			str = _T("フルカラー");
-			break;
-		case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
-		case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-			str = _T("ハイカラー");
-			break;
-		default:
-			return;
-		};
-		_TCHAR screenstr[256];
-		if(refresh_rate==D3DPRESENT_RATE_DEFAULT) _stprintf(screenstr, _T("%d×%d:%s:規定値"), width, height, str);
-		else _stprintf(screenstr, _T("%d×%d:%s:%dHz"), width, height, str, refresh_rate);
-		int idx = screens_->addValue(screenstr);
-		screen_map_[idx] = data;
-	}
-
-	void doOnOk( WidgetButtonPtr btn )
-	{
-		//is_fs = fullscreen_->getChecked();
-		is_fs = (IsDlgButtonChecked(handle(), IDC_RADIO_FSMODE)==BST_CHECKED);
-		mode = screen_map_[screens_->getSelectedIndex()];
-		endDialog( IDOK );
-	}
-
-	void doOnCancel( WidgetButtonPtr btn )
-	{
-		endDialog( IDCANCEL );
-	}
-
-	std::map<int, DWORD> screen_map_;
-	WidgetComboBoxPtr screens_;
-	//WidgetRadioButtonPtr fullscreen_; // 直接WinAPI呼んだほうが便利
-};
-
-using namespace std;
-using namespace gctp;
-using namespace SmartWin;
-
-namespace {
-
-	void initialize(HINSTANCE hinst)
-	{
-		Timer::initialize();
-//		graphic::allowHardwareVertexProcessing(true);
-		graphic::allowStrictMultiThreadSafe(true);
-//		graphic::setIntervalTime(1);
-		graphic::initialize();
-		Input::initialize(hinst);
-
-		PRNN(_T("列挙されたアダプタ"));
-		for(graphic::dx::AdapterList::const_iterator i = graphic::dx::adapters().begin(); i != graphic::dx::adapters().end(); ++i) {
-			PRNN(*i);
-		}
-		PRNN(_T("列挙された入力デバイス"));
-		for(Input::DeviceList::const_iterator i = Input::devicies().begin(); i != Input::devicies().end(); ++i) {
-			PRNN(*i);
-		}
-	}
-
-	bool startupdialog(Widget *parent, bool &is_fs, uint &mode)
-	{
-		StartupDialog dlg(false, parent);
-
-		int mode_num = (int)graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes.size();
-		for(int i = 0; i < mode_num; i++) {
-			const D3DDISPLAYMODE &mode = graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes[i];
-//			if(mode.Width==640 && mode.Height==480) {
-			if(mode.Width>=800 && mode.Height>=600 && mode.RefreshRate==D3DPRESENT_RATE_DEFAULT) {
-				switch(mode.Format) {
-				case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-					dlg.modes.push_back(i);
-					break;
-				case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
-				case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-					dlg.modes.push_back(i);
-					break;
-				}
+	while(app().canContinue()) {
+		//if(input().kbd().press(DIK_ESCAPE)) break;
+		Pointer<scene::World> world = context[_T("world")].lock();
+		Pointer<scene::Camera> camera = context[_T("camera")].lock();
+		Pointer<scene::QuakeCamera> qcam = context[_T("qcam")].lock();
+		if(camera && qcam) {
+			if(input().kbd().push(DIK_TAB)) {
+				qcam_on = !qcam_on;
+				qcam->activate(qcam_on);
+				app().showCursor(!qcam_on);
+				app().holdCursor(qcam_on);
+			}
+			if(input().kbd().press(DIK_HOME)) {
+				camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
+				camera->fov() = g_pi/4;
 			}
 		}
+		Pointer<scene::Entity> chr = context[_T("chara")].lock();
+		if(chr) {
+			if(input().kbd().push(DIK_NUMPADPLUS)||input().kbd().push(DIK_COMMA)) chr->mixer().setSpeed(chr->mixer().speed()+0.1f);
+			if(input().kbd().push(DIK_NUMPADMINUS)||input().kbd().push(DIK_PERIOD)) chr->mixer().setSpeed(chr->mixer().speed()-0.1f);
+//			if(input().kbd().push(DIK_NUMPAD1)||input().kbd().push(DIK_U)) chr->skeleton().setPosType(MotionChannel::NONE);
+//			if(input().kbd().push(DIK_NUMPAD2)||input().kbd().push(DIK_I)) chr->skeleton().setPosType(MotionChannel::LINEAR);
+//			if(input().kbd().push(DIK_NUMPAD3)||input().kbd().push(DIK_O)) chr->skeleton().setPosType(MotionChannel::SPLINE);
+//			float weight = chr->mixer().speed()>0?1.0f:-1.0f;
+			float weight = 1.0f;
+			if(input().kbd().push(DIK_NUMPAD4)||input().kbd().push(DIK_J)) {
+				chr->mixer().tracks()[0].setWeightDelta( weight);
+				chr->mixer().tracks()[1].setWeightDelta(-weight);
+				chr->mixer().tracks()[2].setWeightDelta(-weight);
+				chr->mixer().tracks()[0].setSpeed(1.0f);
+				chr->mixer().tracks()[1].setSpeed(0.0f);
+				chr->mixer().tracks()[2].setSpeed(0.0f);
+			}
+			if(input().kbd().push(DIK_NUMPAD5)||input().kbd().push(DIK_K)) {
+				chr->mixer().tracks()[0].setWeightDelta(-weight);
+				chr->mixer().tracks()[1].setWeightDelta( weight);
+				chr->mixer().tracks()[2].setWeightDelta(-weight);
+				chr->mixer().tracks()[0].setSpeed(0.0f);
+				chr->mixer().tracks()[1].setSpeed(1.0f);
+				chr->mixer().tracks()[2].setSpeed(0.0f);
+			}
+			if(input().kbd().push(DIK_NUMPAD6)||input().kbd().push(DIK_L)&&chr->mixer().tracks()[2].weightDelta()<0) {
+				chr->mixer().tracks()[0].setWeightDelta(-weight);
+				chr->mixer().tracks()[1].setWeightDelta(-weight);
+				chr->mixer().tracks()[2].setWeightDelta( weight);
+				chr->mixer().tracks()[0].setSpeed(0.0f);
+				chr->mixer().tracks()[1].setSpeed(0.0f);
+				chr->mixer().tracks()[2].setSpeed(1.0f);
+				chr->mixer().tracks()[2].setKeytime(0.0f);
+			}
+			if(input().kbd().push(DIK_1)) { mesh_mode = "Software"; hr = chr->target().lock()->fleshies().front()->model().lock()->useSoftware(); }
+			else if(input().kbd().push(DIK_2)) { mesh_mode = "Indexed"; hr = chr->target().lock()->fleshies().front()->model().lock()->useIndexed(); }
+			else if(input().kbd().push(DIK_3)) { mesh_mode = "Blended"; hr = chr->target().lock()->fleshies().front()->model().lock()->useBlended(); }
+			else if(input().kbd().push(DIK_4)) { mesh_mode = "Vertex Shader"; hr = chr->target().lock()->fleshies().front()->model().lock()->useVS(); }
+			else if(input().kbd().push(DIK_5)) { mesh_mode = "HLSL"; hr = chr->target().lock()->fleshies().front()->model().lock()->useShader(); }
+			if(!hr) GCTP_TRACE(hr);
+		}
+//		if(input().mouse().push[0]) se.play();
 
-		int ret = dlg.createDialog( IDD_STARTUPDLG_DIALOG );
-		is_fs = dlg.is_fs;
-		mode = dlg.mode;
-		return (ret == IDOK)? true : false;
-	}
-
-}
-
-int SmartWinMain(Application & app)
-{
-	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
-	initialize(app.getAppHandle());
-	GameWindow *window = new GameWindow;
-	window->splash(_T("GameCatapult DEMO"), IDB_BITMAP1);
-	bool is_fs = false; uint mode = 0;
-	if(startupdialog(window, is_fs, mode)) {
-		window->setUp(is_fs, mode);
-		return app.run();
-	}
-	return 1; // CANCEL
-}
-
-#ifdef _UNICODE
-# ifdef _DEBUG
-#  pragma comment(lib, "SmartWinDU.lib")
-# else
-#  pragma comment(lib, "SmartWinU.lib")
-# endif
-#else
-# ifdef _DEBUG
-#  pragma comment(lib, "SmartWinD.lib")
-# else
-#  pragma comment(lib, "SmartWin.lib")
-# endif
+#ifdef PHYSICSTEST
+		if(phy_world) {
+			if(input().kbd().push(DIK_B)) {
+				addBox(phy_world, phy_collision_shapes, box_list, context, *world, btVector3(0, 2, 0));
+			}
+			// シミュレーションを進める
+			phy_world->stepSimulation(app().lap);
+			// 結果を適用
+			int ii = 1;
+			for(HandleList<scene::Entity>::iterator i = box_list.begin(); i != box_list.end() && ii < phy_world->getCollisionObjectArray().size(); ++i, ++ii)
+			{
+				float mat[16];
+				phy_world->getCollisionObjectArray()[ii]->getWorldTransform().getOpenGLMatrix(mat);
+				memcpy(&(*i)->getLCM(), mat, sizeof(float)*16);
+				AABox aabb = (*i)->target()->fleshies().front()->model()->getAABB();
+				(*i)->getLCM() = Matrix().trans(-aabb.center())*(*i)->lcm();
+			}
+		}
 #endif
+		app().update_signal(app().lap);
 
-#pragma comment(lib, "DxErr9.lib")
-#pragma comment(lib, "amstrmid.lib")
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "d3dxof.lib")
-#pragma comment(lib, "ddraw.lib")
-#pragma comment(lib, "dinput.lib")
-#pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dmoguids.lib")
-#pragma comment(lib, "dplayx.lib")
-#pragma comment(lib, "dsetup.lib")
-#pragma comment(lib, "dsound.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dxtrans.lib")
-#pragma comment(lib, "ksproxy.lib")
-#pragma comment(lib, "ksuser.lib")
-#pragma comment(lib, "msdmo.lib")
-#pragma comment(lib, "quartz.lib")
-#pragma comment(lib, "strmiids.lib")
-#ifdef _DEBUG
-# pragma comment(lib, "luad.lib")
-# pragma comment(lib, "d3dx9d.lib")
+		if(app().canDraw()) {
+			graphic::clear();
+			graphic::begin();
+
+			app().draw_signal(app().lap);
+
+			graphic::LineParticleDesc pdesc;
+			Vector pos[2];
+			pos[0] = VectorC(0.5f, 0.5f, 1.0f);
+			pos[1] = VectorC(1.5f, 1.5f, 1.0f);
+			pdesc.num = 2;
+			pdesc.pos = pos;
+			pdesc.size = Vector2C(0.5f, 0.5f);
+			pdesc.setUV(RectfC(0.0f, 0.0f, 1.0f, 1.0f));
+			pdesc.setColor(Color32(255, 255, 255));
+			pdesc.setHilight(Color32(0, 0, 0));
+			graphic::setWorld(MatrixC(true));
+
+#ifdef MOVIETEST
+			pbuf.begin(*movie.getTexture());
+			pbuf.draw(pdesc);
+			pbuf.end();
 #else
-# pragma comment(lib, "lua.lib")
-# pragma comment(lib, "d3dx9.lib")
+			Pointer<graphic::Texture> ptex = context[_T("BitmapSet4.bmp")].lock();
+			pbuf.begin(*ptex);
+			pbuf.draw(pdesc);
+			pbuf.end();
+#endif
+			text.reset();
+			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
+				<< "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl
+				<< "FPS:" << app().fps.latestave << endl << endl;
+			if(chr) text.out()
+				<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
+				<< "	" << chr->mixer().tracks()[0].keytime() << endl
+				<< "track 1 " << chr->mixer().tracks()[1].weight() << endl
+				<< "	" << chr->mixer().tracks()[1].keytime() << endl
+				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
+				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
+			text.out()
+#ifdef PHYSICSTEST
+				<< _T("箱　  :") << box_list.size() << endl
+#endif
+				<< _T("ヨー  :") << qcam->yaw_ << endl
+				<< _T("ピッチ:") << qcam->pitch_ << endl
+				<< _T("速度  :") << qcam->speed_ << endl
+				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
+				<< _T("位置  :") << camera->stance().position << endl << endl
+				<< _T("モード: ") << mesh_mode << endl << endl
+				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
+
+			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
+
+			if(qcam_on) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
+				<< _T("ウォークスルー中");
+
+			text.draw(spr, *fonttex);
+
+			graphic::end();
+			app().present();
+		}
+	}
+
+#ifdef PHYSICSTEST
+	for(int i = phy_world->getNumCollisionObjects()-1; i >= 0; i--)
+	{
+		btCollisionObject *obj = phy_world->getCollisionObjectArray()[i];
+		btRigidBody *body = btRigidBody::upcast(obj);
+		if(body && body->getMotionState())
+		{
+			delete body->getMotionState();
+		}
+		phy_world->removeCollisionObject( obj );
+		delete obj;
+	}
+
+	for(int i = 0; i < phy_collision_shapes.size(); i++)
+	{
+		delete phy_collision_shapes[i];
+	}
+
+	delete phy_overlapping_pair_cache;
+	delete phy_dispatcher;
+	delete phy_solver;
+	delete phy_world;
+	delete phy_collision_configuration;
+#endif
+	CoUninitialize();
+	return 0;
+}
+
+#ifdef _DEBUG
+# pragma comment(lib, "zlibd.lib")
+# ifdef MOVIETEST
+#  pragma comment(lib, "strmbasd.lib")
+#  pragma comment(lib, "asynbasd.lib")
+# endif
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "libbulletdynamics_d.lib")
+#  pragma comment(lib, "libbulletcollision_d.lib")
+#  pragma comment(lib, "libbulletmath_d.lib")
+# endif
+#else
+# pragma comment(lib, "zlib.lib")
+# ifdef MOVIETEST
+#  pragma comment(lib, "strmbase.lib")
+#  pragma comment(lib, "asynbase.lib")
+# endif
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "libbulletdynamics.lib")
+#  pragma comment(lib, "libbulletcollision.lib")
+#  pragma comment(lib, "libbulletmath.lib")
+# endif
 #endif

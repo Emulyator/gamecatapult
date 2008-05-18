@@ -18,6 +18,8 @@ namespace gctp { namespace graphic {
 	public:
 		virtual HRslt setUp(const _TCHAR *fname) = 0;
 
+		/// 指定のテクニックがあるか？
+		virtual bool hasTechnique(const char *name) const = 0;
 		/// 適用開始
 		virtual HRslt begin() const = 0;
 		/// 適用終了
@@ -28,6 +30,21 @@ namespace gctp { namespace graphic {
 		virtual HRslt endPass() const = 0;
 		/// パス数を返す（begin~endの間のみ有効）
 		virtual uint passnum() const = 0;
+
+		// とりあえず。。。
+		// NULLにすると先頭のテクニックで描画
+		static void setTechnique(const char *techname)
+		{
+			current_technique_ = techname;
+		}
+
+		static const char *getTechnique()
+		{
+			return current_technique_;
+		}
+
+	protected:
+		static const char *current_technique_;
 
 	GCTP_DECLARE_TYPEINFO
 	};
