@@ -95,7 +95,7 @@ namespace gctp { namespace scene {
 
 	void Light::enter(World &world)
 	{
-		world.strutum_tree->push(node_.get());
+		world.strutum_tree.root()->push(node_.get());
 		//world.rendering_tree->push(this);
 	}
 

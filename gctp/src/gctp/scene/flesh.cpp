@@ -31,7 +31,7 @@ namespace gctp { namespace scene {
 	{
 		dissolve_rate_ = 1.0f;
 		model_ = model;
-		if(skl) node_ = *skl.lock();
+		if(skl) node_ = skl->root();
 		skl_ = skl;
 		return S_OK;
 	}

@@ -34,7 +34,7 @@ namespace gctp {
 		/// ブロック幅からレベル数に変換
 		static unsigned int blockToLevel(unsigned int w)
 		{
-			return _LEVEL-intlog2(w-1);
+			return _LEVEL-(intlog2(w-1)+1);
 		}
 
 		struct Block {

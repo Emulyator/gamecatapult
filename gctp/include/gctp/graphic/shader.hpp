@@ -11,7 +11,21 @@
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/class.hpp>
 
+namespace gctp {
+	class Skeleton;
+}
+
 namespace gctp { namespace graphic {
+
+	// やっぱりBrushに戻したいなぁ。
+	//!!
+	// シェーダーとブラッシュは分けなきゃだめ。
+	// Brushにおしゃれな名前以外の意義が出てきた。
+	// Shader＝シェーダそのもの。
+	// Brush=モデルごとのインスタンスデータ。
+	// いまのModelDetail=Brush
+
+	class Model;
 
 	/// シェーダーリソースクラス
 	class Shader : public Rsrc {
@@ -31,6 +45,33 @@ namespace gctp { namespace graphic {
 		/// パス数を返す（begin~endの間のみ有効）
 		virtual uint passnum() const = 0;
 
+#if 0
+		// こいつらいらないかも
+		// どこに何を入れるか、はBrushがしってる、ってことでいいんじゃ？
+
+		/** モデルインスタンスごとではない、パラメータの設定
+		 *
+		 * ViewProjectionMatrixやアンビエントなど
+		 *
+		 * begin前に設定可能なパラメータ
+		 */
+		virtual void setGlobalParameter() = 0;
+		/** モデルインスタンスごとのパラメータの設定
+		 *
+		 * ModelMatrix（WorldMatrix）や動的ライトなど
+		 *
+		 * 描画直前に設定するパラメータ
+		 */
+		virtual void setLocalParameter(const Model &model, int subsetno, const Matrix &mat) = 0;
+		/** モデルインスタンスごとのパラメータの設定
+		 *
+		 * ModelMatrix（WorldMatrix）や動的ライトなど
+		 *
+		 * 描画直前に設定するパラメータ
+		 */
+		virtual void setLocalParameter(const Model &model, int subsetno, const Skeleton &skel) = 0;
+#endif
+
 		// とりあえず。。。
 		// NULLにすると先頭のテクニックで描画
 		static void setTechnique(const char *techname)
@@ -45,6 +86,7 @@ namespace gctp { namespace graphic {
 
 	protected:
 		static const char *current_technique_;
+		// これはレンダーツリーが持つべき
 
 	GCTP_DECLARE_TYPEINFO
 	};

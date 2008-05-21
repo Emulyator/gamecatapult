@@ -222,6 +222,23 @@ namespace gctp {
 		return 0;
 	}
 
+	/// Œ^•s–¾‚Ìó‘Ô‚©‚çALua‚ÉŠ—L‚³‚¹‚é
+	int TukiRegister::newUserData(lua_State *l, Ptr pobj)
+	{
+		if(pobj) {
+			const char *luaname = typeRegistry().get(GCTP_TYPEID(*pobj));
+			if(!luaname) luaname = UNKNOWNNAME;
+			UserData *ud = new(lua_newuserdata(l, sizeof(UserData))) UserData;
+			if(ud) {
+				ud->p = pobj;  // store pointer to object in userdata
+				luaL_getmetatable(l, luaname);  // lookup metatable in Lua registry
+				lua_setmetatable(l, -2);
+				return 1;  // userdata containing pointer to T object
+			}
+		}
+		return 0;
+	}
+
 	int TukiRegister::luaRegister(lua_State *l)
 	{
 		luapp::Stack L(l);

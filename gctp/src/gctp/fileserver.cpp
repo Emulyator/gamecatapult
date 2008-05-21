@@ -350,8 +350,16 @@ namespace gctp {
 
 	class FileServer::Thread {
 	public:
+		struct Request {
+			TCStr name;
+			Handle<Volume> volume;
+			AsyncBufferPtr buffer;
+		};
+		std::queue<Request> requests_;
+		Mutex monitor_;
 		Thread(FileServer *fs) : thread_(0), id_(0)
 		{
+			fs->synchronize(true);
 			thread_ = (HANDLE)_beginthreadex( NULL, 0, &threadfunc, fs, 0, (unsigned int *)&id_ );
 		}
 		~Thread()
@@ -364,8 +372,10 @@ namespace gctp {
 		static unsigned int __stdcall threadfunc( void* arg )
 		{
 			FileServer *fs = (FileServer *)arg;
-			fs->service();
-			_endthreadex( 0 );
+			MSG msg;
+			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
+				fs->service();
+			}
 			return 0;
 		}
 		HANDLE thread_;
@@ -483,6 +493,23 @@ namespace gctp {
 	AsyncBufferPtr FileServer::getFileAsync(const _TCHAR *name)
 	{
 		if(!thread_) thread_ = new Thread(this);
+		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
+			if(*i) {
+				int s = (*i)->find(name);
+				if(s >= 0) {
+					AsyncBufferPtr ret = new AsyncBuffer(s);
+					if(ret) {
+						Thread::Request request;
+						request.name = name;
+						request.volume = (*i);
+						request.buffer = ret;
+						ScopedLock sl(thread_->monitor_);
+						thread_->requests_.push(request);
+					}
+					return ret;
+				}
+			}
+		}
 		GCTP_TRACE(_T("要求されたファイル'")<<name<<_T("'はマウントされているボリュームの中に見つかりませんでした。"));
 		return AsyncBufferPtr();
 	}
@@ -503,6 +530,25 @@ namespace gctp {
 
 	void FileServer::service()
 	{
+		Thread::Request req;
+		{
+			ScopedLock sl(thread_->monitor_);
+			if(!thread_->requests_.empty()) {
+				req = thread_->requests_.front();
+				thread_->requests_.pop();
+			}
+		}
+		if(req.volume) {
+			Pointer<Volume> volume = req.volume.lock();
+			if(volume) {
+				if(volume->read(req.name.c_str(), *req.buffer) >= 0) {
+					req.buffer->is_ready_ = true;
+				}
+			}
+		}
+		else {
+			::Sleep(0);
+		}
 	}
 	
 	bool FileServer::busy()

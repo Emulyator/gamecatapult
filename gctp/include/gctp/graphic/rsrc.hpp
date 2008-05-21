@@ -54,6 +54,7 @@ namespace gctp { namespace graphic {
 		typedef IDirect3DStateBlock9 IDirect3DStateBlock;
 		typedef IDirect3DVertexBuffer9 IDirect3DVertexBuffer;
 		typedef IDirect3DIndexBuffer9 IDirect3DIndexBuffer;
+		typedef IDirect3DVertexDeclaration9 IDirect3DVertexDeclaration;
 
 		typedef D3DCAPS9 D3DCAPS;
 		typedef D3DLIGHT9 D3DLIGHT;
@@ -66,6 +67,7 @@ namespace gctp { namespace graphic {
 		TYPEDEF_DXCOMPTREX(IDirect3DDevice9, IDirect3DDevicePtr);
 		TYPEDEF_DXCOMPTREX(IDirect3DSwapChain9, IDirect3DSwapChainPtr);
 		TYPEDEF_DXCOMPTREX(IDirect3DStateBlock9, IDirect3DStateBlockPtr);
+		TYPEDEF_DXCOMPTREX(IDirect3DVertexDeclaration9, IDirect3DVertexDeclarationPtr);
 
 		TYPEDEF_DXCOMPTREX(IDirect3DBaseTexture9, IDirect3DBaseTexturePtr);
 		TYPEDEF_DXCOMPTREX(IDirect3DTexture9, IDirect3DTexturePtr);

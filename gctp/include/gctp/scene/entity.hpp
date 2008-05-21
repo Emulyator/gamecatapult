@@ -66,21 +66,21 @@ namespace gctp { namespace scene {
 		Handle<Body> target() { return target_; }
 
 		/// ターゲットのローカル座標位置
-		const Vector &lpos() const { return (*target_)->val.lcm().position(); }
+		const Vector &lpos() const { return target_->root()->val.lcm().position(); }
 		/// ターゲットのローカル座標位置
-		Vector &getLpos() { return (*target_)->val.getLCM().position(); }
+		Vector &getLpos() { return target_->root()->val.getLCM().position(); }
 		/// ターゲットのグローバル座標位置
-		const Vector &pos() const { return (*target_)->val.wtm().position(); }
+		const Vector &pos() const { return target_->root()->val.wtm().position(); }
 		/// ターゲットのグローバル座標位置
-		Vector &pos() { return (*target_)->val.wtm().position(); }
+		Vector &pos() { return target_->root()->val.wtm().position(); }
 		/// ターゲットのローカル座標
-		const Matrix &lcm() const { return (*target_)->val.lcm(); }
+		const Matrix &lcm() const { return (*target_).root()->val.lcm(); }
 		/// ターゲットのローカル座標
-		Matrix &getLCM() { return (*target_)->val.getLCM(); }
+		Matrix &getLCM() { return target_->root()->val.getLCM(); }
 		/// ターゲットのグローバル座標
-		const Matrix &wtm() const { return (*target_)->val.wtm(); }
+		const Matrix &wtm() const { return target_->root()->val.wtm(); }
 		/// ターゲットのグローバル座標
-		Matrix &wtm() { return (*target_)->val.wtm(); }
+		Matrix &wtm() { return target_->root()->val.wtm(); }
 
 		/// 更新
 		bool onUpdate(float delta);

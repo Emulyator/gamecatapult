@@ -483,7 +483,7 @@ namespace gctp { namespace scene {
 					if(body) {
 						self.push_back(body);
 						body->setUp(cur.name().c_str());
-						cnode = *body;
+						cnode = body->root();
 					}
 				}
 				

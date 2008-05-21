@@ -15,6 +15,9 @@
 #include <gctp/graphic/material.hpp>
 #include <gctp/dxcomptrs.hpp>
 
+#include <gctp/graphic/vertexbuffer.hpp>
+#include <gctp/graphic/indexbuffer.hpp>
+
 struct ID3DXMesh;
 struct ID3DXSkinInfo;
 namespace gctp {
@@ -109,8 +112,8 @@ namespace gctp { namespace graphic {
 		operator const ushort *() const { return reinterpret_cast<ushort *>(p_); }
 	};
 
-	class VertexBuffer;
-	class IndexBuffer;
+	//class VertexBuffer;
+	//class IndexBuffer;
 	/** ワイヤフレームモデル（線リスト）
 	 *
 	 * LWで言うところの線ポリゴンの集まり
@@ -157,6 +160,9 @@ namespace gctp { namespace graphic {
 		virtual ~ModelDetail() {}
 		virtual HRslt draw(const Skeleton &skl) const = 0;
 		virtual HRslt draw(const Skeleton &skl, int mtrlno) const = 0;
+		//virtual HRslt begin(int mtrlno) const = 0;
+		//virtual HRslt drawFragment(const Skeleton &skel) const = 0;
+		//virtual HRslt end() const = 0;
 		Model &owner_;
 	};
 
@@ -179,17 +185,24 @@ namespace gctp { namespace graphic {
 		HRslt draw(const Matrix &mat) const;
 		/// 描画
 		HRslt draw(const Skeleton &skel) const;
+
+		/// マテリアルを指定して描画、の準備
+		HRslt begin() const;
 		/// マテリアルを指定して描画
-		HRslt draw(const Matrix &mat, int mtrlno) const;
+		HRslt drawSubset(const Matrix &mat, int mtrlno) const;
 		/// マテリアルを指定して描画
-		HRslt draw(const Skeleton &skel, int mtrlno) const;
+		HRslt drawSubset(const Skeleton &skl, int mtrlno) const;
+		/// マテリアルを指定して描画終了
+		HRslt end() const;
 
 		/// マテリアルリスト
 		std::vector< Material >	mtrls;
 		/// 面接続情報
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
+		/// メッシュ断片情報
+		const std::vector<D3DXATTRIBUTERANGE> &subsets() const { return subsets_; }
 
-		Model() : bs_(VectorC(0,0,0),0), offset_(0) {}
+		Model() : bs_(VectorC(0,0,0),0), offset_(0) { vb_.deleteGuard(); ib_.deleteGuard(); }
 
 		/// 境界球
 		const Sphere &bs() { return bs_; }
@@ -270,10 +283,15 @@ namespace gctp { namespace graphic {
 		void blend(const Model **models, Real *weights, int num);
 
 	protected:
-		CStr					name_;		// シーンファイル上での名前
-		ID3DXMeshPtr			mesh_;      // ファイルから読み込んだままののメッシュ
-		ID3DXSkinInfoPtr		skin_;		// スキン情報
-		ID3DXBufferPtr			adjc_;		// 面の接続情報
+		CStr								name_;		// シーンファイル上での名前
+		ID3DXMeshPtr						mesh_;      // ファイルから読み込んだままののメッシュ
+		ID3DXSkinInfoPtr					skin_;		// スキン情報
+		ID3DXBufferPtr						adjc_;		// 面の接続情報
+		std::vector<D3DXATTRIBUTERANGE>		subsets_;	// 断片情報
+		std::vector<D3DVERTEXELEMENT9>		vbinfo_;
+		mutable VertexBuffer				vb_;
+		mutable IndexBuffer					ib_;
+		dx::IDirect3DVertexDeclarationPtr	decl_;
 
 		Vector calcCenter() const;
 		float calcRadius(const Vector &center) const;

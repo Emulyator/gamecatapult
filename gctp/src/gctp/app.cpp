@@ -16,7 +16,7 @@
 
 namespace gctp {
 
-	void Events::post(const Event &event)
+	void EventQue::post(const Event &event)
 	{
 #ifdef _MT
 		ScopedLock _al(monitor_);
@@ -24,7 +24,7 @@ namespace gctp {
 		q_.push_back(event);
 	}
 
-	void Events::flush()
+	void EventQue::flush()
 	{
 #ifdef _MT
 		ScopedLock _al(monitor_);
@@ -38,7 +38,7 @@ namespace gctp {
 
 	namespace {
 		
-		struct GUIEvent {
+		struct GUIEvent : EventHeader {
 			enum Message {
 				DOWN,
 				UP,
@@ -48,7 +48,6 @@ namespace gctp {
 				KEY,
 				CHAR,
 			};
-			GUID guid;
 			Message msg;
 		};
 
@@ -84,10 +83,11 @@ namespace gctp {
 	// {595BC867-DF86-4e22-B75D-4645B65093C7}
 	const GUID GUIEvents::TYPEID = { 0x595bc867, 0xdf86, 0x4e22, { 0xb7, 0x5d, 0x46, 0x45, 0xb6, 0x50, 0x93, 0xc7 } };
 
-	void GUIEvents::postDownMsg(Events &q, Point2 p, uint8_t button, uint8_t opt)
+	void GUIEvents::postDownMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt)
 	{
 		Event event;
 		PointerEvent *e = reinterpret_cast<PointerEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::DOWN;
 		e->p = p;
@@ -96,10 +96,11 @@ namespace gctp {
 		q.post(event);
 	}
 
-	void GUIEvents::postUpMsg(Events &q, Point2 p, uint8_t button, uint8_t opt)
+	void GUIEvents::postUpMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt)
 	{
 		Event event;
 		PointerEvent *e = reinterpret_cast<PointerEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::UP;
 		e->p = p;
@@ -108,10 +109,11 @@ namespace gctp {
 		q.post(event);
 	}
 
-	void GUIEvents::postDblClickMsg(Events &q, Point2 p, uint8_t button, uint8_t opt)
+	void GUIEvents::postDblClickMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt)
 	{
 		Event event;
 		PointerEvent *e = reinterpret_cast<PointerEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::DBLCLICK;
 		e->p = p;
@@ -120,10 +122,11 @@ namespace gctp {
 		q.post(event);
 	}
 
-	void GUIEvents::postMoveMsg(Events &q, Point2 p, uint8_t opt)
+	void GUIEvents::postMoveMsg(EventQue &q, ulong time, Point2 p, uint8_t opt)
 	{
 		Event event;
 		PointerEvent *e = reinterpret_cast<PointerEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::MOVE;
 		e->p = p;
@@ -131,10 +134,11 @@ namespace gctp {
 		q.post(event);
 	}
 
-	void GUIEvents::postWheelMsg(Events &q, Point2 p, int16_t delta, uint8_t wheel, uint8_t opt)
+	void GUIEvents::postWheelMsg(EventQue &q, ulong time, Point2 p, int16_t delta, uint8_t wheel, uint8_t opt)
 	{
 		Event event;
 		PointerEvent *e = reinterpret_cast<PointerEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::WHEEL;
 		e->p = p;
@@ -144,20 +148,22 @@ namespace gctp {
 		q.post(event);
 	}
 
-	void GUIEvents::postKeyMsg(Events &q, int key)
+	void GUIEvents::postKeyMsg(EventQue &q, ulong time, int key)
 	{
 		Event event;
 		KeyEvent *e = reinterpret_cast<KeyEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::KEY;
 		e->key = key;
 		q.post(event);
 	}
 
-	void GUIEvents::postCharMsg(Events &q, int ch)
+	void GUIEvents::postCharMsg(EventQue &q, ulong time, int ch)
 	{
 		Event event;
 		KeyEvent *e = reinterpret_cast<KeyEvent *>(&event);
+		e->time = time;
 		e->guid = TYPEID;
 		e->msg = GUIEvent::CHAR;
 		e->key = ch;
@@ -172,43 +178,43 @@ namespace gctp {
 			case GUIEvent::DOWN:
 				{
 					const PointerEvent *e = reinterpret_cast<const PointerEvent *>(&event);
-					down_signal(e->p, e->button, e->opt);
+					down_signal(e->time, e->p, e->button, e->opt);
 				}
 				break;
 			case GUIEvent::UP:
 				{
 					const PointerEvent *e = reinterpret_cast<const PointerEvent *>(&event);
-					up_signal(e->p, e->button, e->opt);
+					up_signal(e->time, e->p, e->button, e->opt);
 				}
 				break;
 			case GUIEvent::DBLCLICK:
 				{
 					const PointerEvent *e = reinterpret_cast<const PointerEvent *>(&event);
-					dblclick_signal(e->p, e->button, e->opt);
+					dblclick_signal(e->time, e->p, e->button, e->opt);
 				}
 				break;
 			case GUIEvent::MOVE:
 				{
 					const PointerEvent *e = reinterpret_cast<const PointerEvent *>(&event);
-					move_signal(e->p, e->opt);
+					move_signal(e->time, e->p, e->opt);
 				}
 				break;
 			case GUIEvent::WHEEL:
 				{
 					const PointerEvent *e = reinterpret_cast<const PointerEvent *>(&event);
-					wheel_signal(e->p, e->delta, e->button, e->opt);
+					wheel_signal(e->time, e->p, e->delta, e->button, e->opt);
 				}
 				break;
 			case GUIEvent::KEY:
 				{
 					const KeyEvent *e = reinterpret_cast<const KeyEvent *>(&event);
-					key_signal(e->key);
+					key_signal(e->time, e->key);
 				}
 				break;
 			case GUIEvent::CHAR:
 				{
 					const KeyEvent *e = reinterpret_cast<const KeyEvent *>(&event);
-					char_signal(e->key);
+					char_signal(e->time, e->key);
 				}
 				break;
 			}
@@ -233,6 +239,7 @@ namespace gctp {
 #if !defined(_MSC_VER) || (_MSC_VER > 1300)
 		events_.event_signal.connect(guievents_.event_slot);
 #endif
+		basetime_ = 0;
 	}
 
 	void GameApp::incWindow()
@@ -275,6 +282,17 @@ namespace gctp {
 			draw_profile_->end();
 			draw_profile_ = 0;
 		}
+	}
+
+	ulong GameApp::basetime()
+	{
+		return basetime_;
+	}
+
+	ulong GameApp::getTimeStamp()
+	{
+		ulong c = clock()/(CLOCKS_PER_SEC/1000);
+		return c;
 	}
 
 	/** ゲームループの標準的な実装

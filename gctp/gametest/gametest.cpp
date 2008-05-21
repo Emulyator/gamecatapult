@@ -267,7 +267,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
+		gctp::GUIEvents::postDownMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
 	}
 
 	void doOnLeftMouseUp(const sw::MouseEventResult &mouse)
@@ -281,7 +281,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
+		gctp::GUIEvents::postUpMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
 	}
 
 	void doOnMiddleMouseDown(const sw::MouseEventResult &mouse)
@@ -295,7 +295,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
+		gctp::GUIEvents::postDownMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
 	}
 
 	void doOnMiddleMouseUp(const sw::MouseEventResult &mouse)
@@ -309,7 +309,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
+		gctp::GUIEvents::postUpMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::MB, opt);
 	}
 
 	void doOnRightMouseDown(const sw::MouseEventResult &mouse)
@@ -323,7 +323,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDownMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
+		gctp::GUIEvents::postDownMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
 	}
 
 	void doOnRightMouseUp(const sw::MouseEventResult &mouse)
@@ -337,7 +337,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postUpMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
+		gctp::GUIEvents::postUpMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
 	}
 
 	void doOnLeftMouseDblClick(const sw::MouseEventResult &mouse)
@@ -351,7 +351,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
+		gctp::GUIEvents::postDblClickMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::LB, opt);
 	}
 
 	void doOnRightMouseDblClick(const sw::MouseEventResult &mouse)
@@ -365,7 +365,7 @@ protected:
 		if(mouse.isControlPressed) opt |= gctp::GUIEvents::CTRL;
 		if(mouse.isShiftPressed) opt |= gctp::GUIEvents::SHIFT;
 		if(mouse.isAltPressed) opt |= gctp::GUIEvents::ALT;
-		gctp::GUIEvents::postDblClickMsg(events(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
+		gctp::GUIEvents::postDblClickMsg(events(), getTimeStamp(), gctp::Point2C(mouse.pos.x, mouse.pos.y), gctp::GUIEvents::RB, opt);
 	}
 
 	void doOnMouseMove(const sw::MouseEventResult &mouse)

@@ -23,7 +23,7 @@ namespace gctp {
 	 */
 	void StrutumTree::merge(const StrutumTree &src)
 	{
-		get()->push(src->dup());
+		root()->push(src.dup().root());
 	}
 
 	namespace {

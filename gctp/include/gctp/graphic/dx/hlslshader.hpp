@@ -19,6 +19,7 @@ namespace gctp { namespace graphic { namespace dx {
 	/// シェーダーリソースクラス
 	class HLSLShader : public Shader {
 	public:
+		HLSLShader() : passnum_(0) {}
 		virtual HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(BufferPtr buffer);
 
@@ -43,6 +44,8 @@ namespace gctp { namespace graphic { namespace dx {
 		virtual HRslt endPass() const;
 		/// パス数を返す（begin~endの間のみ有効）
 		virtual uint passnum() const { return passnum_; }
+		/// 開始済みか？
+		virtual bool isBeginning() const { return passnum_ > 0; }
 
 	GCTP_DECLARE_CLASS
 

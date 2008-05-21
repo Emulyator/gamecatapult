@@ -57,7 +57,7 @@ namespace gctp { namespace scene {
 					pbody = *i;
 					if(pbody) {
 						body_list.push_back(pbody);
-						strutum_tree.root()->push(*pbody);
+						strutum_tree.root()->push(pbody->root());
 					}
 					plight = *i;
 					if(plight) {
@@ -137,6 +137,20 @@ namespace gctp { namespace scene {
 		World *self = const_cast<World *>(this);
 		for(HandleList<Body>::iterator i = self->body_list.begin(); i != self->body_list.end();) {
 			if(*i) {
+				for(PointerList<Flesh>::iterator j = (*i)->fleshies().begin(); j != (*i)->fleshies().end(); ++j) {
+				}
+				// マテリアル（シェーダー）ごとに並べたい
+				// 半透明体は後から書きたい
+				// グローバルに、現在の設定を残す？
+				// 今対応しなきゃいけないこと：
+				// Zフィル（不透明体、半透明体全部描画、ただし半透明はAlphaTest=255で行う（不透明部分のパンチアウト））
+				// デプスバッファフィル（不透明体、半透明体全部描画、ただし半透明はAlphaTest==255で行う（不透明部分のパンチアウト））
+				// HDR描画（半透明体はソートして後から。AlphaTest>0）
+				// ポストプロセス
+				//
+				// デプスフィル設定は、RenderNodeでできる。テクニックの設定も。
+				// 足らない能力は、半透明体の識別、そのソート、現在半透明を描画すべきか？不透明体を描画すべきか？その両方か？の判別
+				//FreshList作るべきか。不透明、半透明で分けた
 				(*i)->draw(); // パスに関する情報をここで送るべき？
 				++i;
 			}

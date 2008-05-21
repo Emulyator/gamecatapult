@@ -55,6 +55,7 @@ namespace gctp {
 		static void registerIt(lua_State *l, const char *name);
 		static void registerIt(lua_State *l, const GCTP_TYPEINFO &type);
 		static int push(lua_State *l, Hndl hobj);
+		static int newUserData(lua_State *l, Ptr pobj);
 		static int luaRegisterPackage(lua_State *L);
 		static int luaRegister(lua_State *L);
 		static int luaTableDump(lua_State *L);

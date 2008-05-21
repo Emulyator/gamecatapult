@@ -43,11 +43,17 @@ namespace gctp {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/24 1:02:41
 	 */
-	struct Event {
+	struct EventHeader {
 		enum {
 			ATTR_SIZE = 24,
 		};
-		GUID guid; // UUIDのほうがいいかなぁ
+		GUID guid; ///< イベント識別子
+		// UUIDのほうがいいかなぁ
+		ulong time; ///< 基準時間からのオフセット(ms)
+	};
+
+	/// イベントブロック実体
+	struct Event : EventHeader {
 		char attr[ATTR_SIZE];
 	};
 
@@ -56,12 +62,11 @@ namespace gctp {
 	 * ゲームスレッドで処理できるように、UIスレッド（メインスレッド）で発生した
 	 * いくつかの入力イベントを溜め込むキュー。
 	 *
-	 * マウスアップ・マウスダウン・マウスドラッグ・カーソルムーブ・キーアップ･キーダウンなどのみ扱う
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/11/21 17:55:36
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Events : public Object {
+	class EventQue : public Object {
 	public:
 		void post(const Event &event);
 		void flush();
@@ -110,28 +115,28 @@ namespace gctp {
 
 		const static GUID TYPEID;
 
-		static void postDownMsg(Events &q, Point2 p, uint8_t button, uint8_t opt);
-		static void postUpMsg(Events &q, Point2 p, uint8_t button, uint8_t opt);
-		static void postDblClickMsg(Events &q, Point2 p, uint8_t button, uint8_t opt);
-		static void postMoveMsg(Events &q, Point2 p, uint8_t button);
-		static void postWheelMsg(Events &q, Point2 p, int16_t delta, uint8_t wheel, uint8_t opt);
-		static void postKeyMsg(Events &q, int key);
-		static void postCharMsg(Events &q, int ch);
+		static void postDownMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt);
+		static void postUpMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt);
+		static void postDblClickMsg(EventQue &q, ulong time, Point2 p, uint8_t button, uint8_t opt);
+		static void postMoveMsg(EventQue &q, ulong time, Point2 p, uint8_t button);
+		static void postWheelMsg(EventQue &q, ulong time, Point2 p, int16_t delta, uint8_t wheel, uint8_t opt);
+		static void postKeyMsg(EventQue &q, ulong time, int key);
+		static void postCharMsg(EventQue &q, ulong time, int ch);
 
-		/// ボタンが押されたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>				down_signal;
-		/// ボタンが離されたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>				up_signal;
-		/// ダブルクリックされたら(X, Y, BUTTON, OPTBUTTON)
-		Signal3<true, Point2, uint8_t, uint8_t>				dblclick_signal;
-		/// ポインタの移動(X, Y, OPTBUTTON)
-		Signal2<true, Point2, uint8_t>						move_signal;
-		/// マウスホイールや、パッドのアナコン操作(X, Y, DELTA, WHEEL, OPT)
-		Signal4<true, Point2, int16_t, uint8_t, uint8_t>	wheel_signal;
-		/// キー入力（プラットホーム依存、WindowsならVK_*が入る）
-		Signal1<true, int>									key_signal;
+		/// ボタンが押されたら(TimeStamp, X, Y, BUTTON, OPTBUTTON)
+		Signal4<true, const ulong &, const Point2 &, uint8_t, uint8_t>			down_signal;
+		/// ボタンが離されたら(TimeStamp, X, Y, BUTTON, OPTBUTTON)
+		Signal4<true, const ulong &, const Point2 &, uint8_t, uint8_t>			up_signal;
+		/// ダブルクリックされたら(TimeStamp, X, Y, BUTTON, OPTBUTTON)
+		Signal4<true, const ulong &, const Point2 &, uint8_t, uint8_t>			dblclick_signal;
+		/// ポインタの移動(TimeStamp, X, Y, OPTBUTTON)
+		Signal3<true, const ulong &, const Point2 &, uint8_t>					move_signal;
+		/// マウスホイールや、パッドのアナコン操作(TimeStamp, X, Y, DELTA, WHEEL, OPT)
+		Signal5<true, const ulong &, const Point2 &, int16_t, uint8_t, uint8_t>	wheel_signal;
+		/// キー入力（TimeStamp, プラットホーム依存、WindowsならVK_*が入る）
+		Signal2<true, const ulong &, int>										key_signal;
 		/// 文字入力
-		Signal1<true, int>									char_signal;
+		Signal2<true, const ulong &, int>										char_signal;
 
 		bool procEvent(const Event &event);
 #ifndef BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS
@@ -163,8 +168,10 @@ namespace gctp {
 		Profiler *draw_profile_;
 		bool odd_frame_;
 		bool present_;
-		Events events_;
+		EventQue events_;
 		GUIEvents guievents_;
+		ulong basetime_;
+		ulong current_clock_;
 	public:
 		GameApp();
 		virtual bool canContinue();
@@ -182,13 +189,17 @@ namespace gctp {
 		uint window_count() { return window_count_; }
 
 		/// イベントキュー
-		Events &events() { return events_; }
+		EventQue &events() { return events_; }
 		/// GUIイベントシグナル
 		GUIEvents &guievents() { return guievents_; }
 		/// 更新シグナル
 		Signal1<false, float /*delta*/> update_signal;
 		/// 描画シグナル
 		Signal1<false, float /*delta*/> draw_signal;
+		/// 基準時間(イベントのtimeを扱うときの値)(ms)
+		ulong basetime();
+		/// イベントを発行するときの、現在時間取得(ms)
+		ulong getTimeStamp();
 
 		/// 実行
 		int run();
