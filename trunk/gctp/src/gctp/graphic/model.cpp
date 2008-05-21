@@ -37,7 +37,24 @@ namespace gctp { namespace graphic {
 		mesh_ = mesh;
 		skin_ = skin;
 		adjc_ = adjc;
-		
+
+		if(mesh_) {
+			DWORD size;
+			mesh_->GetAttributeTable(NULL, &size);
+			subsets_.resize(size);
+			mesh_->GetAttributeTable(&subsets_[0], &size);
+			dx::IDirect3DVertexBufferPtr vb;
+			mesh_->GetVertexBuffer(&vb);
+			vb_.setUp(vb);
+			dx::IDirect3DIndexBufferPtr ib;
+			mesh_->GetIndexBuffer(&ib);
+			ib_.setUp(ib);
+		}
+		else {
+			vb_.setUp(0);
+			ib_.setUp(0);
+			subsets_.resize(0);
+		}
 		if(isSkin() && !isSkinned()) useShader(); // デフォルトでHLSL
 		updateBS();
 	}
@@ -335,6 +352,69 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
+	HRslt Model::begin() const
+	{
+		HRslt hr;
+		if(mesh_) {
+			Handle<dx::HLSLShader> shader = shader_;
+			if(shader && (*shader)) {
+				hr = shader->begin();
+			}
+			else {
+				IDirect3DDevicePtr dev;
+				mesh_->GetDevice(&dev);
+				dev->SetVertexShader(NULL);
+			}
+			{
+				IDirect3DDevicePtr dev;
+				mesh_->GetDevice(&dev);
+				//dev->SetVertexDeclaration(decl_);
+				hr = dev->SetFVF( mesh_->GetFVF() );
+				if(!hr) return hr;
+				hr = dev->SetIndices(ib_); //< これModel.beginに
+				if(!hr) return hr;
+				hr = dev->SetStreamSource(0, vb_, 0, mesh_->GetNumBytesPerVertex());//< これModel.beginSubsetに
+				if(!hr) return hr;
+				//	Shader.begin
+				//		Model.begin
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//		Model.end
+				//		Model.begin
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//		Model.end
+				//	Shader.end
+				//	Model.drawSubset =
+				//		for allpass
+				//			Shader.beginPass
+				//				DrawIndexedPrimitive
+				//			Shader.endPass
+				// こう？
+				//
+				//	一般的に切り替えペナルティー＝Shader＞Modelらしい。と信じる
+				// その仮定では上のような順位。違ったら、
+				//	Model.begin
+				//		Shader.begin
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//		Shader.end
+				//		Shader.begin
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//				Model.drawSubset
+				//		Shader.end
+				//	Model.end
+				//
+			}
+			if(!hr) return hr;
+		}
+		return hr;
+	}
+
 	/** マテリアルを指定して、ソリッドモデルとして描画
 	 *
 	 * 主に半透明体の遅延描画用。
@@ -345,10 +425,12 @@ namespace gctp { namespace graphic {
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::draw(const Matrix &mat, int mtrlno) const
+	HRslt Model::drawSubset(const Matrix &mat, int mtrlno) const
 	{
 		HRslt hr;
 		if(mesh_) {
+			IDirect3DDevicePtr dev;
+			mesh_->GetDevice(&dev);
 			device().setMaterial(mtrls[mtrlno]);
 			Handle<dx::HLSLShader> shader = shader_;
 			if(shader && *shader) {
@@ -371,25 +453,52 @@ namespace gctp { namespace graphic {
 				}
 			}
 			else {
-				IDirect3DDevicePtr dev;
-				mesh_->GetDevice(&dev);
 				dev->SetVertexShader(NULL);
 				dev->SetTransform(D3DTS_WORLD, mat);
 			}
-			if(shader && (hr = shader->begin())) {
+			if(shader) {
+				hr = (*shader)->CommitChanges();
+				if(!hr) GCTP_TRACE(hr);
 				for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
 					hr = shader->beginPass( ipass );
 					if(!hr) GCTP_TRACE(hr);
-					hr = mesh_->DrawSubset(mtrlno);
+					hr = dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, subsets_[mtrlno].VertexStart, 0, subsets_[mtrlno].VertexCount, subsets_[mtrlno].FaceStart, subsets_[mtrlno].FaceCount);
 					if(!hr) GCTP_TRACE(hr);
 					hr = shader->endPass();
 					if(!hr) GCTP_TRACE(hr);
 				}
-				hr = shader->end();
-				if(!hr) GCTP_TRACE(hr);
 			}
-			else hr = mesh_->DrawSubset(mtrlno);
+			else hr = dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, subsets_[mtrlno].VertexStart, 0, subsets_[mtrlno].VertexCount, subsets_[mtrlno].FaceStart, subsets_[mtrlno].FaceCount);
 
+			if(!hr) return hr;
+		}
+		return hr;
+	}
+
+	HRslt Model::end() const
+	{
+		HRslt hr;
+		if(mesh_) {
+			IDirect3DDevicePtr dev;
+			mesh_->GetDevice(&dev);
+			hr = dev->SetIndices(0);
+			if(!hr) {
+				GCTP_TRACE(hr);
+				return hr;
+			}
+			hr = dev->SetStreamSource(0, 0, 0, 0);//< これModel.beginSubsetに
+			if(!hr) {
+				GCTP_TRACE(hr);
+				return hr;
+			}
+			Handle<dx::HLSLShader> shader = shader_;
+			if(shader) {
+				hr = shader->end();
+				if(!hr) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
+			}
 			if(!hr) return hr;
 		}
 		return hr;
@@ -411,7 +520,7 @@ namespace gctp { namespace graphic {
 	HRslt Model::draw(const Skeleton &skl) const
 	{
 		if(detail_.get()) return detail_->draw(skl);
-		else if(!skl.empty()) return draw(skl->val.wtm());
+		else if(!skl.empty()) return draw(skl.root()->val.wtm());
 		return E_FAIL;
 	}
 
@@ -426,10 +535,10 @@ namespace gctp { namespace graphic {
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::draw(const Skeleton &skl, int mtrlno) const
+	HRslt Model::drawSubset(const Skeleton &skl, int mtrlno) const
 	{
 		if(detail_) return detail_->draw(skl, mtrlno);
-		else if(!skl.empty()) return draw(skl->val.wtm(), mtrlno);
+		else if(!skl.empty()) return drawSubset(skl.root()->val.wtm(), mtrlno);
 		return E_FAIL;
 	}
 

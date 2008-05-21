@@ -14,6 +14,7 @@
 #include <gctp/pointerlist.hpp>
 #include <gctp/buffer.hpp>
 #include <gctp/tcstr.hpp>
+#include <queue>
 
 namespace gctp {
 
@@ -87,11 +88,11 @@ namespace gctp {
 		~FileServer();
 
 	private:
-		class Thread; // 外に出してもいいかな…
 		FileServer();
 		FileServer(FileServer &); // not implement
 		PointerList<Volume> volume_list_;
 		PointerList<AsyncBuffer> req_list_;
+		class Thread; // 外に出してもいいかな…
 		Thread *thread_;
 	};
 
@@ -125,6 +126,10 @@ namespace gctp {
 		}
 	protected:
 		AsyncBuffer() : is_ready_(false)
+		{
+			synchronize(true);
+		}
+		AsyncBuffer(std::size_t size) : Buffer(size), is_ready_(false)
 		{
 			synchronize(true);
 		}

@@ -16,9 +16,6 @@
 
 namespace gctp { namespace scene {
 
-	/// レンダーノード
-	typedef TreeNode< Handle<Renderer> > RenderNode;
-
 	/** レンダーツリークラス
 	 *
 	 * Pointer<Renderer>のTreeである点に注意
@@ -35,12 +32,17 @@ namespace gctp { namespace scene {
 		RenderTree() { draw_slot.bind(this); }
 		/// コンストラクタ
 		explicit RenderTree(Tree< Handle<Renderer> > const & src) : Tree< Handle<Renderer> >(src) { draw_slot.bind(this); }
+		RenderTree(RenderTree &src)
+		{
+			root() = src.root();
+			index = src.index;
+			dummynode_ = 0;
+		}
 		
 		/// ルート製作
 		void setUp(const Handle<Renderer> renderer)
 		{
-			*this = RenderTree(Tree< Handle<Renderer> >(renderer));
-			draw_slot.bind(this);
+			root() = TreeType(renderer).root();
 		}
 
 		/// 結合
@@ -86,10 +88,13 @@ namespace gctp { namespace scene {
 	protected:
 		bool setUp(luapp::Stack &L);
 		int set(luapp::Stack &L);
-		bool set(const luapp::Table &tbl, RenderNode *parent_node, int &i);
+		bool set(const luapp::Table &tbl, NodePtr parent_node, int &i);
 		int get(luapp::Stack &L);
 		void show(luapp::Stack &L);
 		void hide(luapp::Stack &L);
+
+	private:
+		Pointer<Renderer> dummynode_;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(RenderTree)

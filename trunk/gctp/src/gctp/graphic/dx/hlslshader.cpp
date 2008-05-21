@@ -262,6 +262,7 @@ namespace gctp { namespace graphic { namespace dx {
 
 	HRslt HLSLShader::end() const
 	{
+		passnum_ = 0;
 		if(ptr_) return ptr_->End();
 		return E_POINTER;
 	}

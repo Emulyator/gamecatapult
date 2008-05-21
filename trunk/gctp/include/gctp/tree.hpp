@@ -583,7 +583,7 @@ namespace gctp {
 	 * @date 2005/01/27 2:51:14
 	 */
 	template<class T, class Alloc = std::allocator<T> >
-	class Tree : public Pointer< TreeNode<T, Alloc> > {
+	class Tree {
 	public:
 		typedef TreeNode<T, Alloc>						NodeType;
 		typedef Pointer<NodeType>						NodePtr;
@@ -595,7 +595,7 @@ namespace gctp {
 		typedef typename NodeType::ConstTraverseItr		ConstTraverseItr;
 		typedef typename NodeType::Visitor				Visitor;
 		typedef typename NodeType::ConstVisitor			ConstVisitor;
-
+/*
 		/// ツリーノードハンドル
 		struct NodeHandle
 		{
@@ -630,13 +630,13 @@ namespace gctp {
 			}
 			NodePtr node;
 		};
-
+*/
 		/// デフォルトコンストラクタ
 		Tree() {}
 		/// コンストラクタ
-		explicit Tree(const ValueType &val) : NodePtr(NodeType::create(val)) {}
+		explicit Tree(const ValueType &val) : root_(NodeType::create(val)) {}
 		/// コンストラクタ
-		explicit Tree(NodePtr const & rhs): NodePtr(rhs) {}
+		explicit Tree(NodePtr const & rhs): root_(rhs) {}
 
 		/** visitor呼び出し
 		 *
@@ -644,7 +644,7 @@ namespace gctp {
 		 */
 		void visit(Visitor visitor)
 		{
-			if(get()) visitor(*get());
+			if(root()) visitor(*root());
 		}
 		/** visitor呼び出し(const版)
 		 *
@@ -652,7 +652,7 @@ namespace gctp {
 		 */
 		void visit(ConstVisitor visitor) const
 		{
-			if(get()) visitor(*get());
+			if(root()) visitor(*root());
 		}
 
 		/// 子リストの最初を指すイテレータを返す
@@ -665,59 +665,61 @@ namespace gctp {
 		ConstSiblingItr end() const { return ConstSiblingItr(0); }
 
 		/// 深さ優先探索の最初を指すイテレータを返す
-		TraverseItr beginTraverse() { return TraverseItr(get(), get()); }
+		TraverseItr beginTraverse() { return TraverseItr(root().get(), root().get()); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		TraverseItr endTraverse() { return TraverseItr(get(), 0); }
+		TraverseItr endTraverse() { return TraverseItr(root().get(), 0); }
 		/// 深さ優先探索の最初を指すイテレータを返す
-		ConstTraverseItr beginTraverse() const { return ConstTraverseItr(get(), get()); }
+		ConstTraverseItr beginTraverse() const { return ConstTraverseItr(root().get(), root().get()); }
 		/// 深さ優先探索の終端を指すイテレータを返す
-		ConstTraverseItr endTraverse() const { return ConstTraverseItr(get(), 0); }
+		ConstTraverseItr endTraverse() const { return ConstTraverseItr(root().get(), 0); }
 
 		/// posを削除し、直後のItrを返す
 		SiblingItr erase(SiblingItr pos)
 		{
-			return get()->erase(pos);
+			return root()->erase(pos);
 		}
 		/// posを削除し、直後のItrを返す
 		TraverseItr erase(TraverseItr pos)
 		{
-			return get()->erase(pos);
+			return root()->erase(pos);
 		}
 
-		/// ルートをさすイテレータ
-		NodeType *root() { return get(); }
-		/// ルートをさすイテレータ
-		const NodeType *root() const { return get(); }
+		/// ルートをさすポインタ
+		NodePtr &root() { return root_; }
+		/// ルートをさすポインタ
+		NodePtr root() const { return root_; }
 
 		/// ルートがあるか？
-		bool empty() const { return !get(); }
+		bool empty() const { return !root(); }
 
 		/// 子の先頭
-		NodeType &front() { return get()->front(); }
+		NodeType &front() { return root()->front(); }
 		/// 子の最後尾
-		NodeType &back() { return get()->back(); }
+		NodeType &back() { return root()->back(); }
 		/// 子の先頭
-		const NodeType &front() const { return get()->front(); }
+		const NodeType &front() const { return root()->front(); }
 		/// 子の最後尾
-		const NodeType &back() const { return get()->back(); }
+		const NodeType &back() const { return root()->back(); }
 
 		/// 階層を複製
 		Tree dup() const
 		{
-			return Tree(get()->dup());
+			return Tree(root()->dup());
 		}
 		
 		template<class E, class T>
 		void printIndented(std::basic_ostream<E, T> & os, int indent) const
 		{
-			get()->printIndented(os, indent);
+			root()->printIndented(os, indent);
 		}
 		
 		template<class E, class T>
 		void print(std::basic_ostream<E, T> & os) const
 		{
-			get()->printIndented(os, 0);
+			root()->printIndented(os, 0);
 		}
+	private:
+		NodePtr root_;
 	};
 
 	template<class E, class T, typename TV>

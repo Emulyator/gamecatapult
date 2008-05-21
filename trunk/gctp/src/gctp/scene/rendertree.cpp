@@ -21,7 +21,7 @@ namespace gctp { namespace scene {
 	 */
 	void RenderTree::merge(const RenderTree &src)
 	{
-		TreeType::get()->push(src->dup());
+		root()->push(src.dup().root());
 	}
 
 	namespace {
@@ -76,7 +76,7 @@ rendertree = context:create("gctp.RenderTree")
 rendertree:set({
 	-- 名前→レンダラー→子の順
 	
-	-- 無名ノード（もっともrootとしてアクセスできる）
+	-- 無名ノード（もっとも（一個なら）rootとしてアクセスできる）
 	camera,
 	{
 		-- 名前付きノード
@@ -92,9 +92,10 @@ rendertree:set({
 			world
 		}
 	},
-	-- ルートノードは一個。
+	-- ルートに複数あった場合、自動でダミールートが挿入され、その子になる。
+	camera2,
 	{
-		--これは無視される
+		....
 	}
 })
 rendertree:replace("mainnode", { world }) -- 名前をつけとくと後で操作できる
@@ -104,24 +105,35 @@ rendertree:erase("shadowmap") -- 名前をつけとくと後で操作できる
 	int RenderTree::set(luapp::Stack &L)
 	{
 		if(L.top() >= 1 && L[1].isTable()) {
+			NodeType *parent = 0;
 			int i = 1;
-			if(set(L[1].toTable(), 0, i)) return 0;
-			else {
-				L << "description error";
-				return 1;
-			}
+			do {
+				if(i > 1 && !parent) {
+					Pointer<NodeType> p = root();
+					dummynode_ = new Renderer();
+					setUp(dummynode_);
+					root()->push(p);
+					parent = root().get();
+				}
+				if(!set(L[1].toTable(), parent, i)) {
+					L << "description error";
+					return 1;
+				}
+			} while(!L[1].toTable()[i].isNil());
+			return 0;
 		}
-		return 0;
+		L << "invalid param";
+		return 1;
 	}
 
-	bool RenderTree::set(const luapp::Table &tbl, RenderNode *parent_node, int &i)
+	bool RenderTree::set(const luapp::Table &tbl, NodePtr parent_node, int &i)
 	{
 		const char *name = 0;
 		if(tbl[i].isString()) name = tbl[i++].toCStr();
 		Handle<Renderer> renderer = tuki_cast<Renderer>(tbl[i]);
 		if(renderer) {
 			i++;
-			RenderNode *it;
+			NodePtr it;
 			if(parent_node) {
 				it = parent_node->push(renderer);
 			}
@@ -130,7 +142,7 @@ rendertree:erase("shadowmap") -- 名前をつけとくと後で操作できる
 				it = root();
 			}
 			if(it) {
-				if(name && strlen(name)) index[name] = it;
+				if(name && strlen(name)) index[name] = it.get();
 				if(tbl[i].isTable()) {
 					luapp::Table child = tbl[i++];
 					int ii = 1;

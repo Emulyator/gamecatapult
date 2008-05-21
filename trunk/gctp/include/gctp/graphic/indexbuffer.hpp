@@ -33,6 +33,23 @@ namespace gctp { namespace graphic {
 
 		/// 製作
 		HRslt setUp(Type type/**< DYNAMIC VRAMに確保  STATIC 管理リソース*/, Bits bits/**< SHORT 16ビット  LONG 32ビット*/, uint num/**< インデックス長*/);
+		/// dx::IDirect3DIndexBufferからセットアップ
+		HRslt setUp(dx::IDirect3DIndexBufferPtr src)
+		{
+			ptr_ = src;
+			if(ptr_) {
+				D3DINDEXBUFFER_DESC desc;
+				ptr_->GetDesc(&desc);
+				type_ = (desc.Pool==D3DPOOL_DEFAULT) ? DYNAMIC : STATIC;
+				bits_ = desc.Format == D3DFMT_INDEX16 ? SHORT : LONG;
+				num_ = desc.Size / (bits_== SHORT ? 2 : 4);
+			}
+			else {
+				bits_ = SHORT;
+				num_ = 0;
+			}
+			return S_OK;
+		}
 
 		virtual HRslt restore();
 		virtual void cleanUp();
@@ -48,11 +65,14 @@ namespace gctp { namespace graphic {
 		}
 		void unlock() const;
 		
+		/// インデックスストリームに設定
 		HRslt setCurrent() const;
 		uint size() const;
 
 		operator dx::IDirect3DIndexBuffer *() { return ptr_; }
+		operator const dx::IDirect3DIndexBuffer *() const { return ptr_; }
 		dx::IDirect3DIndexBuffer *get() { return ptr_; }
+		const dx::IDirect3DIndexBuffer *get() const { return ptr_; }
 		
 		/// インデックスプリミティブ描画
 		HRslt draw(const VertexBuffer &vb, dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const;

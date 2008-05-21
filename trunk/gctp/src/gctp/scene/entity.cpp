@@ -66,7 +66,7 @@ namespace gctp { namespace scene {
 		world.update_signal.connectOnce(update_slot);
 		if(target_) {
 			world.body_list.push_back(target_);
-			world.strutum_tree.root()->push(*target_);
+			world.strutum_tree.root()->push(target_->root());
 		}
 	}
 
@@ -75,7 +75,7 @@ namespace gctp { namespace scene {
 		world.update_signal.disconnect(update_slot);
 		if(target_) {
 			world.body_list.erase(remove(world.body_list.begin(), world.body_list.end(), target_), world.body_list.end());
-			world.strutum_tree.root()->erase(target_->root());
+			world.strutum_tree.root()->erase(target_->root().get());
 		}
 	}
 
@@ -152,14 +152,14 @@ namespace gctp { namespace scene {
 	void Entity::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			if(target_ && *target_) (*target_)->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[1].toNumber(),(float)L[1].toNumber()));
+			if(target_ && target_->root()) target_->root()->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[1].toNumber(),(float)L[1].toNumber()));
 		}
 	}
 
 	int Entity::getPosition(luapp::Stack &L)
 	{
-		if(target_ && *target_) {
-			Vector v = (*target_)->val.lcm().position();
+		if(target_ && target_->root()) {
+			Vector v = target_->root()->val.lcm().position();
 			L << v.x << v.y << v.z;
 			return 3;
 		}
@@ -169,18 +169,18 @@ namespace gctp { namespace scene {
 	void Entity::setPosture(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			if(target_ && *target_) {
-				Coord c = (*target_)->val.lcm();
+			if(target_ && target_->root()) {
+				Coord c = target_->root()->val.lcm();
 				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-				(*target_)->val.getLCM() = c.toMatrix();
+				target_->root()->val.getLCM() = c.toMatrix();
 			}
 		}
 	}
 
 	int Entity::getPosture(luapp::Stack &L)
 	{
-		if(target_ && *target_) {
-			Coord c = (*target_)->val.lcm();
+		if(target_ && target_->root()) {
+			Coord c = target_->root()->val.lcm();
 			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
 			return 3;
 		}
@@ -189,26 +189,26 @@ namespace gctp { namespace scene {
 
 	void Entity::setScale(luapp::Stack &L)
 	{
-		if(target_ && *target_) {
+		if(target_ && target_->root()) {
 			if(L.top() >= 3) {
-				Coord c = (*target_)->val.lcm();
+				Coord c = target_->root()->val.lcm();
 				c.scale.x = (float)L[1].toNumber();
 				c.scale.y = (float)L[2].toNumber();
 				c.scale.z = (float)L[3].toNumber();
-				(*target_)->val.getLCM() = c.toMatrix();
+				target_->root()->val.getLCM() = c.toMatrix();
 			}
 			else if(L.top() >= 1) {
-				Coord c = (*target_)->val.lcm();
+				Coord c = target_->root()->val.lcm();
 				c.scale.x = c.scale.y = c.scale.z = (float)L[1].toNumber();
-				(*target_)->val.getLCM() = c.toMatrix();
+				target_->root()->val.getLCM() = c.toMatrix();
 			}
 		}
 	}
 
 	int Entity::getScale(luapp::Stack &L)
 	{
-		if(target_ && *target_) {
-			Vector v = (*target_)->val.lcm().getScale();
+		if(target_ && target_->root()) {
+			Vector v = target_->root()->val.lcm().getScale();
 			L << v.x << v.y << v.z;
 			return 3;
 		}

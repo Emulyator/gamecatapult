@@ -31,6 +31,22 @@ namespace gctp { namespace graphic {
 		/// 非ＦＶＦバッファとして製作
 		HRslt setUp(Type type/**< DYNAMIC VRAMに確保  STATIC 管理リソース*/, uint size/**< バイトサイズ*/);
 
+		/// dx::IDirect3DVertexBufferからセットアップ
+		HRslt setUp(dx::IDirect3DVertexBufferPtr src)
+		{
+			ptr_ = src;
+			if(ptr_) {
+				D3DVERTEXBUFFER_DESC desc;
+				ptr_->GetDesc(&desc);
+				type_ = (desc.Pool==D3DPOOL_DEFAULT) ? DYNAMIC : STATIC;
+				fvf_ = desc.FVF;
+				size_ = desc.Size;
+			}
+			else size_ = 0;
+			used_ = 0;
+			return S_OK;
+		}
+
 		virtual HRslt restore();
 		virtual void cleanUp();
 		
@@ -47,6 +63,7 @@ namespace gctp { namespace graphic {
 		
 		dx::FVF fvf() const { return fvf_; }
 
+		/// 頂点ストリームに設定
 		HRslt setCurrent(uint index) const;
 		/// バッファのバイトサイズ
 		uint size() const;
@@ -58,7 +75,9 @@ namespace gctp { namespace graphic {
 		uint freenum() const;
 
 		operator dx::IDirect3DVertexBuffer *() { return ptr_; }
+		operator const dx::IDirect3DVertexBuffer *() const { return ptr_; }
 		dx::IDirect3DVertexBuffer *get() { return ptr_; }
+		const dx::IDirect3DVertexBuffer *get() const { return ptr_; }
 		
 		/** スコープから抜けるとアンロックする
 		 *
