@@ -455,7 +455,7 @@ namespace gctp { namespace graphic {
 		else {
 			ib_.setCurrent();
 			vb_.setCurrent(0);
-			device().impl()->SetFVF( vb_.fvf().val ); // ‚±‚êAvb‚ÌsetCurrent‚ÉŠÜ‚ß‚é‚×‚«‚©
+			device().impl()->SetFVF( vb_.fvf().val ); // ‚±‚êAvb‚ÌsetCurrent‚ÉŠÜ‚ß‚é‚×‚«‚©...
 		}
 		return hr;
 	}
