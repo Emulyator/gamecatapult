@@ -55,6 +55,8 @@ namespace gctp { namespace graphic {
 		virtual void cleanUp();
 		
 		void *lock(uint offset, uint length);
+		const void *lock(uint offset, uint length) const;
+
 		ushort *lock16(uint offset, uint length)
 		{
 			return reinterpret_cast<ushort *>(lock(offset, length));
@@ -87,15 +89,27 @@ namespace gctp { namespace graphic {
 		 */
 		class ScopedLock {
 		public:
-			ScopedLock(IndexBuffer &ib, uint offset, uint length) : ib_(ib), buf(ib.lock(offset, length)) {}
+			explicit ScopedLock(IndexBuffer &ib) : ib_(ib), buf(ib.lock(0, 0)) { base_ = buf; }
+			ScopedLock(IndexBuffer &ib, uint offset, uint length) : ib_(ib), buf(ib.lock(offset, length)) { base_ = buf; }
 			~ScopedLock() { ib_.unlock(); }
 			union {
 				void *buf;
 				ushort *buf16;
 				ulong  *buf32;
 			};
+			template<typename _T>
+			_T &get(int i)
+			{
+				return *reinterpret_cast<_T *>(((uchar *)base_) + sizeof(_T)*i);
+			}
+			template<typename _T>
+			const _T &get(int i) const
+			{
+				return *reinterpret_cast<const _T *>(((const uchar *)base_) + sizeof(_T)*i);
+			}
 		private:
 			IndexBuffer &ib_;
+			void *base_;
 		};
 
 	private:

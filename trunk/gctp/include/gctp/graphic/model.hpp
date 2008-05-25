@@ -34,88 +34,6 @@ namespace gctp { namespace graphic {
 	class Shader;
 	class Brush;
 
-	/** D3DXメッシュ頂点データのロックと自動開放
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 15:38:20
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class MeshVertexLock {
-		ID3DXMeshPtr mesh_;
-		void *base_;
-		void *p_;
-	public:
-		MeshVertexLock(ID3DXMeshPtr mesh)
-		{
-			if(mesh && HRslt(mesh->LockVertexBuffer(0, &p_)) && p_) {
-				base_ = p_;
-				mesh_ = mesh;
-			}
-		}
-		~MeshVertexLock()
-		{
-			if(mesh_) mesh_->UnlockVertexBuffer();
-		}
-		void step()
-		{
-			p_ = ((uchar *)p_) + D3DXGetFVFVertexSize(mesh_->GetFVF());
-		}
-
-		Vector &operator[](ushort i)
-		{
-			return *reinterpret_cast<Vector *>(((uchar *)base_) + D3DXGetFVFVertexSize(mesh_->GetFVF())*i);
-		}
-		const Vector &operator[](ushort i) const
-		{
-			return *reinterpret_cast<const Vector *>(((const uchar *)base_) + D3DXGetFVFVertexSize(mesh_->GetFVF())*i);
-		}
-		void *get() { return p_; }
-		const void *get() const { return p_; }
-		operator Vector *() { return reinterpret_cast<Vector *>(p_); }
-		operator const Vector *() const { return reinterpret_cast<Vector *>(p_); }
-	};
-
-	/** D3DXメッシュインデックスデータのロックと自動開放
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 15:38:20
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class MeshIndexLock {
-		ID3DXMeshPtr mesh_;
-		void *base_;
-		void *p_;
-	public:
-		MeshIndexLock(ID3DXMeshPtr mesh)
-		{
-			if(mesh && HRslt(mesh->LockIndexBuffer(0, &p_)) && p_) {
-				base_ = p_;
-				mesh_ = mesh;
-			}
-		}
-		~MeshIndexLock()
-		{
-			if(mesh_) mesh_->UnlockIndexBuffer();
-		}
-		void step()
-		{
-			p_ = ((uchar *)p_) + sizeof(ushort);
-		}
-
-		ushort &operator[](std::size_t i)
-		{
-			return *reinterpret_cast<ushort *>(((uchar *)base_) + sizeof(ushort)*i);
-		}
-		const ushort &operator[](std::size_t i) const
-		{
-			return *reinterpret_cast<const ushort *>(((const uchar *)base_) + sizeof(ushort)*i);
-		}
-		void *get() { return p_; }
-		const void *get() const { return p_; }
-		operator ushort *() { return reinterpret_cast<ushort *>(p_); }
-		operator const ushort *() const { return reinterpret_cast<ushort *>(p_); }
-	};
-
 	struct SubsetInfo
 	{
 		uint index_offset;
@@ -158,7 +76,7 @@ namespace gctp { namespace graphic {
 		HRslt end() const;
 
 		/// マテリアルリスト
-		std::vector<Material>	mtrls;
+		std::vector<Material> mtrls;
 		/// 面接続情報
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
 		/// メッシュ断片情報
@@ -238,6 +156,11 @@ namespace gctp { namespace graphic {
 
 		/// ブレンド
 		void blend(const Model **models, Real *weights, int num);
+
+		VertexBuffer &vertexbuffer() { return vb_; }
+		const VertexBuffer &vertexbuffer() const { return vb_; }
+		IndexBuffer &indexbuffer() { return ib_; }
+		const IndexBuffer &indexbuffer() const { return ib_; }
 
 	protected:
 		CStr								name_;		// シーンファイル上での名前

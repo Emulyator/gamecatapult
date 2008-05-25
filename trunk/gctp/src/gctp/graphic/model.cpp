@@ -20,7 +20,6 @@
 #include <gctp/graphic/dx/hlslshader.hpp>
 #include <gctp/graphic/dx/skinbrush.hpp>
 #include <gctp/dbgout.hpp>
-//#include <rmxfguid.h>
 
 using namespace std;
 using gctp::graphic::dx::IDirect3DDevicePtr;
@@ -28,6 +27,9 @@ using gctp::graphic::dx::IDirect3DVertexBufferPtr;
 using gctp::graphic::dx::IDirect3DIndexBufferPtr;
 
 namespace gctp { namespace graphic {
+
+	// 本来はdx/skinbrush.cppにあるべきだが…
+	Pointer<SkinningVertexShader> VertexShaderSkinBrush::vs_;
 
 	/** モデル製作
 	 *
@@ -230,11 +232,11 @@ namespace gctp { namespace graphic {
 		if(!src.mesh_) return CO_E_NOTINITIALIZED;
 		uint vnum = (max)(mesh_->GetNumVertices(), src.mesh_->GetNumVertices());
 
-		MeshVertexLock _dst(mesh_);
-		MeshVertexLock _src(src.mesh_);
-		if(_dst && _src) {
+		VertexBuffer::ScopedLock _dst(vb_);
+		VertexBuffer::ScopedLock _src(src.vb_);
+		if(_dst.buf && _src.buf) {
 			for(uint i = 0; i < vnum; i++, _dst.step(), _src.step()) {
-				*_dst = mat * *_src;
+				*(Vector *)_dst.buf = mat * *(Vector *)_src.buf;
 			}
 		}
 		return S_OK;
@@ -248,20 +250,6 @@ namespace gctp { namespace graphic {
 
 	float Model::calcRadius(const Vector &center) const
 	{
-#if 0
-		if(!mesh_) return 0;
-		float d, ret = 0;
-		MeshVertexLock vbl(mesh_);
-		if(vbl) {
-			uint vnum = mesh_->GetNumVertices();
-			for(uint i=0; i < vnum; i++, vbl.step()) {
-				Vector *pv = vbl;
-				//if((pv->x == 0.0) && (pv->y == 0.0) && (pv->z == 0.0)) continue; // なんで？
-				d = distance(*pv, center);
-				if(d > ret) ret = d;
-			}
-		}
-#else
 		if(!vb_) return 0;
 		float d, ret = 0;
 		VertexBuffer::ScopedLock vbl(vb_);
@@ -273,26 +261,11 @@ namespace gctp { namespace graphic {
 				if(d > ret) ret = d;
 			}
 		}
-#endif
 		return ret;
 	}
 
 	AABox Model::getAABB() const
 	{
-#if 0
-		if(wire_) return wire_->getAABB();
-		if(!mesh_) return AABox(VectorC(0, 0, 0));
-		AABox ret;
-		MeshVertexLock vbl(mesh_);
-		if(vbl) {
-			uint vnum = mesh_->GetNumVertices();
-			for(uint i = 0; i < vnum; i++, vbl.step()) {
-				Vector *pv = vbl;
-				if(i == 0) ret.initialize(*pv);
-				else ret.add(*pv);
-			}
-		}
-#else
 		if(!vb_) return AABox(VectorC(0, 0, 0));
 		AABox ret;
 		VertexBuffer::ScopedLock vbl(vb_);
@@ -304,30 +277,11 @@ namespace gctp { namespace graphic {
 				else ret.add(*pv);
 			}
 		}
-#endif
 		return ret;
 	}
 
 	AABox Model::getAABB(const Matrix &mat) const
 	{
-#if 0
-		if(wire_) return wire_->getAABB(mat);
-		if(!mesh_) return AABox(VectorC(0, 0, 0));
-		AABox ret;
-		Vector vec;
-		
-		uint vnum = mesh_->GetNumVertices();
-		MeshVertexLock vbl(mesh_);
-		if(vbl) {
-			for(uint i = 0; i < vnum; i++, vbl.step()) {
-				//Vector *pv = vbl;
-				//mat.transformPoint(vec, *pv);
-				vec = mat * *vbl;
-				if(i == 0) ret.initialize(vec);
-				else ret.add(vec);
-			}
-		}
-#else
 		if(!vb_) return AABox(VectorC(0, 0, 0));
 		AABox ret;
 		VertexBuffer::ScopedLock vbl(vb_);
@@ -342,7 +296,6 @@ namespace gctp { namespace graphic {
 				else ret.add(vec);
 			}
 		}
-#endif
 		return ret;
 	}
 
@@ -379,28 +332,28 @@ namespace gctp { namespace graphic {
 	 */
 	bool Model::hasIntersected(const Model &with, Vector &mytouch, Vector &histouch) const
 	{
-		MeshVertexLock vbl(with.mesh_);
-		MeshIndexLock ibl(with.mesh_);
+		VertexBuffer::ScopedLock vbl(with.vb_);
+		IndexBuffer::ScopedLock ibl(with.ib_);
 		RayLine ray;
 		ulong idx;
 		float u, v, dist, sdist;
 		for(uint i = 0; i < with.mesh_->GetNumFaces(); i++) {
 			for(int j = 0; j < 6; j++) {
 				switch(j) {
-				case 0: ray.s = vbl[ibl[i*3]]; ray.v = vbl[ibl[i*3+1]] - vbl[ibl[i*3]]; break;
-				case 1: ray.s = vbl[ibl[i*3+1]]; ray.v = vbl[ibl[i*3+2]] - vbl[ibl[i*3+1]]; break;
-				case 2: ray.s = vbl[ibl[i*3+2]]; ray.v = vbl[ibl[i*3]] - vbl[ibl[i*3+2]]; break;
-				case 3: ray.s = vbl[ibl[i*3]]; ray.v = vbl[ibl[i*3+2]] - vbl[ibl[i*3]]; break;
-				case 4: ray.s = vbl[ibl[i*3+1]]; ray.v = vbl[ibl[i*3]] - vbl[ibl[i*3+1]]; break;
-				case 5: ray.s = vbl[ibl[i*3+2]]; ray.v = vbl[ibl[i*3+1]] - vbl[ibl[i*3+2]]; break;
+				case 0: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3  )); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+1)) - vbl.get<Vector>(ibl.get<ushort>(i*3  )); break;
+				case 1: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3+1)); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+2)) - vbl.get<Vector>(ibl.get<ushort>(i*3+1)); break;
+				case 2: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3+2)); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3  )) - vbl.get<Vector>(ibl.get<ushort>(i*3+2)); break;
+				case 3: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3  )); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+2)) - vbl.get<Vector>(ibl.get<ushort>(i*3  )); break;
+				case 4: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3+1)); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3  )) - vbl.get<Vector>(ibl.get<ushort>(i*3+1)); break;
+				case 5: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3+2)); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+1)) - vbl.get<Vector>(ibl.get<ushort>(i*3+2)); break;
 				}
 				sdist = ray.v.length();
 				ray.v.normalize();
 				if(hasIntersected(ray, idx, u, v, dist)) {
 					if(dist < sdist) {
-						MeshVertexLock myvbl(mesh_);
-						MeshIndexLock myibl(mesh_);
-						mytouch = myvbl[myibl[(size_t)idx*3]];
+						VertexBuffer::ScopedLock myvbl(vb_);
+						IndexBuffer::ScopedLock myibl(ib_);
+						mytouch = myvbl.get<Vector>(myibl.get<ushort>(idx*3));
 						histouch = ray.s + ray.v*dist;
 						return true;
 					}
@@ -854,8 +807,8 @@ namespace gctp { namespace graphic {
 	 */
 	void Model::blend(const Model **models, Real *weights, int num)
 	{
-		MeshVertexLock _dst(mesh_);
-		if(_dst) {
+		VertexBuffer::ScopedLock _dst(vb_);
+		if(_dst.buf) {
 			dx::D3DVERTEXELEMENT decl[MAX_FVF_DECL_SIZE];
 			D3DXDeclaratorFromFVF(mesh_->GetFVF(), decl);
 			int highest = 0; Real highest_weight = Real(0);
@@ -887,11 +840,11 @@ namespace gctp { namespace graphic {
 						mtrls[j].tex2 = models[highest]->mtrls[j].tex2;
 					}
 				}
-				MeshVertexLock _src(models[i]->mesh_);
-				if(_src) {
+				VertexBuffer::ScopedLock _src(models[i]->vb_);
+				if(_src.buf) {
 					uint vnum = (std::max)(mesh_->GetNumVertices(), models[i]->mesh_->GetNumVertices());
 					for(uint j = 0; j < vnum; j++, _dst.step(), _src.step()) {
-						setBlend(_dst.get(), _src.get(), weights[i], decl, i == 0);
+						setBlend(_dst.buf, _src.buf, weights[i], decl, i == 0);
 					}
 				}
 			}

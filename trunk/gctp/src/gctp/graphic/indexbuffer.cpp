@@ -66,6 +66,16 @@ namespace gctp { namespace graphic {
 		return ret;
 	}
 
+	const void *IndexBuffer::lock(uint offset, uint length) const
+	{
+		if(!ptr_) return NULL;
+		HRslt hr;
+		void *ret;
+		hr = ptr_->Lock(offset, length, &ret, D3DLOCK_READONLY);
+		if(!hr) return NULL;
+		return ret;
+	}
+
 	void IndexBuffer::unlock() const
 	{
 		ptr_->Unlock();
