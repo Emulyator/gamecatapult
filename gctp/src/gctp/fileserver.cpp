@@ -8,12 +8,14 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 #include "common.h"
+#include <gctp/app.hpp>
 #include <gctp/fileserver.hpp>
 #include <gctp/archive.hpp>
 #include <gctp/zipfile.hpp>
 #include <gctp/turi.hpp>
 #include <process.h> //  for _beginthread, _endthread
 #include <sstream>
+#include <queue>
 
 using namespace std;
 
@@ -355,8 +357,15 @@ namespace gctp {
 			Handle<Volume> volume;
 			AsyncBufferPtr buffer;
 		};
+		struct Read {
+			TCStr name;
+			AsyncBufferHndl buffer;
+		};
 		std::queue<Request> requests_;
+		std::queue<Read> read_;
+
 		Mutex monitor_;
+		Mutex read_list_monitor_;
 		Thread(FileServer *fs) : thread_(0), id_(0)
 		{
 			fs->synchronize(true);
@@ -374,7 +383,7 @@ namespace gctp {
 			FileServer *fs = (FileServer *)arg;
 			MSG msg;
 			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
-				fs->service();
+				fs->serviceRequest();
 			}
 			return 0;
 		}
@@ -382,8 +391,9 @@ namespace gctp {
 		DWORD  id_;
 	};
 
-	FileServer::FileServer() : thread_(0)
+	FileServer::FileServer() : thread_(0), update_slot(Slot::MAX_PRIORITY)
 	{
+		update_slot.bind(this);
 		//mount(_T("."), NATIVE);
 	}
 
@@ -492,7 +502,7 @@ namespace gctp {
 	
 	AsyncBufferPtr FileServer::getFileAsync(const _TCHAR *name)
 	{
-		if(!thread_) thread_ = new Thread(this);
+		startAsync();
 		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
 			if(*i) {
 				int s = (*i)->find(name);
@@ -513,7 +523,7 @@ namespace gctp {
 		GCTP_TRACE(_T("要求されたファイル'")<<name<<_T("'はマウントされているボリュームの中に見つかりませんでした。"));
 		return AsyncBufferPtr();
 	}
-
+	
 	AbstractFilePtr FileServer::getFileInterface(const _TCHAR *name)
 	{
 		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
@@ -528,7 +538,20 @@ namespace gctp {
 		return AbstractFilePtr();
 	}
 
-	void FileServer::service()
+	bool FileServer::service(float delta)
+	{
+		if(thread_) {
+			ScopedLock sl(thread_->read_list_monitor_);
+			while(!thread_->read_.empty()) {
+				AsyncBufferPtr buffer = thread_->read_.front().buffer.lock();
+				if(buffer) buffer->ready_signal(thread_->read_.front().name.c_str(), buffer);
+				thread_->read_.pop();
+			}
+		}
+		return true;
+	}
+
+	void FileServer::serviceRequest()
 	{
 		Thread::Request req;
 		{
@@ -543,6 +566,13 @@ namespace gctp {
 			if(volume) {
 				if(volume->read(req.name.c_str(), *req.buffer) >= 0) {
 					req.buffer->is_ready_ = true;
+					{
+						ScopedLock sl(thread_->read_list_monitor_);
+						Thread::Read read;
+						read.name = req.name;
+						read.buffer = req.buffer;
+						thread_->read_.push(read);
+					}
 				}
 			}
 		}
@@ -551,8 +581,23 @@ namespace gctp {
 		}
 	}
 	
+	void FileServer::startAsync()
+	{
+		if(!thread_) thread_ = new Thread(this);
+		app().update_signal.connectOnce(update_slot);
+	}
+	
 	bool FileServer::busy()
 	{
+		return false;
+	}
+
+	bool FileServer::done()
+	{
+		if(thread_) {
+			ScopedLock sl(thread_->monitor_);
+			return thread_->requests_.empty() && thread_->read_.empty();
+		}
 		return true;
 	}
 

@@ -58,6 +58,8 @@ namespace gctp { namespace scene {
 		/// XFile‚Ì“Ç‚Ý‚±‚Ý
 		bool setUpFromX(BufferPtr buffer);
 		
+		PtrList asyncsolvers;
+		
 	GCTP_DECLARE_CLASS;
 	};
 

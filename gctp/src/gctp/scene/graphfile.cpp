@@ -106,9 +106,56 @@ namespace gctp { namespace scene {
 		GCTP_REGISTER_REALIZER2(x, GraphFile, &GraphFile::setUpFromX);
 		//Extention extention_x("x", Realizer<XFile>);
 
+		class AsyncTextureSolver : public Object {
+		public:
+			AsyncTextureSolver(GraphFile &self, graphic::Model &model, ulong mtrl_no) : self_(&self), model_(&model), mtrl_no_(mtrl_no)
+			{
+				on_ready_slot.bind(this);
+			}
+			bool onReady(const _TCHAR *name, BufferPtr buffer)
+			{
+				if(model_) model_->mtrls[mtrl_no_].tex = context()[name];
+				if(self_) self_->asyncsolvers.remove(this);
+				return false;
+			}
+			MemberSlot2<AsyncTextureSolver, const _TCHAR *, BufferPtr, &AsyncTextureSolver::onReady> on_ready_slot;
+			Handle<GraphFile> self_;
+			Handle<graphic::Model> model_;
+			ulong mtrl_no_;
+		};
+
+		class AsyncEffectSolver : public Object {
+		public:
+			AsyncEffectSolver(GraphFile &self, graphic::Model &model, ID3DXBufferPtr eff) : self_(&self), model_(&model), eff_(eff)
+			{
+				on_ready_slot.bind(this);
+			}
+			bool onReady(const _TCHAR *name, BufferPtr buffer)
+			{
+				if(model_) {
+					Handle<graphic::dx::HLSLShader> shader = context()[name];
+					if(shader) {
+						model_->setShader(shader);
+						if(eff_) {
+							D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff_->GetBufferPointer());
+							for(DWORD i = 0; i < effect->NumDefaults; i++) {
+								(*shader)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
+							}
+						}
+					}
+				}
+				if(self_) self_->asyncsolvers.remove(this);
+				return false;
+			}
+			MemberSlot2<AsyncEffectSolver, const _TCHAR *, BufferPtr, &AsyncEffectSolver::onReady> on_ready_slot;
+			Handle<GraphFile> self_;
+			Handle<graphic::Model> model_;
+			ID3DXBufferPtr eff_;
+		};
+
 		/** モデルのマテリアルをセットアップ
 		 */
-		void setUpModelMaterial(graphic::Model &model, ID3DXBufferPtr mtrls, ulong mtrl_num, ID3DXBufferPtr eff)
+		void setUpModelMaterial(GraphFile &self, graphic::Model &model, ID3DXBufferPtr mtrls, ulong mtrl_num, ID3DXBufferPtr eff)
 		{
 			// マテリアル設定
 			if(mtrls) {
@@ -124,25 +171,62 @@ namespace gctp { namespace scene {
 					if(_mtrls[i].pTextureFilename) {
 #ifdef UNICODE
 						WCStr fname = _mtrls[i].pTextureFilename;
-						context().load(fname.c_str());
 						model.mtrls[i].tex = context()[fname.c_str()];
+						if(!model.mtrls[i].tex) {
+							if(context().loadingAsync()) {
+								Pointer<AsyncTextureSolver> p = new AsyncTextureSolver(self, model, i);
+								self.asyncsolvers.push_back(p);
+								context().loadAsync(fname.c_str(), p->on_ready_slot);
+							}
+							else {
+								model.mtrls[i].tex = context().load(fname.c_str());
+							}
+						}
 #else
-						context().load(_mtrls[i].pTextureFilename);
 						model.mtrls[i].tex = context()[_mtrls[i].pTextureFilename];
+						if(!model.mtrls[i].tex) {
+							if(context().loadingAsync()) {
+								Pointer<AsyncTextureSolver> p = new AsyncTextureSolver(self, model, i);
+								self.asyncsolvers.push_back(p);
+								context().loadAsync(_mtrls[i].pTextureFilename, p->on_ready_slot);
+							}
+							else {
+								model.mtrls[i].tex = context().load(_mtrls[i].pTextureFilename);
+							}
+						}
 #endif
 					}
 				}
 				if(eff) {
 					D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff->GetBufferPointer());
 					if(effect->pEffectFilename) {
-						PRNN("Effect "<<effect->pEffectFilename);
 #ifdef UNICODE
 						WCStr fname = effect->pEffectFilename;
-						context().load(fname.c_str());
+						PRNN("Effect "<<fname.c_str());
 						Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
+						if(!shader) {
+							if(context().loadingAsync()) {
+								Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
+								self.asyncsolvers.push_back(p);
+								context().loadAsync(fname.c_str(), p->on_ready_slot);
+							}
+							else {
+								shader = context().load(fname.c_str());
+							}
+						}
 #else
-						context().load(effect->pEffectFilename);
+						PRNN("Effect "<<effect->pEffectFilename);
 						Handle<graphic::dx::HLSLShader> shader = context()[effect->pEffectFilename];
+						if(!shader) {
+							if(context().loadingAsync()) {
+								Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
+								self.asyncsolvers.push_back(p);
+								context().loadAsync(effect->pEffectFilename, p->on_ready_slot);
+							}
+							else {
+								shader = context().load(effect->pEffectFilename);
+							}
+						}
 #endif
 						if(shader) {
 							model.setShader(shader);
@@ -184,7 +268,7 @@ namespace gctp { namespace scene {
 		 *
 		 * すでにセットアップされていたら、レストア
 		 */
-		HRslt setUpModel(graphic::Model &model, const XData &data)
+		HRslt setUpModel(GraphFile &self, graphic::Model &model, const XData &data)
 		{
 			ID3DXMeshPtr mesh;
 			ID3DXSkinInfoPtr skin;
@@ -193,7 +277,7 @@ namespace gctp { namespace scene {
 			// 指定したチャンクからスキン（かも知れない）モデルをロードする。
 			HRslt hr = D3DXLoadSkinMeshFromXof(data, D3DXMESH_SYSTEMMEM, graphic::device().impl(), &adjc, &mtrls, &effect, &mtrl_num, &skin, &mesh);
 			if(!hr) return hr;
-			setUpModelMaterial(model, mtrls, mtrl_num, effect);
+			setUpModelMaterial(self, model, mtrls, mtrl_num, effect);
 			model.setUp(data.name(), mesh, skin, adjc);
 
 			{
@@ -219,7 +303,7 @@ namespace gctp { namespace scene {
 		/** ワイヤモデル製作
 		 *
 		 */
-		HRslt setUpWireModel(graphic::Model &model, const XData &data)
+		HRslt setUpWireModel(GraphFile &self, graphic::Model &model, const XData &data)
 		{
 			ID3DXBufferPtr mtrls;
 			ulong mtrl_num = 0;
@@ -261,7 +345,7 @@ namespace gctp { namespace scene {
 					}
 				}
 			}
-			setUpModelMaterial(model, mtrls, mtrl_num, ID3DXBufferPtr());
+			setUpModelMaterial(self, model, mtrls, mtrl_num, ID3DXBufferPtr());
 			return model.setUpWire(data.name(), data.data(), mtrllist, mtrls, mtrl_num);
 		}
 
@@ -417,7 +501,7 @@ namespace gctp { namespace scene {
 				//PRNN("TID_D3DRMMesh found");
 				Pointer<graphic::Model> w = new graphic::Model;
 				if(w) {
-					HRslt hr = setUpModel(*w, cur);
+					HRslt hr = setUpModel(self, *w, cur);
 					if(hr) {
 						self.push_back(w);
 						if(body) {
@@ -436,7 +520,7 @@ namespace gctp { namespace scene {
 				//PRNN("xext::TID_Wire found");
 				Pointer<graphic::Model> w = new graphic::Model;
 				if(w) {
-					HRslt hr = setUpWireModel(*w, cur);
+					HRslt hr = setUpWireModel(self, *w, cur);
 					if(hr) {
 						self.push_back(w);
 						if(body) {
