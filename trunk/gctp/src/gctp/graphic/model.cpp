@@ -452,6 +452,11 @@ namespace gctp { namespace graphic {
 			}
 			if(!hr) return hr;
 		}
+		else {
+			ib_.setCurrent();
+			vb_.setCurrent(0);
+			device().impl()->SetFVF( vb_.fvf().val ); // ‚±‚êAvb‚ÌsetCurrent‚ÉŠÜ‚ß‚é‚×‚«‚©
+		}
 		return hr;
 	}
 
@@ -468,12 +473,10 @@ namespace gctp { namespace graphic {
 	HRslt Model::draw(const Matrix &mat, int mtrlno) const
 	{
 		HRslt hr;
-		if(mesh_) {
+		if(vb_ && ib_) {
 			uint subsetno;
 			for(subsetno = 0; subsetno < subsets_.size(); subsetno++) if(subsets_[subsetno].material_no == mtrlno) break;
 			if(subsetno == subsets_.size()) return S_FALSE;
-			IDirect3DDevicePtr dev;
-			mesh_->GetDevice(&dev);
 			device().setMaterial(mtrls[mtrlno]);
 			Handle<dx::HLSLShader> shader = mtrls[mtrlno].shader;
 			if(shader && *shader) {
@@ -496,8 +499,8 @@ namespace gctp { namespace graphic {
 				}
 			}
 			else {
-				dev->SetVertexShader(NULL);
-				dev->SetTransform(D3DTS_WORLD, mat);
+				device().impl()->SetVertexShader(NULL);
+				device().impl()->SetTransform(D3DTS_WORLD, mat);
 			}
 			if(shader) {
 				hr = (*shader)->CommitChanges();
@@ -505,13 +508,17 @@ namespace gctp { namespace graphic {
 				for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
 					hr = shader->beginPass( ipass );
 					if(!hr) GCTP_TRACE(hr);
-					hr = dev->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
-					if(!hr) GCTP_TRACE(hr);
-					hr = shader->endPass();
-					if(!hr) GCTP_TRACE(hr);
+					else {
+						hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
+						if(!hr) GCTP_TRACE(hr);
+						hr = shader->endPass();
+						if(!hr) GCTP_TRACE(hr);
+					}
 				}
 			}
-			else hr = dev->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
+			else {
+				hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
+			}
 
 			if(!hr) return hr;
 		}
@@ -521,28 +528,20 @@ namespace gctp { namespace graphic {
 	HRslt Model::end() const
 	{
 		HRslt hr;
-		if(mesh_) {
-			IDirect3DDevicePtr dev;
-			mesh_->GetDevice(&dev);
-			hr = dev->SetIndices(0);
+		hr = device().impl()->SetIndices(0);
+		if(!hr) {
+			GCTP_TRACE(hr);
+		}
+		hr = device().impl()->SetStreamSource(0, 0, 0, 0);//< ‚±‚êModel.beginSubset‚É
+		if(!hr) {
+			GCTP_TRACE(hr);
+		}
+		Handle<dx::HLSLShader> shader = mtrls[current_template_mtrlno_].shader;
+		if(shader) {
+			hr = shader->end();
 			if(!hr) {
 				GCTP_TRACE(hr);
-				return hr;
 			}
-			hr = dev->SetStreamSource(0, 0, 0, 0);//< ‚±‚êModel.beginSubset‚É
-			if(!hr) {
-				GCTP_TRACE(hr);
-				return hr;
-			}
-			Handle<dx::HLSLShader> shader = mtrls[current_template_mtrlno_].shader;
-			if(shader) {
-				hr = shader->end();
-				if(!hr) {
-					GCTP_TRACE(hr);
-					return hr;
-				}
-			}
-			if(!hr) return hr;
 		}
 		return hr;
 	}
