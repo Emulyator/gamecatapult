@@ -431,6 +431,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\graphic\brush.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\common.h"
 				>
 			</File>
@@ -511,6 +515,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\include\gctp\graphic\dx\hlslshader.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\graphic\dx\skinbrush.hpp"
 					>
 				</File>
 				<File

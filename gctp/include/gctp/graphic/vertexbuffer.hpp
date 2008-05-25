@@ -87,16 +87,27 @@ namespace gctp { namespace graphic {
 		 */
 		class ScopedLock {
 		public:
-			explicit ScopedLock(VertexBuffer &vb) : vb_(vb), buf(vb.lock()) {}
-			ScopedLock(VertexBuffer &vb, uint offset, uint length) : vb_(vb), buf(vb.lock(offset, length)) {}
+			explicit ScopedLock(VertexBuffer &vb) : vb_(vb), buf(vb.lock()) { base_ = buf; }
+			ScopedLock(VertexBuffer &vb, uint offset, uint length) : vb_(vb), buf(vb.lock(offset, length)) { base_ = buf; }
 			~ScopedLock() { vb_.unlock(); }
 			void step()
 			{
 				buf = ((uchar *)buf) + D3DXGetFVFVertexSize(vb_.fvf().val);
 			}
 			void *buf;
+			template<typename _T>
+			_T &get(int i)
+			{
+				return *reinterpret_cast<_T *>(((uchar *)base_) + D3DXGetFVFVertexSize(vb_.fvf().val)*i);
+			}
+			template<typename _T>
+			const _T &get(int i) const
+			{
+				return *reinterpret_cast<const _T *>(((const uchar *)base_) + D3DXGetFVFVertexSize(vb_.fvf().val)*i);
+			}
 		private:
 			VertexBuffer &vb_;
+			void *base_;
 		};
 
 	private:
