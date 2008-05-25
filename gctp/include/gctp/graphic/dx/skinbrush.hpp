@@ -1010,9 +1010,9 @@ namespace gctp { namespace graphic {
 		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
 		{
 			D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-			for(ulong i = 0; i < attr_num_; i++) {
-				if(bonecb[i].AttribId != static_cast<uint>(mtrlno)) return S_FALSE;
-			}
+			//for(ulong i = 0; i < attr_num_; i++) {
+			//	if(bonecb[i].AttribId != static_cast<uint>(mtrlno)) return S_FALSE;
+			//}
 			HRslt hr;
 			Handle<dx::HLSLShader> shader = target_.mtrls[mtrlno].shader;
 			if(mesh_ && shader) {
@@ -1080,7 +1080,7 @@ namespace gctp { namespace graphic {
 						hr = (*shader)->SetInt( "CurNumBones", max_face_infl_-1);
 						if(!hr) GCTP_TRACE(hr);
 
-						Pointer<Texture> tex = target_.mtrls[bonecb[i].AttribId].tex.get();
+						Pointer<Texture> tex = target_.mtrls[bonecb[i].AttribId].tex.lock();
 						if(tex) dev->SetTexture(0, *tex);
 						else dev->SetTexture(0, NULL);
 
