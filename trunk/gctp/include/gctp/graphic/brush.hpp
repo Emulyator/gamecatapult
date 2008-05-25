@@ -4,7 +4,7 @@
 #pragma once
 #endif // GCTP_ONCE
 /** @file
- * GameCatapult シェーダークラスヘッダファイル
+ * GameCatapult 描画処理クラスヘッダファイル
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/01/28 12:43:53
@@ -23,8 +23,9 @@ namespace gctp { namespace graphic {
 		virtual ~Brush() {}
 		virtual HRslt draw(const Skeleton &skl) const = 0;
 		virtual HRslt draw(const Skeleton &skl, int mtrlno) const = 0;
-		//virtual HRslt begin(int mtrlno) const = 0;
-		//virtual HRslt drawFragment(const Skeleton &skel) const = 0;
+		//virtual HRslt begin(int template_mtrlno) const = 0;
+		//virtual HRslt draw(const Skeleton &skel, int mtrlno) const = 0;
+		//virtual HRslt draw(const Matrix &mat, int mtrlno) const = 0;
 		//virtual HRslt end() const = 0;
 		Model &target_;
 	};

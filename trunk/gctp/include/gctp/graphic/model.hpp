@@ -36,6 +36,7 @@ namespace gctp { namespace graphic {
 
 	struct SubsetInfo
 	{
+		uint material_no;
 		uint index_offset;
 		uint primitive_num;
 		uint vertex_offset;
@@ -66,12 +67,16 @@ namespace gctp { namespace graphic {
 		/// 描画
 		HRslt draw(const Skeleton &skel) const;
 
-		/// マテリアルを指定して描画、の準備
-		HRslt begin() const;
+		/** マテリアルを指定して描画、の準備
+		 *
+		 * @param template_mtrlno セットアップするBrush/Shaderを代表するマテリアル番号。
+		 * 同じBrush/Shaderの組をさすのであれば、どのマテリアルでもかまわない
+		 */
+		HRslt begin(int template_mtrlno, int passno) const;
 		/// マテリアルを指定して描画
-		HRslt drawSubset(const Matrix &mat, int mtrlno) const;
+		HRslt draw(const Matrix &mat, int mtrlno) const;
 		/// マテリアルを指定して描画
-		HRslt drawSubset(const Skeleton &skl, int mtrlno) const;
+		HRslt draw(const Skeleton &skl, int mtrlno) const;
 		/// マテリアルを指定して描画終了
 		HRslt end() const;
 
@@ -133,10 +138,6 @@ namespace gctp { namespace graphic {
 		ID3DXMeshPtr mesh() const { return mesh_; }
 		/// D3DXスキン情報を返す
 		ID3DXSkinInfoPtr skin() const { return skin_; }
-		/// 使用するgctp::Shaderを返す
-		Handle<Shader> shader() const { return shader_; }
-		/// 使用するgctp::Shaderを設定する
-		void setShader(Handle<Shader> shader);
 
 		/// ボーン名
 		const char *bonename(uint i) { if(skin_) return skin_->GetBoneName(i); else return NULL; }
@@ -178,8 +179,9 @@ namespace gctp { namespace graphic {
 		float calcRadius(const Vector &center) const;
 
 	private:
+		mutable int current_template_mtrlno_;
+		//std::vector< Pointer<Brush> > brushes_;
 		Pointer<Brush> brush_;
-		mutable Handle<Shader> shader_;
 		Sphere bs_;
 		int offset_;
 	};

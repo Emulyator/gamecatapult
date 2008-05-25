@@ -56,6 +56,7 @@ namespace gctp { namespace graphic {
 		
 		void *lock(uint offset, uint length);
 		const void *lock(uint offset, uint length) const;
+		void unlock() const;
 
 		ushort *lock16(uint offset, uint length)
 		{
@@ -65,11 +66,12 @@ namespace gctp { namespace graphic {
 		{
 			return reinterpret_cast<ulong *>(lock(offset, length));
 		}
-		void unlock() const;
 		
 		/// インデックスストリームに設定
 		HRslt setCurrent() const;
 		uint size() const;
+
+		uint primitiveNum() { return num_; }
 
 		operator dx::IDirect3DIndexBuffer *() { return ptr_; }
 		operator const dx::IDirect3DIndexBuffer *() const { return ptr_; }

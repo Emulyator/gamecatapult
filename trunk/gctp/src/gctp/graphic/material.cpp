@@ -11,6 +11,7 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/texture.hpp>
+#include <gctp/graphic/shader.hpp>
 #include <gctp/graphic/material.hpp>
 
 using namespace std;
