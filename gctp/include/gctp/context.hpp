@@ -21,9 +21,13 @@
 
 namespace gctp {
 	class Serializer;
+	class Buffer;
+	class AsyncBuffer;
 }
 
 namespace gctp { namespace core {
+
+	class AsyncSolver;
 
 	/** リソースコンテキストクラス
 	 *
@@ -117,6 +121,8 @@ namespace gctp { namespace core {
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
 		bool loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback);
+
+		bool loadAsync(const _TCHAR *name, Pointer<AsyncSolver> solver); // 上のはオミット。晴れてAsyncBufferのon_ready_signalはMonoSignalに
 
 		/** オブジェクト登録
 		 *
@@ -275,6 +281,15 @@ namespace gctp { namespace core {
 		static int _ipair_gc(lua_State *l);
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(Context)
+	};
+
+	/// 非同期ソルバ基底クラス
+	class AsyncSolver : public Object {
+	public:
+		AsyncSolver(Context &owner, Pointer<AsyncBuffer> async_buffer);
+		Pointer<AsyncBuffer> async_buffer;
+		Context &owner;
+		virtual void onReady(const _TCHAR *name, Pointer<Buffer> buffer) = 0;
 	};
 
 }} // namespace gctp.core

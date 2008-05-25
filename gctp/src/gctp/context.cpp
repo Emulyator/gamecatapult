@@ -202,7 +202,16 @@ namespace gctp { namespace core {
 		if(name) {
 			Hndl ret = db_[name];
 			if(ret) {
-				Pointer<AsyncBuffer> async = ret.get();
+				AsyncBufferPtr async = ret.get();
+				// これだと問題。
+				// 同一フレームで同じリソースを要求した場合、共有されない。
+				// loadAsync時点で空の実体を作る必要あり
+				// load対象のリソースは、全部「空の状態」を定義できる必要あり（これはすでにＯＫ。Realizerはいったん空オブジェクトを作る）
+				// AsyncBufferリストを別個に持つ必要あり？
+				// それともload可能リソースはすべてAsyncBufferPtrをメンバに持つ？
+				// それは無理っぽい。（ロード可能＝Objectで、特別な派生クラスではない）
+				// 何とかしてContextが保持し続ける必要あり
+				// 現在GraphFileが持っているasyncsolversをConextが持つべき
 				if(async) {
 					if(async->isReady()) {
 						onReady(name, async);
@@ -439,4 +448,6 @@ namespace gctp { namespace core {
 		TUKI_METHOD(Context, current)
 	TUKI_IMPLEMENT_END(Context)
 
-}} // namespace gctp
+	AsyncSolver::AsyncSolver(Context &owner, Pointer<AsyncBuffer> async_buffer) : owner(owner), async_buffer(async_buffer) {}
+
+}} // namespace gctp::core

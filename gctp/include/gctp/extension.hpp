@@ -18,11 +18,23 @@ namespace gctp {
 
 	/** リソース名からリソースを構築する関数ポインタ
 	 *
+	 * 非同期用に、bufferがNULLだったら
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/08 11:17:49
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	typedef Ptr (*RealizeMethod)(BufferPtr buffer);
+
+	/** リソース名からリソースを構築する関数ポインタ
+	 *
+	 * 非同期用に、bufferがNULLだったら空のオブジェクト（デフォルトコンストラクタが呼ばれただけ）を、
+	 * selfにNULL以外が渡されたらそれに対してSetUpを呼び出すようになっていなければいけない。
+	 * 同期読みの場合はself==NULL,buffer!=NULLで呼び出される。
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/02/08 11:17:49
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	//typedef Ptr (*RealizeMethod)(Ptr self, BufferPtr buffer);
 
 	/** リソースリアライザ登録クラス
 	 *
@@ -53,6 +65,19 @@ namespace gctp {
 		}
 		return Ptr();
 	}
+
+/*	template<class T, bool (T::*SetUpMethod)(BufferPtr)>
+	Ptr realize(Ptr self, BufferPtr buffer)
+	{
+		if(!self) self = new T;
+		if(self && buffer) {
+			if((self.get()->*SetUpMethod)(buffer)) {
+				return self;
+			}
+			return Ptr();
+		}
+		return self;
+	}*/
 
 } // namespace gctp
 

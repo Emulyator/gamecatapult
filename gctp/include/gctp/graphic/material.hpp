@@ -16,6 +16,8 @@
 namespace gctp { namespace graphic {
 
 	class Texture;
+	class Shader;
+
 	/** マテリアル情報
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -37,11 +39,13 @@ namespace gctp { namespace graphic {
 		Color emissive;
 		float power;
 		BlendMode blend;
+
 		Handle<Texture> tex;
 		Handle<Texture> tex1;
 		Handle<Texture> tex2;
-//		Handle<Blush> blush;
 
+		Handle<Shader> shader;
+		
 		/// 標準的な初期値を与える
 		void setUp();
 
@@ -73,30 +77,6 @@ namespace gctp { namespace graphic {
 		}
 	};
 
-#if 0
-	class SortPacket
-	{
-	public:
-		StateBlock	sb_;
-		bool		is_transparent_;	// 半透明あり？
-		float		z_order_;			// Z値（半透明体の時、有効）
-		bool operator==(const SortPacket &rhs) {
-			if( sb_.get() == rhs.sb_.get()
-				&& is_transparent_ == rhs.is_transparent_
-				&& z_order_ == rhs.z_order_) return true;
-			else return false;
-		}
-		bool operator<(const SortPacket &rhs) {
-			if(is_transparent_ != rhs.is_transparent_){
-				return is_transparent_;
-			}
-			else {
-				if(is_transparent_) return z_order_ < rhs.z_order_;
-				else return sb_.get() < rhs.sb_.get();
-			}
-		}
-	};
-#endif
 }} //namespace gctp
 
 #endif //_GCTP_MATERIAL_HPP_

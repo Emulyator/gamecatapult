@@ -51,7 +51,8 @@ namespace gctp { namespace graphic {
 			attrinfo.resize(size);
 			mesh_->GetAttributeTable(&attrinfo[0], &size);
 			for(DWORD i = 0; i < size; i++) {
-				subsets_[i].index_offset = attrinfo[i].FaceStart;
+				subsets_[i].material_no = attrinfo[i].AttribId;
+				subsets_[i].index_offset = attrinfo[i].FaceStart*3;
 				subsets_[i].primitive_num = attrinfo[i].FaceCount;
 				subsets_[i].vertex_offset = attrinfo[i].VertexStart;
 				subsets_[i].vertex_num = attrinfo[i].VertexCount;
@@ -115,8 +116,6 @@ namespace gctp { namespace graphic {
 
 	/** ワイヤモデル製作
 	 *
-	 * あくまで表示物はModel、という設計を守るための暫定処置…
-	 * もっとスマートな手段を考えましょう
 	 */
 	HRslt Model::setUpWire(CStr name, const void *data, const void *mlist, ID3DXBufferPtr mtrls, ulong mtrl_num)
 	{
@@ -192,14 +191,6 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
-	/** ブラシ設定
-	 *
-	 */
-	void Model::setShader(Handle<Shader> shader)
-	{
-		shader_ = shader;
-	}
-
 	/** モデルを複写
 	 *
 	 */
@@ -220,6 +211,7 @@ namespace gctp { namespace graphic {
 			for(size_t i = 0; i < src.mtrls.size(); i++) mtrls[i] = src.mtrls[i];
 
 			name_ = src.name_;
+			//brushes_.resize(0);
 			brush_ = 0;
 			return ret;
 		}
@@ -230,7 +222,7 @@ namespace gctp { namespace graphic {
 	{
 		if(!mesh_) return CO_E_NOTINITIALIZED;
 		if(!src.mesh_) return CO_E_NOTINITIALIZED;
-		uint vnum = (max)(mesh_->GetNumVertices(), src.mesh_->GetNumVertices());
+		uint vnum = (max)(vb_.numVerticies(), src.vb_.numVerticies());
 
 		VertexBuffer::ScopedLock _dst(vb_);
 		VertexBuffer::ScopedLock _src(src.vb_);
@@ -337,7 +329,7 @@ namespace gctp { namespace graphic {
 		RayLine ray;
 		ulong idx;
 		float u, v, dist, sdist;
-		for(uint i = 0; i < with.mesh_->GetNumFaces(); i++) {
+		for(uint i = 0; i < with.ib_.primitiveNum(); i++) {
 			for(int j = 0; j < 6; j++) {
 				switch(j) {
 				case 0: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3  )); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+1)) - vbl.get<Vector>(ibl.get<ushort>(i*3  )); break;
@@ -365,10 +357,7 @@ namespace gctp { namespace graphic {
 
 	/** ソリッドモデルとして描画
 	 *
-	 * 半透明体が含まれ、遅延描画をする場合、matのインスタンスはdrawDelayが呼ばれるまで
-	 * 存在していなければいけない。
 	 * @param mat モデルの座標系
-	 * @param delay 遅延描画か？(デフォルトfalse）
 	 *
 	 * @todo Pointer<Matrix>版を用意して、遅延描画はそっちのみにする？
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -378,113 +367,37 @@ namespace gctp { namespace graphic {
 	HRslt Model::draw(const Matrix &mat) const
 	{
 		HRslt hr;
-		if(type_ == TYPE_LINE) {
-			Handle<dx::HLSLShader> shader = shader_;
-			if(shader && *shader) {
-				Matrix wv = mat*getView();
-//				hr = (*shader)->SetMatrix("WorldView", &wv);
-				hr = (*shader)->SetMatrix("g_mWorldView", wv);
-				if(!hr) GCTP_TRACE(hr);
-//				hr = (*shader)->SetMatrix("Projection", &getProjection());
-				Matrix wvp = wv*getProjection();
-				hr = (*shader)->SetMatrix("g_mWorldViewProjection", wvp);
-				if(!hr) GCTP_TRACE(hr);
-			}
-			else {
-				device().impl()->SetVertexShader(NULL);
-				device().impl()->SetTransform(D3DTS_WORLD, mat);
-			}
-			if(mtrls.size() > 0) {
-				for(uint i = 0; i < mtrls.size(); i++) {
-					device().setMaterial(mtrls[i]);
-					Handle<dx::HLSLShader> shader = shader_;
-					if(shader && (hr = shader->begin())) {
-						for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
-							hr = shader->beginPass( ipass );
-							if(!hr) GCTP_TRACE(hr);
-							if(ib_ && vb_) {
-								//if(subsets_[i].first) return S_FALSE; //??
-								hr = ib_.draw(vb_, 0, D3DPT_LINELIST, subsets_[i].primitive_num, subsets_[i].index_offset);
-								if(!hr) GCTP_TRACE(hr);
-							}
-							//hr = wire_->draw(i);
-							//if(!hr) GCTP_TRACE(hr);
-							hr = shader->endPass();
-							if(!hr) GCTP_TRACE(hr);
-						}
-						hr = shader->end();
-						if(!hr) GCTP_TRACE(hr);
+		uint cur_template = 0;
+		Handle<Shader> cur_shader = mtrls[cur_template].shader;
+		while(cur_template < mtrls.size()) {
+			hr = begin(cur_template, 0);
+			if(hr) {
+				for(uint i = cur_template; i < mtrls.size(); i++) {
+					if(cur_shader == mtrls[i].shader) {
+						hr = draw(mat, i);
+						if(!hr) break;
 					}
-					else {
-						if(ib_ && vb_) {
-							//if(subsets_[i].first) return S_FALSE; //??
-							hr = ib_.draw(vb_, 0, D3DPT_LINELIST, subsets_[i].primitive_num, subsets_[i].index_offset);
-							if(!hr) GCTP_TRACE(hr);
-						}
-					}
-					if(!hr) return hr;
 				}
+				HRslt _hr = end();
+				if(hr) hr = _hr;
 			}
-			else {
-				Material mtrl;
-				mtrl.setUp();
-				device().setMaterial(mtrl);
-				//hr = wire_->draw();
-				if(ib_ && vb_) {
-					//if(subsets_[i].first) return S_FALSE; //??
-					for(uint i = 0; i < subsets_.size(); i++) {
-						hr = ib_.draw(vb_, 0, D3DPT_LINELIST, subsets_[i].primitive_num, subsets_[i].index_offset);
-					}
-					if(!hr) GCTP_TRACE(hr);
+			// 次のシェーダを探す
+			while(++cur_template < mtrls.size()) {
+				if(mtrls[cur_template].shader != cur_shader) {
+					cur_shader = mtrls[cur_template].shader;
+					break;
 				}
-				if(!hr) return hr;
-			}
-		}
-		else if(mesh_) {
-			Handle<dx::HLSLShader> shader = shader_;
-			if(shader && *shader) {
-				Matrix wv = mat*getView();
-//				hr = (*shader)->SetMatrix("WorldView", &wv);
-				hr = (*shader)->SetMatrix("g_mWorldView", wv);
-				if(!hr) GCTP_TRACE(hr);
-//				hr = (*shader)->SetMatrix("Projection", &getProjection());
-				Matrix wvp = wv*getProjection();
-				hr = (*shader)->SetMatrix("g_mWorldViewProjection", wvp);
-				if(!hr) GCTP_TRACE(hr);
-			}
-			else {
-				IDirect3DDevicePtr dev;
-				mesh_->GetDevice(&dev);
-				dev->SetVertexShader(NULL);
-				dev->SetTransform(D3DTS_WORLD, mat);
-			}
-			for(uint i = 0; i < mtrls.size(); i++) {
-				device().setMaterial(mtrls[i]);
-				if(shader_ && (hr = shader_->begin())) {
-					for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
-						hr = shader_->beginPass( ipass );
-						if(!hr) GCTP_TRACE(hr);
-						hr = mesh_->DrawSubset(i);
-						if(!hr) GCTP_TRACE(hr);
-						hr = shader_->endPass();
-						if(!hr) GCTP_TRACE(hr);
-					}
-					hr = shader_->end();
-					if(!hr) GCTP_TRACE(hr);
-				}
-				else hr = mesh_->DrawSubset(i);
-
-				if(!hr) return hr;
 			}
 		}
 		return hr;
 	}
 
-	HRslt Model::begin() const
+	HRslt Model::begin(int template_mtrlno, int passno) const
 	{
 		HRslt hr;
-		if(mesh_) {
-			Handle<dx::HLSLShader> shader = shader_;
+		current_template_mtrlno_ = template_mtrlno;
+		if(mesh_) { // mesh_も追い出す
+			Handle<dx::HLSLShader> shader = mtrls[template_mtrlno].shader;
 			if(shader && (*shader)) {
 				hr = shader->begin();
 			}
@@ -552,14 +465,17 @@ namespace gctp { namespace graphic {
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::drawSubset(const Matrix &mat, int mtrlno) const
+	HRslt Model::draw(const Matrix &mat, int mtrlno) const
 	{
 		HRslt hr;
 		if(mesh_) {
+			uint subsetno;
+			for(subsetno = 0; subsetno < subsets_.size(); subsetno++) if(subsets_[subsetno].material_no == mtrlno) break;
+			if(subsetno == subsets_.size()) return S_FALSE;
 			IDirect3DDevicePtr dev;
 			mesh_->GetDevice(&dev);
 			device().setMaterial(mtrls[mtrlno]);
-			Handle<dx::HLSLShader> shader = shader_;
+			Handle<dx::HLSLShader> shader = mtrls[mtrlno].shader;
 			if(shader && *shader) {
 //				hr = (*shader)->SetMatrix("WorldView", &(mat*getView()));
 				hr = (*shader)->SetMatrix("WorldView", mat);
@@ -589,13 +505,13 @@ namespace gctp { namespace graphic {
 				for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
 					hr = shader->beginPass( ipass );
 					if(!hr) GCTP_TRACE(hr);
-					hr = dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, subsets_[mtrlno].vertex_offset, 0, subsets_[mtrlno].vertex_num, subsets_[mtrlno].index_offset, subsets_[mtrlno].primitive_num);
+					hr = dev->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
 					if(!hr) GCTP_TRACE(hr);
 					hr = shader->endPass();
 					if(!hr) GCTP_TRACE(hr);
 				}
 			}
-			else hr = dev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, subsets_[mtrlno].vertex_offset, 0, subsets_[mtrlno].vertex_num, subsets_[mtrlno].index_offset, subsets_[mtrlno].primitive_num);
+			else hr = dev->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
 
 			if(!hr) return hr;
 		}
@@ -618,7 +534,7 @@ namespace gctp { namespace graphic {
 				GCTP_TRACE(hr);
 				return hr;
 			}
-			Handle<dx::HLSLShader> shader = shader_;
+			Handle<dx::HLSLShader> shader = mtrls[current_template_mtrlno_].shader;
 			if(shader) {
 				hr = shader->end();
 				if(!hr) {
@@ -633,11 +549,8 @@ namespace gctp { namespace graphic {
 
 	/** (スキニング済みであれば）スキンモデルとして描画
 	 *
-	 * スキニングされてない場合、Skeletonのルートを使ってソリッドモデルとして描画する。<BR>
-	 * 半透明体が含まれ、遅延描画をする場合、sklのインスタンスはdrawDelayが呼ばれるまで
-	 * 存在していなければいけない。
+	 * スキニングされてない場合、Skeletonのルートを使ってソリッドモデルとして描画する。
 	 * @param skl モーションがセットされたスケルトン
-	 * @param delay 遅延描画か？(デフォルトfalse）
 	 *
 	 * @todo Pointer<Skelton>版を用意して、遅延描画はそっちのみにする？
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -662,10 +575,10 @@ namespace gctp { namespace graphic {
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::drawSubset(const Skeleton &skl, int mtrlno) const
+	HRslt Model::draw(const Skeleton &skl, int mtrlno) const
 	{
 		if(brush_) return brush_->draw(skl, mtrlno);
-		else if(!skl.empty()) return drawSubset(skl.root()->val.wtm(), mtrlno);
+		else if(!skl.empty()) return draw(skl.root()->val.wtm(), mtrlno);
 		return E_FAIL;
 	}
 

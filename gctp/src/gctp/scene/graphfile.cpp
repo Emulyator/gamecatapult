@@ -135,7 +135,9 @@ namespace gctp { namespace scene {
 				if(model_) {
 					Handle<graphic::dx::HLSLShader> shader = context()[name];
 					if(shader) {
-						model_->setShader(shader);
+						for(std::vector<int>::size_type i = 0; i < mtrl_no_.size(); i++) {
+							model_->mtrls[mtrl_no_[i]].shader = shader;
+						}
 						if(eff_) {
 							D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff_->GetBufferPointer());
 							for(DWORD i = 0; i < effect->NumDefaults; i++) {
@@ -151,6 +153,7 @@ namespace gctp { namespace scene {
 			Handle<GraphFile> self_;
 			Handle<graphic::Model> model_;
 			ID3DXBufferPtr eff_;
+			std::vector<int> mtrl_no_;
 		};
 
 		/** モデルのマテリアルをセットアップ
@@ -199,64 +202,82 @@ namespace gctp { namespace scene {
 				}
 				if(eff) {
 					D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff->GetBufferPointer());
-					if(effect->pEffectFilename) {
+					for(uint i = 0; i < mtrl_num; i++) {
+						if(effect[i].pEffectFilename) {
 #ifdef UNICODE
-						WCStr fname = effect->pEffectFilename;
-						PRNN("Effect "<<fname.c_str());
-						Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
-						if(!shader) {
-							if(context().loadingAsync()) {
-								Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
-								self.asyncsolvers.push_back(p);
-								context().loadAsync(fname.c_str(), p->on_ready_slot);
+							WCStr fname = effect[i].pEffectFilename;
+							PRNN("Effect "<<fname.c_str());
+							Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
+							if(!shader) {
+								if(context().loadingAsync()) {
+									Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
+									// つか、これほんとはいらなくなる。
+									// contextは即座に空のオブジェクトを返すようになるんだから
+									// shader = context()[fname.c_str()];
+									// これだけでおｋ
+									p->mtrl_no_.push_back(i);
+									for(uint j = i+1; j < mtrl_num; j++) {
+										if(effect[j].pEffectFilename && fname == WCStr(effect[j].pEffectFilename)) {
+											p->mtrl_no_.push_back(j);
+										}
+									}
+									self.asyncsolvers.push_back(p);
+									context().loadAsync(fname.c_str(), p->on_ready_slot);
+								}
+								else {
+									shader = context().load(fname.c_str());
+								}
 							}
-							else {
-								shader = context().load(fname.c_str());
-							}
-						}
 #else
-						PRNN("Effect "<<effect->pEffectFilename);
-						Handle<graphic::dx::HLSLShader> shader = context()[effect->pEffectFilename];
-						if(!shader) {
-							if(context().loadingAsync()) {
-								Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
-								self.asyncsolvers.push_back(p);
-								context().loadAsync(effect->pEffectFilename, p->on_ready_slot);
+							PRNN("Effect "<<effect[i].pEffectFilename);
+							Handle<graphic::dx::HLSLShader> shader = context()[effect[i].pEffectFilename];
+							if(!shader) {
+								if(context().loadingAsync()) {
+									Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
+									p->mtrl_no_.push_back(i);
+									for(uint j = i+1; j < mtrl_num; j++) {
+										if(effect[j].pEffectFilename && strcmp(effect[i].pEffectFilename, effect[j].pEffectFilename)) {
+											p->mtrl_no_.push_back(j);
+										}
+									}
+									self.asyncsolvers.push_back(p);
+									context().loadAsync(effect[i].pEffectFilename, p->on_ready_slot);
+								}
+								else {
+									shader = context().load(effect[i].pEffectFilename);
+								}
 							}
-							else {
-								shader = context().load(effect->pEffectFilename);
-							}
-						}
 #endif
-						if(shader) {
-							model.setShader(shader);
-							for(DWORD i = 0; i < effect->NumDefaults; i++) {
-								(*shader)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
+							if(shader) {
+								for(DWORD j = 0; j < effect[i].NumDefaults; j++) {
+									(*shader)->SetValue(effect[i].pDefaults[j].pParamName, effect[i].pDefaults[j].pValue, effect[i].pDefaults[j].NumBytes);
+								}
+								model.mtrls[i].shader = shader;
 							}
 						}
-					}
-					else {
-						for(DWORD i = 0; i < effect->NumDefaults; i++) {
-							switch(effect->pDefaults[i].Type) {
-							case D3DXEDT_STRING:
-								PRNN(i<<")STRING "<<effect->pDefaults[i].pParamName<<" "<<(const char *)effect->pDefaults[i].pValue);
-								break;
-							case D3DXEDT_FLOATS:
-								PRN(i<<")FLOATS "<<effect->pDefaults[i].pParamName<<" ");
-								for(DWORD j = 0; j < effect->pDefaults[i].NumBytes/sizeof(float); j++) {
-									if(j > 0) PRN(", ");
-									PRN(((float *)effect->pDefaults[i].pValue)[j]);
+						else {
+							for(DWORD j = 0; j < effect[i].NumDefaults; j++) {
+								switch(effect[i].pDefaults[j].Type) {
+								case D3DXEDT_STRING:
+									PRNN(i<<")STRING "<<effect[i].pDefaults[j].pParamName<<" "<<(const char *)effect[i].pDefaults[j].pValue);
+									break;
+								case D3DXEDT_FLOATS:
+									PRN(i<<")FLOATS "<<effect[i].pDefaults[j].pParamName<<" ");
+									for(DWORD k = 0; k < effect[i].pDefaults[j].NumBytes/sizeof(float); k++) {
+										if(k > 0) PRN(", ");
+										PRN(((float *)effect[i].pDefaults[j].pValue)[k]);
+									}
+									PRN(endl);
+									break;
+								case D3DXEDT_DWORD:
+									PRN(i<<")DWORD "<<effect[i].pDefaults[j].pParamName<<" ");
+									for(DWORD k = 0; k < effect[i].pDefaults[j].NumBytes/sizeof(DWORD); k++) {
+										if(k > 0) PRN(", ");
+										PRN(((DWORD *)effect[i].pDefaults[j].pValue)[k]);
+									}
+									PRN(endl);
+									break;
 								}
-								PRN(endl);
-								break;
-							case D3DXEDT_DWORD:
-								PRN(i<<")DWORD "<<effect->pDefaults[i].pParamName<<" ");
-								for(DWORD j = 0; j < effect->pDefaults[i].NumBytes/sizeof(DWORD); j++) {
-									if(j > 0) PRN(", ");
-									PRN(((DWORD *)effect->pDefaults[i].pValue)[j]);
-								}
-								PRN(endl);
-								break;
 							}
 						}
 					}
