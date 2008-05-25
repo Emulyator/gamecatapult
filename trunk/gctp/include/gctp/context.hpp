@@ -16,6 +16,7 @@
 #include <gctp/db.hpp>
 #include <gctp/class.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/signal.hpp>
 #include <tchar.h>
 
 namespace gctp {
@@ -44,10 +45,24 @@ namespace gctp { namespace core {
 		/** コンストラクタ
 		 *
 		 * 同時にカレントに設定。（コンテキストスタックに自分をプッシュ）
-		 *
-		 * 最も最近に生成もしくは操作されたコンテキストがカレントになる
 		 */
-		Context(bool open = true);
+		Context(bool do_push = true) : is_pushed_(false), loading_async_(false)
+		{
+			on_ready_slot.bind(this);
+			if(do_push) push();
+		}
+
+		/** コンストラクタ
+		 *
+		 * 親を指定する
+		 *
+		 * 同時にカレントに設定。（コンテキストスタックに自分をプッシュ）
+		 */
+		Context(Handle<Context> parent, bool do_push = true) : is_pushed_(false), loading_async_(false), parent_(parent)
+		{
+			on_ready_slot.bind(this);
+			if(do_push) push();
+		}
 
 		/** デストラクタ
 		 *
@@ -58,12 +73,23 @@ namespace gctp { namespace core {
 		 *
 		 * デストラクタ内なので、例外は投げない
 		 */
-		~Context();
+		~Context()
+		{
+			pop();
+		}
 
-		/// コンテキストを開く
-		void open();
-		/// コンテキストを閉じる
-		void close();
+		/// コンテキストをカレントに
+		void push();
+		/// 直前のコンテキストをカレントに
+		void pop();
+
+		/// 子コンテキストを作る
+		Pointer<Context> newChild(bool do_push = true)
+		{
+			return new Context(this, do_push);
+		}
+
+		Handle<Context> parent() { return parent_; }
 
 		/** コンテンツロード
 		 *
@@ -82,6 +108,15 @@ namespace gctp { namespace core {
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
 		bool loadAsync(const _TCHAR *name);
+
+		/** ロード要求
+		 *
+		 * @return リクエストが成功したか？
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		bool loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback);
 
 		/** オブジェクト登録
 		 *
@@ -192,21 +227,36 @@ namespace gctp { namespace core {
 			return *current_;
 		}
 
+		/// 非同期読み込みによるロード処理か？（リアライズ関数の中などで使用）
+		bool loadingAsync()
+		{
+			return loading_async_;
+		}
+
 	protected:
 		// luapp
 		bool setUp(luapp::Stack &L);
+		int newChild(luapp::Stack &L);
 		int load(luapp::Stack &L);
+		int loadAsync(luapp::Stack &L);
+		int isReady(luapp::Stack &L);
 		int create(luapp::Stack &L);
 		int find(luapp::Stack &L);
 		int pairs(luapp::Stack &L);
 		int ipairs(luapp::Stack &L);
 		static int current(luapp::Stack &L);
 
+		bool loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> *callback);
+		bool onReady(const _TCHAR *name, BufferPtr buffer);
+		MemberSlot2<Context, const _TCHAR *, BufferPtr, &Context::onReady> on_ready_slot;
+
 	private:
-		bool is_open_;
+		bool is_pushed_;
+		bool loading_async_;
 		PtrList ptrs_;
 		DB db_;
-		Context *prev_;
+		Handle<Context> parent_;
+		Handle<Context> prev_;
 
 		static Context *current_;
 

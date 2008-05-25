@@ -29,6 +29,8 @@
  * (マウスなどの入力メッセージで）処理をのっとりたい場合、つまり、より上位のスロットが実行された時点で下位のスロットを実行しない、
  * という処理を実現するには、Slotのオーバーライドで実現する｡
  *
+ * やっぱこれいろいろへんだなぁ。変えたいんだけど、いまさら。。。プライオリティーが変えやすいというメリットはあるけど
+ *
  * VC6では\n
  * class Foo {\n
  *     bool bar();\n
@@ -68,6 +70,27 @@ namespace gctp {
 	class Slot : public Object
 	{
 	public:
+		enum {
+// うーん。。。
+#ifdef MAX_PRIORITY
+#define BACKUP_MAX_PRIORITY MAX_PRIORITY
+#undef MAX_PRIORITY
+#endif
+#ifdef MIN_PRIORITY
+#define BACKUP_MIN_PRIORITY MIN_PRIORITY
+#undef MIN_PRIORITY
+#endif
+			MAX_PRIORITY = 0x7FFF,
+			MIN_PRIORITY = 0x8000
+#ifdef BACKUP_MAX_PRIORITY
+#define MAX_PRIORITY BACKUP_MAX_PRIORITY
+#undef BACKUP_MAX_PRIORITY
+#endif
+#ifdef BACKUP_MIN_PRIORITY
+#define MIN_PRIORITY BACKUP_MIN_PRIORITY
+#undef BACKUP_MIN_PRIORITY
+#endif
+		};
 		/// プライオリティーを指定して初期化
 		Slot(int16_t pri) : pri_(pri), mask_(0xFFFF) {}
 		/// プライオリティーを返す

@@ -17,27 +17,17 @@ using namespace std;
 
 namespace gctp { namespace core {
 
-	Context::Context(bool do_open) : is_open_(false)
-	{
-		if(do_open) open();
-	}
-
-	Context::~Context()
-	{
-		close();
-	}
-
 	/** コンテキストの使用開始を宣言
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/19 2:07:06
 	 */
-	void Context::open()
+	void Context::push()
 	{
 		prev_ = current_;
 		current_ = this;
-		is_open_ = true;
+		is_pushed_ = true;
 	}
 
 	/** コンテキストの使用終了を宣言
@@ -46,12 +36,13 @@ namespace gctp { namespace core {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/19 2:07:06
 	 */
-	void Context::close()
+	void Context::pop()
 	{
-		if(is_open_) {
-			is_open_ = false;
+		if(is_pushed_) {
+			is_pushed_ = false;
 			GCTP_ASSERT(current_ == this);
-			current_ = prev_;
+			if(prev_) current_ = prev_.get();
+			else current_ = parent_.get();
 		}
 	}
 
@@ -81,7 +72,11 @@ namespace gctp { namespace core {
 			if(f) {
 				BufferPtr file = fileserver().getFile(uri.raw().c_str());
 				if(file) {
+					Context *backup = current_; // 一時的にカレントを差し替える
+					current_ = this;
+					loading_async_ = false;
 					Ptr p = f(file);
+					current_ = backup;
 					if(p) {
 						ptrs_.push_back(p);
 						db_.insert(name, p);
@@ -102,7 +97,7 @@ namespace gctp { namespace core {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	bool Context::loadAsync(const _TCHAR *name)
+	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> *callback)
 	{
 		//GCTP_ASSERT(current_ == this); これ必要か？
 		if(name) {
@@ -123,12 +118,11 @@ namespace gctp { namespace core {
 				if(!fileserver().busy()) {
 					AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
 					if(file) {
-						// リアライザとともにどっかに保持
-						// isReadyがtrueになったときに呼び出す
+						// find/isReadyの呼び出しの段階でリアライズ
 						ptrs_.push_back(file);
-						db_.insert(name, file); // これでいいんじゃないか？
-						// で、後で差し替える
-						// ...いやダメかも
+						db_.insert(name, file);
+						file->connect(on_ready_slot);
+						if(callback) file->connect(*callback);
 					}
 				}
 			}
@@ -137,6 +131,16 @@ namespace gctp { namespace core {
 			}
 		}
 		return false;
+	}
+
+	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback)
+	{
+		return loadAsync(name, &callback);
+	}
+
+	bool Context::loadAsync(const _TCHAR *name)
+	{
+		return loadAsync(name, 0);
 	}
 
 	/** 渡されたオブジェクトを保持する
@@ -163,8 +167,10 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name)
 	{
-		GCTP_ASSERT(current_ == this);
+		Context *backup = current_; // 一時的にカレントを差し替える
+		current_ = this;
 		Ptr ret = Factory::create(typeinfo);
+		current_ = backup;
 		if(ret) {
 			ptrs_.push_back(ret);
 			if(name) db_.insert(name, ret);
@@ -180,8 +186,10 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const char *classname, const _TCHAR *name)
 	{
-		GCTP_ASSERT(current_ == this);
+		Context *backup = current_; // 一時的にカレントを差し替える
+		current_ = this;
 		Ptr ret = Factory::create(classname);
+		current_ = backup;
 		if(ret) {
 			ptrs_.push_back(ret);
 			if(name) db_.insert(name, ret);
@@ -193,14 +201,49 @@ namespace gctp { namespace core {
 	{
 		if(name) {
 			Hndl ret = db_[name];
-			if(ret) return ret;
-			if(prev_) return prev_->find(name);
+			if(ret) {
+				Pointer<AsyncBuffer> async = ret.get();
+				if(async) {
+					if(async->isReady()) {
+						onReady(name, async);
+						return db_[name];
+					}
+				}
+				else return ret;
+			}
+			else if(parent_) return parent_->find(name);
 		}
 		return Hndl();
 	}
 
+	bool Context::onReady(const _TCHAR *name, BufferPtr buffer)
+	{
+		TURI uri(name);
+		std::basic_string<_TCHAR> ext = uri.extension();
+		RealizeMethod f = Extension::get(ext.c_str());
+		if(f) {
+			Context *backup = current_; // 一時的にカレントを差し替える
+			current_ = this;
+			loading_async_ = true;
+			Ptr p = f(buffer);
+			current_ = backup;
+			ptrs_.remove(buffer);
+			if(p) {
+				ptrs_.push_back(p);
+				db_.set(name, p);
+			}
+			else db_.erase(name);
+		}
+		else {
+			PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
+		}
+		return false;
+	}
+
 	void Context::serialize(Serializer &serializer)
 	{
+		Context *backup = current_; // 一時的にカレントを差し替える
+		current_ = this;
 		if(serializer.isLoading()) {
 			int size;
 			serializer.istream() >> size;
@@ -217,13 +260,21 @@ namespace gctp { namespace core {
 				serializer << *i;
 			}
 		}
+		current_ = backup;
 	}
 
 	Context *Context::current_ = NULL;
 
 	bool Context::setUp(luapp::Stack &L)
 	{
-		return true;
+		// gctp.core.Context.current().child()経由でなければ作れない
+		return false;
+	}
+
+	int Context::newChild(luapp::Stack &L)
+	{
+		gctp::TukiRegister::newUserData(L, newChild());
+		return 1;
 	}
 
 	int Context::load(luapp::Stack &L)
@@ -238,6 +289,21 @@ namespace gctp { namespace core {
 #endif
 		}
 		if(ret) return gctp::TukiRegister::push(L, ret);
+		return 0;
+	}
+	
+	int Context::loadAsync(luapp::Stack &L)
+	{
+		/* (const char *fname) */
+		Hndl ret;
+		if(L.top() >= 1) {
+#ifdef UNICODE
+			L << loadAsync(WCStr(L[1].toCStr()).c_str());
+#else
+			L << loadAsync(L[1].toCStr());
+#endif
+			return 1;
+		}
 		return 0;
 	}
 	
@@ -363,7 +429,9 @@ namespace gctp { namespace core {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, core, Context, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, core, Context)
+		TUKI_METHOD(Context, newChild)
 		TUKI_METHOD(Context, load)
+		TUKI_METHOD(Context, loadAsync)
 		TUKI_METHOD(Context, create)
 		TUKI_METHOD(Context, find)
 		TUKI_METHOD(Context, pairs)

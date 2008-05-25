@@ -12,9 +12,9 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/pointerlist.hpp>
+#include <gctp/signal.hpp>
 #include <gctp/buffer.hpp>
 #include <gctp/tcstr.hpp>
-#include <queue>
 
 namespace gctp {
 
@@ -77,10 +77,15 @@ namespace gctp {
 		/// ファイル読み込みインターフェースを返す
 		AbstractFilePtr getFileInterface(const _TCHAR *name);
 
+		/// 非同期読み込みサービス開始
+		void startAsync();
 		/// 非同期読み込みを受け入れ不可能か？
 		bool busy();
+		/// 非同期読み込みリクエストがすべて処理されたか？
+		bool done();
 
-		void service();
+		bool service(float delta);
+		MemberSlot1<FileServer, float, &FileServer::service> update_slot;
 
 		static FileServer &getInstance();
 
@@ -91,8 +96,9 @@ namespace gctp {
 		FileServer();
 		FileServer(FileServer &); // not implement
 		PointerList<Volume> volume_list_;
-		PointerList<AsyncBuffer> req_list_;
 		class Thread; // 外に出してもいいかな…
+		friend Thread;
+		void serviceRequest();
 		Thread *thread_;
 	};
 
@@ -124,6 +130,14 @@ namespace gctp {
 			if(is_ready_) synchronize(false);
 			return is_ready_;
 		}
+		void connect(const Slot2<const _TCHAR *, BufferPtr> &slot)
+		{
+			ready_signal.connectOnce(slot);
+		}
+		void disconnect(const Slot2<const _TCHAR *, BufferPtr> &slot)
+		{
+			ready_signal.disconnect(slot);
+		}
 	protected:
 		AsyncBuffer() : is_ready_(false)
 		{
@@ -134,6 +148,7 @@ namespace gctp {
 			synchronize(true);
 		}
 		friend FileServer;
+		Signal2<false, const _TCHAR *, BufferPtr> ready_signal;
 		bool is_ready_;
 	};
 

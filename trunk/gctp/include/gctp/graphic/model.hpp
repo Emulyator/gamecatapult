@@ -1,5 +1,8 @@
 #ifndef _GCTP_GRAPHIC_MODEL_HPP_
 #define _GCTP_GRAPHIC_MODEL_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult モデルクラスヘッダファイル
  *
@@ -29,6 +32,7 @@ namespace gctp { namespace graphic {
 
 	class Texture;
 	class Shader;
+	class Brush;
 
 	/** D3DXメッシュ頂点データのロックと自動開放
 	 *
@@ -112,58 +116,12 @@ namespace gctp { namespace graphic {
 		operator const ushort *() const { return reinterpret_cast<ushort *>(p_); }
 	};
 
-	//class VertexBuffer;
-	//class IndexBuffer;
-	/** ワイヤフレームモデル（線リスト）
-	 *
-	 * LWで言うところの線ポリゴンの集まり
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/11/21 13:04:28
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class WireMesh : public Object {
-	public:
-		/// すでにセットアップされていたら、レストア
-		HRslt setUp(const void *data, const void *mtrllist, ID3DXBufferPtr mtrls, ulong mtrl_num);
-		
-		/// 描画
-		HRslt draw() const;
-		HRslt draw(int subset) const;
-
-		float calcRadius(const Vector &center) const;
-
-		/// AABBを計測
-		AABox getAABB() const;
-		/// ワールド座標系でのAABBを返す
-		AABox getAABB(const Matrix &mat) const;
-
-	protected:
-		Pointer<VertexBuffer>	vbuf_;
-		Pointer<IndexBuffer>	ibuf_;
-		uint					num_;
-		std::vector< std::pair<int, int> > subset_;
-		uint					subsetnum_;
-	};
-
-	class Model;
-	/**モデル詳細基底クラス
-	 *
-	 * 今のところスキンモデルばかり
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 16:44:46
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	class ModelDetail : public Object {
-	public:
-		ModelDetail(Model &owner) : owner_(owner) {}
-		virtual ~ModelDetail() {}
-		virtual HRslt draw(const Skeleton &skl) const = 0;
-		virtual HRslt draw(const Skeleton &skl, int mtrlno) const = 0;
-		//virtual HRslt begin(int mtrlno) const = 0;
-		//virtual HRslt drawFragment(const Skeleton &skel) const = 0;
-		//virtual HRslt end() const = 0;
-		Model &owner_;
+	struct SubsetInfo
+	{
+		uint index_offset;
+		uint primitive_num;
+		uint vertex_offset;
+		uint vertex_num;
 	};
 
 	/** モデルクラス
@@ -174,8 +132,12 @@ namespace gctp { namespace graphic {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	class Model : public Object {
-		friend class ModelDetail;
+		friend class Brush;
 	public:
+		enum Type {
+			TYPE_POLYGON,
+			TYPE_LINE,
+		};
 		/// すでにセットアップされていたら、レストア
 		void setUp(CStr name, ID3DXMeshPtr mesh, ID3DXSkinInfoPtr skin, ID3DXBufferPtr adjc);
 		/// すでにセットアップされていたら、レストア
@@ -196,11 +158,11 @@ namespace gctp { namespace graphic {
 		HRslt end() const;
 
 		/// マテリアルリスト
-		std::vector< Material >	mtrls;
+		std::vector<Material>	mtrls;
 		/// 面接続情報
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
 		/// メッシュ断片情報
-		const std::vector<D3DXATTRIBUTERANGE> &subsets() const { return subsets_; }
+		const std::vector<SubsetInfo> &subsets() const { return subsets_; }
 
 		Model() : bs_(VectorC(0,0,0),0), offset_(0) { vb_.deleteGuard(); ib_.deleteGuard(); }
 
@@ -212,12 +174,7 @@ namespace gctp { namespace graphic {
 		{
 			// 境界球を計算
 			bs_.c = calcCenter();
-			if(wire_) {
-				bs_.r = wire_->calcRadius(bs_.c);
-			}
-			else {
-				bs_.r = calcRadius(bs_.c);
-			}
+			bs_.r = calcRadius(bs_.c);
 		}
 
 		/// AABBを返す
@@ -284,21 +241,21 @@ namespace gctp { namespace graphic {
 
 	protected:
 		CStr								name_;		// シーンファイル上での名前
+		Type								type_;
+
 		ID3DXMeshPtr						mesh_;      // ファイルから読み込んだままののメッシュ
 		ID3DXSkinInfoPtr					skin_;		// スキン情報
 		ID3DXBufferPtr						adjc_;		// 面の接続情報
-		std::vector<D3DXATTRIBUTERANGE>		subsets_;	// 断片情報
-		std::vector<D3DVERTEXELEMENT9>		vbinfo_;
+
+		std::vector<SubsetInfo>				subsets_;	// 断片情報
 		mutable VertexBuffer				vb_;
 		mutable IndexBuffer					ib_;
-		dx::IDirect3DVertexDeclarationPtr	decl_;
 
 		Vector calcCenter() const;
 		float calcRadius(const Vector &center) const;
 
 	private:
-		Pointer<ModelDetail> detail_;
-		Pointer<WireMesh>    wire_; // あくまで表示物はModel、という設計を守るための暫定処置…
+		Pointer<Brush> brush_;
 		mutable Handle<Shader> shader_;
 		Sphere bs_;
 		int offset_;
