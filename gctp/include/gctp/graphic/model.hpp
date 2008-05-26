@@ -71,6 +71,8 @@ namespace gctp { namespace graphic {
 		 *
 		 * @param template_mtrlno セットアップするBrush/Shaderを代表するマテリアル番号。
 		 * 同じBrush/Shaderの組をさすのであれば、どのマテリアルでもかまわない
+		 *
+		 * この関数はそのうち意味なくなるなぁ。Worldが描画パケットを管理するようになったら
 		 */
 		HRslt begin(int template_mtrlno, int passno) const;
 		/// マテリアルを指定して描画

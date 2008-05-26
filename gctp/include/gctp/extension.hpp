@@ -18,15 +18,6 @@ namespace gctp {
 
 	/** リソース名からリソースを構築する関数ポインタ
 	 *
-	 * 非同期用に、bufferがNULLだったら
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/02/08 11:17:49
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	typedef Ptr (*RealizeMethod)(BufferPtr buffer);
-
-	/** リソース名からリソースを構築する関数ポインタ
-	 *
 	 * 非同期用に、bufferがNULLだったら空のオブジェクト（デフォルトコンストラクタが呼ばれただけ）を、
 	 * selfにNULL以外が渡されたらそれに対してSetUpを呼び出すようになっていなければいけない。
 	 * 同期読みの場合はself==NULL,buffer!=NULLで呼び出される。
@@ -34,7 +25,7 @@ namespace gctp {
 	 * @date 2004/02/08 11:17:49
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	//typedef Ptr (*RealizeMethod)(Ptr self, BufferPtr buffer);
+	typedef Ptr (*RealizeMethod)(Ptr self, BufferPtr buffer);
 
 	/** リソースリアライザ登録クラス
 	 *
@@ -54,30 +45,26 @@ namespace gctp {
 		const _TCHAR *ext_;
 	};
 
+	/** リアライズ関数テンプレート
+	 *
+	 * selfにヌル以外が渡されたらそれに対してSetUpMethodを、
+	 * そうでなければ新たに作って呼び出す。
+	 * selfもbufferもヌルならnewしたものを返すだけ。
+	 */
 	template<class T, bool (T::*SetUpMethod)(BufferPtr)>
-	Ptr realize(BufferPtr buffer)
+	Ptr realize(Ptr self, BufferPtr buffer)
 	{
-		Pointer<T> ret = new T;
-		if(ret) {
+		Pointer<T> ret;
+		if(self) ret = self;
+		else ret = new T;
+		if(ret && buffer) {
 			if((ret.get()->*SetUpMethod)(buffer)) {
 				return ret;
 			}
-		}
-		return Ptr();
-	}
-
-/*	template<class T, bool (T::*SetUpMethod)(BufferPtr)>
-	Ptr realize(Ptr self, BufferPtr buffer)
-	{
-		if(!self) self = new T;
-		if(self && buffer) {
-			if((self.get()->*SetUpMethod)(buffer)) {
-				return self;
-			}
 			return Ptr();
 		}
-		return self;
-	}*/
+		return ret;
+	}
 
 } // namespace gctp
 
@@ -95,8 +82,8 @@ namespace gctp {
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #define GCTP_REGISTER_REALIZER(_E, _C)							\
-	static Ptr _C##_E##_realize(BufferPtr buffer) {				\
-		return gctp::realize<_C, &_C::setUp>(buffer);			\
+	static Ptr _C##_E##_realize(Ptr self, BufferPtr buffer) {	\
+		return gctp::realize<_C, &_C::setUp>(self, buffer);		\
 	}															\
 	static Extension _C##_E##_realizer(_T(#_E), _C##_E##_realize)
 
@@ -116,8 +103,8 @@ namespace gctp {
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #define GCTP_REGISTER_REALIZER2(_E, _C, _M)						\
-	static Ptr _C##_E##_realize(BufferPtr buffer) {				\
-		return gctp::realize<_C, _M>(buffer);					\
+	static Ptr _C##_E##_realize(Ptr self, BufferPtr buffer) {	\
+		return gctp::realize<_C, _M>(self, buffer);				\
 	}															\
 	static Extension _C##_E##_realizer(_T(#_E), _C##_E##_realize)
 
@@ -136,10 +123,10 @@ namespace gctp {
  * @date 2004/02/08 11:18:01
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#define GCTP_REGISTER_REALIZER_EX(_S, _E, _C)				\
-	static Ptr _C##_E##_realize(BufferPtr buffer) {			\
-		return gctp::realize<_C, &_C::setUp>(buffer);		\
-	}														\
+#define GCTP_REGISTER_REALIZER_EX(_S, _E, _C)					\
+	static Ptr _C##_E##_realize(Ptr self, BufferPtr buffer) {	\
+		return gctp::realize<_C, &_C::setUp>(self, buffer);		\
+	}															\
 	static Extension _C##_E##_realizer(_S, _C##_E##_realize)
 
 /** 汎用リアライザ定義マクロ
@@ -159,10 +146,10 @@ namespace gctp {
  * @date 2004/02/08 11:18:01
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#define GCTP_REGISTER_REALIZER2_EX(_S, _E, _C, _M)			\
-	static Ptr _C##_E##_realize(BufferPtr buffer) {			\
-		return gctp::realize<_C, _M>(buffer);				\
-	}														\
+#define GCTP_REGISTER_REALIZER2_EX(_S, _E, _C, _M)				\
+	static Ptr _C##_E##_realize(Ptr self, BufferPtr buffer) {	\
+		return gctp::realize<_C, _M>(self, buffer);				\
+	}															\
 	static Extension _C##_E##_realizer(_S, _C##_E##_realize)
 
 #endif //_GCTP_EXTENSION_HPP_

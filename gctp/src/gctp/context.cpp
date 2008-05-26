@@ -75,7 +75,7 @@ namespace gctp { namespace core {
 					Context *backup = current_; // 一時的にカレントを差し替える
 					current_ = this;
 					loading_async_ = false;
-					Ptr p = f(file);
+					Ptr p = f(0, file);
 					current_ = backup;
 					if(p) {
 						ptrs_.push_back(p);
@@ -118,9 +118,11 @@ namespace gctp { namespace core {
 				if(!fileserver().busy()) {
 					AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
 					if(file) {
-						// find/isReadyの呼び出しの段階でリアライズ
-						ptrs_.push_back(file);
-						db_.insert(name, file);
+						Ptr p = f(0, 0);
+						if(p) {
+							ptrs_.push_back(p);
+							db_.insert(name, p);
+						}
 						file->connect(on_ready_slot);
 						if(callback) file->connect(*callback);
 					}
@@ -201,25 +203,7 @@ namespace gctp { namespace core {
 	{
 		if(name) {
 			Hndl ret = db_[name];
-			if(ret) {
-				AsyncBufferPtr async = ret.get();
-				// これだと問題。
-				// 同一フレームで同じリソースを要求した場合、共有されない。
-				// loadAsync時点で空の実体を作る必要あり
-				// load対象のリソースは、全部「空の状態」を定義できる必要あり（これはすでにＯＫ。Realizerはいったん空オブジェクトを作る）
-				// AsyncBufferリストを別個に持つ必要あり？
-				// それともload可能リソースはすべてAsyncBufferPtrをメンバに持つ？
-				// それは無理っぽい。（ロード可能＝Objectで、特別な派生クラスではない）
-				// 何とかしてContextが保持し続ける必要あり
-				// 現在GraphFileが持っているasyncsolversをConextが持つべき
-				if(async) {
-					if(async->isReady()) {
-						onReady(name, async);
-						return db_[name];
-					}
-				}
-				else return ret;
-			}
+			if(ret) return ret;
 			else if(parent_) return parent_->find(name);
 		}
 		return Hndl();
@@ -234,14 +218,15 @@ namespace gctp { namespace core {
 			Context *backup = current_; // 一時的にカレントを差し替える
 			current_ = this;
 			loading_async_ = true;
-			Ptr p = f(buffer);
-			current_ = backup;
-			ptrs_.remove(buffer);
-			if(p) {
-				ptrs_.push_back(p);
-				db_.set(name, p);
+			Ptr rsrc = find(name).lock();
+			if(rsrc) {
+				Ptr p = f(rsrc, buffer);
+				if(!p) {
+					db_.erase(name);
+					ptrs_.remove(rsrc);
+				}
 			}
-			else db_.erase(name);
+			current_ = backup;
 		}
 		else {
 			PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
@@ -447,7 +432,5 @@ namespace gctp { namespace core {
 		TUKI_METHOD(Context, ipairs)
 		TUKI_METHOD(Context, current)
 	TUKI_IMPLEMENT_END(Context)
-
-	AsyncSolver::AsyncSolver(Context &owner, Pointer<AsyncBuffer> async_buffer) : owner(owner), async_buffer(async_buffer) {}
 
 }} // namespace gctp::core

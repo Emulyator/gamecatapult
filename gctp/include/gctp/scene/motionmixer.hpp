@@ -25,14 +25,21 @@ namespace gctp { namespace scene {
 	 * @date 2004/12/08 2:37:38
 	 */
 	struct CoordUnion {
-		Stance &stance() { return *reinterpret_cast<Stance *>(__m); }
-		Coord  &coord()  { return *reinterpret_cast<Coord *>(__m); }
-		Matrix &matrix() { return *reinterpret_cast<Matrix *>(__m); }
-		const Stance &stance() const { return *reinterpret_cast<const Stance *>(__m); }
-		const Coord  &coord() const { return *reinterpret_cast<const Coord *>(__m); }
-		const Matrix &matrix() const { return *reinterpret_cast<const Matrix *>(__m); }
-		float __m[16];
-		bool is_valid;
+		Stance &stance() { return *reinterpret_cast<Stance *>(&__m); }
+		const Stance &stance() const { return *reinterpret_cast<const Stance *>(&__m); }
+		Coord  &coord()  { return *reinterpret_cast<Coord *>(&__m); }
+		const Coord  &coord() const { return *reinterpret_cast<const Coord *>(&__m); }
+		Matrix &matrix() { return __m; }
+		const Matrix &matrix() const { return __m; }
+		Matrix __m;
+
+		enum Type {
+			TYPE_NONE,
+			TYPE_MATRIX,
+			TYPE_COORD,
+			TYPE_STANCE
+		};
+		Type type;
 	};
 
 	/** モーショントラッククラス
@@ -115,8 +122,8 @@ namespace gctp { namespace scene {
 
 		HRslt update(float delta);
 		void apply(Pose &pose) const;
+		void apply(Skeleton &skl, const Skeleton &initial_skl) const;
 		void apply(Skeleton &skl) const;
-		void applyEx(Skeleton &skl) const;
 
 		void add(Handle<Motion> motion, MotionChannel::PosType postype = MotionChannel::DEFAULT_POSTYPE, MotionChannel::IsOpen is_open = MotionChannel::DEFAULT_ISOPEN);
 		MotionTrackVector &tracks() { return tracks_; }

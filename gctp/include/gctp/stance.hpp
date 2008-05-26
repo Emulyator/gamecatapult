@@ -39,10 +39,10 @@ namespace gctp {
 			return posture.toMatrix().setPos(position);
 		}
 
-		/// 位置
-		Vector	position;
 		/// 姿勢
 		Quat	posture;
+		/// 位置
+		Vector	position;
 
 		// 代入演算子を外部にさらす
 		Stance &operator+=(const Stance &src) {

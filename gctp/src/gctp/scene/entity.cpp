@@ -30,6 +30,7 @@ namespace gctp { namespace scene {
 
 	void Entity::setUp(Pointer<Body> src)
 	{
+		source_ = src;
 		target_ = src->dup();
 	}
 
@@ -88,7 +89,7 @@ namespace gctp { namespace scene {
 	{
 		if(mixer_) {
 			mixer_->update(delta);
-			if(target_) mixer_->apply(*target_);
+			if(target_ && source_) mixer_->apply(*target_, *source_);
 		}
 		return true;
 	}

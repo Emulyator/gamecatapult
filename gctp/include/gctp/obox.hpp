@@ -22,12 +22,12 @@ namespace gctp {
 	 * 主に境界ボックス(OBB:Oriented Bounding Box)として使われる
 	 */
 	struct OBox {
+		Quat   posture;
 		Vector position;
 		Vector size;
-		Quat   posture;
 
 		OBox() {}
-		OBox(const Vector &posiiton, const Vector &size, const Quat &posture) : position(position), size(size), posture(posture) {}
+		OBox(const Vector &posiiton, const Vector &size, const Quat &posture) : posture(posture), position(position), size(size) {}
 		OBox(const Vector &posiiton, const Vector &right, const Vector &up, const Vector &at) : position(position)
 		{
 			size.x = right.length();

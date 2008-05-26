@@ -359,7 +359,7 @@ namespace gctp {
 		};
 		struct Read {
 			TCStr name;
-			AsyncBufferHndl buffer;
+			AsyncBufferPtr buffer;
 		};
 		std::queue<Request> requests_;
 		std::queue<Read> read_;
@@ -543,7 +543,7 @@ namespace gctp {
 		if(thread_) {
 			ScopedLock sl(thread_->read_list_monitor_);
 			while(!thread_->read_.empty()) {
-				AsyncBufferPtr buffer = thread_->read_.front().buffer.lock();
+				AsyncBufferPtr buffer = thread_->read_.front().buffer;
 				if(buffer) buffer->ready_signal(thread_->read_.front().name.c_str(), buffer);
 				thread_->read_.pop();
 			}
@@ -584,7 +584,6 @@ namespace gctp {
 	void FileServer::startAsync()
 	{
 		if(!thread_) thread_ = new Thread(this);
-		app().update_signal.connectOnce(update_slot);
 	}
 	
 	bool FileServer::busy()

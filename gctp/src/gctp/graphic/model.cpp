@@ -69,8 +69,9 @@ namespace gctp { namespace graphic {
 			ib_.setUp(0);
 			subsets_.resize(0);
 		}
-		if(isSkin() && !isSkinned()) useShader(); // デフォルトでHLSL
 		updateBS();
+
+		if(isSkin() && !isSkinned()) useShader(); // デフォルトでHLSL
 	}
 
 	namespace {
@@ -462,7 +463,6 @@ namespace gctp { namespace graphic {
 
 	/** マテリアルを指定して、ソリッドモデルとして描画
 	 *
-	 * 主に半透明体の遅延描画用。
 	 * @param mat モデルの座標系
 	 * @param mtrlno マテリアル番号
 	 *
