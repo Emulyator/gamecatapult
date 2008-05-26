@@ -65,11 +65,11 @@ namespace gctp { namespace scene {
 				for(MotionChannelVector::const_iterator j = i->second.begin(); j != i->second.end(); ++j) {
 					(*j)->get(work_.stance(), custom_postype_, custom_is_open_, keytime_*ticks_per_sec);
 				}
-				work_.is_valid = true;
+				work_.type = CoordUnion::TYPE_STANCE;
 			}
 		}
-		else work_.is_valid = false;
-		return work_.is_valid;
+		else work_.type = CoordUnion::TYPE_NONE;
+		return work_.type != CoordUnion::TYPE_NONE;
 	}
 
 	/** Coordにモーションを適用
@@ -89,11 +89,11 @@ namespace gctp { namespace scene {
 				for(MotionChannelVector::const_iterator j = i->second.begin(); j != i->second.end(); ++j) {
 					(*j)->get(work_.coord(), custom_postype_, custom_is_open_, keytime_*ticks_per_sec);
 				}
-				work_.is_valid = true;
+				work_.type = CoordUnion::TYPE_COORD;
 			}
 		}
-		else work_.is_valid = false;
-		return work_.is_valid;
+		else work_.type = CoordUnion::TYPE_NONE;
+		return work_.type != CoordUnion::TYPE_NONE;
 	}
 
 	/** Matrixにモーションを適用
@@ -120,11 +120,11 @@ namespace gctp { namespace scene {
 					}
 					work_.matrix() = coord.toMatrix();
 				}
-				work_.is_valid = true;
+				work_.type = CoordUnion::TYPE_MATRIX;
 			}
 		}
-		else work_.is_valid = false;
-		return work_.is_valid;
+		else work_.type = CoordUnion::TYPE_NONE;
+		return work_.type != CoordUnion::TYPE_NONE;
 	}
 
 	MotionMixer::MotionMixer() : speed_(1.0f) {}
@@ -157,6 +157,7 @@ namespace gctp { namespace scene {
 
 	/** トラック間のモーションブレンドをした値を適用
 	 *
+	 * @param pose モーションを適用するPose
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/10/05 0:18:09
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
@@ -175,7 +176,7 @@ namespace gctp { namespace scene {
 			if(ok) {
 				bool first = true;
 				for(MotionTrackVector::const_iterator j = tracks_.begin(); j != tracks_.end(); ++j) {
-					if(j->work().is_valid) {
+					if(j->work().type != CoordUnion::TYPE_NONE) {
 						if(first) {
 							i->second = j->work().stance()*(j->weight()/weight_sum);
 							first = false;
@@ -189,17 +190,19 @@ namespace gctp { namespace scene {
 
 	/** トラック間のモーションブレンドをした値を適用
 	 *
+	 * @param skl モーションを適用するSkelton
+	 * @param initial_skl 初期値を持っているSkelton
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/10/05 0:18:41
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	void MotionMixer::apply(Skeleton &skl) const
+	void MotionMixer::apply(Skeleton &skl, const Skeleton &initial_skl) const
 	{
 		for(Skeleton::NodeIndex::iterator i = skl.index.begin(); i != skl.index.end(); ++i) {
 			float weight_sum = 0;
 			bool ok = false;
 			for(MotionTrackVector::const_iterator j = tracks_.begin(); j != tracks_.end(); ++j) {
-				if(j->setWork(Coord(reinterpret_cast<Skeleton::NodeType *>(i->second)->val.lcm()), i->first.c_str())) {
+				if(j->setWork(Coord(reinterpret_cast<Skeleton::NodeType *>(initial_skl[i->first])->val.lcm()), i->first.c_str())) {
 					weight_sum += j->weight();
 					ok = true;
 				}
@@ -208,7 +211,7 @@ namespace gctp { namespace scene {
 				bool first = true;
 				Coord coord;
 				for(MotionTrackVector::const_iterator j = tracks_.begin(); j != tracks_.end(); ++j) {
-					if(j->work().is_valid) {
+					if(j->work().type != CoordUnion::TYPE_NONE) {
 						if(first) {
 							coord = j->work().coord()*(j->weight()/weight_sum);
 							first = false;
@@ -216,7 +219,6 @@ namespace gctp { namespace scene {
 						else coord += j->work().coord()*(j->weight()/weight_sum);
 					}
 				}
-				coord.posture.normalize();
 				reinterpret_cast<Skeleton::NodeType *>(i->second)->val.getLCM() = coord.toMatrix();
 			}
 		}
@@ -224,14 +226,14 @@ namespace gctp { namespace scene {
 
 	/** トラック間のモーションブレンドをした値を適用
 	 *
-	 * 直交行列でない行列キーが含まれる場合に使用する。
-	 *
-	 * せん断など、行列キー特有のモーションを適用する場合、こちらを使用する。
+	 * 初期値をあらわすSkeltonが必要ない代わりに、ブレンドをCoordではなくMatrixで行うため、
+	 * フリップが発生する可能性あり。//uso その代わり、せん断など、直交行列でない行列キーも処理できる。
+	 * @param skl モーションを適用するSkelton
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/10/05 0:18:41
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	void MotionMixer::applyEx(Skeleton &skl) const
+	void MotionMixer::apply(Skeleton &skl) const
 	{
 		for(Skeleton::NodeIndex::iterator i = skl.index.begin(); i != skl.index.end(); ++i) {
 			float weight_sum = 0;
@@ -245,7 +247,7 @@ namespace gctp { namespace scene {
 			if(ok) {
 				bool first = true;
 				for(MotionTrackVector::const_iterator j = tracks_.begin(); j != tracks_.end(); ++j) {
-					if(j->work().is_valid) {
+					if(j->work().type != CoordUnion::TYPE_NONE) {
 						if(first) {
 							reinterpret_cast<Skeleton::NodeType *>(i->second)->val.getLCM() = j->work().matrix()*(j->weight()/weight_sum);
 							first = false;

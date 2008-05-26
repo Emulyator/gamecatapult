@@ -7,6 +7,7 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 #include "common.h"
+#include <gctp/audio/player.hpp>
 #include <gctp/audio.hpp>
 #include <gctp/audio/dx/buffer.hpp>
 //#include <gctp/audio/track.hpp> // Ç¢Ç¬Ç©Ç±Ç§Ç»ÇÈÅc

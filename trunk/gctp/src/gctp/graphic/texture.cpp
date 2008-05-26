@@ -21,15 +21,18 @@ namespace gctp { namespace graphic {
 
 	namespace {
 
-		Ptr realizeTexture(BufferPtr buffer)
+		Ptr realizeTexture(Ptr self, BufferPtr buffer)
 		{
-			Pointer<Texture> ret = new Texture;
-			if(ret) {
+			Pointer<Texture> ret;
+			if(self) ret = self;
+			else ret = new Texture;
+			if(ret && buffer) {
 				if(ret->setUp(buffer->buf(), buffer->size())) {
 					return ret;
 				}
+				return Ptr();
 			}
-			return Ptr();
+			return ret;
 		}
 
 #define __REGISTER(ext) Extension ext##_realizer(_T(#ext), realizeTexture)

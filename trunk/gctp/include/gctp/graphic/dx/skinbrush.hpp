@@ -991,13 +991,7 @@ namespace gctp { namespace graphic {
 
 			bone_matricies_.resize(pal_size_);
 
-			D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-			for(ulong i = 0; i < attr_num_; i++) {
-				if(!target_.mtrls[bonecb[i].AttribId].shader) {
-					if(!shader_) shader_ = graphic::createOnDB<dx::HLSLShader>(_T("skinnedmesh.fx"));
-					target_.mtrls[bonecb[i].AttribId].shader = shader_;
-				}
-			}
+			if(!shader_) shader_ = graphic::createOnDB<dx::HLSLShader>(_T("skinnedmesh.fx"));
 			return hr;
 		}
 
@@ -1014,7 +1008,8 @@ namespace gctp { namespace graphic {
 			//	if(bonecb[i].AttribId != static_cast<uint>(mtrlno)) return S_FALSE;
 			//}
 			HRslt hr;
-			Handle<dx::HLSLShader> shader = target_.mtrls[mtrlno].shader;
+			//Handle<dx::HLSLShader> shader = target_.mtrls[mtrlno].shader;
+			Handle<dx::HLSLShader> shader = shader_;
 			if(mesh_ && shader) {
 				dx::IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);

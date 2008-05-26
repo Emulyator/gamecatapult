@@ -197,11 +197,11 @@ namespace gctp { namespace scene {
 		/** @name アニメーションキー配列クラス
 		 */
 		/* @{ */
-		typedef KeyArray<TKey<Vector>,Vector> ScaleKeys;
-		typedef KeyArray<TKey<Quat>,Quat> PostureKeys;
-		typedef KeyArray<TKey<Vector>,Vector> YPRKeys;
-		typedef KeyArray<TKey<Vector>,Vector> PositionKeys;
-		typedef KeyArray<TKey<Matrix>,Matrix> MatrixKeys;
+		typedef KeyArray<TKey<Vector>,Vector>	PositionKeys;
+		typedef KeyArray<TKey<Quat>,Quat>		PostureKeys;
+		typedef KeyArray<TKey<Vector>,Vector>	YPRKeys;
+		typedef KeyArray<TKey<Vector>,Vector>	ScaleKeys;
+		typedef KeyArray<TKey<Matrix>,Matrix>	MatrixKeys;
 		/* @} */
 		
 		MotionChannel() : is_open_(false), position_type_(SPLINE) {}

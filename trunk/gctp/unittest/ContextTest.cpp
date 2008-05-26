@@ -73,7 +73,7 @@ public:
 	  TURI uri(_T("test/leaf.ext"));
 	  RealizeMethod f = Extension::get(uri.extension().c_str());
 	  CPPUNIT_ASSERT(f);
-	  ContextTestFoo::Ptr p = f(BufferPtr());
+	  ContextTestFoo::Ptr p = f(0, BufferPtr());
 	  CPPUNIT_ASSERT(p);
   }
   void testContext() {

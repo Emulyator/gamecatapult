@@ -10,12 +10,10 @@
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
 #include <gctp/def.hpp>
-//#include <gctp/pointer.hpp>
 #include <gctp/audio/track.hpp>
 
 namespace gctp { namespace audio {
 
-	//class Track; // いつかtypedefで無くなる…
 	class Clip;
 
 	/** 再生ハンドルクラス

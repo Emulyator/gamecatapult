@@ -100,7 +100,7 @@ extern "C" int main(int argc, char *argv[])
 	GCTP_USE_CLASS(scene::Entity);
 	GCTP_USE_CLASS(scene::RenderTree);
 	GCTP_USE_CLASS(scene::WorldRenderer);
-	const char *mesh_mode = "Vertex Shader";
+	const char *mesh_mode = "HLSL";
 	HRslt hr;
 
 	CoInitialize(0);
@@ -210,9 +210,6 @@ extern "C" int main(int argc, char *argv[])
 					Pointer<scene::Entity> entity;
 					entity = newEntity(context, *world, "gctp.scene.Entity", _T("chara"), _T("gradriel.x")).lock();
 					if(entity) {
-						//entity->skeleton().setPosType(MotionChannel::LINEAR);
-						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
-						//entity->do_loop_ = true;
 						if(entity->mixer().isExist(0)) {
 							entity->mixer().tracks()[0].setWeight(1.0f);
 							entity->mixer().tracks()[1].setWeight(1.0f);
@@ -246,21 +243,16 @@ extern "C" int main(int argc, char *argv[])
 							entity->mixer().tracks()[0].setWeight(1.0f);
 							entity->mixer().tracks()[0].setLoop(true);
 						}
-						//entity->speed_ = 30.0f;
 						entity->getLpos().x += 2.0f;
-						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
-						//entity->do_loop_ = true;
 					}
 
-					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("gctp_base.x")).lock();
+					entity = newEntity(context, *world, "gctp.scene.Entity", _T("gctp_base"), _T("gctp_base.x")).lock();
 					if(entity) {
 						if(entity->mixer().isExist(0)) {
 							entity->mixer().tracks()[0].setWeight(1.0f);
-							entity->mixer().tracks()[0].setLoop(true);
+							entity->mixer().tracks()[0].setLoop(false);
 						}
-						//entity->speed_ = 30.0f;
 						entity->getLpos().x -= 2.0f;
-						//entity->skeleton().setIsOpen(MotionChannel::CLOSE);
 					}
 
 					entity = newEntity(context, *world, "gctp.scene.Entity", NULL, _T("cell.x")).lock();
@@ -425,7 +417,26 @@ extern "C" int main(int argc, char *argv[])
 				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
 				<< _T("位置  :") << camera->stance().position << endl << endl
 				<< _T("モード: ") << mesh_mode << endl << endl
-				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy;
+				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl;
+			Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();
+			if(chr2) {
+				static int c = 2;
+				int _c = 0;
+				if(input().kbd().push(DIK_P) && c < 255) c++;
+				if(input().kbd().push(DIK_O) && c > 0) c--;
+				for(StrutumTree::TraverseItr i = chr2->skeleton().beginTraverse(); i != chr2->skeleton().endTraverse(); ++i) {
+					if(c == _c) {
+						const char *name = chr2->skeleton().getName(*i);
+						if(name) text.out() << name << endl;
+						else text.out() << "???" << endl;
+						text.out()
+							<< (*i).val.lcm() << endl
+							<< (*i).val.wtm() << endl;
+						break;
+					}
+					_c++;
+				}
+			}
 
 			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
 

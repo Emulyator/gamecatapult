@@ -103,6 +103,7 @@ namespace gctp { namespace scene {
 		virtual bool doOnUpdate(float delta);
 		Pointer<MotionMixer> mixer_;
 		Pointer<Body> target_;
+		Handle<Body> source_;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(Entity)
