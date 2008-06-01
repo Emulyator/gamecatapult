@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_FLESH_HPP_
 #define _GCTP_SCENE_FLESH_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult モデルインスタンスクラスヘッダファイル
  *
@@ -10,6 +13,7 @@
 #include <gctp/sphere.hpp>
 #include <gctp/strutumnode.hpp>
 #include <gctp/class.hpp>
+#include <gctp/scene/drawpacket.hpp>
 
 namespace gctp {
 	class Skeleton;
@@ -40,6 +44,8 @@ namespace gctp { namespace scene {
 
 		/// 描画
 		bool draw() const;
+		/// 描画パケット登録
+		void push(DrawPacketVector &packets) const;
 
 		/// （マテリアルとは別の）透明度設定。0で非表示。（シェーダーによっては、働かないかも）
 		float setDissolveRate(float dissolve_rate) { std::swap(dissolve_rate, dissolve_rate_); return dissolve_rate; }

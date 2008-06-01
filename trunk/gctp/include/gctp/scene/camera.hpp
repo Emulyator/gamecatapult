@@ -76,6 +76,8 @@ namespace gctp { namespace scene {
 		/// 投影スクリーンサイズを返す
 		Size2f screen() const;
 
+		const Matrix &viewprojection() const { return viewprojection_; }
+
 		/// カメラをグラフィックシステムに設定
 		void setToSystem() const;
 		/// カメラ設定開始
@@ -105,6 +107,10 @@ namespace gctp { namespace scene {
 		int getPosition(luapp::Stack &L);
 		void setPosture(luapp::Stack &L);
 		int getPosture(luapp::Stack &L);
+		void setClip(luapp::Stack &L);
+		int getClip(luapp::Stack &L);
+		void setFov(luapp::Stack &L);
+		int getFov(luapp::Stack &L);
 
 	private:
 		Stance stance_;
@@ -114,6 +120,7 @@ namespace gctp { namespace scene {
 		Size2f window_;
 		Rectf subwindow_;
 		Frustum frustum_;
+		mutable Matrix viewprojection_;
 
 		Handle<StrutumNode> node_;
 

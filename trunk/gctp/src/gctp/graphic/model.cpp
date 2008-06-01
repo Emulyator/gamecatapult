@@ -12,8 +12,6 @@
 #include <gctp/graphic/texture.hpp>
 #include <gctp/graphic/brush.hpp>
 #include <gctp/graphic/shader.hpp>
-#include <gctp/graphic/light.hpp>
-#include <gctp/graphic/rsrc.hpp>
 #include <gctp/graphic/vertexbuffer.hpp>
 #include <gctp/graphic/indexbuffer.hpp>
 #include <gctp/graphic/dx/device.hpp>
@@ -27,9 +25,6 @@ using gctp::graphic::dx::IDirect3DVertexBufferPtr;
 using gctp::graphic::dx::IDirect3DIndexBufferPtr;
 
 namespace gctp { namespace graphic {
-
-	// 本来はdx/skinbrush.cppにあるべきだが…
-	Pointer<SkinningVertexShader> VertexShaderSkinBrush::vs_;
 
 	/** モデル製作
 	 *
@@ -71,7 +66,11 @@ namespace gctp { namespace graphic {
 		}
 		updateBS();
 
-		if(isSkin() && !isSkinned()) useShader(); // デフォルトでHLSL
+		if(!brush_ && isSkin()) {
+			// デフォルトでHLSL
+			dx::ShaderSkinBrush *p = new dx::ShaderSkinBrush(*this);
+			if(p->setUp()) brush_ = p;
+		}
 	}
 
 	namespace {
@@ -368,24 +367,38 @@ namespace gctp { namespace graphic {
 	HRslt Model::draw(const Matrix &mat) const
 	{
 		HRslt hr;
-		uint cur_template = 0;
-		Handle<Shader> cur_shader = mtrls[cur_template].shader;
-		while(cur_template < mtrls.size()) {
-			hr = begin(cur_template, 0);
+		uint begin_subset = 0;
+		Handle<Shader> shader = mtrls[subsets_[begin_subset].material_no].shader;
+		while(begin_subset < subsets_.size()) {
+			if(shader) {
+				hr = shader->begin();
+				GCTP_TRACE(hr);
+			}
+			else {
+				device().impl()->SetVertexShader(NULL);
+				device().impl()->SetPixelShader(NULL);
+			}
+
+			hr = begin();
 			if(hr) {
-				for(uint i = cur_template; i < mtrls.size(); i++) {
-					if(cur_shader == mtrls[i].shader) {
-						hr = draw(mat, i);
+				for(uint i = begin_subset; i < subsets_.size(); i++) {
+					if(shader == mtrls[subsets_[i].material_no].shader) {
+						hr = draw(i, mat);
 						if(!hr) break;
 					}
 				}
 				HRslt _hr = end();
-				if(hr) hr = _hr;
+				if(!_hr) GCTP_TRACE(_hr);
+			}
+			if(shader) {
+				HRslt _hr;
+				_hr = shader->end();
+				GCTP_TRACE(_hr);
 			}
 			// 次のシェーダを探す
-			while(++cur_template < mtrls.size()) {
-				if(mtrls[cur_template].shader != cur_shader) {
-					cur_shader = mtrls[cur_template].shader;
+			while(++begin_subset < subsets_.size()) {
+				if(mtrls[subsets_[begin_subset].material_no].shader != shader) {
+					shader = mtrls[subsets_[begin_subset].material_no].shader;
 					break;
 				}
 			}
@@ -393,92 +406,103 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
-	HRslt Model::begin(int template_mtrlno, int passno) const
+	/** (スキニング済みであれば）スキンモデルとして描画
+	 *
+	 * スキニングされてない場合、Skeletonのルートを使ってソリッドモデルとして描画する。
+	 * @param skl モーションがセットされたスケルトン
+	 *
+	 * @todo Pointer<Skelton>版を用意して、遅延描画はそっちのみにする？
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 15:13:42
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	HRslt Model::draw(const Skeleton &skl) const
+	{
+		if(brush_) {
+			HRslt hr;
+			uint begin_subset = 0;
+			Handle<Shader> shader = mtrls[brush_->subsets()[begin_subset].material_no].shader;
+			while(begin_subset < brush_->subsets().size()) {
+				if(shader) {
+					hr = shader->begin();
+					if(!hr) GCTP_TRACE(hr);
+				}
+				else {
+					IDirect3DDevicePtr dev;
+					mesh_->GetDevice(&dev);
+					dev->SetVertexShader(NULL);
+					dev->SetPixelShader(NULL);
+				}
+
+				hr = brush_->begin(shader, skl);
+				if(hr) {
+					for(uint i = begin_subset; i < brush_->subsets().size(); i++) {
+						if(shader == mtrls[brush_->subsets()[i].material_no].shader) {
+							hr = brush_->draw(i, skl);
+							if(!hr) break;
+						}
+					}
+					HRslt _hr = brush_->end();
+					if(!_hr) GCTP_TRACE(_hr);
+				}
+				if(shader) {
+					HRslt _hr;
+					_hr = shader->end();
+					if(!_hr) GCTP_TRACE(_hr);
+				}
+				// 次のシェーダを探す
+				while(++begin_subset < brush_->subsets().size()) {
+					if(mtrls[brush_->subsets()[begin_subset].material_no].shader != shader) {
+						shader = mtrls[brush_->subsets()[begin_subset].material_no].shader;
+						break;
+					}
+				}
+			}
+			return hr;
+		}
+		else if(!skl.empty()) return draw(skl.root()->val.wtm());
+		return E_FAIL;
+	}
+
+	HRslt Model::begin() const
 	{
 		HRslt hr;
-		current_template_mtrlno_ = template_mtrlno;
-		if(mesh_) { // mesh_も追い出す
-			Handle<dx::HLSLShader> shader = mtrls[template_mtrlno].shader;
-			if(shader && (*shader)) {
-				hr = shader->begin();
-			}
-			else {
-				IDirect3DDevicePtr dev;
-				mesh_->GetDevice(&dev);
-				dev->SetVertexShader(NULL);
-			}
-			{
-				IDirect3DDevicePtr dev;
-				mesh_->GetDevice(&dev);
-				hr = dev->SetFVF( mesh_->GetFVF() );
-				if(!hr) return hr;
-				hr = dev->SetIndices(ib_); //< これModel.beginに
-				if(!hr) return hr;
-				hr = dev->SetStreamSource(0, vb_, 0, mesh_->GetNumBytesPerVertex());//< これModel.beginSubsetに
-				if(!hr) return hr;
-				//	Shader.begin
-				//		Model.begin
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//		Model.end
-				//		Model.begin
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//		Model.end
-				//	Shader.end
-				//	Model.drawSubset =
-				//		for allpass
-				//			Shader.beginPass
-				//				DrawIndexedPrimitive
-				//			Shader.endPass
-				// こう？
-				//
-				//	一般的に切り替えペナルティー＝Shader＞Modelらしい。と信じる
-				// その仮定では上のような順位。違ったら、
-				//	Model.begin
-				//		Shader.begin
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//		Shader.end
-				//		Shader.begin
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//				Model.drawSubset
-				//		Shader.end
-				//	Model.end
-				//
-			}
-			if(!hr) return hr;
+		ib_.setCurrent();
+		vb_.setCurrent(0);
+		device().impl()->SetFVF( vb_.fvf().val ); // これ、vbのsetCurrentに含めるべきか...
+		return hr;
+	}
+
+	HRslt Model::end() const
+	{
+		HRslt hr;
+		hr = device().impl()->SetIndices(0);
+		if(!hr) {
+			GCTP_TRACE(hr);
 		}
-		else {
-			ib_.setCurrent();
-			vb_.setCurrent(0);
-			device().impl()->SetFVF( vb_.fvf().val ); // これ、vbのsetCurrentに含めるべきか...
+		hr = device().impl()->SetStreamSource(0, 0, 0, 0);//< これModel.beginSubsetに
+		if(!hr) {
+			GCTP_TRACE(hr);
 		}
 		return hr;
 	}
 
-	/** マテリアルを指定して、ソリッドモデルとして描画
+	/** サブセットを指定して、ソリッドモデルとして描画
 	 *
+	 * 主にマテリアルソート描画用。
+	 * @param subset_no サブセット番号
 	 * @param mat モデルの座標系
-	 * @param mtrlno マテリアル番号
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::draw(const Matrix &mat, int mtrlno) const
+	HRslt Model::draw(int subset_no, const Matrix &mat) const
 	{
 		HRslt hr;
 		if(vb_ && ib_) {
-			uint subsetno;
-			for(subsetno = 0; subsetno < subsets_.size(); subsetno++) if(subsets_[subsetno].material_no == mtrlno) break;
-			if(subsetno == subsets_.size()) return S_FALSE;
-			device().setMaterial(mtrls[mtrlno]);
-			Handle<dx::HLSLShader> shader = mtrls[mtrlno].shader;
+			device().setMaterial(mtrls[subsets_[subset_no].material_no]);
+			Handle<dx::HLSLShader> shader = mtrls[subsets_[subset_no].material_no].shader;
 			if(shader && *shader) {
 //				hr = (*shader)->SetMatrix("WorldView", &(mat*getView()));
 				hr = (*shader)->SetMatrix("WorldView", mat);
@@ -499,156 +523,42 @@ namespace gctp { namespace graphic {
 				}
 			}
 			else {
-				device().impl()->SetVertexShader(NULL);
 				device().impl()->SetTransform(D3DTS_WORLD, mat);
 			}
-			if(shader) {
+			if(shader && *shader) {
 				hr = (*shader)->CommitChanges();
 				if(!hr) GCTP_TRACE(hr);
-				for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
-					hr = shader->beginPass( ipass );
-					if(!hr) GCTP_TRACE(hr);
-					else {
-						hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
-						if(!hr) GCTP_TRACE(hr);
-						hr = shader->endPass();
-						if(!hr) GCTP_TRACE(hr);
-					}
-				}
 			}
-			else {
-				hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subsetno].vertex_offset, subsets_[subsetno].vertex_num, subsets_[subsetno].index_offset, subsets_[subsetno].primitive_num);
-			}
+			hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subset_no].vertex_offset, subsets_[subset_no].vertex_num, subsets_[subset_no].index_offset, subsets_[subset_no].primitive_num);
+			if(!hr) GCTP_TRACE(hr);
 
 			if(!hr) return hr;
 		}
 		return hr;
 	}
 
-	HRslt Model::end() const
-	{
-		HRslt hr;
-		hr = device().impl()->SetIndices(0);
-		if(!hr) {
-			GCTP_TRACE(hr);
-		}
-		hr = device().impl()->SetStreamSource(0, 0, 0, 0);//< これModel.beginSubsetに
-		if(!hr) {
-			GCTP_TRACE(hr);
-		}
-		Handle<dx::HLSLShader> shader = mtrls[current_template_mtrlno_].shader;
-		if(shader) {
-			hr = shader->end();
-			if(!hr) {
-				GCTP_TRACE(hr);
-			}
-		}
-		return hr;
-	}
-
 	/** (スキニング済みであれば）スキンモデルとして描画
 	 *
-	 * スキニングされてない場合、Skeletonのルートを使ってソリッドモデルとして描画する。
-	 * @param skl モーションがセットされたスケルトン
-	 *
-	 * @todo Pointer<Skelton>版を用意して、遅延描画はそっちのみにする？
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 15:13:42
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	HRslt Model::draw(const Skeleton &skl) const
-	{
-		if(brush_.get()) return brush_->draw(skl);
-		else if(!skl.empty()) return draw(skl.root()->val.wtm());
-		return E_FAIL;
-	}
-
-	/** (スキニング済みであれば）スキンモデルとして描画
-	 *
-	 * 主に半透明体の遅延描画用。
+	 * 主にマテリアルソート描画用。
+	 * @param subset_no サブセット番号
 	 * @param mat モデルの座標系
-	 * @param mtrlno マテリアル番号
      *
 	 * @todo Pointer<Skelton>版を用意して、遅延描画はそっちのみにする？
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/29 15:13:42
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt Model::draw(const Skeleton &skl, int mtrlno) const
+	HRslt Model::draw(int subset_no, const Skeleton &skl) const
 	{
-		if(brush_) return brush_->draw(skl, mtrlno);
-		else if(!skl.empty()) return draw(skl.root()->val.wtm(), mtrlno);
+		if(brush_) return brush_->draw(subset_no, skl);
+		else if(!skl.empty()) return draw(subset_no, skl.root()->val.wtm());
 		return E_FAIL;
 	}
 
-	bool Model::isSkin()
+	bool Model::isSkin() const
 	{
 		if(boneNum() > 0) return true;
 		else return false;
-	}
-
-	bool Model::isSkinned()
-	{
-		// 後々これでは問題あり
-		if(brush_) return true;
-		return false;
-	}
-
-	/** スキニングをやめる
-	 */
-	void Model::solidize()
-	{
-		brush_ = 0;
-	}
-
-#define CREATE_BRUSH(_T)	{\
-	if(skin_) {\
-		if(isSkin()) {\
-			_T *w = new _T(*this);\
-			if(w) {\
-				brush_ = w;\
-				return w->setUp();\
-			}\
-			return E_OUTOFMEMORY;\
-		}\
-		return D3DERR_INVALIDCALL;\
-	}\
-	return CO_E_NOTINITIALIZED;\
-}
-
-	/** ソフトウェアスキニングされたメッシュを生成
-	 */
-	HRslt Model::useSoftware()
-	{
-		CREATE_BRUSH(SoftwareSkinBrush);
-	}
-
-	/** 頂点ブレンドスキンに変換
-	 */
-	HRslt Model::useBlended()
-	{
-		CREATE_BRUSH(BlendedSkinBrush);
-	}
-
-	/** インデックス型頂点ブレンドスキンに変換
-	 */
-	HRslt Model::useIndexed()
-	{
-		CREATE_BRUSH(IndexedSkinBrush);
-	}
-
-	/** 頂点シェーダーによるスキンに変換
-	 */
-	HRslt Model::useVS()
-	{
-		CREATE_BRUSH(VertexShaderSkinBrush);
-	}
-
-	/** HLSLによるスキンに変換
-	 */
-	HRslt Model::useShader()
-	{
-		CREATE_BRUSH(ShaderSkinBrush);
 	}
 
 	namespace {
@@ -763,4 +673,248 @@ namespace gctp { namespace graphic {
 		}
 	}
 
-}} // namespace gctp
+	
+	namespace dx {
+		
+		/////////////////
+		// なぜかSkinningVertexShaderの定義がここに
+		//
+
+		// Infl 1
+		const char SkinningVertexShader::asm_shaders_1[] =
+			"vs.1.1\n"
+			";------------------------------------------------------------------------------\n"
+			"; v0 = position\n"
+			"; v1 = blend weights\n"
+			"; v2 = blend indices\n"
+			"; v3 = normal\n"
+			"; v4 = texture coordinates\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; r0.w = Last blend weight\n"
+			"; r1 = Blend indices\n"
+			"; r2 = Temp position\n"
+			"; r3 = Temp normal\n"
+			"; r4 = Blended position in camera space\n"
+			"; r5 = Blended normal in camera space\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; Constants specified by the app;\n"
+			";\n"
+			"; c9-c95 = world-view matrix palette\n"
+			"; c8	  = diffuse * light.diffuse\n"
+			"; c7	  = ambient color\n"
+			"; c2-c5   = projection matrix\n"
+			"; c1	  = light direction\n"
+			"; c0	  = {1, power, 0, 1020.01};\n"
+			";------------------------------------------------------------------------------\n"
+			";------------------------------------------------------------------------------\n"
+			"; oPos	  = Output position\n"
+			"; oD0	  = Diffuse\n"
+			"; oD1	  = Specular\n"
+			"; oT0	  = texture coordinates\n"
+			";------------------------------------------------------------------------------\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
+		
+		// Infl 2
+		const char SkinningVertexShader::asm_shaders_2[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xzz; \n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
+
+		// Infl 3
+		const char SkinningVertexShader::asm_shaders_3[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xxz; \n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
+			"//Set 3\n"
+			"mov a0.x,r1.z\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
+		
+		// Infl 4
+		const char SkinningVertexShader::asm_shaders_4[] =
+			"vs.1.1\n"
+			"dcl_position v0;\n"
+			"dcl_blendweight v1;\n"
+			"dcl_blendindices v2;\n"
+			"dcl_normal v3;\n"
+			"dcl_texcoord0 v4;\n"
+			"// Compensate for lack of UBYTE4 on Geforce3\n"
+			"mul r1,v2.zyxw,c0.wwww\n"
+			"//mul r1,v2,c0.wwww\n"
+			"//first compute the last blending weight\n"
+			"dp3 r0.w,v1.xyz,c0.xxx;\n"
+			"add r0.w,-r0.w,c0.x\n"
+			"//Set 1\n"
+			"mov a0.x,r1.x\n"
+			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
+			"//blend them\n"
+			"mul r4.xyz,r4.xyz,v1.xxxx\n"
+			"mul r5.xyz,r5.xyz,v1.xxxx\n"
+			"//Set 2\n"
+			"mov a0.x,r1.y\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
+			"//Set 3\n"
+			"mov a0.x,r1.z\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,v1.zzzz,r4;\n"
+			"mad r5.xyz,r3.xyz,v1.zzzz,r5;\n"
+			"//Set 4\n"
+			"mov a0.x,r1.w\n"
+			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
+			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
+			"//add them in\n"
+			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
+			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
+			"//compute position\n"
+			"mov r4.w,c0.x\n"
+			"m4x4 oPos,r4,c2\n"
+			"// normalize normals\n"
+			"dp3 r5.w, r5, r5;\n"
+			"rsq r5.w, r5.w;\n"
+			"mul r5, r5, r5.w;\n"
+			"; Do the lighting calculation\n"
+			"dp3 r1.x, r5, c1      ; normal dot light\n"
+			"lit r1, r1\n"
+			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
+			"add r0, r0, c7        ; Add in ambient\n"
+			"min oD0, r0, c0.x     ; clamp if > 1\n"
+			"mov oD1, c0.zzzz      ; output specular\n"
+			"; Copy texture coordinate\n"
+			"mov oT0, v4\n";
+		
+		const char *SkinningVertexShader::asm_shaders[] = {
+			asm_shaders_1,
+			asm_shaders_2,
+			asm_shaders_3,
+			asm_shaders_4,
+		};
+		
+		const int SkinningVertexShader::asm_shader_sizes[] = {
+			sizeof(asm_shaders_1),
+			sizeof(asm_shaders_2),
+			sizeof(asm_shaders_3),
+			sizeof(asm_shaders_4),
+		};
+		
+		// 本来はdx/skinbrush.cppにあるべきだが…
+		Pointer<SkinningVertexShader> VertexShaderSkinBrush::vs_;
+	}
+
+}} // namespace gctp::graphic

@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_WORLD_HPP_
 #define _GCTP_SCENE_WORLD_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult ワールドクラスヘッダファイル
  *

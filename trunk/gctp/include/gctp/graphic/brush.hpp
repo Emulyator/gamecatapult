@@ -12,21 +12,27 @@
  */
 #include <gctp/graphic.hpp>
 #include <gctp/class.hpp>
+#include <gctp/graphic/model.hpp>
 
 namespace gctp { namespace graphic {
 
-	class Model;
 	/// 描画手段クラス
 	class Brush : public Object {
 	public:
 		Brush(Model &target) : target_(target) {}
 		virtual ~Brush() {}
-		virtual HRslt draw(const Skeleton &skl) const = 0;
-		virtual HRslt draw(const Skeleton &skl, int mtrlno) const = 0;
-		//virtual HRslt begin(int template_mtrlno) const = 0;
-		//virtual HRslt draw(const Skeleton &skel, int mtrlno) const = 0;
-		//virtual HRslt draw(const Matrix &mat, int mtrlno) const = 0;
-		//virtual HRslt end() const = 0;
+		virtual HRslt begin(Handle<Shader> shader, const Skeleton &skl) const
+		{
+			return S_OK;
+		}
+		virtual HRslt end() const
+		{
+			return S_OK;
+		}
+		virtual HRslt draw(uint subset_no, const Skeleton &skl) const = 0;
+		//virtual HRslt draw(uint subset_no, const Matrix &mat) const = 0;
+		/// メッシュ断片情報
+		virtual const std::vector<SubsetInfo> &subsets() const { return target_.subsets(); }
 		Model &target_;
 	};
 
