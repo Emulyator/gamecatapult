@@ -14,14 +14,56 @@
  */
 #include <gctp/graphic/brush.hpp>
 #include <gctp/graphic/rsrc.hpp>
-#include <gctp/graphic/shader.hpp>
+#include <gctp/graphic/light.hpp>
+#include <gctp/graphic/dx/hlslshader.hpp>
 
-namespace gctp { namespace graphic {
+namespace gctp { namespace graphic { namespace dx {
+
+	/// スキンブラシ基底クラス
+	class SkinBrush : public Brush {
+	public:
+		SkinBrush(Model &target) : Brush(target) {}
+
+		void setUp()
+		{
+			ulong size;
+			mesh_->GetAttributeTable(NULL, &size);
+			subsets_.resize(size);
+			std::vector<D3DXATTRIBUTERANGE> attrinfo;
+			attrinfo.resize(size);
+			mesh_->GetAttributeTable(&attrinfo[0], &size);
+			for(DWORD i = 0; i < size; i++) {
+				subsets_[i].material_no = attrinfo[i].AttribId;
+				subsets_[i].index_offset = attrinfo[i].FaceStart*3;
+				subsets_[i].primitive_num = attrinfo[i].FaceCount;
+				subsets_[i].vertex_offset = attrinfo[i].VertexStart;
+				subsets_[i].vertex_num = attrinfo[i].VertexCount;
+			}
+		}
+
+		void setUp(D3DXBONECOMBINATION *bonecb, ulong bonecb_len)
+		{
+			subsets_.resize(bonecb_len);
+			for(DWORD i = 0; i < bonecb_len; i++) {
+				subsets_[i].material_no = bonecb[i].AttribId;
+				subsets_[i].index_offset = bonecb[i].FaceStart*3;
+				subsets_[i].primitive_num = bonecb[i].FaceCount;
+				subsets_[i].vertex_offset = bonecb[i].VertexStart;
+				subsets_[i].vertex_num = bonecb[i].VertexCount;
+			}
+		}
+
+		virtual const std::vector<SubsetInfo> &subsets() const { return subsets_; }
+
+	protected:
+		std::vector<SubsetInfo>			subsets_;	// 断片情報
+		ID3DXMeshPtr					mesh_;
+	};
 
 	/// ソフトウェアスキンモデルクラス
-	class SoftwareSkinBrush : public Brush {
+	class SoftwareSkinBrush : public SkinBrush {
 	public:
-		SoftwareSkinBrush(Model &target) : Brush(target), bone_matricies_(NULL) {}
+		SoftwareSkinBrush(Model &target) : SkinBrush(target), bone_matricies_(NULL) {}
 		~SoftwareSkinBrush()
 		{
 			delete[] bone_matricies_;
@@ -36,43 +78,26 @@ namespace gctp { namespace graphic {
 			hr = target_.mesh()->CloneMeshFVF(D3DXMESH_MANAGED, target_.mesh()->GetFVF(), dev, &mesh_);
 			if(!hr) return hr;
 
-			ulong attr_num;
-			hr = mesh_->GetAttributeTable(NULL, &attr_num);
-			if(!hr) return hr;
-			attr_tbl_.resize(attr_num);
-			hr = mesh_->GetAttributeTable(&attr_tbl_[0], NULL);
-			if(!hr) return hr;
+			SkinBrush::setUp();
 
 			if(bone_matricies_) delete[] bone_matricies_;
 			bone_matricies_ = new D3DXMATRIXA16[target_.boneNum()];
 			return hr;
 		}
 
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
-		{
-			return drawLow(tree, -1);
-		}
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			return drawLow(tree, mtrlno);
-		}
-
-	protected:
-		/// 描画
-		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
+		/// 描画設定
+		virtual HRslt begin(Handle<Shader> shader, const Skeleton &skl/**< モーションがセットされたスケルトン*/) const
 		{
 			HRslt hr;
 			if(mesh_) {
 				dx::IDirect3DDevicePtr dev;
 				mesh_->GetDevice(&dev);
-
 				dev->SetVertexShader(NULL);
+
 				uint bonenum  = target_.boneNum();
 				// set up bone transforms
 				for(uint i = 0; i < bonenum; i++) {
-					Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(i));
+					Pointer<Skeleton::NodeType> node = skl.get(target_.bonename(i));
 					if(node) D3DXMatrixMultiply(const_cast<D3DXMATRIXA16 *>(&bone_matricies_[i]), *target_.bone(i), node->val.wtm());
 				}
 
@@ -87,48 +112,36 @@ namespace gctp { namespace graphic {
 				// generate skinned mesh
 				hr = target_.skin()->UpdateSkinnedMesh(&bone_matricies_[0], NULL, src_vbl.buf, dst_vbl.buf);
 				if(!hr) return hr;
-
-				for(uint i = 0; i < attr_tbl_.size(); i++) {
-					if(mtrlno != -1 && attr_tbl_[i].AttribId != static_cast<uint>(mtrlno)) break;
-					device().setMaterial(target_.mtrls[attr_tbl_[i].AttribId]);
-					
-					Pointer<Shader> shader = target_.mtrls[attr_tbl_[i].AttribId].shader.get();
-					if(shader && (hr = shader->begin())) {
-						for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
-							hr = shader->beginPass( ipass );
-							if(!hr) GCTP_TRACE(hr);
-							hr = mesh_->DrawSubset(attr_tbl_[i].AttribId);
-							if(!hr) GCTP_TRACE(hr);
-							hr = shader->endPass();
-							if(!hr) GCTP_TRACE(hr);
-						}
-						hr = shader->end();
-						if(!hr) GCTP_TRACE(hr);
-					}
-					else hr = mesh_->DrawSubset(attr_tbl_[i].AttribId);
-
-					if(!hr) return hr;
-				}
+			}
+			return hr;
+		}
+		/// 描画
+		virtual HRslt draw(uint subset_no, const Skeleton &skl/**< モーションがセットされたスケルトン*/) const
+		{
+			HRslt hr;
+			if(mesh_) {
+				device().setMaterial(target_.mtrls[subsets_[subset_no].material_no]);
+				hr = mesh_->DrawSubset(subset_no);
+				if(!hr) return hr;
 			}
 			return hr;
 		}
 
-		std::vector<D3DXATTRIBUTERANGE>	attr_tbl_;
+	protected:
 		D3DXMATRIXA16					*bone_matricies_;
-		ID3DXMeshPtr					mesh_;
 	};
 
 	/// 頂点ブレンドスキンモデルクラス
-	class BlendedSkinBrush : public Brush {
+	class BlendedSkinBrush : public SkinBrush {
 	public:
 		BlendedSkinBrush(Model &target)
-			: Brush(target), max_face_infl_(0), attr_split_(0), attr_num_(0)
+			: SkinBrush(target), max_face_infl_(0), split_(0), bonecb_len_(0)
 		{}
 
 		HRslt setUp()
 		{
 			HRslt hr;
-			mesh_ = 0; bonecb_ = 0; attr_split_ = 0; attr_num_ = 0; max_face_infl_ = 0;
+			mesh_ = 0; bonecb_ = 0; bonecb_len_ = 0; split_ = 0; max_face_infl_ = 0;
 			
 			dx::IDirect3DDevicePtr dev;
 			hr = target_.mesh()->GetDevice(&dev);
@@ -148,7 +161,7 @@ namespace gctp { namespace graphic {
 				NULL,//pFaceRemap
 				NULL,//ppVertexRemap
 				&max_face_infl_,//pMaxFaceInfl
-				&attr_num_,//pNumBoneCombinations
+				&bonecb_len_,//pNumBoneCombinations
 				&bonecb_,
 				&mesh_);
 			if(!hr) return hr;
@@ -166,40 +179,50 @@ namespace gctp { namespace graphic {
 				// calculate the index of the attribute table to split on
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 
-				for(attr_split_ = 0; attr_split_ < attr_num_; attr_split_++) {
+				for(split_ = 0; split_ < bonecb_len_; split_++) {
 					ulong infl = 0;
 					for(ulong winfl = 0; winfl < max_face_infl_; winfl++) {
-						if(bonecb[attr_split_].BoneId[winfl] != UINT_MAX) infl++;
+						if(bonecb[split_].BoneId[winfl] != UINT_MAX) infl++;
 					}
 					if(infl > caps.MaxVertexBlendMatrices) break;
 				}
 
 				// if there is both HW and SW, add the Software Processing flag
-				if(attr_split_ < attr_num_) {
+				if(split_ < bonecb_len_) {
 					ID3DXMeshPtr temp_mesh;
 					hr = mesh_->CloneMeshFVF(D3DXMESH_SOFTWAREPROCESSING|mesh_->GetOptions(), mesh_->GetFVF(), dev, &temp_mesh);
 					if(!hr) return hr;
 					mesh_ = temp_mesh;
 				}
 			}
-			else attr_split_ = attr_num_;
+			else split_ = bonecb_len_;
+
+			SkinBrush::setUp(reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer()), bonecb_len_);
 			return hr;
 		}
 
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		/// 描画開始
+		HRslt begin(Handle<Shader> shader, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
 		{
-			return drawLow(tree, -1);
-		}
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			return drawLow(tree, mtrlno);
+			HRslt hr;
+			dx::IDirect3DDevicePtr dev;
+			hr = mesh_->GetDevice(&dev);
+			if(!hr) return hr;
+			return dev->SetVertexShader(NULL);
 		}
 
-	protected:
+		/// 描画終了
+		HRslt end() const
+		{
+			HRslt hr;
+			dx::IDirect3DDevicePtr dev;
+			hr = mesh_->GetDevice(&dev);
+			if(!hr) return hr;
+			return dev->SetRenderState(D3DRS_VERTEXBLEND, 0);
+		}
+
 		/// 描画
-		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
+		HRslt draw(uint subset_no, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
 		{
 			HRslt hr;
 			dx::IDirect3DDevicePtr dev;
@@ -213,21 +236,17 @@ namespace gctp { namespace graphic {
 			hr = dev->GetDeviceCaps(&caps);
 			if(!hr) return hr;
 			
-			dev->SetVertexShader(NULL);
-			uint bonenum  = target_.boneNum();
-			ulong attr_id_prev = UNUSED32;
 			D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-			// Draw using default vtx processing of the graphic (typically HW)
-			for(ulong i = 0; i < attr_num_; i++) {
-				if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
+			device().setMaterial(target_.mtrls[bonecb[subset_no].AttribId]);
+			if(subset_no < bonecb_len_) {
 				ulong blend_num = 0;
 				for(ulong j = 0; j < max_face_infl_; j++) {
-					if(bonecb[i].BoneId[j] != UINT_MAX) blend_num = j;
+					if(bonecb[subset_no].BoneId[j] != UINT_MAX) blend_num = j;
 				}
 
 				if(caps.MaxVertexBlendMatrices >= blend_num + 1) {
 					for(ulong j = 0; j < max_face_infl_; j++) {
-						ulong matid = bonecb[i].BoneId[j];
+						ulong matid = bonecb[subset_no].BoneId[j];
 						if(matid != UINT_MAX) {
 							Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
 							if(node) {
@@ -239,71 +258,56 @@ namespace gctp { namespace graphic {
 
 					dev->SetRenderState(D3DRS_VERTEXBLEND, blend_num);
 
-					if((attr_id_prev != bonecb[i].AttribId) || (attr_id_prev == UNUSED32)) {
-						device().setMaterial(target_.mtrls[bonecb[i].AttribId]);
-						attr_id_prev  = bonecb[i].AttribId;
-					}
-
-					hr = mesh_->DrawSubset(i);
+					hr = mesh_->DrawSubset(subset_no);
 					if(!hr) return hr;
 				}
 			}
 
 			// If necessary, draw parts that HW could not handle using SW
-			if(attr_split_ < attr_num_) {
-				attr_id_prev = UNUSED32;
+			if(subset_no >= split_ && split_ < bonecb_len_) {
 				dev->SetSoftwareVertexProcessing(TRUE);
-				for(ulong i = attr_split_; i < attr_num_; i++) {
-					if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
-					ulong blend_num = 0;
+				ulong blend_num = 0;
+				for(ulong j = 0; j < max_face_infl_; j++) {
+					if(bonecb[subset_no].BoneId[j] != UINT_MAX) blend_num = j;
+				}
+
+				if(caps.MaxVertexBlendMatrices < blend_num + 1) {
 					for(ulong j = 0; j < max_face_infl_; j++) {
-						if(bonecb[i].BoneId[j] != UINT_MAX) blend_num = j;
+						ulong matid = bonecb[subset_no].BoneId[j];
+						if(matid != UINT_MAX) {
+							dev->SetTransform(D3DTS_WORLDMATRIX(j), tree.get(target_.bonename(matid))->val.wtm());
+							dev->MultiplyTransform(D3DTS_WORLDMATRIX(j), *target_.bone(matid));
+						}
 					}
 
-					if(caps.MaxVertexBlendMatrices < blend_num + 1) {
-						for(ulong j = 0; j < max_face_infl_; j++) {
-							ulong matid = bonecb[i].BoneId[j];
-							if(matid != UINT_MAX) {
-								dev->SetTransform(D3DTS_WORLDMATRIX(j), tree.get(target_.bonename(matid))->val.wtm());
-								dev->MultiplyTransform(D3DTS_WORLDMATRIX(j), *target_.bone(matid));
-							}
-						}
+					dev->SetRenderState(D3DRS_VERTEXBLEND, blend_num);
 
-						dev->SetRenderState(D3DRS_VERTEXBLEND, blend_num);
-
-						if((attr_id_prev != bonecb[i].AttribId) || (attr_id_prev == UNUSED32)) {
-							device().setMaterial(target_.mtrls[bonecb[i].AttribId]);
-							attr_id_prev = bonecb[i].AttribId;
-						}
-
-						hr = mesh_->DrawSubset(i);
-						if(!hr) return hr;
-					}
+					hr = mesh_->DrawSubset(subset_no);
+					if(!hr) return hr;
 				}
 				dev->SetSoftwareVertexProcessing(FALSE);
 			}
-			dev->SetRenderState(D3DRS_VERTEXBLEND, 0);
 			return hr;
 		}
 
+	protected:
 		ulong					max_face_infl_;
-		ulong					attr_split_;
-		ulong					attr_num_;
+		ulong					split_;
+		ulong					bonecb_len_;
 		ID3DXBufferPtr			bonecb_; // ボーンの組み合わせデータ
-		ID3DXMeshPtr			mesh_;
 	};
 
 	/// インデックス式頂点ブレンドスキンモデルクラス
-	class IndexedSkinBrush : public Brush {
+	class IndexedSkinBrush : public SkinBrush {
 	public:
-		IndexedSkinBrush(Model &target) : Brush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), attr_num_(0)
+		IndexedSkinBrush(Model &target) : SkinBrush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), bonecb_len_(0)
 		{
 		}
 
 		HRslt setUp()
 		{
 			HRslt hr;
-			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
+			mesh_ = 0; bonecb_ = 0; bonecb_len_ = 0; pal_size_ = 0; max_face_infl_ = 0;
 			
 			dx::IDirect3DDevicePtr dev;
 			hr = target_.mesh()->GetDevice(&dev);
@@ -348,27 +352,16 @@ namespace gctp { namespace graphic {
 				NULL,//pFaceRemap
 				NULL,//ppVertexRemap
 				&max_face_infl_,
-				&attr_num_,
+				&bonecb_len_,
 				&bonecb_,
 				&mesh_);
 			if(!hr) return hr;
+			SkinBrush::setUp(reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer()), bonecb_len_);
 			return hr;
 		}
 
 		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
-		{
-			return drawLow(tree, -1);
-		}
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			return drawLow(tree, mtrlno);
-		}
-
-	protected:
-		/// 描画
-		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
+		HRslt begin(Handle<Shader> shader, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
 		{
 			HRslt hr;
 			if(mesh_) {
@@ -381,275 +374,61 @@ namespace gctp { namespace graphic {
 				if(max_face_infl_ == 1) dev->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_0WEIGHTS);
 				else dev->SetRenderState(D3DRS_VERTEXBLEND, max_face_infl_-1);
 				if(max_face_infl_) dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, TRUE);
-				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 				dev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 				dev->SetVertexShader(NULL);
-				for(uint i = 0; i < attr_num_; i++) {
-					if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
-					for(uint j = 0; j < pal_size_; j++) {
-						uint matid = bonecb[i].BoneId[j];
-						if(matid != UINT_MAX) {
-							Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
-							if(node) {
-								dev->SetTransform(D3DTS_WORLDMATRIX(j), node->val.wtm());
-								dev->MultiplyTransform(D3DTS_WORLDMATRIX(j), *target_.bone(matid));
-							}
-						}
-					}
-					device().setMaterial(target_.mtrls[bonecb[i].AttribId]);
-					hr = mesh_->DrawSubset(i);
-					if(!hr) PRNN(hr);
-				}
+			}
+			return hr;
+		}
+
+		HRslt end() const
+		{
+			HRslt hr;
+			if(mesh_) {
+				dx::IDirect3DDevicePtr dev;
+				hr = mesh_->GetDevice(&dev);
+				if(!hr) return hr;
+
 				dev->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE);
 				dev->SetRenderState(D3DRS_VERTEXBLEND, 0);
 				if(is_use_sw_) dev->SetSoftwareVertexProcessing(FALSE);
 			}
 			return hr;
 		}
+		/// 描画
+		HRslt draw(uint subset_no, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		{
+			if(mesh_) {
+				HRslt hr;
+				dx::IDirect3DDevicePtr dev;
+				hr = mesh_->GetDevice(&dev);
+				if(!hr) return hr;
 
+				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
+				for(uint j = 0; j < pal_size_; j++) {
+					uint matid = bonecb[subset_no].BoneId[j];
+					if(matid != UINT_MAX) {
+						Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
+						if(node) {
+							dev->SetTransform(D3DTS_WORLDMATRIX(j), node->val.wtm());
+							dev->MultiplyTransform(D3DTS_WORLDMATRIX(j), *target_.bone(matid));
+						}
+					}
+				}
+				device().setMaterial(target_.mtrls[bonecb[subset_no].AttribId]);
+				hr = mesh_->DrawSubset(subset_no);
+				if(!hr) PRNN(hr);
+				return hr;
+			}
+			return E_POINTER;
+		}
+
+	protected:
 		bool					is_use_sw_;
 		ulong					pal_size_;
 		ulong					max_face_infl_;
-		ulong					attr_num_;
+		ulong					bonecb_len_;
 		ID3DXBufferPtr			bonecb_; // ボーンの組み合わせデータ
-		ID3DXMeshPtr			mesh_;
 	};
-
-	namespace {
-
-		// Infl 1
-		const char asm_shaders_1[] =
-			"vs.1.1\n"
-			";------------------------------------------------------------------------------\n"
-			"; v0 = position\n"
-			"; v1 = blend weights\n"
-			"; v2 = blend indices\n"
-			"; v3 = normal\n"
-			"; v4 = texture coordinates\n"
-			";------------------------------------------------------------------------------\n"
-			";------------------------------------------------------------------------------\n"
-			"; r0.w = Last blend weight\n"
-			"; r1 = Blend indices\n"
-			"; r2 = Temp position\n"
-			"; r3 = Temp normal\n"
-			"; r4 = Blended position in camera space\n"
-			"; r5 = Blended normal in camera space\n"
-			";------------------------------------------------------------------------------\n"
-			";------------------------------------------------------------------------------\n"
-			"; Constants specified by the app;\n"
-			";\n"
-			"; c9-c95 = world-view matrix palette\n"
-			"; c8	  = diffuse * light.diffuse\n"
-			"; c7	  = ambient color\n"
-			"; c2-c5   = projection matrix\n"
-			"; c1	  = light direction\n"
-			"; c0	  = {1, power, 0, 1020.01};\n"
-			";------------------------------------------------------------------------------\n"
-			";------------------------------------------------------------------------------\n"
-			"; oPos	  = Output position\n"
-			"; oD0	  = Diffuse\n"
-			"; oD1	  = Specular\n"
-			"; oT0	  = texture coordinates\n"
-			";------------------------------------------------------------------------------\n"
-			"dcl_position v0;\n"
-			"dcl_blendweight v1;\n"
-			"dcl_blendindices v2;\n"
-			"dcl_normal v3;\n"
-			"dcl_texcoord0 v4;\n"
-			"// Compensate for lack of UBYTE4 on Geforce3\n"
-			"mul r1,v2.zyxw,c0.wwww\n"
-			"//mul r1,v2,c0.wwww\n"
-			"//Set 1\n"
-			"mov a0.x,r1.x\n"
-			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
-			"//compute position\n"
-			"mov r4.w,c0.x\n"
-			"m4x4 oPos,r4,c2\n"
-			"// normalize normals\n"
-			"dp3 r5.w, r5, r5;\n"
-			"rsq r5.w, r5.w;\n"
-			"mul r5, r5, r5.w;\n"
-			"; Do the lighting calculation\n"
-			"dp3 r1.x, r5, c1      ; normal dot light\n"
-			"lit r1, r1\n"
-			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
-			"add r0, r0, c7        ; Add in ambient\n"
-			"min oD0, r0, c0.x     ; clamp if > 1\n"
-			"mov oD1, c0.zzzz      ; output specular\n"
-			"; Copy texture coordinate\n"
-			"mov oT0, v4\n";
-		
-		// Infl 2
-		const char asm_shaders_2[] =
-			"vs.1.1\n"
-			"dcl_position v0;\n"
-			"dcl_blendweight v1;\n"
-			"dcl_blendindices v2;\n"
-			"dcl_normal v3;\n"
-			"dcl_texcoord0 v4;\n"
-			"// Compensate for lack of UBYTE4 on Geforce3\n"
-			"mul r1,v2.zyxw,c0.wwww\n"
-			"//mul r1,v2,c0.wwww\n"
-			"//first compute the last blending weight\n"
-			"dp3 r0.w,v1.xyz,c0.xzz; \n"
-			"add r0.w,-r0.w,c0.x\n"
-			"//Set 1\n"
-			"mov a0.x,r1.x\n"
-			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
-			"//blend them\n"
-			"mul r4.xyz,r4.xyz,v1.xxxx\n"
-			"mul r5.xyz,r5.xyz,v1.xxxx\n"
-			"//Set 2\n"
-			"mov a0.x,r1.y\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
-			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
-			"//compute position\n"
-			"mov r4.w,c0.x\n"
-			"m4x4 oPos,r4,c2\n"
-			"// normalize normals\n"
-			"dp3 r5.w, r5, r5;\n"
-			"rsq r5.w, r5.w;\n"
-			"mul r5, r5, r5.w;\n"
-			"; Do the lighting calculation\n"
-			"dp3 r1.x, r5, c1      ; normal dot light\n"
-			"lit r1, r1\n"
-			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
-			"add r0, r0, c7        ; Add in ambient\n"
-			"min oD0, r0, c0.x     ; clamp if > 1\n"
-			"mov oD1, c0.zzzz      ; output specular\n"
-			"; Copy texture coordinate\n"
-			"mov oT0, v4\n";
-
-		// Infl 3
-		const char asm_shaders_3[] =
-			"vs.1.1\n"
-			"dcl_position v0;\n"
-			"dcl_blendweight v1;\n"
-			"dcl_blendindices v2;\n"
-			"dcl_normal v3;\n"
-			"dcl_texcoord0 v4;\n"
-			"// Compensate for lack of UBYTE4 on Geforce3\n"
-			"mul r1,v2.zyxw,c0.wwww\n"
-			"//mul r1,v2,c0.wwww\n"
-			"//first compute the last blending weight\n"
-			"dp3 r0.w,v1.xyz,c0.xxz; \n"
-			"add r0.w,-r0.w,c0.x\n"
-			"//Set 1\n"
-			"mov a0.x,r1.x\n"
-			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r5.xyz,v3,c[a0.x + 9];\n"
-			"//blend them\n"
-			"mul r4.xyz,r4.xyz,v1.xxxx\n"
-			"mul r5.xyz,r5.xyz,v1.xxxx\n"
-			"//Set 2\n"
-			"mov a0.x,r1.y\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
-			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
-			"//Set 3\n"
-			"mov a0.x,r1.z\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
-			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
-			"//compute position\n"
-			"mov r4.w,c0.x\n"
-			"m4x4 oPos,r4,c2\n"
-			"// normalize normals\n"
-			"dp3 r5.w, r5, r5;\n"
-			"rsq r5.w, r5.w;\n"
-			"mul r5, r5, r5.w;\n"
-			"; Do the lighting calculation\n"
-			"dp3 r1.x, r5, c1      ; normal dot light\n"
-			"lit r1, r1\n"
-			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
-			"add r0, r0, c7        ; Add in ambient\n"
-			"min oD0, r0, c0.x     ; clamp if > 1\n"
-			"mov oD1, c0.zzzz      ; output specular\n"
-			"; Copy texture coordinate\n"
-			"mov oT0, v4\n";
-		
-		// Infl 4
-		const char asm_shaders_4[] =
-			"vs.1.1\n"
-			"dcl_position v0;\n"
-			"dcl_blendweight v1;\n"
-			"dcl_blendindices v2;\n"
-			"dcl_normal v3;\n"
-			"dcl_texcoord0 v4;\n"
-			"// Compensate for lack of UBYTE4 on Geforce3\n"
-			"mul r1,v2.zyxw,c0.wwww\n"
-			"//mul r1,v2,c0.wwww\n"
-			"//first compute the last blending weight\n"
-			"dp3 r0.w,v1.xyz,c0.xxx;\n"
-			"add r0.w,-r0.w,c0.x\n"
-			"//Set 1\n"
-			"mov a0.x,r1.x\n"
-			"m4x3 r4.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r5.xyz,v3,c[a0.x + 9]; \n"
-			"//blend them\n"
-			"mul r4.xyz,r4.xyz,v1.xxxx\n"
-			"mul r5.xyz,r5.xyz,v1.xxxx\n"
-			"//Set 2\n"
-			"mov a0.x,r1.y\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,v1.yyyy,r4;\n"
-			"mad r5.xyz,r3.xyz,v1.yyyy,r5;\n"
-			"//Set 3\n"
-			"mov a0.x,r1.z\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,v1.zzzz,r4;\n"
-			"mad r5.xyz,r3.xyz,v1.zzzz,r5;\n"
-			"//Set 4\n"
-			"mov a0.x,r1.w\n"
-			"m4x3 r2.xyz,v0,c[a0.x + 9];\n"
-			"m3x3 r3.xyz,v3,c[a0.x + 9];\n"
-			"//add them in\n"
-			"mad r4.xyz,r2.xyz,r0.wwww,r4;\n"
-			"mad r5.xyz,r3.xyz,r0.wwww,r5;\n"
-			"//compute position\n"
-			"mov r4.w,c0.x\n"
-			"m4x4 oPos,r4,c2\n"
-			"// normalize normals\n"
-			"dp3 r5.w, r5, r5;\n"
-			"rsq r5.w, r5.w;\n"
-			"mul r5, r5, r5.w;\n"
-			"; Do the lighting calculation\n"
-			"dp3 r1.x, r5, c1      ; normal dot light\n"
-			"lit r1, r1\n"
-			"mul r0, r1.y, c8      ; Multiply with diffuse\n"
-			"add r0, r0, c7        ; Add in ambient\n"
-			"min oD0, r0, c0.x     ; clamp if > 1\n"
-			"mov oD1, c0.zzzz      ; output specular\n"
-			"; Copy texture coordinate\n"
-			"mov oT0, v4\n";
-		
-		const char *asm_shaders[] = {
-			asm_shaders_1,
-			asm_shaders_2,
-			asm_shaders_3,
-			asm_shaders_4,
-		};
-		
-		const int asm_shader_sizes[] = {
-			sizeof(asm_shaders_1),
-			sizeof(asm_shaders_2),
-			sizeof(asm_shaders_3),
-			sizeof(asm_shaders_4),
-		};
-	}
 
 	class SkinningVertexShader : public Rsrc
 	{
@@ -692,17 +471,24 @@ namespace gctp { namespace graphic {
 			return hr;
 		}
 
+		static const char asm_shaders_1[];
+		static const char asm_shaders_2[];
+		static const char asm_shaders_3[];
+		static const char asm_shaders_4[];
+		static const char *asm_shaders[];
+		static const int asm_shader_sizes[];
+
 		dx::IDirect3DVertexShaderPtr shader_[4];
 	};
 
 	/// 頂点シェーダー式スキンモデルクラス
-	class VertexShaderSkinBrush : public Brush
+	class VertexShaderSkinBrush : public SkinBrush
 	{
 	public:
 		enum { MAX_MATRICIES = 28 };
 
 		VertexShaderSkinBrush(Model &target)
-			: Brush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), attr_num_(0)
+			: SkinBrush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), bonecb_len_(0)
 		{
 		}
 
@@ -714,7 +500,7 @@ namespace gctp { namespace graphic {
 			}
 
 			HRslt hr;
-			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
+			mesh_ = 0; bonecb_ = 0; bonecb_len_ = 0; pal_size_ = 0; max_face_infl_ = 0;
 			
 			dx::IDirect3DDevicePtr dev;
 			hr = target_.mesh()->GetDevice(&dev);
@@ -761,7 +547,7 @@ namespace gctp { namespace graphic {
 				NULL,//pFaceRemap
 				NULL,//ppVertexRemap
 				&max_face_infl_,
-				&attr_num_,
+				&bonecb_len_,
 				&bonecb_,
 				&mesh_);
 			if(!hr) return hr;
@@ -776,7 +562,7 @@ namespace gctp { namespace graphic {
 				hr = mesh_->CloneMeshFVF(mesh_->GetOptions(), new_fvf, dev, &temp_mesh);
 				if(hr) mesh_ = temp_mesh;
 			}
-			
+
 			dx::D3DVERTEXELEMENT pDecl[MAX_FVF_DECL_SIZE];
 			dx::D3DVERTEXELEMENT *pDeclCur;
 			hr = mesh_->GetDeclaration(pDecl);
@@ -794,26 +580,16 @@ namespace gctp { namespace graphic {
 
 			hr = mesh_->UpdateSemantics(pDecl);
 			if(!hr) return hr;
+			
+			SkinBrush::setUp(reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer()), bonecb_len_);
 			return hr;
 		}
 
 		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		HRslt begin(Handle<Shader> shader, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
 		{
-			return drawLow(tree, -1);
-		}
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			return drawLow(tree, mtrlno);
-		}
-
-	protected:
-		/// 描画
-		HRslt drawLow(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			HRslt hr;
 			if(mesh_ && vs_) {
+				HRslt hr;
 				dx::IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
@@ -839,7 +615,34 @@ namespace gctp { namespace graphic {
 					D3DXMatrixTranspose(&transposed_proj_mat, &transposed_proj_mat);
 					dev->SetVertexShaderConstantF(2, transposed_proj_mat, 4);
 				}
+				return hr;
+			}
+			return E_POINTER;
+		}
 
+		/// 描画
+		HRslt end() const
+		{
+			if(mesh_) {
+				HRslt hr;
+				if(is_use_sw_) {
+					dx::IDirect3DDevicePtr dev;
+					hr = mesh_->GetDevice(&dev);
+					if(hr) hr = dev->SetSoftwareVertexProcessing(FALSE);
+				}
+				return hr;
+			}
+			return E_POINTER;
+		}
+
+		/// 描画
+		HRslt draw(uint subset_no, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		{
+			if(mesh_) {
+				HRslt hr;
+				dx::IDirect3DDevicePtr dev;
+				hr = mesh_->GetDevice(&dev);
+				if(!hr) return hr;
 				// Use COLOR instead of UBYTE4 since Geforce3 does not support it
 				// _const.w should be 3, but due to about hack, mul by 255 and add epsilon
 				Vector4 _const = { 1.0f, 0.0f, 0.0f, 765.01f };
@@ -847,67 +650,63 @@ namespace gctp { namespace graphic {
 				D3DXMATRIXA16 view_mat;
 				dev->GetTransform(D3DTS_VIEW, &view_mat);
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-				for(ulong i = 0; i < attr_num_; i++) {
-					if(mtrlno != -1 && bonecb[i].AttribId != static_cast<uint>(mtrlno)) break;
-					for(ulong j = 0; j < pal_size_; j++) {
-						DWORD matid = bonecb[i].BoneId[j];
-						if(matid != UINT_MAX) {
-							Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
-							if(node) {
-								D3DXMATRIXA16 mat;
-								D3DXMatrixMultiply(&mat, *target_.bone(matid), node->val.wtm());
-								D3DXMatrixMultiplyTranspose(&mat, &mat, &view_mat);
-								dev->SetVertexShaderConstantF(j*3 + 9, mat, 3);
-							}
+
+				for(ulong j = 0; j < pal_size_; j++) {
+					DWORD matid = bonecb[subset_no].BoneId[j];
+					if(matid != UINT_MAX) {
+						Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
+						if(node) {
+							D3DXMATRIXA16 mat;
+							D3DXMatrixMultiply(&mat, *target_.bone(matid), node->val.wtm());
+							D3DXMatrixMultiplyTranspose(&mat, &mat, &view_mat);
+							dev->SetVertexShaderConstantF(j*3 + 9, mat, 3);
 						}
 					}
-
-					// Sum of all ambient and emissive contribution
-					Color amb_emm = target_.mtrls[bonecb[i].AttribId].ambient*getAmbient()+target_.mtrls[bonecb[i].AttribId].emissive;
-					dev->SetVertexShaderConstantF(7, amb_emm, 1);
-					dev->SetVertexShaderConstantF(8, target_.mtrls[bonecb[i].AttribId].diffuse, 1);
-					_const.y = target_.mtrls[bonecb[i].AttribId].power;
-					dev->SetVertexShaderConstantF(0, _const, 1);
-
-					Pointer<Texture> tex = target_.mtrls[bonecb[i].AttribId].tex.get();
-					if(tex) dev->SetTexture(0, *tex);
-					else dev->SetTexture(0, NULL);
-
-					hr = mesh_->DrawSubset(i);
-					if(!hr) return hr;
 				}
 
-				if(is_use_sw_) dev->SetSoftwareVertexProcessing(FALSE);
+				// Sum of all ambient and emissive contribution
+				Color amb_emm = target_.mtrls[bonecb[subset_no].AttribId].ambient*getAmbient()+target_.mtrls[bonecb[subset_no].AttribId].emissive;
+				dev->SetVertexShaderConstantF(7, amb_emm, 1);
+				dev->SetVertexShaderConstantF(8, target_.mtrls[bonecb[subset_no].AttribId].diffuse, 1);
+				_const.y = target_.mtrls[bonecb[subset_no].AttribId].power;
+				dev->SetVertexShaderConstantF(0, _const, 1);
+
+				Pointer<Texture> tex = target_.mtrls[bonecb[subset_no].AttribId].tex.get();
+				if(tex) dev->SetTexture(0, *tex);
+				else dev->SetTexture(0, NULL);
+
+				hr = mesh_->DrawSubset(subset_no);
+				return hr;
 			}
-			return hr;
+			return E_POINTER;
 		}
 
+	protected:
 		bool					is_use_sw_;
 		ulong					pal_size_;
 		ulong					max_face_infl_;
-		ulong					attr_num_;
+		ulong					bonecb_len_;
 		ID3DXBufferPtr			bonecb_; // ボーンの組み合わせデータ
-		ID3DXMeshPtr			mesh_;
 
 		static Pointer<SkinningVertexShader> vs_;
 	};
 	
 	/// HLSL式スキンモデルクラス
-	class ShaderSkinBrush : public Brush
+	class ShaderSkinBrush : public SkinBrush
 	{
 	public:
 		enum { MAX_MATRICIES = 26 }; // 実際はもっと使えるんだけど…
 		// asm型に比べて不便かも
 
 		ShaderSkinBrush(Model &target)
-			: Brush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), attr_num_(0)
+			: SkinBrush(target), is_use_sw_(false), pal_size_(0), max_face_infl_(0), bonecb_len_(0)
 		{
 		}
 
 		HRslt setUp()
 		{
 			HRslt hr;
-			mesh_ = 0; bonecb_ = 0; pal_size_ = 0; attr_num_ = 0; max_face_infl_ = 0;
+			mesh_ = 0; bonecb_ = 0; bonecb_len_ = 0; pal_size_ = 0; max_face_infl_ = 0;
 			
 			dx::IDirect3DDevicePtr dev;
 			hr = target_.mesh()->GetDevice(&dev);
@@ -943,7 +742,7 @@ namespace gctp { namespace graphic {
 				NULL,//pFaceRemap
 				NULL,//ppVertexRemap
 				&max_face_infl_,
-				&attr_num_,
+				&bonecb_len_,
 				&bonecb_,
 				&mesh_);
 			if(!hr) return hr;
@@ -974,43 +773,35 @@ namespace gctp { namespace graphic {
 				pDeclCur++;
 			}
 
-			for(ulong i = 0; i < attr_num_; i++) {
-				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-				for(ulong j = 0; j < pal_size_; j++) {
-					DWORD matid = bonecb[i].BoneId[j];
-					if(matid != UINT_MAX) {
-						const char *name = target_.bonename(matid);
-						if(name) PRNN("bonename "<<i<<","<<bonecb[i].AttribId<<","<<j<<","<<matid<<" "<<name);
-						else PRNN("bonename "<<i<<","<<bonecb[i].AttribId<<","<<j<<","<<matid<<" ???");
-					}
-				}
-			}
-
 			hr = mesh_->UpdateSemantics(pDecl);
 			if(!hr) return hr;
 
 			bone_matricies_.resize(pal_size_);
 
 			if(!shader_) shader_ = graphic::createOnDB<dx::HLSLShader>(_T("skinnedmesh.fx"));
+
+			for(ulong i = 0; i < bonecb_len_; i++) {
+				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
+				target_.mtrls[bonecb[i].AttribId].shader = shader_;
+				/*for(ulong j = 0; j < pal_size_; j++) {
+					DWORD matid = bonecb[i].BoneId[j];
+					if(matid != UINT_MAX) {
+						const char *name = target_.bonename(matid);
+						if(name) PRNN("bonename "<<i<<","<<bonecb[i].AttribId<<","<<j<<","<<matid<<" "<<name);
+						else PRNN("bonename "<<i<<","<<bonecb[i].AttribId<<","<<j<<","<<matid<<" ???");
+					}
+				}*/
+			}
+			SkinBrush::setUp(reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer()), bonecb_len_);
 			return hr;
 		}
 
 		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		HRslt begin(Handle<Shader> _shader, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
 		{
-			return draw(tree, 0);
-		}
-		/// 描画
-		HRslt draw(const Skeleton &tree/**< モーションがセットされたスケルトン*/, int mtrlno) const
-		{
-			D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-			//for(ulong i = 0; i < attr_num_; i++) {
-			//	if(bonecb[i].AttribId != static_cast<uint>(mtrlno)) return S_FALSE;
-			//}
-			HRslt hr;
-			//Handle<dx::HLSLShader> shader = target_.mtrls[mtrlno].shader;
-			Handle<dx::HLSLShader> shader = shader_;
+			Handle<dx::HLSLShader> shader = _shader;
 			if(mesh_ && shader) {
+				HRslt hr;
 				dx::IDirect3DDevicePtr dev;
 				hr = mesh_->GetDevice(&dev);
 				if(!hr) return hr;
@@ -1046,58 +837,73 @@ namespace gctp { namespace graphic {
 					hr = (*shader)->SetMatrix("mViewProj", &view_proj_mat);
 					if(!hr) GCTP_TRACE(hr);
 				}
+				return hr;
+			}
+			return E_POINTER;
+		}
+
+		/// 描画
+		HRslt end() const
+		{
+			if(mesh_) {
+				HRslt hr;
+				if(is_use_sw_) {
+					dx::IDirect3DDevicePtr dev;
+					hr = mesh_->GetDevice(&dev);
+					if(hr) hr = dev->SetSoftwareVertexProcessing(FALSE);
+				}
+				return hr;
+			}
+			return E_POINTER;
+		}
+
+		/// 描画
+		HRslt draw(uint subset_no, const Skeleton &tree/**< モーションがセットされたスケルトン*/) const
+		{
+			HRslt hr;
+			D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
+			Handle<dx::HLSLShader> shader = target_.mtrls[bonecb[subset_no].AttribId].shader;
+			if(mesh_ && shader) {
+				dx::IDirect3DDevicePtr dev;
+				hr = mesh_->GetDevice(&dev);
+				if(!hr) return hr;
+
 				D3DXMATRIX *bm_buf = const_cast< D3DXMATRIX * >(&bone_matricies_[0]);
-
-				for(ulong i = 0; i < attr_num_; i++) {
-					if(hr = shader->begin()) {
-						for(ulong j = 0; j < pal_size_; j++)
-						{
-							DWORD matid = bonecb[i].BoneId[j];
-							if(matid != UINT_MAX) {
-								Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
-								if(node) D3DXMatrixMultiply(&bm_buf[j], *target_.bone(matid), node->val.wtm());
-							}
-						}
-						hr = (*shader)->SetMatrixArray("mWorldMatrixArray", &bone_matricies_[0], pal_size_);
-						if(!hr) {
-							PRNN(pal_size_);
-							GCTP_TRACE(hr);
-						}
-
-						// Sum of all ambient and emissive contribution
-						Color amb_emm = target_.mtrls[bonecb[i].AttribId].ambient*getAmbient()+target_.mtrls[bonecb[i].AttribId].emissive;
-						hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
-						if(!hr) GCTP_TRACE(hr);
-						// set material color properties 
-						hr = (*shader)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&target_.mtrls[bonecb[i].AttribId].diffuse);
-						if(!hr) GCTP_TRACE(hr);
-
-						hr = (*shader)->SetInt( "CurNumBones", max_face_infl_-1);
-						if(!hr) GCTP_TRACE(hr);
-
-						Pointer<Texture> tex = target_.mtrls[bonecb[i].AttribId].tex.lock();
-						if(tex) dev->SetTexture(0, *tex);
-						else dev->SetTexture(0, NULL);
-
-						for(uint ipass = 0; ipass < shader->passnum(); ipass++) {
-							hr = shader->beginPass( ipass );
-							if(!hr) GCTP_TRACE(hr);
-							hr = mesh_->DrawSubset(i);
-							if(!hr) {
-								GCTP_TRACE(hr);
-								PRNN("i = "<<i<<";"<<"ipass = "<<ipass<<";"<<"passnum = "<<shader_->passnum());
-							}
-							hr = shader->endPass();
-							if(!hr) GCTP_TRACE(hr);
-						}
-
-						hr = shader->end();
-						if(!hr) GCTP_TRACE(hr);
+				for(ulong j = 0; j < pal_size_; j++)
+				{
+					DWORD matid = bonecb[subset_no].BoneId[j];
+					if(matid != UINT_MAX) {
+						Pointer<Skeleton::NodeType> node = tree.get(target_.bonename(matid));
+						if(node) D3DXMatrixMultiply(&bm_buf[j], *target_.bone(matid), node->val.wtm());
 					}
-					else GCTP_TRACE(hr);
+				}
+				hr = (*shader)->SetMatrixArray("mWorldMatrixArray", &bone_matricies_[0], pal_size_);
+				if(!hr) {
+					PRNN(pal_size_);
+					GCTP_TRACE(hr);
 				}
 
-				if(is_use_sw_) dev->SetSoftwareVertexProcessing(FALSE);
+				// Sum of all ambient and emissive contribution
+				Color amb_emm = target_.mtrls[bonecb[subset_no].AttribId].ambient*getAmbient()+target_.mtrls[bonecb[subset_no].AttribId].emissive;
+				hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
+				if(!hr) GCTP_TRACE(hr);
+				// set material color properties 
+				hr = (*shader)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&target_.mtrls[bonecb[subset_no].AttribId].diffuse);
+				if(!hr) GCTP_TRACE(hr);
+
+				hr = (*shader)->SetInt( "CurNumBones", max_face_infl_-1);
+				if(!hr) GCTP_TRACE(hr);
+
+				Pointer<Texture> tex = target_.mtrls[bonecb[subset_no].AttribId].tex.lock();
+				if(tex) dev->SetTexture(0, *tex);
+				else dev->SetTexture(0, NULL);
+
+				(*shader)->CommitChanges();
+				hr = mesh_->DrawSubset(subset_no);
+				if(!hr) {
+					GCTP_TRACE(hr);
+					PRNN("subset_no = "<<subset_no<<";passnum = "<<shader->passnum());
+				}
 			}
 			return hr;
 		}
@@ -1106,12 +912,11 @@ namespace gctp { namespace graphic {
 		bool						is_use_sw_;
 		ulong						pal_size_;
 		ulong						max_face_infl_;
-		ulong						attr_num_;
+		ulong						bonecb_len_;
 		ID3DXBufferPtr				bonecb_; // ボーンの組み合わせデータ
-		ID3DXMeshPtr				mesh_;
 		Pointer<dx::HLSLShader>		shader_;
 		std::vector<D3DXMATRIX>		bone_matricies_;
 	};
 
-}} // namespace gctp::graphic
-#endif // _GCTP_GRAPHIC_BRUSH_HPP_
+}}} // namespace gctp::graphic::dx
+#endif // _GCTP_GRAPHIC_DX_SKINBRUSH_HPP_

@@ -50,7 +50,7 @@ namespace gctp { namespace scene {
 		if(Camera::current().isVisible(bs_)) {
 			if(model_ && dissolve_rate_ > 0.0f) {
 				Pointer<graphic::Model> model = model_.lock();
-				if(model->isSkinned()) {
+				if(model->isSkin()) {
 					Pointer<Skeleton> skl = skl_.lock();
 					if(skl) model->draw(*skl);
 					// エラー表示したほうがいいのかな
@@ -65,6 +65,33 @@ namespace gctp { namespace scene {
 		}
 		//PRNN("culled");
 		return false;
+	}
+
+	void Flesh::push(DrawPacketVector &packets) const
+	{
+		if(Camera::current().isVisible(bs_)) {
+			if(model_ && dissolve_rate_ > 0.0f) {
+				DrawPacket packet;
+				packet.model = model_;
+				packet.flesh = const_cast<Flesh *>(this);
+				Pointer<graphic::Model> model = model_.lock();
+				for(uint i = 0; i < model->subsets().size(); i++) {
+					packet.shader = model->mtrls[model->subsets()[i].material_no].shader;
+					packet.subset_no = i;
+					if(model->mtrls[model->subsets()[i].material_no].diffuse.a == 1.0f) {
+						// 本来別のフラグで不透明体を識別すべし
+						packet.z = -1;
+					}
+					else {
+						Vector c = Camera::current().viewprojection()*bs_.c;
+						if(c.z > 1.0f) c.z = 1.0f;
+						// とりあえず。。。
+						packet.z = static_cast<uint>(c.z*USHRT_MAX);
+					}
+					packets.push_back(packet);
+				}
+			}
+		}
 	}
 
 	/** バウンシングスフィアを更新が必要なら、再計算する

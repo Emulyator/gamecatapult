@@ -91,12 +91,6 @@ namespace gctp { namespace core {
 		return Hndl();
 	}
 
-	/** 要求されたリソースのロードをリクエスト
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 20:36:59
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
 	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> *callback)
 	{
 		//GCTP_ASSERT(current_ == this); これ必要か？
@@ -135,11 +129,24 @@ namespace gctp { namespace core {
 		return false;
 	}
 
+	/** 要求されたリソースのロードをリクエスト
+	 *
+	 * @param callback リアライズ後に呼ばれるコールバック
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
 	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback)
 	{
 		return loadAsync(name, &callback);
 	}
 
+	/** 要求されたリソースのロードをリクエスト
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
 	bool Context::loadAsync(const _TCHAR *name)
 	{
 		return loadAsync(name, 0);

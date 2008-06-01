@@ -24,6 +24,4 @@ namespace gctp { namespace graphic {
 	//いまさらだが、TypeInfo->Class->Factoryの序列に直す必要あり？
 	// TypeInfo->Factory->Class 今はこう
 
-	const char *Shader::current_technique_ = 0;
-
 }} // namespace gctp

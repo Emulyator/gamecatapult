@@ -239,23 +239,29 @@ namespace gctp { namespace graphic { namespace dx {
 		if( ptr_ ) ptr_->OnLostDevice();
 	}
 
-	HRslt HLSLShader::begin() const
+	HRslt HLSLShader::begin(const char *technique, uint passno) const
 	{
 		if(ptr_) {
 			HRslt hr;
-			D3DXHANDLE tech;
-			if(current_technique_) tech = current_technique_;
-			else hr = ptr_->FindNextValidTechnique(NULL, &tech);
-			if(!hr) {
-				GCTP_TRACE(hr);
-				return hr;
+			if(technique && hasTechnique(technique)) {
+				hr = ptr_->SetTechnique(technique);
+				if(!hr) {
+					GCTP_TRACE(hr);
+					return hr;
+				}
 			}
-			hr = ptr_->SetTechnique(tech);
-			if(!hr) {
-				GCTP_TRACE(hr);
-				return hr;
+			hr = ptr_->Begin(&passnum_, 0/*D3DXFX_DONOTSAVESTATE*/);
+			if(hr) {
+				if(passno < passnum_) {
+					hr = ptr_->BeginPass(passno);
+					if(!hr) ptr_->End();
+				}
+				else {
+					ptr_->End();
+					return E_INVALIDARG;
+				}
 			}
-			return ptr_->Begin(&passnum_, 0/*D3DXFX_DONOTSAVESTATE*/);
+			return hr;
 		}
 		return E_POINTER;
 	}
@@ -263,19 +269,10 @@ namespace gctp { namespace graphic { namespace dx {
 	HRslt HLSLShader::end() const
 	{
 		passnum_ = 0;
-		if(ptr_) return ptr_->End();
-		return E_POINTER;
-	}
-
-	HRslt HLSLShader::beginPass(uint passno) const
-	{
-		if(ptr_) return ptr_->BeginPass(passno);
-		return E_POINTER;
-	}
-
-	HRslt HLSLShader::endPass() const
-	{
-		if(ptr_) return ptr_->EndPass();
+		if(ptr_) {
+			ptr_->EndPass();
+			return ptr_->End();
+		}
 		return E_POINTER;
 	}
 

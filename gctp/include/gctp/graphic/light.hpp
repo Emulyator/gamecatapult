@@ -1,5 +1,8 @@
 #ifndef _GCTP_GRAPHIC_LIGHT_HPP_
 #define _GCTP_GRAPHIC_LIGHT_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult 光源クラスヘッダファイル
  *

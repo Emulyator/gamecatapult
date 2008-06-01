@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_BODY_HPP_
 #define _GCTP_SCENE_BODY_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult ボディークラスヘッダファイル
  *

@@ -225,6 +225,15 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	int Entity::getBoundingSphere(luapp::Stack &L)
+	{
+		if(target_) {
+			L << target_->bs().c.x << target_->bs().c.y << target_->bs().c.z << target_->bs().r;
+			return 4;
+		}
+		return 0;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Entity, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Entity)
 		TUKI_METHOD(Entity, load)
@@ -237,6 +246,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, setScale)
 		TUKI_METHOD(Entity, getScale)
 		TUKI_METHOD(Entity, getMotionMixer)
+		TUKI_METHOD(Entity, getBoundingSphere)
 	TUKI_IMPLEMENT_END(Entity)
 	
 	Handle<Entity> newEntity(core::Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)

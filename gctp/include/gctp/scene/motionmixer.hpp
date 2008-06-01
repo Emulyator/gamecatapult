@@ -27,8 +27,8 @@ namespace gctp { namespace scene {
 	struct CoordUnion {
 		Stance &stance() { return *reinterpret_cast<Stance *>(&__m); }
 		const Stance &stance() const { return *reinterpret_cast<const Stance *>(&__m); }
-		Coord  &coord()  { return *reinterpret_cast<Coord *>(&__m); }
-		const Coord  &coord() const { return *reinterpret_cast<const Coord *>(&__m); }
+		Coord &coord()  { return *reinterpret_cast<Coord *>(&__m); }
+		const Coord &coord() const { return *reinterpret_cast<const Coord *>(&__m); }
 		Matrix &matrix() { return __m; }
 		const Matrix &matrix() const { return __m; }
 		Matrix __m;

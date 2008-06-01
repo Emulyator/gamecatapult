@@ -67,23 +67,21 @@ namespace gctp { namespace graphic {
 		/// 描画
 		HRslt draw(const Skeleton &skel) const;
 
-		/** マテリアルを指定して描画、の準備
+		/** サブセットごとの描画、の準備
 		 *
-		 * @param template_mtrlno セットアップするBrush/Shaderを代表するマテリアル番号。
-		 * 同じBrush/Shaderの組をさすのであれば、どのマテリアルでもかまわない
-		 *
-		 * この関数はそのうち意味なくなるなぁ。Worldが描画パケットを管理するようになったら
+		 * このモデルのバッファをカレントに
 		 */
-		HRslt begin(int template_mtrlno, int passno) const;
-		/// マテリアルを指定して描画
-		HRslt draw(const Matrix &mat, int mtrlno) const;
-		/// マテリアルを指定して描画
-		HRslt draw(const Skeleton &skl, int mtrlno) const;
+		HRslt begin() const;
+		/// サブセットを指定して描画
+		HRslt draw(int sunset_no, const Matrix &mat) const;
+		/// サブセットを指定して描画
+		HRslt draw(int sunset_no, const Skeleton &skl) const;
 		/// マテリアルを指定して描画終了
 		HRslt end() const;
 
 		/// マテリアルリスト
 		std::vector<Material> mtrls;
+
 		/// 面接続情報
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
 		/// メッシュ断片情報
@@ -118,23 +116,10 @@ namespace gctp { namespace graphic {
 		HRslt update(const Model &src, const Matrix &mat);
 
 		/// スキンモデルか？
-		bool isSkin();
+		bool isSkin() const;
 
-		/// スキンモデル化済みか？
-		bool isSkinned();
-
-		/// スキンモデルをやめる
-		void solidize();
-		/// ソフトウェアスキンモデル化
-		HRslt useSoftware();
-		/// 頂点ブレンドスキンモデル化
-		HRslt useBlended();
-		/// インデックス化頂点ブレンドスキンモデル化
-		HRslt useIndexed();
-		/// 頂点シェーダースキンモデル化
-		HRslt useVS();
-		/// HLSLによるスキンモデル化
-		HRslt useShader();
+		Pointer<Brush> &brush() { return brush_; }
+		Pointer<Brush> brush() const { return brush_; }
 
 		/// D3DXメッシュを返す
 		ID3DXMeshPtr mesh() const { return mesh_; }
@@ -146,7 +131,7 @@ namespace gctp { namespace graphic {
 		/// ボーンオフセット行列
 		Matrix *bone(uint i) { if(skin_) return reinterpret_cast<Matrix *>(skin_->GetBoneOffsetMatrix(i)); else return NULL; }
 		/// ボーン数
-		uint boneNum() { if(skin_) return skin_->GetNumBones(); else return 0; }
+		uint boneNum() const { if(skin_) return skin_->GetNumBones(); else return 0; }
 
 		/// 名前
 		const char *name() const { return name_.c_str(); }
@@ -181,8 +166,7 @@ namespace gctp { namespace graphic {
 		float calcRadius(const Vector &center) const;
 
 	private:
-		mutable int current_template_mtrlno_;
-		//std::vector< Pointer<Brush> > brushes_;
+		//std::vector< Pointer<Brush> > brushes_; // マテリアルごとの特化Brush（必要か？）
 		Pointer<Brush> brush_;
 		Sphere bs_;
 		int offset_;

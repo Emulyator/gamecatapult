@@ -103,8 +103,6 @@ namespace gctp { namespace scene {
 		graphic::clearLight();
 #endif
 		dsb_->setCurrent();
-		backup_tech_ = graphic::Shader::getTechnique();
-		graphic::Shader::setTechnique(0);
 		WorldRenderer *self = const_cast<WorldRenderer *>(this);
 		for(HandleList<World>::iterator world = self->worlds_.begin(); world != self->worlds_.end();) {
 			if(*world) {
@@ -130,7 +128,6 @@ namespace gctp { namespace scene {
 	bool WorldRenderer::onLeave(float delta) const
 	{
 		dsb_->unset();
-		graphic::Shader::setTechnique(backup_tech_);
 		return true;
 	}
 

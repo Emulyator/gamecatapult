@@ -35,17 +35,13 @@ namespace gctp { namespace graphic { namespace dx {
 		/// 指定のテクニックがあるか？
 		virtual bool hasTechnique(const char *name) const;
 		/// 適用開始
-		virtual HRslt begin() const;
+		virtual HRslt begin(const char *technique = 0, uint passno = 0) const;
 		/// 適用終了
 		virtual HRslt end() const;
-		/// 指定のパスを適用開始
-		virtual HRslt beginPass(uint passno) const;
-		/// 指定のパスを適用終了
-		virtual HRslt endPass() const;
 		/// パス数を返す（begin~endの間のみ有効）
-		virtual uint passnum() const { return passnum_; }
+		uint passnum() const { return passnum_; }
 		/// 開始済みか？
-		virtual bool isBeginning() const { return passnum_ > 0; }
+		bool isBeginning() const { return passnum_ > 0; }
 
 	GCTP_DECLARE_CLASS
 

@@ -41,6 +41,7 @@ namespace gctp { namespace scene {
 	{
 		graphic::setView(view());
 		graphic::setProjection(projection());
+		viewprojection_ = view()*projection();
 	}
 
 	void Camera::begin() const
@@ -138,12 +139,41 @@ namespace gctp { namespace scene {
 		return 3;
 	}
 
+	void Camera::setClip(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			nearclip_ = (float)L[1].toNumber();
+			farclip_ = (float)L[2].toNumber();
+		}
+	}
+
+	int Camera::getClip(luapp::Stack &L)
+	{
+		L << nearclip_ << farclip_;
+		return 2;
+	}
+
+	void Camera::setFov(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			fov_ = (float)L[1].toNumber();
+		}
+	}
+
+	int Camera::getFov(luapp::Stack &L)
+	{
+		L << fov_;
+		return 1;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Camera, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Camera)
 		TUKI_METHOD(Camera, setPosition)
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)
 		TUKI_METHOD(Camera, getPosture)
+		TUKI_METHOD(Camera, setClip)
+		TUKI_METHOD(Camera, getClip)
 	TUKI_IMPLEMENT_END(Camera)
 
 }} // namespace gctp::scene
