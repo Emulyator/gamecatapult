@@ -132,7 +132,7 @@ namespace gctp {
 		}
 		void connect(const Slot2<const _TCHAR *, BufferPtr> &slot)
 		{
-			ready_signal.connectOnce(slot);
+			ready_signal.connect(slot);
 		}
 		void disconnect(const Slot2<const _TCHAR *, BufferPtr> &slot)
 		{
@@ -148,7 +148,7 @@ namespace gctp {
 			synchronize(true);
 		}
 		friend FileServer;
-		Signal2<false, const _TCHAR *, BufferPtr> ready_signal;
+		MonoSignal2<const _TCHAR *, BufferPtr> ready_signal;
 		bool is_ready_;
 	};
 

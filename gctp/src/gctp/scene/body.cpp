@@ -63,13 +63,21 @@ namespace gctp { namespace scene {
 	bool Body::draw() const
 	{
 		if(Camera::current().isVisible(bs_)) {
-			/// ほんとはここでバウンシングスフィアのチェック
 			for(PointerList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
 				(*i)->draw();
 			}
 			return true;
 		}
 		return false;
+	}
+
+	void Body::pushPackets(DrawPacketVector &packets) const
+	{
+		if(Camera::current().isVisible(bs_)) {
+			for(PointerList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
+				(*i)->pushPackets(packets);
+			}
+		}
 	}
 
 }} // namespace gctp::scene

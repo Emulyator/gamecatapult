@@ -34,12 +34,12 @@ namespace gctp {
 
 	void Signal::connect(const Slot &slot)
 	{
-		slots_.push_back(Handle<Slot>(&const_cast<Slot &>(slot)));
+		slots_.push_back(Handle<Slot>(const_cast<Slot *>(&slot)));
 	}
 
 	void Signal::disconnect(const Slot &slot)
 	{
-		slots_.remove(Handle<Slot>(&const_cast<Slot &>(slot)));
+		slots_.remove(Handle<Slot>(const_cast<Slot *>(&slot)));
 	}
 
 	std::size_t Signal::num() const

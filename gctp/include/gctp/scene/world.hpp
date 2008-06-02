@@ -82,11 +82,16 @@ namespace gctp { namespace scene {
 	TUKI_DECLARE(World)
 	
 	protected:
+		Pointer<Body> world_body_;
+
 		virtual bool doOnUpdate(float delta);
 
 		bool setUp(luapp::Stack &L);
 		void load(luapp::Stack &L);
 		void activate(luapp::Stack &L);
+		void setPosition(luapp::Stack &L);
+		int getPosition(luapp::Stack &L);
+		int getBoundingSphere(luapp::Stack &L);
 
 	private:
 #ifdef _MT

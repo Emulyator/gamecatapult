@@ -329,6 +329,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\scene\drawpacket.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\scene\entity.hpp"
 				>
 			</File>

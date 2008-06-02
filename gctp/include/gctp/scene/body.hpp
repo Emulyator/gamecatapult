@@ -12,6 +12,7 @@
  */
 #include <gctp/skeleton.hpp>
 #include <gctp/pointerlist.hpp>
+#include <gctp/scene/drawpacket.hpp>
 #include <gctp/class.hpp>
 
 namespace gctp { namespace scene {
@@ -41,6 +42,8 @@ namespace gctp { namespace scene {
 
 		/// •`‰æ
 		bool draw() const;
+		/// •`‰æƒpƒPƒbƒg“o˜^
+		void pushPackets(DrawPacketVector &packets) const;
 
 	GCTP_DECLARE_CLASS
 

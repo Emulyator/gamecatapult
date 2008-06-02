@@ -67,7 +67,7 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
-	void Flesh::push(DrawPacketVector &packets) const
+	void Flesh::pushPackets(DrawPacketVector &packets) const
 	{
 		if(Camera::current().isVisible(bs_)) {
 			if(model_ && dissolve_rate_ > 0.0f) {

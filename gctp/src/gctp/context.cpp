@@ -57,12 +57,7 @@ namespace gctp { namespace core {
 		//GCTP_ASSERT(current_ == this); これ必要か？
 		if(name) {
 			Hndl h = find(name);
-			if(h) {
-				//ptrs_.push_back(h.lock());
-				// どうすべきか…
-				// 多重で確保する可能性があるから、追加しない、のほうでいいか
-				return h;
-			}
+			if(h) return h;
 			TURI uri(name);
 //#ifdef _WIN32
 //			uri.convertLower();
@@ -91,17 +86,12 @@ namespace gctp { namespace core {
 		return Hndl();
 	}
 
-	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> *callback)
+	Hndl Context::loadAsync(const _TCHAR *name)
 	{
 		//GCTP_ASSERT(current_ == this); これ必要か？
 		if(name) {
 			Hndl h = find(name);
-			if(h) {
-				//ptrs_.push_back(h.lock());
-				// どうすべきか…
-				// 多重で確保する可能性があるから、追加しない、のほうでいいか
-				return true;
-			}
+			if(h) return h;
 			TURI uri(name);
 //#ifdef _WIN32
 //			uri.convertLower();
@@ -109,16 +99,17 @@ namespace gctp { namespace core {
 			std::basic_string<_TCHAR> ext = uri.extension();
 			RealizeMethod f = Extension::get(ext.c_str());
 			if(f) {
-				if(!fileserver().busy()) {
-					AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
-					if(file) {
-						Ptr p = f(0, 0);
-						if(p) {
-							ptrs_.push_back(p);
-							db_.insert(name, p);
-						}
+				while(fileserver().busy()) {
+					fileserver().service(0);
+				}
+				AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
+				if(file) {
+					Ptr p = f(0, 0);
+					if(p) {
 						file->connect(on_ready_slot);
-						if(callback) file->connect(*callback);
+						ptrs_.push_back(p);
+						db_.insert(name, p);
+						return p;
 					}
 				}
 			}
@@ -126,30 +117,7 @@ namespace gctp { namespace core {
 				PRNN(_T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)"));
 			}
 		}
-		return false;
-	}
-
-	/** 要求されたリソースのロードをリクエスト
-	 *
-	 * @param callback リアライズ後に呼ばれるコールバック
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 20:36:59
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	bool Context::loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback)
-	{
-		return loadAsync(name, &callback);
-	}
-
-	/** 要求されたリソースのロードをリクエスト
-	 *
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/01/29 20:36:59
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	bool Context::loadAsync(const _TCHAR *name)
-	{
-		return loadAsync(name, 0);
+		return Hndl();
 	}
 
 	/** 渡されたオブジェクトを保持する

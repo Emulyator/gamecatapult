@@ -234,6 +234,12 @@ namespace gctp { namespace graphic {
 		return S_OK;
 	}
 
+	const std::vector<SubsetInfo> &Model::subsets() const
+	{
+		if(brush_) return brush_->subsets();
+		else return subsets_;
+	}
+
 	Vector Model::calcCenter() const
 	{
 		AABox aabb = getAABB();

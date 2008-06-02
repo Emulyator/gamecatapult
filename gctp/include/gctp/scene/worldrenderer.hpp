@@ -45,6 +45,8 @@ namespace gctp { namespace scene {
 	TUKI_DECLARE(WorldRenderer)
 	
 	protected:
+		mutable DrawPacketVector packets_;
+
 		HandleList<World> worlds_;
 		mutable const char *backup_tech_;
 
@@ -75,8 +77,8 @@ namespace gctp { namespace scene {
 		/// ï`âÊëŒè€çÌèú
 		void remove(Handle<World> world);
 
-		DrawPacket opeque;
-		DrawPacket translucent;
+		DrawPacketVector opeque;
+		DrawPacketVector translucent;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(WorldSorter)
