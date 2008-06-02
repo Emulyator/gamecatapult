@@ -22,6 +22,8 @@
 #include <gctp/app.hpp>
 #include <gctp/dbgout.hpp>
 
+#include <gctp/dbgout.hpp>
+
 using namespace std;
 
 namespace gctp { namespace scene {
@@ -30,6 +32,9 @@ namespace gctp { namespace scene {
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, World)
 		TUKI_METHOD(World, load)
 		TUKI_METHOD(World, activate)
+		TUKI_METHOD(World, setPosition)
+		TUKI_METHOD(World, getPosition)
+		TUKI_METHOD(World, getBoundingSphere)
 	TUKI_IMPLEMENT_END(World)
 
 	World* World::current_ = NULL;	///< カレントステージ（そのステージのupdate、draw…などの間だけ有効）
@@ -56,6 +61,7 @@ namespace gctp { namespace scene {
 				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
 					pbody = *i;
 					if(pbody) {
+						world_body_ = pbody;
 						body_list.push_back(pbody);
 						strutum_tree.root()->push(pbody->root());
 					}
@@ -184,6 +190,32 @@ namespace gctp { namespace scene {
 			else app().update_signal.disconnect(update_slot);
 		}
 		else app().update_signal.connectOnce(update_slot);
+	}
+	
+	void World::setPosition(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(strutum_tree.root()) strutum_tree.root()->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[1].toNumber(),(float)L[1].toNumber()));
+		}
+	}
+
+	int World::getPosition(luapp::Stack &L)
+	{
+		if(strutum_tree.root()) {
+			Vector v = strutum_tree.root()->val.lcm().position();
+			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
+	}
+
+	int World::getBoundingSphere(luapp::Stack &L)
+	{
+		if(world_body_) {
+			L << world_body_->bs().c.x << world_body_->bs().c.y << world_body_->bs().c.z << world_body_->bs().r;
+			return 4;
+		}
+		return 0;
 	}
 
 }} // namespace gctp::scene

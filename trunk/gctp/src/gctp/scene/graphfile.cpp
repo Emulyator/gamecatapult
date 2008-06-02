@@ -106,56 +106,6 @@ namespace gctp { namespace scene {
 		GCTP_REGISTER_REALIZER2(x, GraphFile, &GraphFile::setUpFromX);
 		//Extention extention_x("x", Realizer<XFile>);
 
-		class AsyncTextureSolver : public Object {
-		public:
-			AsyncTextureSolver(GraphFile &self, graphic::Model &model, ulong mtrl_no) : self_(&self), model_(&model), mtrl_no_(mtrl_no)
-			{
-				on_ready_slot.bind(this);
-			}
-			bool onReady(const _TCHAR *name, BufferPtr buffer)
-			{
-				if(model_) model_->mtrls[mtrl_no_].tex = context()[name];
-				if(self_) self_->asyncsolvers.remove(this);
-				return false;
-			}
-			MemberSlot2<AsyncTextureSolver, const _TCHAR *, BufferPtr, &AsyncTextureSolver::onReady> on_ready_slot;
-			Handle<GraphFile> self_;
-			Handle<graphic::Model> model_;
-			ulong mtrl_no_;
-		};
-
-		class AsyncEffectSolver : public Object {
-		public:
-			AsyncEffectSolver(GraphFile &self, graphic::Model &model, ID3DXBufferPtr eff) : self_(&self), model_(&model), eff_(eff)
-			{
-				on_ready_slot.bind(this);
-			}
-			bool onReady(const _TCHAR *name, BufferPtr buffer)
-			{
-				if(model_) {
-					Handle<graphic::dx::HLSLShader> shader = context()[name];
-					if(shader) {
-						for(std::vector<int>::size_type i = 0; i < mtrl_no_.size(); i++) {
-							model_->mtrls[mtrl_no_[i]].shader = shader;
-						}
-						if(eff_) {
-							D3DXEFFECTINSTANCE *effect = reinterpret_cast<D3DXEFFECTINSTANCE*>(eff_->GetBufferPointer());
-							for(DWORD i = 0; i < effect->NumDefaults; i++) {
-								(*shader)->SetValue(effect->pDefaults[i].pParamName, effect->pDefaults[i].pValue, effect->pDefaults[i].NumBytes);
-							}
-						}
-					}
-				}
-				if(self_) self_->asyncsolvers.remove(this);
-				return false;
-			}
-			MemberSlot2<AsyncEffectSolver, const _TCHAR *, BufferPtr, &AsyncEffectSolver::onReady> on_ready_slot;
-			Handle<GraphFile> self_;
-			Handle<graphic::Model> model_;
-			ID3DXBufferPtr eff_;
-			std::vector<int> mtrl_no_;
-		};
-
 		/** モデルのマテリアルをセットアップ
 		 */
 		void setUpModelMaterial(GraphFile &self, graphic::Model &model, ID3DXBufferPtr mtrls, ulong mtrl_num, ID3DXBufferPtr eff)
@@ -177,9 +127,7 @@ namespace gctp { namespace scene {
 						model.mtrls[i].tex = context()[fname.c_str()];
 						if(!model.mtrls[i].tex) {
 							if(context().loadingAsync()) {
-								Pointer<AsyncTextureSolver> p = new AsyncTextureSolver(self, model, i);
-								self.asyncsolvers.push_back(p);
-								context().loadAsync(fname.c_str(), p->on_ready_slot);
+								model.mtrls[i].tex = context().loadAsync(fname.c_str());
 							}
 							else {
 								model.mtrls[i].tex = context().load(fname.c_str());
@@ -189,9 +137,8 @@ namespace gctp { namespace scene {
 						model.mtrls[i].tex = context()[_mtrls[i].pTextureFilename];
 						if(!model.mtrls[i].tex) {
 							if(context().loadingAsync()) {
-								Pointer<AsyncTextureSolver> p = new AsyncTextureSolver(self, model, i);
-								self.asyncsolvers.push_back(p);
-								context().loadAsync(_mtrls[i].pTextureFilename, p->on_ready_slot);
+								context().loadAsync(_mtrls[i].pTextureFilename);
+								model.mtrls[i].tex = context()[_mtrls[i].pTextureFilename];
 							}
 							else {
 								model.mtrls[i].tex = context().load(_mtrls[i].pTextureFilename);
@@ -210,19 +157,7 @@ namespace gctp { namespace scene {
 							Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
 							if(!shader) {
 								if(context().loadingAsync()) {
-									Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
-									// つか、これほんとはいらなくなる。
-									// contextは即座に空のオブジェクトを返すようになるんだから
-									// shader = context()[fname.c_str()];
-									// これだけでおｋ
-									p->mtrl_no_.push_back(i);
-									for(uint j = i+1; j < mtrl_num; j++) {
-										if(effect[j].pEffectFilename && fname == WCStr(effect[j].pEffectFilename)) {
-											p->mtrl_no_.push_back(j);
-										}
-									}
-									self.asyncsolvers.push_back(p);
-									context().loadAsync(fname.c_str(), p->on_ready_slot);
+									shader = context().loadAsync(fname.c_str());
 								}
 								else {
 									shader = context().load(fname.c_str());
@@ -233,15 +168,7 @@ namespace gctp { namespace scene {
 							Handle<graphic::dx::HLSLShader> shader = context()[effect[i].pEffectFilename];
 							if(!shader) {
 								if(context().loadingAsync()) {
-									Pointer<AsyncEffectSolver> p = new AsyncEffectSolver(self, model, eff);
-									p->mtrl_no_.push_back(i);
-									for(uint j = i+1; j < mtrl_num; j++) {
-										if(effect[j].pEffectFilename && strcmp(effect[i].pEffectFilename, effect[j].pEffectFilename)) {
-											p->mtrl_no_.push_back(j);
-										}
-									}
-									self.asyncsolvers.push_back(p);
-									context().loadAsync(effect[i].pEffectFilename, p->on_ready_slot);
+									shader = context().loadAsync(effect[i].pEffectFilename);
 								}
 								else {
 									shader = context().load(effect[i].pEffectFilename);
@@ -508,14 +435,21 @@ namespace gctp { namespace scene {
 			return hr;
 		}
 
+		struct XFileReadingWork {
+			XFileReadingWork() : ticks_per_sec(60), body(0), multi_body(false) {}
+			ulong ticks_per_sec;
+			Body *body;
+			bool multi_body;
+		};
+
 		/** XFileの読みこみ
 		 */
 		HRslt loadX(
 			GraphFile &self, /**< 対象のXfileオブジェクト*/
 			XFileReadingWork &work,
 			const XData &cur, /**< カレントの位置を示すXDataオブジェクト */
-			Body *body=NULL, /**< カレントの階層ツリー */
-			Body::NodePtr cnode=NULL /**< カレントのノード */
+			Body *body = 0, /**< カレントの階層ツリー */
+			Body::NodePtr cnode = 0 /**< カレントのノード */
 		) {
 			//PRNN("chunk name : "<<cur.name());
 			if(TID_D3DRMMesh == cur.type()) {
@@ -584,11 +518,22 @@ namespace gctp { namespace scene {
 				//PRNN("TID_D3DRMFrame found");
 				if(body) cnode = body->add(*cnode, cur.name().c_str());
 				else {
-					body = new Body;
-					if(body) {
-						self.push_back(body);
-						body->setUp(cur.name().c_str());
+					if(work.body) {
+						work.multi_body = true;
+						Body::NodePtr n = work.body->root();
+						work.body->setUp();
+						work.body->root()->push(n);
+						body = work.body;
 						cnode = body->root();
+					}
+					else {
+						body = new Body;
+						if(body) {
+							work.body = body;
+							self.push_back(body);
+							body->setUp(cur.name().c_str());
+							cnode = body->root();
+						}
 					}
 				}
 				
@@ -690,23 +635,22 @@ namespace gctp { namespace scene {
 			PRNN(_T("Begin read Xfile : ")<<fn);
 			TURI _fn = fn;
 			XFileReadingWork work;
-			work.ticks_per_sec = 30;
 			_TCHAR cur_dir[MAX_PATH];
 			::GetCurrentDirectory(MAX_PATH, cur_dir);
 			::SetCurrentDirectory(_fn.path().c_str());
 			for(uint i = 0; i < file.size(); i++) {
-				hr = loadX(*this, work, file[i]);
+				hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(*this, work, file[i]);
+					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				}
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(*this, work, file[i]);
+					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				}
 				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
-					hr = loadX(*this, work, file[i]);
+					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				}
 				if(!hr) break;
 			}
@@ -730,9 +674,8 @@ namespace gctp { namespace scene {
 		if(hr) {
 			PRNN(_T("Begin read Xfile"));
 			XFileReadingWork work;
-			work.ticks_per_sec = 30;
 			for(uint i = 0; i < file.size(); i++) {
-				hr = loadX(*this, work, file[i]);
+				hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				if(!hr) break;
 			}
 			PRNN(_T("End read Xfile"));

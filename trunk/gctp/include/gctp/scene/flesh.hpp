@@ -45,7 +45,7 @@ namespace gctp { namespace scene {
 		/// 描画
 		bool draw() const;
 		/// 描画パケット登録
-		void push(DrawPacketVector &packets) const;
+		void pushPackets(DrawPacketVector &packets) const;
 
 		/// （マテリアルとは別の）透明度設定。0で非表示。（シェーダーによっては、働かないかも）
 		float setDissolveRate(float dissolve_rate) { std::swap(dissolve_rate, dissolve_rate_); return dissolve_rate; }

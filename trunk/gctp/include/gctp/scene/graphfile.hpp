@@ -38,10 +38,6 @@ namespace gctp { namespace scene {
 		static HandlerMap &handlers();
 	};
 
-	struct XFileReadingWork {
-		ulong ticks_per_sec;
-	};
-
 	/** シーングラフファイル読み込み
 	 *
 	 * ファイルを読みこんで、内部のデータをリソースとして登録していく。\n
@@ -57,8 +53,6 @@ namespace gctp { namespace scene {
 		bool setUpFromX(const _TCHAR *fn);
 		/// XFileの読みこみ
 		bool setUpFromX(BufferPtr buffer);
-		
-		PtrList asyncsolvers;
 		
 	GCTP_DECLARE_CLASS;
 	};

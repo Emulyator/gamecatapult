@@ -85,7 +85,7 @@ namespace gctp { namespace graphic {
 		/// –ÊÚ‘±î•ñ
 		const ulong *adjacency() const { return reinterpret_cast<ulong*>(adjc_->GetBufferPointer()); }
 		/// ƒƒbƒVƒ…’f•Ğî•ñ
-		const std::vector<SubsetInfo> &subsets() const { return subsets_; }
+		const std::vector<SubsetInfo> &subsets() const;
 
 		Model() : bs_(VectorC(0,0,0),0), offset_(0) { vb_.deleteGuard(); ib_.deleteGuard(); }
 

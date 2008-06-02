@@ -102,21 +102,12 @@ namespace gctp { namespace core {
 
 		/** ロード要求
 		 *
-		 * @return リクエストが成功したか？
+		 * @return 未構築のオブジェクト。リクエストに失敗した場合はヌルハンドルが返る。
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		bool loadAsync(const _TCHAR *name);
-
-		/** ロード要求
-		 *
-		 * @return リクエストが成功したか？
-		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-		 * @date 2004/02/08 11:18:22
-		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-		 */
-		bool loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> &callback);
+		Hndl loadAsync(const _TCHAR *name);
 
 		/** オブジェクト登録
 		 *

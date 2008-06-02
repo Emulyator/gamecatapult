@@ -169,9 +169,15 @@ namespace gctp {
 	{
 	public:
 		/// スロット接続
-		void connect(const Slot &slot);
+		void connect(const Slot &slot)
+		{
+			slot_ = Handle<Slot>(const_cast<Slot *>(&slot));
+		}
 		/// スロット切断
-		void disconnect(const Slot &slot);
+		void disconnect(const Slot &slot)
+		{
+			if(slot_ == Handle<Slot>(const_cast<Slot *>(&slot))) slot_ = 0;
+		}
 		/// スロットが接続されているか？
 		bool empty() const { return !slot_; }
 	protected:

@@ -16,6 +16,7 @@
 #include <gctp/graphic/dx/stateblock.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/dbgout.hpp>
+#include <gctp/app.hpp> // for gctp::Profiling
 
 using namespace std;
 
@@ -72,6 +73,7 @@ namespace gctp { namespace scene {
 
 	WorldRenderer::WorldRenderer()
 	{
+		packets_.reserve(1024);
 		dsb_ = new DefaultSB();
 		dsb_->setUp();
 	}
@@ -98,18 +100,21 @@ namespace gctp { namespace scene {
 	 */	
 	bool WorldRenderer::onReach(float delta) const
 	{
+		gctp::Profiling prof("WR.onReach");
 #ifndef __ee__
 		graphic::setAmbient(graphic::getAmbient());
 		graphic::clearLight();
 #endif
 		dsb_->setCurrent();
 		WorldRenderer *self = const_cast<WorldRenderer *>(this);
+		packets_.clear();
 		for(HandleList<World>::iterator world = self->worlds_.begin(); world != self->worlds_.end();) {
 			if(*world) {
 				(*world)->begin();
 				for(HandleList<Body>::iterator i = (*world)->body_list.begin(); i != (*world)->body_list.end();) {
 					if(*i) {
-						(*i)->draw(); // パスに関する情報をここで送るべき？
+						//(*i)->draw(); // パスに関する情報をここで送るべき？
+						(*i)->pushPackets(packets_);
 						++i;
 					}
 					else i = (*world)->body_list.erase(i);
@@ -119,9 +124,8 @@ namespace gctp { namespace scene {
 			}
 			else world = self->worlds_.erase(world);
 		}
-		// うーん、めんどいなぁ
-		// いや、ほかはこれの派生にして、みんなこの部分を使えるようにすればいいんじゃ
-		// Aspectにしてmixinにしたいなぁ
+		packets_.sort();
+		packets_.draw();
 		return false;
 	}
 
