@@ -24,7 +24,8 @@ namespace gctp { namespace graphic {
 		ambient = Color(0.2f,0.2f,0.2f);
 		specular = emissive = Color(0.0f,0.0f,0.0f);
 		power = 1.0f;
-		blend = ALPHA;
+		blend = OPEQUE;
+		double_side = false;
 	}
 
 }} // namespace gctp

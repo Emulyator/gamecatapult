@@ -12,18 +12,12 @@ namespace gctp {
 	
 	Profiler::Profiler() : next_(0), prev_(0), begun_(false)
 	{
-		prof.count = 0;
-		prof.rate = 1.0f;
-		prof.total = prof.ave = prof.max = 0.0f;
-		prof.min = FLT_MAX;
+		clear();
 	}
 	
 	Profiler::Profiler(const char *name) : name_(name), next_(0), prev_(0), begun_(false)
 	{
-		prof.count = 0;
-		prof.rate = 1.0f;
-		prof.total = prof.ave = prof.max = 0.0f;
-		prof.min = FLT_MAX;
+		clear();
 	}
 
 	Profiler &Profiler::begin(const char *name)
@@ -59,10 +53,10 @@ namespace gctp {
 		if(begun_) {
 			begun_ = false;
 			float lap = timer_.elapsed();
-			prof.count++;
-			prof.total += lap;
-			if(lap < prof.min) prof.min = lap;
-			if(lap > prof.max) prof.max = lap;
+			work.count++;
+			work.total += lap;
+			if(lap < work.min) work.min = lap;
+			if(lap > work.max) work.max = lap;
 			calcStat();
 			if(prev_) prev_->next_ = 0;
 		}
@@ -81,27 +75,55 @@ namespace gctp {
 
 	void Profiler::calcStat()
 	{
-		prof.ave = prof.total/prof.count;
+		work.ave = work.total/work.count;
 		float child_total = 0;
 		float child_rate_total = 0;
 		for(SubEntries::iterator i = subentries_.begin(); i != subentries_.end(); ++i)
 		{
 			i->end();
-			i->prof.rate = i->prof.total/prof.total;
-			child_total += i->prof.total;
-			child_rate_total += i->prof.rate;
+			i->work.rate = i->work.total/work.total;
+			child_total += i->work.total;
+			child_rate_total += i->work.rate;
 		}
-		other_total = prof.total - child_total;
-		other_rate = 1.0f - child_rate_total;
+		other_work.total = work.total - child_total;
+		other_work.rate = 1.0f - child_rate_total;
+		other_work.count = 1;
+		if(other_work.rate < 0) other_work.rate = 0;
+		if(other_work.total < 0) other_work.total = 0;
+		if(other_work.total < other_work.min) other_work.min = other_work.total;
+		if(other_work.total > other_work.max) other_work.max = other_work.total;
+	}
+
+	void Profiler::commit()
+	{
+		if(work.count > 0) {
+			result = work;
+			other_result = other_work;
+		}
+		work.count = 0;
+		work.total = 0;
+		other_work.count = 0;
+		other_work.total = 0;
+		for(SubEntries::iterator i = subentries_.begin(); i != subentries_.end();)
+		{
+			if(i->work.count > 0) {
+				i->commit();
+				++i;
+			}
+			else {
+				i = subentries_.erase(i);
+			}
+		}
 	}
 
 	void Profiler::clear()
 	{
-		prof.count = 0;
-		prof.rate = 1.0f;
-		prof.total = prof.ave = prof.max = 0.0f;
-		prof.min = FLT_MAX;
-
+		result.clear();
+		result.min = result.max = 0;
+		other_result.clear();
+		other_result.min = other_result.max = 0;
+		work.clear();
+		other_work.clear();
 		subentries_.clear();
 	}
 

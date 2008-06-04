@@ -671,10 +671,7 @@ namespace gctp { namespace graphic { namespace dx {
 				_const.y = target_.mtrls[bonecb[subset_no].AttribId].power;
 				dev->SetVertexShaderConstantF(0, _const, 1);
 
-				Pointer<Texture> tex = target_.mtrls[bonecb[subset_no].AttribId].tex.get();
-				if(tex) dev->SetTexture(0, *tex);
-				else dev->SetTexture(0, NULL);
-
+				device().setMaterial(target_.mtrls[bonecb[subset_no].AttribId]);
 				hr = mesh_->DrawSubset(subset_no);
 				return hr;
 			}
@@ -894,11 +891,8 @@ namespace gctp { namespace graphic { namespace dx {
 				hr = (*shader)->SetInt( "CurNumBones", max_face_infl_-1);
 				if(!hr) GCTP_TRACE(hr);
 
-				Pointer<Texture> tex = target_.mtrls[bonecb[subset_no].AttribId].tex.lock();
-				if(tex) dev->SetTexture(0, *tex);
-				else dev->SetTexture(0, NULL);
-
 				(*shader)->CommitChanges();
+				device().setMaterial(target_.mtrls[bonecb[subset_no].AttribId]);
 				hr = mesh_->DrawSubset(subset_no);
 				if(!hr) {
 					GCTP_TRACE(hr);

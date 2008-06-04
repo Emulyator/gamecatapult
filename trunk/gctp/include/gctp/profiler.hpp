@@ -33,19 +33,27 @@ namespace gctp {
 		float min; ///< このプロファイルエントリの最短使用時間
 		float max; ///< このプロファイルエントリの最長使用時間
 		int   count; ///< このプロファイルエントリの呼び出し回数
+		void clear()
+		{
+			count = 0;
+			rate = 1;
+			total = ave = 0;
+			min = FLT_MAX;
+			max = FLT_MIN;
+		}
 	};
 
 	template<class T>
 	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, Profile const & p)
 	{
 	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
-		return os << boost::basic_format<char, T>("%1$#04.1f%% %2$#08.6fs %3$#08.6fs %4$#08.6fs %5$#08.6fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+		return os << boost::basic_format<char, T>("%1$#04.1f%% %2$#08.4fs %3$#08.4fs %4$#08.4fs %5$#08.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
 	}
 	template<class T>
 	std::basic_ostream<wchar_t, T> & operator<< (std::basic_ostream<wchar_t, T> & os, Profile const & p)
 	{
 	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
-		return os << boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.6fs %3$#08.6fs %4$#08.6fs %5$#08.6fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+		return os << boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.4fs %3$#08.4fs %4$#08.4fs %5$#08.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
 	}
 
 	/** プロファイル計測クラス
@@ -92,14 +100,18 @@ namespace gctp {
 		/// 名前
 		const char *name() const { return name_.c_str(); }
 
+		/// 結果を確定
+		void commit();
+
 		/// サブエントリをクリア
 		void clear();
 
-		Profile prof; ///< プロファイルデータ
-		float other_rate; ///< このプロファイルエントリの不明使用比率
-		float other_total; ///< このプロファイルエントリの総不明使用時間
+		Profile result; ///< プロファイルデータ
+		Profile other_result;
 
 	private:
+		Profile work; // 計測中のプロファイルデータ
+		Profile other_work;
 		void calcStat();
 
 		std::string name_;
@@ -113,7 +125,7 @@ namespace gctp {
 	template<class T>
 	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, Profiler const & p)
 	{
-		os<<"#"<<p.name()<<"\t"<<p.prof<<endl;
+		os<<"#"<<p.name()<<"\t"<<p.result<<endl;
 		for(Profiler::SubEntries::const_iterator i = p.subentries().begin(); i != p.subentries().end(); ++i)
 		{
 			for(int tab = i->depth(); tab > 0; tab--) os << "\t";
@@ -121,14 +133,14 @@ namespace gctp {
 		}
 		if(!p.subentries().empty()) {
 			for(int tab = p.depth()+1; tab > 0; tab--) os << "\t";
-			os<<"--------\t"<<boost::basic_format<char, T>("%1$#04.1f%% %2$#08.6fs")%(p.other_rate*100.0f)%p.other_total<<endl;
+			os<<"--------\t"<<boost::basic_format<char, T>("%1$#04.1f%% %2$#08.4fs %3$#08.4fs %4$#08.4fs")%(p.other_result.rate*100.0f)%p.other_result.total%p.other_result.min%p.other_result.max<<endl;
 		}
 		return os;
 	}
 	template<class T>
 	std::basic_ostream<wchar_t, T> & operator<< (std::basic_ostream<wchar_t, T> & os, Profiler const & p)
 	{
-		os<<"#"<<p.name()<<"\t"<<p.prof<<endl;
+		os<<"#"<<p.name()<<"\t"<<p.result<<endl;
 		for(Profiler::SubEntries::const_iterator i = p.subentries().begin(); i != p.subentries().end(); ++i)
 		{
 			for(int tab = i->depth(); tab > 0; tab--) os << "\t";
@@ -136,7 +148,7 @@ namespace gctp {
 		}
 		if(!p.subentries().empty()) {
 			for(int tab = p.depth()+1; tab > 0; tab--) os << "\t";
-			os<<"--------\t"<<boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.6fs")%(p.other_rate*100.0f)%p.other_total<<endl;
+			os<<"--------\t"<<boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#08.4fs %3$#08.4fs %4$#08.4fs")%(p.other_result.rate*100.0f)%p.other_result.total%p.other_result.min%p.other_result.max<<endl;
 		}
 		return os;
 	}

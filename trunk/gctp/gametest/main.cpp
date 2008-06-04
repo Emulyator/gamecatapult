@@ -185,7 +185,7 @@ extern "C" int main(int argc, char *argv[])
 	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // どうすっかな。。。
 	fonttex->setUp(512, 512);
 	Pointer<Font> font = new gctp::Font;
-	font->setUp(_T(",10,BOLD|FIXEDPITCH"));
+	font->setUp(_T(",8,BOLD|FIXEDPITCH|OUTLINE"));
 	Pointer<Font> font2 = new gctp::Font;
 	font2->setUp(_T(",12,NORMAL"));
 	graphic::ParticleBuffer pbuf;
@@ -288,8 +288,10 @@ extern "C" int main(int argc, char *argv[])
 		}
 	}
 
+	bool hud_on = true;
+
 	while(app().canContinue()) {
-		//if(input().kbd().press(DIK_ESCAPE)) break;
+		gctp::Profiler &update_profile = app().profiler().begin("update");
 		Pointer<scene::World> world = context[_T("world")].lock();
 		Pointer<scene::Camera> camera = context[_T("camera")].lock();
 		Pointer<scene::QuakeCamera> qcam = context[_T("qcam")].lock();
@@ -305,6 +307,7 @@ extern "C" int main(int argc, char *argv[])
 				camera->fov() = g_pi/4;
 			}
 		}
+		if(input().kbd().push(DIK_ESCAPE)) hud_on = !hud_on;
 		Pointer<scene::Entity> chr = context[_T("chara")].lock();
 		if(chr) {
 			if(input().kbd().push(DIK_NUMPADPLUS)||input().kbd().push(DIK_COMMA)) chr->mixer().setSpeed(chr->mixer().speed()+0.1f);
@@ -389,6 +392,8 @@ extern "C" int main(int argc, char *argv[])
 #endif
 		app().update_signal(app().lap);
 
+		update_profile.end();
+
 		if(app().canDraw()) {
 			graphic::clear();
 			graphic::begin();
@@ -419,50 +424,52 @@ extern "C" int main(int argc, char *argv[])
 #endif
 			text.reset();
 			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
-				<< "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl
-				<< "FPS:" << app().fps.latestave << endl << endl;
-			if(chr) text.out()
-				<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
-				<< "	" << chr->mixer().tracks()[0].keytime() << endl
-				<< "track 1 " << chr->mixer().tracks()[1].weight() << endl
-				<< "	" << chr->mixer().tracks()[1].keytime() << endl
-				<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
-				<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
-			text.out()
+				<< "FPS:" << app().fps.latestave << endl;
+			if(hud_on) {
+				text.out() << "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl << endl;
+				if(chr) text.out()
+					<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
+					<< "	" << chr->mixer().tracks()[0].keytime() << endl
+					<< "track 1 " << chr->mixer().tracks()[1].weight() << endl
+					<< "	" << chr->mixer().tracks()[1].keytime() << endl
+					<< "track 2 " << chr->mixer().tracks()[2].weight() << endl
+					<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
+				text.out()
 #ifdef PHYSICSTEST
-				<< _T("箱　  :") << box_list.size() << endl
+					<< _T("箱　  :") << box_list.size() << endl
 #endif
-				<< _T("ヨー  :") << qcam->yaw_ << endl
-				<< _T("ピッチ:") << qcam->pitch_ << endl
-				<< _T("速度  :") << qcam->speed_ << endl
-				<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
-				<< _T("位置  :") << camera->stance().position << endl << endl
-				<< _T("モード: ") << mesh_mode << endl << endl
-				<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl;
-			Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();
-			if(chr2) {
-				static int c = 2;
-				int _c = 0;
-				if(input().kbd().push(DIK_P) && c < 255) c++;
-				if(input().kbd().push(DIK_O) && c > 0) c--;
-				for(StrutumTree::TraverseItr i = chr2->skeleton().beginTraverse(); i != chr2->skeleton().endTraverse(); ++i) {
-					if(c == _c) {
-						const char *name = chr2->skeleton().getName(*i);
-						if(name) text.out() << name << endl;
-						else text.out() << "???" << endl;
-						text.out()
-							<< (*i).val.lcm() << endl
-							<< (*i).val.wtm() << endl;
-						break;
+					<< _T("ヨー  :") << qcam->yaw_ << endl
+					<< _T("ピッチ:") << qcam->pitch_ << endl
+					<< _T("速度  :") << qcam->speed_ << endl
+					<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
+					<< _T("位置  :") << camera->stance().position << endl << endl
+					<< _T("モード: ") << mesh_mode << endl << endl
+					<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl;
+				Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();
+				if(chr2) {
+					static int c = 2;
+					int _c = 0;
+					if(input().kbd().push(DIK_P) && c < 255) c++;
+					if(input().kbd().push(DIK_O) && c > 0) c--;
+					for(StrutumTree::TraverseItr i = chr2->skeleton().beginTraverse(); i != chr2->skeleton().endTraverse(); ++i) {
+						if(c == _c) {
+							const char *name = chr2->skeleton().getName(*i);
+							if(name) text.out() << name << endl;
+							else text.out() << "???" << endl;
+							text.out()
+								<< (*i).val.lcm() << endl
+								<< (*i).val.wtm() << endl;
+							break;
+						}
+						_c++;
 					}
-					_c++;
 				}
+
+				text.setColor(Color32(127, 200, 127)).out() << app().profiler();
+
+				if(qcam_on) text.setFont(font2).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
+					<< _T("ウォークスルー中");
 			}
-
-			text.setPos(10, 500).setColor(Color32(127, 200, 127)).setBackColor(Color32(0, 0, 32)).out() << app().profile();
-
-			if(qcam_on) text.setFont(font2).setBackColor(Color32(0,0,0,0)).setPos(10, graphic::device().getScreenSize().y-20).setColor(Color32(200, 127, 200)).out()
-				<< _T("ウォークスルー中");
 
 			text.draw(spr, *fonttex);
 

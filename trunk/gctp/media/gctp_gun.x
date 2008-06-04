@@ -21517,7 +21517,7 @@ Frame Frame_SCENE_ROOT {
      }
     }
 
-    Material {
+    Material _TRANSLUCENT_DOUBLESIDE_ {
      1.000000;1.000000;1.000000;1.000000;;
      51.200001;
      0.000000;0.000000;0.000000;;
@@ -21527,7 +21527,7 @@ Frame Frame_SCENE_ROOT {
      }
     }
 
-    Material {
+    Material _DOUBLESIDE_ {
      1.000000;1.000000;1.000000;1.000000;;
      51.200001;
      0.000000;0.000000;0.000000;;

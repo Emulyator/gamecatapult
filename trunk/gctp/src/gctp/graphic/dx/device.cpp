@@ -662,6 +662,7 @@ namespace gctp { namespace graphic { namespace dx {
 		dxmtrl.Emissive = mtrl.emissive;
 		dxmtrl.Power    = mtrl.power;
 		ptr_->SetMaterial(&dxmtrl);
+
 		Pointer<Texture> tex = mtrl.tex.lock();
 		if(tex) ptr_->SetTexture(0, *tex);
 		else ptr_->SetTexture(0, NULL);
@@ -673,33 +674,54 @@ namespace gctp { namespace graphic { namespace dx {
 		else ptr_->SetTexture(2, NULL);
 
 		switch(mtrl.blend) {
-		case Material::NONE:
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+		case Material::OPEQUE:
 			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
+			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x80 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+			break;
+		case Material::TRANSLUCENT:
+			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
+			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::ADD:
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
 			ptr_->SetRenderState( D3DRS_SRCBLEND,	 D3DBLEND_SRCCOLOR );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,	 D3DBLEND_ONE );
 			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::SUB:
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
 			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_INVDESTCOLOR );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_ZERO );
 			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::MUL:
 			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_ZERO );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_SRCCOLOR );
 			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
-			break;
-		case Material::ALPHA:
 			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
-			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
+		}
+		if(mtrl.double_side) {
+			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
+		}
+		else {
+#ifdef GCTP_COORD_RH
+			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+#else
+			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#endif
 		}
 	}
 

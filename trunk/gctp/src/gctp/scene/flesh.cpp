@@ -78,8 +78,7 @@ namespace gctp { namespace scene {
 				for(uint i = 0; i < model->subsets().size(); i++) {
 					packet.shader = model->mtrls[model->subsets()[i].material_no].shader;
 					packet.subset_no = i;
-					if(model->mtrls[model->subsets()[i].material_no].diffuse.a == 1.0f) {
-						// 本来別のフラグで不透明体を識別すべし
+					if(dissolve_rate_ >= 1.0f && model->mtrls[model->subsets()[i].material_no].blend == graphic::Material::OPEQUE && model->mtrls[model->subsets()[i].material_no].diffuse.a >= 1.0f) {
 						packet.z = -1;
 					}
 					else {

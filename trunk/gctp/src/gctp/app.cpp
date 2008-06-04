@@ -234,7 +234,7 @@ namespace gctp {
 	GameApp *GameApp::app_ = NULL;
 	uint GameApp::window_count_ = 0;
 
-	GameApp::GameApp() : lap(0.0f), profiler_odd_("root"), profiler_even_("root"), draw_profile_(0), odd_frame_(true)
+	GameApp::GameApp() : lap(0.0f), profiler_("root"), draw_profile_(0)
 	{
 #if !defined(_MSC_VER) || (_MSC_VER > 1300)
 		events_.event_signal.connect(guievents_.event_slot);
@@ -260,18 +260,18 @@ namespace gctp {
 			draw_profile_->end();
 			draw_profile_ = 0;
 		}
-		profiler().end();
-		odd_frame_ = !odd_frame_;
+		profiler_.end();
 
-		profiler().clear();
-		profiler().begin();
+		profiler_.commit();
+		
+		profiler_.begin();
 		events_.flush();
 		return true;
 	}
 
 	bool GameApp::canDraw()
 	{
-		draw_profile_ = &profiler().begin("draw");
+		draw_profile_ = &profiler_.begin("draw");
 		return true;
 	}
 

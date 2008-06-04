@@ -33,7 +33,6 @@ namespace gctp { namespace graphic {
 				enum Type {
 					POSITION,
 					COLOR,
-					BACKCOLOR,
 					FONT,
 					CURSOR,
 					ALIGNMENT,
@@ -43,7 +42,6 @@ namespace gctp { namespace graphic {
 				Attr(float x, float y) : type(POSITION) { pos.x = x; pos.y = y; }
 				Attr(Text::Alignment _alignment) : type(ALIGNMENT) { alignment = _alignment; }
 				explicit Attr(D3DCOLOR _color) : type(COLOR), color(_color) {}
-				explicit Attr(D3DCOLOR _color, bool dummy) : type(BACKCOLOR), color(_color) {}
 				explicit Attr(const Handle<Font> &_font) : type(FONT), font(_font) {}
 				explicit Attr(Type _type) : type(_type) {}
 
@@ -195,12 +193,6 @@ namespace gctp { namespace graphic {
 		return *this;
 	}
 
-	Text &Text::setBackColor(Color32 color, int ofs)
-	{
-		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(color, true)));
-		return *this;
-	}
-
 	Text &Text::setFont(const Handle<Font> &font, int ofs)
 	{
 		impl_->attrs_.insert(std::make_pair(impl_->position(ofs), Attr(font)));
@@ -324,7 +316,7 @@ namespace gctp { namespace graphic {
 		int prev_c = 0, now_disp_count = 0;
 		float x = (float)layout_.left, y = (float)layout_.top;
 		Text::Alignment alignment = Text::LEFT;
-		Color32 color(0, 0, 0), backcolor(0, 0, 0, 0);
+		Color32 color(0, 0, 0);
 		uint line_height = 0, default_line_height = 0, space_size = 0;
 		bool loopback = false;
 		while( i <= size ) {
@@ -339,9 +331,6 @@ namespace gctp { namespace graphic {
 				}
 				else if(attri->second.type == Attr::COLOR) {
 					color = attri->second.color;
-				}
-				else if(attri->second.type == Attr::BACKCOLOR) {
-					backcolor = attri->second.color;
 				}
 				else if(attri->second.type == Attr::FONT) {
 					font = attri->second.font.get();
@@ -421,18 +410,6 @@ namespace gctp { namespace graphic {
 							}
 						}
 						if(spr || descvec) {
-							if(backcolor.a != 0) {
-								graphic::FontGlyph _glyph = fonttex.find(font, ' ');
-								if(_glyph && (!setvp || clip_.isHit(RectC((uint_t)x, (uint_t)y, (uint_t)(x+glyph.size.x), (uint_t)(y+line_height))))) {
-									graphic::SpriteDesc desc;
-									desc.setPos(RectfC(x, y, x+glyph.size.x, y+line_height));
-									desc.setUV(_glyph.uv);
-									desc.setColor(backcolor);
-									desc.setHilight(Color32(0,0,0));
-									if(spr) spr->draw(desc);
-									if(descvec) descvec->descs.push_back(desc);
-								}
-							}
 							if(!isSpaceChar(c) && (!setvp || clip_.isHit(RectC((uint_t)x, (uint_t)y, (uint_t)(x+glyph.size.x), (uint_t)(y+line_height))))) {
 								if(font->exStyle()!=Font::EX_NONE) {
 									// âeï∂éöë‹ï∂éöÇÃÇ∆Ç´ÇÃì¡ï èàóù

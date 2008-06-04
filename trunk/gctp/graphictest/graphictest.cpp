@@ -246,13 +246,11 @@ public:
 				ime_.setPos(Point2C(cursor_pos));
 				uint i;
 				for(i = 0; i < ime_.attrs().size(); i++) {
-					if(i == 0) text_.setBackColor(Color32(64, 64, 127));
 					if(ime_.attrs()[i] == ATTR_TARGET_CONVERTED || ime_.attrs()[i] == ATTR_TARGET_NOTCONVERTED) {
 						text_.setColor(Color32(255, 255, 127), i);
 					}
 					else text_.setColor(Color32(255, 127, 255), i);
 				}
-				text_.setBackColor(Color32(0, 0, 0, 0), i);
 				text_.setPos(cursor_pos.x, cursor_pos.y).out() << ime_.str();
 				text_.setColor(Color32(255, 127, 255));
 				cursor_pos = text_.getPos(*font_, (int)ime_.cursor()-(int)ime_.str().size());
