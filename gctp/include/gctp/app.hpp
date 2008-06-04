@@ -163,10 +163,8 @@ namespace gctp {
 	class GameApp {
 		GCTP_TLS static GameApp *app_;
 		static uint window_count_;
-		Profiler profiler_even_;
-		Profiler profiler_odd_;
+		Profiler profiler_;
 		Profiler *draw_profile_;
-		bool odd_frame_;
 		bool present_;
 		EventQue events_;
 		GUIEvents guievents_;
@@ -181,10 +179,8 @@ namespace gctp {
 		virtual void showCursor(bool yes) = 0;
 		virtual void holdCursor(bool yes) = 0;
 
-		/// オープンされている現在のルートプロファイラ
-		Profiler &profiler() { return odd_frame_ ? profiler_odd_ : profiler_even_; }
-		/// 1フレーム前のプロファイル（クローズ済み）
-		Profiler &profile() { return odd_frame_ ? profiler_even_ : profiler_odd_; }
+		/// ルートプロファイラ
+		Profiler &profiler() { return profiler_; }
 		/// ウィンドウの数（アプリケーション中のGameAppの数）
 		uint window_count() { return window_count_; }
 

@@ -27,8 +27,8 @@ namespace gctp { namespace graphic {
 	struct Material
 	{
 		enum BlendMode {
-			NONE,
-			ALPHA,
+			OPEQUE,		// 不透明（パンチスルー含む）
+			TRANSLUCENT, // アルファブレンド
 			ADD,
 			SUB,
 			MUL,
@@ -39,6 +39,7 @@ namespace gctp { namespace graphic {
 		Color emissive;
 		float power;
 		BlendMode blend;
+		bool double_side;
 
 		Handle<Texture> tex;
 		Handle<Texture> tex1;

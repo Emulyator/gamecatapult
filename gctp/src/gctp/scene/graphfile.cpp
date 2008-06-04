@@ -120,7 +120,7 @@ namespace gctp { namespace scene {
 					model.mtrls[i].specular = _mtrls[i].MatD3D.Specular;
 					model.mtrls[i].emissive = _mtrls[i].MatD3D.Emissive;
 					model.mtrls[i].power    = _mtrls[i].MatD3D.Power;
-					model.mtrls[i].blend    = graphic::Material::ALPHA;
+					model.mtrls[i].blend    = graphic::Material::OPEQUE;
 					if(_mtrls[i].pTextureFilename) {
 #ifdef UNICODE
 						WCStr fname = _mtrls[i].pTextureFilename;
@@ -227,6 +227,37 @@ namespace gctp { namespace scene {
 			if(!hr) return hr;
 			setUpModelMaterial(self, model, mtrls, mtrl_num, effect);
 			model.setUp(data.name(), mesh, skin, adjc);
+
+			{
+				// ƒ}ƒeƒŠƒAƒ‹–¼‚©‚ç’Ç‰Á‚Ì‘®«‚ğ“Ç‚İæ‚é
+				uint n = data.size();
+				for(uint i = 0; i < n; i++) {
+					XData child = data.getChild(i);
+					if(TID_D3DRMMeshMaterialList == child.type()) {
+						uint n = child.size();
+						for(uint i = 0; i < n; i++) {
+							XData mtrl = child.getChild(i);
+							std::string name(mtrl.name().c_str());
+							if(name.find("_TRANSLUCENT_") != std::string::npos) {
+								model.mtrls[i].blend = graphic::Material::TRANSLUCENT;
+							}
+							else if(name.find("_ADD_") != std::string::npos) {
+								model.mtrls[i].blend = graphic::Material::ADD;
+							}
+							else if(name.find("_SUB_") != std::string::npos) {
+								model.mtrls[i].blend = graphic::Material::SUB;
+							}
+							else if(name.find("_MUL_") != std::string::npos) {
+								model.mtrls[i].blend = graphic::Material::MUL;
+							}
+							if(name.find("_DOUBLESIDE_") != std::string::npos) {
+								model.mtrls[i].double_side = true;
+							}
+						}
+						break;
+					}
+				}
+			}
 
 			{
 	//			ID3DXBufferPtr message;

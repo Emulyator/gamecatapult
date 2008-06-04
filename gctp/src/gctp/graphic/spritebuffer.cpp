@@ -51,7 +51,7 @@ namespace gctp { namespace graphic {
 			//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
 			device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
 			device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
-			device().impl()->SetRenderState( D3DRS_ZENABLE,          FALSE );
+			device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
 			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
 			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
 			device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );
@@ -97,7 +97,7 @@ namespace gctp { namespace graphic {
 			//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
 			device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
 			device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
-			device().impl()->SetRenderState( D3DRS_ZENABLE,          FALSE );
+			device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
 			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
 			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
 			device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );

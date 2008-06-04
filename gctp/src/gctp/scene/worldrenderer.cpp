@@ -34,10 +34,11 @@ namespace gctp { namespace scene {
 		{
 			graphic::device().impl()->SetRenderState( D3DRS_CLIPPING, TRUE );
 			graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
-			graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, TRUE );
+			graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
+			graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESS );
 			graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 			graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
-			graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
+			graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, TRUE );
 #ifdef GCTP_COORD_RH
 			graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #else
@@ -45,13 +46,18 @@ namespace gctp { namespace scene {
 #endif
 			graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 			graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
-			graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
 			graphic::device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
-			graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
-			graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
-			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
+			graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x80 );
+			graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+
+			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC );
+			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC );
+			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR );
+			/*graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
 			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
-			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
+			graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );*/
+
 			graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
 			graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
 			graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
@@ -108,23 +114,29 @@ namespace gctp { namespace scene {
 		dsb_->setCurrent();
 		WorldRenderer *self = const_cast<WorldRenderer *>(this);
 		packets_.clear();
-		for(HandleList<World>::iterator world = self->worlds_.begin(); world != self->worlds_.end();) {
-			if(*world) {
-				(*world)->begin();
-				for(HandleList<Body>::iterator i = (*world)->body_list.begin(); i != (*world)->body_list.end();) {
-					if(*i) {
-						//(*i)->draw(); // パスに関する情報をここで送るべき？
-						(*i)->pushPackets(packets_);
-						++i;
+		{
+			gctp::Profiling prof("WR.pushPack");
+			for(HandleList<World>::iterator world = self->worlds_.begin(); world != self->worlds_.end();) {
+				if(*world) {
+					(*world)->begin();
+					for(HandleList<Body>::iterator i = (*world)->body_list.begin(); i != (*world)->body_list.end();) {
+						if(*i) {
+							//(*i)->draw(); // パスに関する情報をここで送るべき？
+							(*i)->pushPackets(packets_);
+							++i;
+						}
+						else i = (*world)->body_list.erase(i);
 					}
-					else i = (*world)->body_list.erase(i);
+					(*world)->end();
+					++world;
 				}
-				(*world)->end();
-				++world;
+				else world = self->worlds_.erase(world);
 			}
-			else world = self->worlds_.erase(world);
 		}
-		packets_.sort();
+		{
+			gctp::Profiling prof("WR.sort");
+			packets_.sort();
+		}
 		packets_.draw();
 		return false;
 	}

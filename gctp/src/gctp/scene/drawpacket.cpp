@@ -14,17 +14,21 @@
 #include <gctp/graphic/model.hpp>
 #include <gctp/graphic/brush.hpp>
 
+#include <gctp/app.hpp>
+
 using namespace std;
 
 namespace gctp { namespace scene {
 
 	void DrawPacketVector::draw() const
 	{
+		gctp::Profiling prof("DrawPacketVector.draw");
 		bool first = true;
 		const graphic::Model *current_model = 0;
 		const graphic::Shader *current_shader = 0;
 		for(DrawPacketVector::const_iterator i = begin(); i != end(); ++i)
 		{
+			gctp::Profiling prof("draw packet");
 			if(i->flesh && i->model) {
 				if(first || current_shader != i->shader.get()) {
 					if(current_shader) current_shader->end();

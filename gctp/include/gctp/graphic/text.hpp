@@ -59,7 +59,6 @@ namespace gctp { namespace graphic {
 
 		Text &setPos(float x, float y, int ofs = 0);
 		Text &setColor(Color32 color, int ofs = 0);
-		Text &setBackColor(Color32 color, int ofs = 0);
 		Text &setFont(const Handle<Font> &font, int ofs = 0);
 		Text &setAlignment(Alignment alignment, int ofs = 0);
 

@@ -28,7 +28,7 @@ namespace gctp { namespace graphic {
 			device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
 			device().impl()->SetRenderState( D3DRS_FILLMODE,   D3DFILL_SOLID );
 			device().impl()->SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );
-			device().impl()->SetRenderState( D3DRS_ZENABLE,          TRUE );
+			device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_USEW/* D3DZB_TRUE */ );
 			device().impl()->SetRenderState( D3DRS_ZWRITEENABLE,     FALSE );
 			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
 			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
@@ -40,8 +40,8 @@ namespace gctp { namespace graphic {
 			device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
 			device().impl()->SetRenderState( D3DRS_SPECULARENABLE,   TRUE );
 			device().impl()->SetRenderState( D3DRS_FOGENABLE,        FALSE );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+			device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+			device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
 			device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
 			device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
 			device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
