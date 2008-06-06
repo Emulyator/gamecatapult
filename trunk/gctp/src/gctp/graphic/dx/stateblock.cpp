@@ -61,13 +61,13 @@ namespace gctp { namespace graphic { namespace dx {
 		return S_OK;
 	}
 
-	HRslt StateBlockRsrc::setCurrent() const
+	HRslt StateBlockRsrc::begin() const
 	{
 		sbb_->capture();
 		return sb_->apply();
 	}
 
-	HRslt StateBlockRsrc::unset() const
+	HRslt StateBlockRsrc::end() const
 	{
 		return sbb_->apply();
 	}

@@ -38,112 +38,112 @@ namespace gctp { namespace graphic {
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, graphic, SpriteBuffer, Object);
-	
-	class SpriteSB : public dx::StateBlockRsrc {
-	public:
-		void record()
-		{
-			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			device().impl()->SetRenderState( D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA );
-			device().impl()->SetRenderState( D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA );
-			device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  FALSE );
-			//device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
-			//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
-			device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
-			device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
-			device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
-			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
-			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
-			device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );
-			device().impl()->SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
-			device().impl()->SetRenderState( D3DRS_VERTEXBLEND,      FALSE );
-			device().impl()->SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
-			device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
-			device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
-			device().impl()->SetRenderState( D3DRS_SPECULARENABLE,   TRUE );
-			device().impl()->SetRenderState( D3DRS_FOGENABLE,        FALSE );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
-			device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
-			
-			device().impl()->SetVertexShader( NULL );
-			device().impl()->SetStreamSource(0, NULL, 0, 0);
-			device().impl()->SetTexture( 0, NULL );
-			device().setView(MatrixC(true));
-			device().setProjection(MatrixC(true));
-			device().setWorld(MatrixC(true));
-		}
-	};
-
-	class SpriteSB2 : public dx::StateBlockRsrc {
-	public:
-		void record()
-		{
-			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			device().impl()->SetRenderState( D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA );
-			device().impl()->SetRenderState( D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA );
-			device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  FALSE );
-			//device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
-			//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
-			device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
-			device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
-			device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
-			device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
-			device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
-			device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );
-			device().impl()->SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
-			device().impl()->SetRenderState( D3DRS_VERTEXBLEND,      FALSE );
-			device().impl()->SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
-			device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
-			device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
-			device().impl()->SetRenderState( D3DRS_SPECULARENABLE,   TRUE );
-			device().impl()->SetRenderState( D3DRS_FOGENABLE,        FALSE );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
-			device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
-			device().impl()->SetSamplerState( 1, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
-			device().impl()->SetSamplerState( 1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
-			device().impl()->SetSamplerState( 1, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP );
-			device().impl()->SetSamplerState( 1, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
-			device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_SELECTARG1 );
-			device().impl()->SetTextureStageState( 1, D3DTSS_COLORARG1, D3DTA_CURRENT );
-			device().impl()->SetTextureStageState( 1, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1 );
-			device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAARG1, D3DTA_ALPHAREPLICATE | D3DTA_TEXTURE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
-			device().impl()->SetTextureStageState( 1, D3DTSS_TEXCOORDINDEX, 1 );
-			device().impl()->SetTextureStageState( 1, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
-			device().impl()->SetTextureStageState( 2, D3DTSS_COLOROP,   D3DTOP_DISABLE );
-			device().impl()->SetTextureStageState( 2, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
-			
-			device().impl()->SetVertexShader( NULL );
-			device().impl()->SetStreamSource(0, NULL, 0, 0);
-			device().impl()->SetTexture( 0, NULL );
-			device().setView(MatrixC(true));
-			device().setProjection(MatrixC(true));
-			device().setWorld(MatrixC(true));
-		}
-	};
 
 	namespace {
+	
+		class SpriteSB : public dx::StateBlockRsrc {
+		public:
+			void record()
+			{
+				device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+				device().impl()->SetRenderState( D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA );
+				device().impl()->SetRenderState( D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA );
+				device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  FALSE );
+				//device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
+				//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
+				device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
+				device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
+				device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
+				device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
+				device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
+				device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );
+				device().impl()->SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
+				device().impl()->SetRenderState( D3DRS_VERTEXBLEND,      FALSE );
+				device().impl()->SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
+				device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
+				device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
+				device().impl()->SetRenderState( D3DRS_SPECULARENABLE,   TRUE );
+				device().impl()->SetRenderState( D3DRS_FOGENABLE,        FALSE );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+				device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+				
+				device().impl()->SetVertexShader( NULL );
+				device().impl()->SetStreamSource(0, NULL, 0, 0);
+				device().impl()->SetTexture( 0, NULL );
+				device().setView(MatrixC(true));
+				device().setProjection(MatrixC(true));
+				device().setWorld(MatrixC(true));
+			}
+		};
+
+		class SpriteSB2 : public dx::StateBlockRsrc {
+		public:
+			void record()
+			{
+				device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+				device().impl()->SetRenderState( D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA );
+				device().impl()->SetRenderState( D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA );
+				device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  FALSE );
+				//device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x08 );
+				//device().impl()->SetRenderState( D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL );
+				device().impl()->SetRenderState( D3DRS_FILLMODE,         D3DFILL_SOLID );
+				device().impl()->SetRenderState( D3DRS_CULLMODE,         D3DCULL_CCW );
+				device().impl()->SetRenderState( D3DRS_ZENABLE,          D3DZB_FALSE );
+				device().impl()->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
+				device().impl()->SetRenderState( D3DRS_CLIPPING,         TRUE );
+				device().impl()->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE,    FALSE );
+				device().impl()->SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
+				device().impl()->SetRenderState( D3DRS_VERTEXBLEND,      FALSE );
+				device().impl()->SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
+				device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
+				device().impl()->SetRenderState( D3DRS_AMBIENT, 0xFFFFFFFF );
+				device().impl()->SetRenderState( D3DRS_SPECULARENABLE,   TRUE );
+				device().impl()->SetRenderState( D3DRS_FOGENABLE,        FALSE );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+				device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
+				device().impl()->SetSamplerState( 1, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+				device().impl()->SetSamplerState( 1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+				device().impl()->SetSamplerState( 1, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP );
+				device().impl()->SetSamplerState( 1, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+				device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_SELECTARG1 );
+				device().impl()->SetTextureStageState( 1, D3DTSS_COLORARG1, D3DTA_CURRENT );
+				device().impl()->SetTextureStageState( 1, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1 );
+				device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAARG1, D3DTA_ALPHAREPLICATE | D3DTA_TEXTURE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				device().impl()->SetTextureStageState( 1, D3DTSS_TEXCOORDINDEX, 1 );
+				device().impl()->SetTextureStageState( 1, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				device().impl()->SetTextureStageState( 2, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+				device().impl()->SetTextureStageState( 2, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+				
+				device().impl()->SetVertexShader( NULL );
+				device().impl()->SetStreamSource(0, NULL, 0, 0);
+				device().impl()->SetTexture( 0, NULL );
+				device().setView(MatrixC(true));
+				device().setProjection(MatrixC(true));
+				device().setWorld(MatrixC(true));
+			}
+		};
 
 		enum {
 			FVF_L  = (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_SPECULAR|D3DFVF_TEX1),
@@ -449,7 +449,7 @@ namespace gctp { namespace graphic {
 	SpriteBuffer &SpriteBuffer::begin(bool do_filter)
 	{
 		draw();
-		sb_->setCurrent();
+		sb_->begin();
 		setCurrent(0);
 		// Set filter states
 		if( do_filter ) {
@@ -497,7 +497,7 @@ namespace gctp { namespace graphic {
 		draw();
 		rewind();
 		// Restore the modified renderstates
-		sb_->unset();
+		sb_->end();
 		return *this;
 	}
 

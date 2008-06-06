@@ -56,8 +56,8 @@ namespace gctp { namespace graphic {
 		void unlock() const;
 		void rewind() { used_ = 0; }
 		
-		HRslt draw(dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset);
-		HRslt draw(uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset);
+		HRslt draw(dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const;
+		HRslt draw(uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const;
 		HRslt draw(dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num);
 		HRslt draw(uint index, D3DPRIMITIVETYPE prim_type, uint num);
 		

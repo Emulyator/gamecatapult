@@ -43,7 +43,7 @@ namespace gctp {
 	{
 		const GCTP_TYPEINFO *tinfo = Class::get(classname);
 		if(tinfo) return Ptr(create(*tinfo));
-		PRNN(_T("Factory::create : ")<<classname<<_T("‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢"));
+		dbgout << _T("Factory::create : ")<<classname<<_T("‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢") << endl;
 		return 0;
 	}
 

@@ -22,20 +22,38 @@ namespace gctp { namespace scene {
 
 	void DrawPacketVector::draw() const
 	{
-		gctp::Profiling prof("DrawPacketVector.draw");
-		bool first = true;
+		draw(begin(), end());
+	}
+
+	void DrawPacketVector::drawOpeque() const
+	{
+		DrawPacket val;
+		val.z = -2;
+		draw(begin(), std::lower_bound(begin(), end(), val));
+	}
+
+	void DrawPacketVector::drawTranslucent() const
+	{
+		DrawPacket val;
+		val.z = -2;
+		draw(std::lower_bound(begin(), end(), val), end());
+	}
+
+	void DrawPacketVector::draw(const_iterator first, const_iterator last) const
+	{
+		bool first_draw = true;
 		const graphic::Model *current_model = 0;
 		const graphic::Shader *current_shader = 0;
-		for(DrawPacketVector::const_iterator i = begin(); i != end(); ++i)
+		for(const_iterator i = first; i != last; ++i)
 		{
-			gctp::Profiling prof("draw packet");
+			gctp::Profiling prof("draw a packet");
 			if(i->flesh && i->model) {
-				if(first || current_shader != i->shader.get()) {
+				if(first_draw || current_shader != i->shader.get()) {
 					if(current_shader) current_shader->end();
 					current_shader = i->shader.get();
 					if(current_shader) current_shader->begin();
 				}
-				if(first || current_model != i->model.get()){
+				if(first_draw || current_model != i->model.get()){
 					if(current_model) {
 						current_model->end();
 					}
@@ -44,7 +62,7 @@ namespace gctp { namespace scene {
 						current_model->begin();
 					}
 				}
-				first = false;
+				first_draw = false;
 				if(i->model->isSkin()) {
 					Pointer<Skeleton> skl = i->flesh->skeleton().lock();
 					if(skl) {

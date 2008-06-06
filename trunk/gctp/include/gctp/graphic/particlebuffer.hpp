@@ -17,6 +17,10 @@
 
 namespace gctp { namespace graphic {
 
+	namespace dx {
+		class StateBlockRsrc;
+	}
+
 	class Texture;
 	/** 点パーティクル定義情報
 	 *
@@ -123,7 +127,7 @@ namespace gctp { namespace graphic {
 		uint cur_;
 		uint maxnum_;
 
-		Pointer<class ParticleSB>	sb_;
+		Pointer<dx::StateBlockRsrc>	sb_;
 	private:
 		void *locked_;
 		Vector up_;

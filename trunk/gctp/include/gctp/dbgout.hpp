@@ -16,11 +16,6 @@
 #define GCTP_DBGOUT	1
 #endif
 #endif
-#ifndef GCTP_LOGFILE
-#ifndef NDEBUG
-#define GCTP_LOGFILE	1
-#endif
-#endif
 #ifndef GCTP_DBGTRACE
 #ifndef NDEBUG
 #define GCTP_DBGTRACE	1
@@ -33,10 +28,21 @@
 
 namespace gctp {
 
+	/** 同期ストリームを挿入
+	 *
+	 * 以下のようにすることで、デバッグ出力をファイルに落とせる
+	 * @code
+	std::basic_ofstream<_TCHAR> g_logfilebuf;
+	gctp::insertDbgoutSyncStream(&g_logfilebuf);
+	g_logfilebuf.open("log.txt");
+	 * @endcode
+	 */
 	void insertDbgoutSyncStream(std::basic_streambuf<_TCHAR> *sync_buf);
+	/// 指定の同期ストリームを同期対象からはずす
 	void eraseDbgoutSyncStream(std::basic_streambuf<_TCHAR> *sync_buf);
+
+	/// デバッグ用出力ストリーム
 	extern std::basic_ostream<_TCHAR> dbgout;
-	extern std::basic_ofstream<_TCHAR> logfile;
 
 } // namespace gctp
 
@@ -45,34 +51,14 @@ namespace gctp {
 //------------------------------------
 #define GCTP_LOCATION	__FILE__<<_T("(")<<__LINE__<<_T(") : ")
 
-#if GCTP_DBGOUT & GCTP_LOGFILE
-# define GCTP_LOGFILE_OPEN(_S)	(gctp::logfile.open(_S))
-# define GCTP_LOGFILE_CLOSE()	(gctp::logfile.close())
-# define PRN(_S)	(gctp::logfile<<_S, gctp::dbgout<<_S)
-# define PRNN(_S)	PRN(_S<<std::endl)
-# define LOG(_S)	(gctp::logfile << _S)
-# define LOGN(_S)	LOG(_S<<std::endl)
-#elif GCTP_DBGOUT
-# define GCTP_LOGFILE_OPEN(_S)
-# define GCTP_LOGFILE_CLOSE()
+#define GCTP_ERRORINFO(_S)	(gctp::dbgout<<_T("Error in ")<<GCTP_LOCATION<<_S<<std::endl)
+
+#if GCTP_DBGOUT
 # define PRN(_S)	(gctp::dbgout << _S)
 # define PRNN(_S)	PRN(_S<<std::endl)
-# define LOG(_S)
-# define LOGN(_S)
-#elif GCTP_LOGFILE
-# define GCTP_LOGFILE_OPEN(_S)	(gctp::logfile.open(_S))
-# define GCTP_LOGFILE_CLOSE()	(gctp::logfile.close())
-# define PRN(_S)
-# define PRNN(_S)
-# define LOG(_S)	(gctp::logfile<<_S, gctp::logfile.flushpp())
-# define LOGN(_S)	LOG(_S<<std::endl)
 #else
-# define GCTP_LOGFILE_OPEN(_S)
-# define GCTP_LOGFILE_CLOSE()
 # define PRN(_S)
 # define PRNN(_S)
-# define LOG(_S)
-# define LOGN(_S)
 #endif
 
 #if GCTP_DBGTRACE

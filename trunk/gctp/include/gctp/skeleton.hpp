@@ -41,7 +41,7 @@ namespace gctp {
 		/// ルートノード製作
 		void setUp(const char *name, const Matrix &value = MatrixC(true)) {
 			StrutumTree::setUp(value);
-			if(name && strlen(name)) index[name] = this;
+			if(name && strlen(name)) index[name] = root().get();
 		}
 
 		/// 子ノード製作
@@ -99,15 +99,17 @@ namespace gctp {
 			std::basic_ostream<E, T> & os_;
 			const Skeleton &skel_;
 			int indent_;
+			bool print_wtm_;
 		public:
-			_PrintVisitor(std::basic_ostream<E, T> &os, const Skeleton &skel, int indent) : os_(os), skel_(skel), indent_(indent) {}
+			_PrintVisitor(std::basic_ostream<E, T> &os, const Skeleton &skel, int indent, bool print_wtm) : os_(os), skel_(skel), indent_(indent), print_wtm_(print_wtm) {}
 			bool operator()(const NodeType &n)
 			{
 				for(int i = 0; i < indent_; i++) os_ << "\t";
 				const char *nodename = skel_.getName(n);
 				if(nodename) os_ << "nodename : " << nodename << std::endl;
 				else os_ << "nodename : NO NAME" << std::endl;
-				os_ << *n << endl;
+				if(print_wtm_) os_ << *n << endl;
+				else os_ << (*n).lcm() << endl;
 				indent_++;
 				n.visitChildrenConst(*this);
 				indent_--;
@@ -118,9 +120,9 @@ namespace gctp {
 	public:
 		/// インデント付きで出力
 		template<class E, class T>
-		void printIndented(std::basic_ostream<E, T> & os, int indent) const
+		void printIndented(std::basic_ostream<E, T> & os, int indent, bool print_wtm = true) const
 		{
-			_PrintVisitor<E, T> visitor(os, *this, indent);
+			_PrintVisitor<E, T> visitor(os, *this, indent, print_wtm);
 			visit(visitor);
 		}
 		
@@ -129,6 +131,13 @@ namespace gctp {
 		void print(std::basic_ostream<E, T> & os) const
 		{
 			printIndented<E, T>(os, 0);
+		}
+
+		/// インデント付きで出力
+		template<class E, class T>
+		void printLCM(std::basic_ostream<E, T> & os) const
+		{
+			printIndented<E, T>(os, 0, false);
 		}
 	};
 

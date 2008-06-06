@@ -275,6 +275,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\skyboxrenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -374,6 +378,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\rendertree.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\skyboxrenderer.hpp"
 				>
 			</File>
 			<File

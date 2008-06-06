@@ -52,6 +52,9 @@ namespace gctp {
 				std::sort(begin(), end());
 			}
 			void draw() const;
+			void drawOpeque() const;
+			void drawTranslucent() const;
+			void draw(const_iterator first, const_iterator last) const;
 		};
 	}
 

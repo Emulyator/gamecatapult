@@ -35,6 +35,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(World, setPosition)
 		TUKI_METHOD(World, getPosition)
 		TUKI_METHOD(World, getBoundingSphere)
+		TUKI_METHOD(World, printHierarchy)
 	TUKI_IMPLEMENT_END(World)
 
 	World* World::current_ = NULL;	///< カレントステージ（そのステージのupdate、draw…などの間だけ有効）
@@ -143,20 +144,6 @@ namespace gctp { namespace scene {
 		World *self = const_cast<World *>(this);
 		for(HandleList<Body>::iterator i = self->body_list.begin(); i != self->body_list.end();) {
 			if(*i) {
-				for(PointerList<Flesh>::iterator j = (*i)->fleshies().begin(); j != (*i)->fleshies().end(); ++j) {
-				}
-				// マテリアル（シェーダー）ごとに並べたい
-				// 半透明体は後から書きたい
-				// グローバルに、現在の設定を残す？
-				// 今対応しなきゃいけないこと：
-				// Zフィル（不透明体、半透明体全部描画、ただし半透明はAlphaTest=255で行う（不透明部分のパンチアウト））
-				// デプスバッファフィル（不透明体、半透明体全部描画、ただし半透明はAlphaTest==255で行う（不透明部分のパンチアウト））
-				// HDR描画（半透明体はソートして後から。AlphaTest>0）
-				// ポストプロセス
-				//
-				// デプスフィル設定は、RenderNodeでできる。テクニックの設定も。
-				// 足らない能力は、半透明体の識別、そのソート、現在半透明を描画すべきか？不透明体を描画すべきか？その両方か？の判別
-				//FreshList作るべきか。不透明、半透明で分けた
 				(*i)->draw(); // パスに関する情報をここで送るべき？
 				++i;
 			}
@@ -215,6 +202,12 @@ namespace gctp { namespace scene {
 			L << world_body_->bs().c.x << world_body_->bs().c.y << world_body_->bs().c.z << world_body_->bs().r;
 			return 4;
 		}
+		return 0;
+	}
+
+	int World::printHierarchy(luapp::Stack &L)
+	{
+		if(world_body_) world_body_->printLCM(gctp::dbgout);
 		return 0;
 	}
 

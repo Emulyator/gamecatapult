@@ -176,8 +176,10 @@ namespace gctp {
 #endif
 
 		/// Objectの各メンバはインスタンス毎に独立なのでコピーさせない
-		Object & operator=(const Object &)
+		Object & operator=(const Object &src)
 		{
+			// ただし同期処理属性だけは引き継ぐ
+			if(src.mutex_) synchronize(true);
 			return *this;
 		}
 

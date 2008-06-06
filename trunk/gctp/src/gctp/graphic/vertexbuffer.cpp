@@ -128,7 +128,7 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/15 5:19:45
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt VertexBuffer::draw(uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset)
+	HRslt VertexBuffer::draw(uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const
 	{
 		assert(fvf_.val!=0);
 		if(!ptr_) return E_POINTER;
@@ -152,7 +152,7 @@ namespace gctp { namespace graphic {
 	 * @date 2004/07/15 5:19:45
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	HRslt VertexBuffer::draw(dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset)
+	HRslt VertexBuffer::draw(dx::FVF fvf, uint index, D3DPRIMITIVETYPE prim_type, uint num, uint offset) const
 	{
 		assert(fvf.val==0);
 		if(!ptr_) return E_POINTER;

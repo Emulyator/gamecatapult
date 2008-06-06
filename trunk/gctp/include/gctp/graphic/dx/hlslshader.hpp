@@ -22,6 +22,7 @@ namespace gctp { namespace graphic { namespace dx {
 		HLSLShader() : passnum_(0) {}
 		virtual HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(BufferPtr buffer);
+		HRslt setUp(const char *source, uint source_len);
 
 		virtual HRslt restore();
 		virtual void cleanUp();

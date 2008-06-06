@@ -26,6 +26,4 @@ namespace gctp {
 		_dbgout_buf.eraseSyncBuf(sync_buf);
 	}
 
-	basic_ofstream<_TCHAR> logfile; // ログファイルストリーム
-
 };	// namespace gctp
