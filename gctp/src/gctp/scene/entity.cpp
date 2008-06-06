@@ -32,6 +32,13 @@ namespace gctp { namespace scene {
 	{
 		source_ = src;
 		target_ = src->dup();
+		if(target_ && target_->getName(*target_->root())) {
+			// ルートに名前がある場合、モーションが適用される可能性があるので、
+			// 下駄を履かせる
+			Body::NodePtr n = target_->root();
+			target_->setUp();
+			target_->root()->push(n);
+		}
 	}
 
 	void Entity::setUp(const _TCHAR *filename)

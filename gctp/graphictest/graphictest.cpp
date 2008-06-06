@@ -301,7 +301,6 @@ private:
 int SmartWinMain( Application & app )
 {
 	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
-	gctp::logfile.imbue(locale(locale::classic(), locale(""), LC_CTYPE));
 	// Initialize COM
     CoInitialize(NULL);
 

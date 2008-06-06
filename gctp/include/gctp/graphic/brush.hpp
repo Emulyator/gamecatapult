@@ -20,7 +20,6 @@ namespace gctp { namespace graphic {
 	class Brush : public Object {
 	public:
 		Brush(Model &target) : target_(target) {}
-		virtual ~Brush() {}
 		virtual HRslt begin(Handle<Shader> shader, const Skeleton &skl) const
 		{
 			return S_OK;

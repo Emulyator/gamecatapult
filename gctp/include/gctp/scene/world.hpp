@@ -92,6 +92,7 @@ namespace gctp { namespace scene {
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
+		int printHierarchy(luapp::Stack &L);
 
 	private:
 #ifdef _MT

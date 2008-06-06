@@ -68,49 +68,81 @@ namespace gctp { namespace graphic {
 		D3DXIMAGE_INFO info;
 		hr = ::D3DXGetImageInfoFromFile(fname, &info);
 		if(hr) {
-			hr = setUp(NORMAL, info.Width, info.Height, info.Format, info.MipLevels);
-			if(hr) {
-				dx::IDirect3DSurfacePtr surf;
-				ptr_->GetSurfaceLevel(0, &surf);
-				if(no_scaling_) {
-					RECT rect = {0, 0, info.Width, info.Height};
-					hr = ::D3DXLoadSurfaceFromFile(surf, 0, &rect, fname, 0, D3DX_FILTER_NONE, 0, 0);
+			if(info.MipLevels == 1) {
+				hr = setUp(NORMAL, info.Width, info.Height, info.Format, 1);
+				if(hr) {
+					dx::IDirect3DSurfacePtr surf;
+					ptr_->GetSurfaceLevel(0, &surf);
+					if(no_scaling_) {
+						RECT rect = {0, 0, info.Width, info.Height};
+						hr = ::D3DXLoadSurfaceFromFile(surf, 0, &rect, fname, 0, D3DX_FILTER_NONE, 0, 0);
+					}
+					else {
+						hr = ::D3DXLoadSurfaceFromFile(surf, 0, 0, fname, 0, (size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+					}
 				}
-				else {
-					hr = ::D3DXLoadSurfaceFromFile(surf, 0, 0, fname, 0, (size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+				if(!hr) {
+					ptr_ = 0;
+					PRNN(_T("D3DXCreateTextureFromFileを使用します"));
+					no_scaling_ = false;
+					hr = ::D3DXCreateTextureFromFile(device().impl(), fname, &ptr_);
+					int retry_count = 0;
+					while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+						::Sleep(1);
+						hr = ::D3DXCreateTextureFromFile(device().impl(), fname, &ptr_);
+					}
 				}
 			}
-			if(!hr) {
-				ptr_ = 0;
-				PRNN(_T("D3DXCreateTextureFromFileを使用します"));
+			else {
 				no_scaling_ = false;
 				hr = ::D3DXCreateTextureFromFile(device().impl(), fname, &ptr_);
+				int retry_count = 0;
+				while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+					::Sleep(1);
+					hr = ::D3DXCreateTextureFromFile(device().impl(), fname, &ptr_);
+				}
 			}
 		}
 		else {
 			PRNN(_T("Win32リソース検索 ") << TURI(fname).basename());
 			hr = ::D3DXGetImageInfoFromResource(NULL, TURI(fname).basename().c_str(), &info);
 			if(!hr) return hr;
-			hr = setUp(NORMAL, info.Width, info.Height, info.Format, info.MipLevels);
-			if(hr) {
-				dx::IDirect3DSurfacePtr surf;
-				ptr_->GetSurfaceLevel(0, &surf);
-				if(no_scaling_) {
-					RECT rect = {0, 0, info.Width, info.Height};
-					hr = ::D3DXLoadSurfaceFromResource(surf, 0, &rect, NULL, TURI(fname).basename().c_str(), 0, D3DX_FILTER_NONE, 0, 0);
+			if(info.MipLevels == 1) {
+				hr = setUp(NORMAL, info.Width, info.Height, info.Format, 1);
+				if(hr) {
+					dx::IDirect3DSurfacePtr surf;
+					ptr_->GetSurfaceLevel(0, &surf);
+					if(no_scaling_) {
+						RECT rect = {0, 0, info.Width, info.Height};
+						hr = ::D3DXLoadSurfaceFromResource(surf, 0, &rect, NULL, TURI(fname).basename().c_str(), 0, D3DX_FILTER_NONE, 0, 0);
+					}
+					else {
+						hr = ::D3DXLoadSurfaceFromResource(surf, 0, 0, NULL, TURI(fname).basename().c_str(), 0, (size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+					}
 				}
-				else {
-					hr = ::D3DXLoadSurfaceFromResource(surf, 0, 0, NULL, TURI(fname).basename().c_str(), 0, (size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+				if(!hr) {
+					ptr_ = 0;
+					PRNN(_T("D3DXCreateTextureFromResourceを使用します"));
+					no_scaling_ = false;
+					hr = ::D3DXCreateTextureFromResource(device().impl(), NULL, TURI(fname).basename().c_str(), &ptr_);
+					int retry_count = 0;
+					while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+						::Sleep(1);
+						hr = ::D3DXCreateTextureFromResource(device().impl(), NULL, TURI(fname).basename().c_str(), &ptr_);
+					}
 				}
 			}
-			if(!hr) {
-				ptr_ = 0;
-				PRNN(_T("D3DXCreateTextureFromResourceを使用します"));
+			else {
 				no_scaling_ = false;
 				hr = ::D3DXCreateTextureFromResource(device().impl(), NULL, TURI(fname).basename().c_str(), &ptr_);
+				int retry_count = 0;
+				while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+					::Sleep(1);
+					hr = ::D3DXCreateTextureFromResource(device().impl(), NULL, TURI(fname).basename().c_str(), &ptr_);
+				}
 			}
 		}
-		if(!hr) GCTP_TRACE(hr<<" / fname:"<<fname);
+		if(!hr) GCTP_ERRORINFO(hr<<" / fname:"<<fname);
 		if(ptr_) {
 			D3DSURFACE_DESC desc;
 			hr = ptr_->GetLevelDesc(0, &desc);
@@ -134,26 +166,32 @@ namespace gctp { namespace graphic {
 		D3DXIMAGE_INFO info;
 		hr = ::D3DXGetImageInfoFromFileInMemory(memory, (UINT)size, &info);
 		if(hr) {
-			hr = setUp(NORMAL, info.Width, info.Height, info.Format, info.MipLevels);
-			if(hr) {
-				dx::IDirect3DSurfacePtr surf;
-				ptr_->GetSurfaceLevel(0, &surf);
-				if(no_scaling_) {
-					RECT rect = {0, 0, info.Width, info.Height};
-					hr = ::D3DXLoadSurfaceFromFileInMemory(surf, 0, &rect, memory, (UINT)size, 0, D3DX_FILTER_NONE, 0, 0);
+			if(info.MipLevels == 1) {
+				hr = setUp(NORMAL, info.Width, info.Height, info.Format, 1);
+				if(hr) {
+					dx::IDirect3DSurfacePtr surf;
+					ptr_->GetSurfaceLevel(0, &surf);
+					if(no_scaling_) {
+						RECT rect = {0, 0, info.Width, info.Height};
+						hr = ::D3DXLoadSurfaceFromFileInMemory(surf, 0, &rect, memory, (UINT)size, 0, D3DX_FILTER_NONE, 0, 0);
+					}
+					else {
+						hr = ::D3DXLoadSurfaceFromFileInMemory(surf, 0, 0, memory, (UINT)size, 0, (this->size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+					}
 				}
-				else {
-					hr = ::D3DXLoadSurfaceFromFileInMemory(surf, 0, 0, memory, (UINT)size, 0, (this->size() != originalSize() ? D3DX_DEFAULT : D3DX_FILTER_NONE), 0, 0);
+				if(!hr) {
+					ptr_ = 0;
+					PRNN(_T("D3DXCreateTextureFromInMemoryを使用します"));
+					no_scaling_ = false;
+					hr = ::D3DXCreateTextureFromFileInMemory(device().impl(), memory, (UINT)size, &ptr_);
 				}
 			}
-			if(!hr) {
-				ptr_ = 0;
-				PRNN(_T("D3DXCreateTextureFromInMemoryを使用します"));
+			else {
 				no_scaling_ = false;
 				hr = ::D3DXCreateTextureFromFileInMemory(device().impl(), memory, (UINT)size, &ptr_);
 			}
 		}
-		if(!hr) GCTP_TRACE(hr<<" / memory");
+		if(!hr) GCTP_ERRORINFO(hr<<" / memory");
 		if(ptr_) {
 			D3DSURFACE_DESC desc;
 			hr = ptr_->GetLevelDesc(0, &desc);
@@ -235,11 +273,12 @@ namespace gctp { namespace graphic {
 		if(!hr && hr != E_OUTOFMEMORY) {
 			hr = ::D3DXCreateTexture(device().impl(), width, height, miplevel, usage, (D3DFORMAT)format, pool, &ptr_);
 		}
+		if(!hr) GCTP_ERRORINFO(hr);
 		if(ptr_) {
 			type_ = type;
 			D3DSURFACE_DESC desc;
 			hr = ptr_->GetLevelDesc(0, &desc);
-			if(!hr) GCTP_TRACE(hr);
+			if(!hr) GCTP_ERRORINFO(hr);
 			//PRNN("Texture {"<<org_width_<<","<<org_height_<<","<<(D3DFORMAT)org_format_<<"}->Desc{"<<desc.Width<<","<<desc.Height<<","<<desc.Format<<"}");
 		}
 		return hr;

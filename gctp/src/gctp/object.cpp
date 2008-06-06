@@ -41,10 +41,7 @@ namespace gctp {
 
 	Object::~Object()
 	{
-		{
-			Object::AutoLock al(mutex_);
-			expire();
-		}
+		expire();
 		if(mutex_) delete mutex_;
 		// Object‚ÌíœŒã‚É‚ÍAStub‚Ìsynchronize‚ğ‰ğœ‚·‚éè’i‚Í–³‚¢c
 	}

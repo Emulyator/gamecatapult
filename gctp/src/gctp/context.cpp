@@ -78,9 +78,12 @@ namespace gctp { namespace core {
 						return p;
 					}
 				}
+				else {
+					dbgout << _T("—v‹‚³‚ê‚½‚èƒ\[ƒX\"") << name << _T("\"‚ÍŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½") << endl;
+				}
 			}
 			else {
-				PRNN(_T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)"));
+				dbgout << _T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)") << endl;
 			}
 		}
 		return Hndl();
@@ -112,9 +115,12 @@ namespace gctp { namespace core {
 						return p;
 					}
 				}
+				else {
+					dbgout << _T("—v‹‚³‚ê‚½‚èƒ\[ƒX\"") << name << _T("\"‚ÍŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½") << endl;
+				}
 			}
 			else {
-				PRNN(_T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)"));
+				dbgout << _T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)") << endl;
 			}
 		}
 		return Hndl();
@@ -204,7 +210,7 @@ namespace gctp { namespace core {
 			current_ = backup;
 		}
 		else {
-			PRNN(_T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)"));
+			dbgout << _T("Context::load : Šg’£Žq'")<<uri.extension()<<_T("'‚ÌƒŠƒAƒ‰ƒCƒU‚Í“o˜^‚³‚ê‚Ä‚¢‚È‚¢(")<<uri.raw()<<_T("‚Ì“Ç‚Ýž‚ÝŽž)") << endl;
 		}
 		return false;
 	}

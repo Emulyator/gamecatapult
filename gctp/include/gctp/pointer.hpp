@@ -616,7 +616,6 @@ namespace gctp {
 	protected:
 		void expire() const
 		{
-			Object::AutoLock al(stub_ && stub_->p_ ? stub_->p_->mutex_: 0);
 			if(stub_ && stub_->decRef()) delete stub_;
 			stub_ = 0;
 		}
@@ -722,7 +721,8 @@ namespace gctp {
 		
 		Handle & operator=(T *rhs)
 		{
-			return *this = Hndl(rhs);
+			Hndl(rhs).swap(*this);
+			return *this;
 		}
 
 #if defined(__MWERKS__) || (defined(_MSC_VER) && (_MSC_VER < 1300))
@@ -737,7 +737,7 @@ namespace gctp {
 		{
 			if(GCTP_DYNCAST<const T *>(rhs.get())==0) expire();
 			else {
-				stub_ = const_cast<detail::Stub *>(rhs.stub());
+				Hndl(rhs).swap(*this);
 			}
 			return *this;
 		}

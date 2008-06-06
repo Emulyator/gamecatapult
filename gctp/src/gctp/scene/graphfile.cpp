@@ -121,6 +121,7 @@ namespace gctp { namespace scene {
 					model.mtrls[i].emissive = _mtrls[i].MatD3D.Emissive;
 					model.mtrls[i].power    = _mtrls[i].MatD3D.Power;
 					model.mtrls[i].blend    = graphic::Material::OPEQUE;
+					model.mtrls[i].double_side = false;
 					if(_mtrls[i].pTextureFilename) {
 #ifdef UNICODE
 						WCStr fname = _mtrls[i].pTextureFilename;
@@ -555,7 +556,7 @@ namespace gctp { namespace scene {
 						work.body->setUp();
 						work.body->root()->push(n);
 						body = work.body;
-						cnode = body->root();
+						cnode = body->add(*body->root(), cur.name().c_str());
 					}
 					else {
 						body = new Body;
@@ -649,19 +650,12 @@ namespace gctp { namespace scene {
 		XFileReader file;
 		hr = file.open(fn);
 		// これが、なぜかE_OUTOFMEMORYを返すことがある。
-		// 一体どこでロックすればいいんだ？
-		if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
+		int retry_count = 0;
+		while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
 			::Sleep(1);
 			hr = file.open(fn);
 		}
-		if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
-			::Sleep(1);
-			hr = file.open(fn);
-		}
-		if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
-			::Sleep(1);
-			hr = file.open(fn);
-		}
+		// まったく条件を変えずにリトライでもうまくいく、となると、絶対D3DXのバグだと思うんだけど。。。
 		if(hr) {
 			PRNN(_T("Begin read Xfile : ")<<fn);
 			TURI _fn = fn;
@@ -671,15 +665,8 @@ namespace gctp { namespace scene {
 			::SetCurrentDirectory(_fn.path().c_str());
 			for(uint i = 0; i < file.size(); i++) {
 				hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
-				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
-					::Sleep(1);
-					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
-				}
-				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
-					::Sleep(1);
-					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
-				}
-				if(hr == E_OUTOFMEMORY) { // …めんどいんで３回試行することにする…
+				retry_count = 0;
+				while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで３回試行することにする…
 					::Sleep(1);
 					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
 				}
@@ -687,9 +674,9 @@ namespace gctp { namespace scene {
 			}
 			::SetCurrentDirectory(cur_dir);
 			PRNN(_T("End read Xfile : ")<<fn);
-			if(!hr) GCTP_TRACE(hr);
+			if(!hr) GCTP_ERRORINFO(_T("Xfile ")<<fn<<_T(" : ")<<hr);
 		}
-		else PRNN("Xfile "<<fn<<" : "<<hr);
+		else GCTP_ERRORINFO(_T("Xfile ")<<fn<<_T(" : ")<<hr);
 		return hr;
 	}
 
@@ -702,17 +689,29 @@ namespace gctp { namespace scene {
 		HRslt hr;
 		XFileReader file;
 		hr = file.open(buffer->buf(), buffer->size());
+		int retry_count = 0;
+		// これが、なぜかE_OUTOFMEMORYを返すことがある。
+		while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+			::Sleep(1);
+			hr = file.open(buffer->buf(), buffer->size());
+		}
+		// まったく条件を変えずにリトライでもうまくいく、となると、絶対D3DXのバグだと思うんだけど。。。
 		if(hr) {
 			PRNN(_T("Begin read Xfile"));
 			XFileReadingWork work;
 			for(uint i = 0; i < file.size(); i++) {
 				hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
+				retry_count = 0;
+				while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+					::Sleep(1);
+					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
+				}
 				if(!hr) break;
 			}
 			PRNN(_T("End read Xfile"));
-			if(!hr) GCTP_TRACE(hr);
+			if(!hr) GCTP_ERRORINFO(hr);
 		}
-		else PRNN("Xfile error : "<<hr);
+		else GCTP_ERRORINFO("Xfile error : "<<hr);
 		return hr;
 	}
 

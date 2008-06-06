@@ -61,9 +61,9 @@ namespace gctp { namespace graphic { namespace dx {
 		/// 製作(リソース用)
 		HRslt setUp(const _TCHAR *name) { return setUp(); }
 		// 適用
-		HRslt setCurrent() const;
+		HRslt begin() const;
 		// 元に戻す
-		HRslt unset() const;
+		HRslt end() const;
 
 		virtual void record() = 0;
 

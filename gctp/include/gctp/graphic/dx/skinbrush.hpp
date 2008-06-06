@@ -775,11 +775,22 @@ namespace gctp { namespace graphic { namespace dx {
 
 			bone_matricies_.resize(pal_size_);
 
-			if(!shader_) shader_ = graphic::createOnDB<dx::HLSLShader>(_T("skinnedmesh.fx"));
-
+			Handle<dx::HLSLShader> shader;
 			for(ulong i = 0; i < bonecb_len_; i++) {
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
-				target_.mtrls[bonecb[i].AttribId].shader = shader_;
+				if(!target_.mtrls[bonecb[i].AttribId].shader) {
+					shader = device().db()[_T("skinnedmesh.fx")];
+					if(!shader) {
+						skinnedmesh_ = device().db()[_T("HLSL_SKINNEDMESH")].lock();
+						if(!skinnedmesh_) {
+							skinnedmesh_ = new dx::HLSLShader;
+							skinnedmesh_->setUp(skinnedmesh_fx, skinnedmesh_fx_size);
+							device().db().insert(_T("HLSL_SKINNEDMESH"), skinnedmesh_);
+						}
+						shader = skinnedmesh_;
+					}
+					target_.mtrls[bonecb[i].AttribId].shader = shader;
+				}
 				/*for(ulong j = 0; j < pal_size_; j++) {
 					DWORD matid = bonecb[i].BoneId[j];
 					if(matid != UINT_MAX) {
@@ -908,8 +919,12 @@ namespace gctp { namespace graphic { namespace dx {
 		ulong						max_face_infl_;
 		ulong						bonecb_len_;
 		ID3DXBufferPtr				bonecb_; // ボーンの組み合わせデータ
-		Pointer<dx::HLSLShader>		shader_;
 		std::vector<D3DXMATRIX>		bone_matricies_;
+
+	private:
+		Pointer<dx::HLSLShader> skinnedmesh_;
+		static const char skinnedmesh_fx[];
+		static const int skinnedmesh_fx_size;
 	};
 
 }}} // namespace gctp::graphic::dx
