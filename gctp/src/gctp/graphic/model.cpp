@@ -58,13 +58,13 @@ namespace gctp { namespace graphic {
 			dx::IDirect3DIndexBufferPtr ib;
 			mesh_->GetIndexBuffer(&ib);
 			ib_.setUp(ib);
+			updateBS();
 		}
 		else {
 			vb_.setUp(0);
 			ib_.setUp(0);
 			subsets_.resize(0);
 		}
-		updateBS();
 	}
 
 	namespace {
@@ -236,6 +236,7 @@ namespace gctp { namespace graphic {
 
 	Vector Model::calcCenter() const
 	{
+		// aabbÇÕì ïÔÇÃÇ©ÇÌÇËÅc
 		AABox aabb = getAABB();
 		return aabb.center();
 	}
@@ -247,7 +248,7 @@ namespace gctp { namespace graphic {
 		VertexBuffer::ScopedLock vbl(vb_);
 		if(vbl.buf) {
 			uint vnum = vb_.numVerticies();
-			for(uint i=0; i < vnum; i++, vbl.step()) {
+			for(uint i = 0; i < vnum; i++, vbl.step()) {
 				Vector *pv = (Vector *)vbl.buf;
 				d = distance(*pv, center);
 				if(d > ret) ret = d;
