@@ -179,8 +179,6 @@ namespace gctp { namespace graphic {
 
 		static void setDefaultMaxnum(uint maxnum) { default_maxnum_ = maxnum; }
 
-	GCTP_DECLARE_CLASS
-
 	protected:
 		static uint default_maxnum_;
 		HRslt draw();
@@ -189,10 +187,14 @@ namespace gctp { namespace graphic {
 		uint maxnum_;
 		uint lastfreenum_;
 
-		Pointer<dx::StateBlockRsrc>	sb_;
+		//Handle<dx::StateBlockRsrc> sb_;
+		Pointer<dx::StateBlockRsrc> sb_;
+
 	private:
 		void *locked_;
 		VertexType type_;
+
+	GCTP_DECLARE_CLASS
 	};
 
 }}

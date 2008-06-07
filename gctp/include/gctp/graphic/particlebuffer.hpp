@@ -89,14 +89,13 @@ namespace gctp { namespace graphic {
 
 		/// ブレンドモード
 		enum BlendMode {
-			NONE,
+			OPEQUE,
+			TRANSLUCENT,
 			ADD,
 			SUB,
-//			MUL,
-			ALPHA,
+			MUL,
 		};
 
-		HRslt setUp(const char *name) { return setUp(); } // createOnDB用
 		HRslt setUp(uint maxnum = default_maxnum_);
 
 		ParticleBuffer &begin(bool do_filter = true);
@@ -127,7 +126,8 @@ namespace gctp { namespace graphic {
 		uint cur_;
 		uint maxnum_;
 
-		Pointer<dx::StateBlockRsrc>	sb_;
+		//Handle<dx::StateBlockRsrc> sb_;
+		Pointer<dx::StateBlockRsrc> sb_;
 	private:
 		void *locked_;
 		Vector up_;

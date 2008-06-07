@@ -16,14 +16,8 @@ using namespace std;
 
 namespace gctp { namespace graphic {
 
-	/// 実装詳細
-	class DeviceImpl : public Object, public dx::Device {
-	public:
-		DB db_;
-	};
-
 	namespace {
-		typedef map<uint, Handle<DeviceImpl> > DeviceImplList;
+		typedef map<uint, Handle<dx::Device> > DeviceImplList;
 		static DeviceImplList devicelist;
 	}
 
@@ -54,7 +48,7 @@ namespace gctp { namespace graphic {
 				}
 			}
 			else {
-				DeviceImpl *impl = new DeviceImpl;
+				dx::Device *impl = new dx::Device;
 				if(impl) {
 					impl_ = impl;
 					devicelist[adpt] = impl_;
@@ -126,7 +120,7 @@ namespace gctp { namespace graphic {
 
 	HRslt Device::open(IDirect3DDevice9 *device)
 	{
-		DeviceImpl *impl = new DeviceImpl;
+		dx::Device *impl = new dx::Device;
 		if(impl) {
 			HRslt hr = impl->open(device);
 			impl_ = 0;
@@ -159,11 +153,6 @@ namespace gctp { namespace graphic {
 	void Device::registerRsrc(Handle<Rsrc> rsrc)
 	{
 		impl_->registerRsrc(rsrc);
-	}
-
-	DB &Device::db()
-	{
-		return impl_->db_;
 	}
 
 	HRslt Device::setCurrent() const
@@ -363,18 +352,6 @@ namespace gctp { namespace graphic {
 	{
 		return impl_->createState(type);
 	}
-
-//	/// ステート退避
-//	HRslt Device::pushState()
-//	{
-//		return impl_->pushState();
-//	}
-
-//	/// ステート復帰
-//	HRslt Device::popState()
-//	{
-//		return impl_->popState();
-//	}
 
 	void allowFSAA(FSAAType type, uint level)
 	{

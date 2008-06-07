@@ -132,9 +132,20 @@ namespace gctp { namespace core {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::add(const Ptr ptr, const _TCHAR *name)
+	void Context::add(const Ptr ptr)
 	{
-		GCTP_ASSERT(current_ == this);
+		if(ptr) ptrs_.push_back(ptr);
+	}
+
+	/** 渡されたオブジェクトを保持する
+	 * 
+	 * これはその他のcreate系と異なり、既存のエントリを上書きする
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Hndl Context::insert(const Ptr ptr, const _TCHAR *name)
+	{
 		if(ptr) {
 			ptrs_.push_back(ptr);
 			if(name) db_.insert(name, ptr);
@@ -148,16 +159,13 @@ namespace gctp { namespace core {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name)
+	Hndl Context::create(const GCTP_TYPEINFO &typeinfo)
 	{
 		Context *backup = current_; // 一時的にカレントを差し替える
 		current_ = this;
 		Ptr ret = Factory::create(typeinfo);
 		current_ = backup;
-		if(ret) {
-			ptrs_.push_back(ret);
-			if(name) db_.insert(name, ret);
-		}
+		if(ret) ptrs_.push_back(ret);
 		return ret;
 	}
 
@@ -167,16 +175,41 @@ namespace gctp { namespace core {
 	 * @date 2004/01/29 20:36:59
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	Hndl Context::create(const char *classname, const _TCHAR *name)
+	Hndl Context::create(const char *classname)
 	{
 		Context *backup = current_; // 一時的にカレントを差し替える
 		current_ = this;
 		Ptr ret = Factory::create(classname);
 		current_ = backup;
-		if(ret) {
-			ptrs_.push_back(ret);
-			if(name) db_.insert(name, ret);
+		if(ret) ptrs_.push_back(ret);
+		return ret;
+	}
+
+	Hndl Context::create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name)
+	{
+		Hndl ret;
+		if(name) {
+			ret = db_[name];
+			if(!ret) {
+				ret = create(typeinfo);
+				if(ret && name) db_.insert(name, ret);
+			}
 		}
+		else ret = create(typeinfo);
+		return ret;
+	}
+
+	Hndl Context::create(const char *classname, const _TCHAR *name)
+	{
+		Hndl ret;
+		if(name) {
+			ret = db_[name];
+			if(!ret) {
+				ret = create(classname);
+				if(ret && name) db_.insert(name, ret);
+			}
+		}
+		else ret = create(classname);
 		return ret;
 	}
 

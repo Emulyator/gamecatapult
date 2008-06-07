@@ -14,6 +14,7 @@
 #include <gctp/graphic/texture.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/dx/hlslshader.hpp>
+#include <gctp/graphic/dx/skinbrush.hpp>
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
@@ -229,13 +230,19 @@ namespace gctp { namespace scene {
 			setUpModelMaterial(self, model, mtrls, mtrl_num, effect);
 			model.setUp(data.name(), mesh, skin, adjc);
 
+			if(model.isSkin()) {
+				// デフォルトでHLSL
+				Pointer<graphic::dx::ShaderSkinBrush> p = new graphic::dx::ShaderSkinBrush(model);
+				if(p->setUp()) model.brush() = p;
+			}
+
 			{
 				// マテリアル名から追加の属性を読み取る
-				uint n = data.size();
+				uint n = (uint)data.size();
 				for(uint i = 0; i < n; i++) {
 					XData child = data.getChild(i);
 					if(TID_D3DRMMeshMaterialList == child.type()) {
-						uint n = child.size();
+						uint n = (uint)child.size();
 						for(uint i = 0; i < n; i++) {
 							XData mtrl = child.getChild(i);
 							std::string name(mtrl.name().c_str());

@@ -55,7 +55,7 @@ namespace gctp { namespace graphic { namespace dx {
 			ID3DXBufferPtr err;
 			hr = D3DXCreateEffectFromFile( device().impl(), fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
 			if(!hr && err) {
-				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+				GCTP_ERRORINFO("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
 		if(!hr) {
@@ -63,7 +63,7 @@ namespace gctp { namespace graphic { namespace dx {
 				ID3DXBufferPtr err;
 				hr = D3DXCreateEffectFromResource( device().impl(), NULL, fname, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
 				if(!hr && err) {
-					GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+					GCTP_ERRORINFO("\n"<<(const char *)err->GetBufferPointer());
 				}
 			}
 		}
@@ -75,7 +75,7 @@ namespace gctp { namespace graphic { namespace dx {
 				return hr;
 			}
 		}
-		GCTP_TRACE(hr);
+		GCTP_ERRORINFO(hr);
 		return hr;
 	}
 
@@ -93,7 +93,7 @@ namespace gctp { namespace graphic { namespace dx {
 			ID3DXBufferPtr err;
 			hr = D3DXCreateEffect( device().impl(), source, source_len, NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
 			if(!hr && err) {
-				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+				GCTP_ERRORINFO("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
 		if(hr) {
@@ -104,7 +104,7 @@ namespace gctp { namespace graphic { namespace dx {
 				return hr;
 			}
 		}
-		GCTP_TRACE(hr);
+		GCTP_ERRORINFO(hr);
 		return hr;
 	}
 
@@ -122,10 +122,10 @@ namespace gctp { namespace graphic { namespace dx {
 			ID3DXBufferPtr err;
 			hr = D3DXCreateEffect( device().impl(), buffer->buf(), (UINT)buffer->size(), NULL, NULL, dwShaderFlags, NULL, &ptr_, &err );
 			if(!hr && err) {
-				GCTP_TRACE("\n"<<(const char *)err->GetBufferPointer());
+				GCTP_ERRORINFO("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
-		GCTP_TRACE(hr);
+		GCTP_ERRORINFO(hr);
 		return hr;
 	}
 

@@ -15,7 +15,9 @@
 #include <gctp/graphic/brush.hpp>
 #include <gctp/graphic/rsrc.hpp>
 #include <gctp/graphic/light.hpp>
+#include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/dx/hlslshader.hpp>
+#include <gctp/context.hpp>
 
 namespace gctp { namespace graphic { namespace dx {
 
@@ -779,15 +781,15 @@ namespace gctp { namespace graphic { namespace dx {
 			for(ulong i = 0; i < bonecb_len_; i++) {
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 				if(!target_.mtrls[bonecb[i].AttribId].shader) {
-					shader = device().db()[_T("skinnedmesh.fx")];
+					shader = context()[_T("skinnedmesh.fx")];
 					if(!shader) {
-						skinnedmesh_ = device().db()[_T("HLSL_SKINNEDMESH")].lock();
-						if(!skinnedmesh_) {
-							skinnedmesh_ = new dx::HLSLShader;
-							skinnedmesh_->setUp(skinnedmesh_fx, skinnedmesh_fx_size);
-							device().db().insert(_T("HLSL_SKINNEDMESH"), skinnedmesh_);
+						shader = context()[_T("HLSL_SKINNEDMESH")];
+						if(!shader) {
+							Pointer<dx::HLSLShader> skinnedmesh = new dx::HLSLShader;
+							skinnedmesh->setUp(skinnedmesh_fx, skinnedmesh_fx_size);
+							context().insert(skinnedmesh, _T("HLSL_SKINNEDMESH"));
+							shader = skinnedmesh;
 						}
-						shader = skinnedmesh_;
 					}
 					target_.mtrls[bonecb[i].AttribId].shader = shader;
 				}
@@ -922,7 +924,6 @@ namespace gctp { namespace graphic { namespace dx {
 		std::vector<D3DXMATRIX>		bone_matricies_;
 
 	private:
-		Pointer<dx::HLSLShader> skinnedmesh_;
 		static const char skinnedmesh_fx[];
 		static const int skinnedmesh_fx_size;
 	};

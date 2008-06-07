@@ -109,24 +109,33 @@ namespace gctp { namespace core {
 		 */
 		Hndl loadAsync(const _TCHAR *name);
 
-		/** オブジェクト登録
+		/** (作成済みの)オブジェクト登録
 		 *
 		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl add(const Ptr ptr, const _TCHAR *name = 0);
+		void add(const Ptr ptr);
+
+		/** (作成済みの)オブジェクト登録
+		 *
+		 * ほかのクリエイト系と違い、これは既存エントリを上書きする
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl insert(const Ptr ptr, const _TCHAR *name);
 
 		/// オブジェクト登録
 		template<class T>
-		Handle<T> create(const _TCHAR *name = 0)
+		Handle<T> create(const _TCHAR *name)
 		{
 			if(name) {
 				Hndl h = find(name);
 				if(h) return h;
 			}
 			Pointer<T> p = new T;
-			if(p) return add(p, name);
+			if(p) return insert(p, name);
 			return 0;
 		}
 		/// オブジェクト登録
@@ -139,7 +148,7 @@ namespace gctp { namespace core {
 			}
 			Pointer<T> p = new T;
 			if(p) {
-				if(p->setUp()) return add(p, name);
+				if(p->setUp()) return insert(p, name);
 			}
 			return 0;
 		}
@@ -153,7 +162,7 @@ namespace gctp { namespace core {
 			}
 			Pointer<T> p = new T;
 			if(p) {
-				if(p->setUp(name)) return add(p, name);
+				if(p->setUp(name)) return insert(p, name);
 			}
 			return 0;
 		}
@@ -164,7 +173,7 @@ namespace gctp { namespace core {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name = 0);
+		Hndl create(const GCTP_TYPEINFO &typeinfo);
 		
 		/** オブジェクト製作
 		 *
@@ -172,7 +181,23 @@ namespace gctp { namespace core {
 		 * @date 2004/02/08 11:18:22
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		Hndl create(const char *classname, const _TCHAR *name = 0);
+		Hndl create(const char *classname);
+
+		/** 名前付きオブジェクト製作
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl create(const GCTP_TYPEINFO &typeinfo, const _TCHAR *name);
+		
+		/** 名前付きオブジェクト製作
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl create(const char *classname, const _TCHAR *name);
 
 		/** オブジェクト検索
 		 *

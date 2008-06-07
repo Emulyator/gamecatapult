@@ -226,8 +226,13 @@ namespace gctp { namespace graphic {
 	{
 		locked_ = 0;
 		cur_ = 0;
-		if(type < VT_TL2) sb_ = createOnDB<SpriteSB>(_T("SPRITESB"));
-		else sb_ = createOnDB<SpriteSB2>(_T("SPRITESB2"));
+		//if(type < VT_TL2) sb_ = context().createAndSetUp<SpriteSB>(_T("SPRITESB"));
+		//else sb_ = context().createAndSetUp<SpriteSB2>(_T("SPRITESB2"));
+		// ‹¤—L‚ð‚â‚ß‚Ä‚Ý‚é
+		if(type < VT_TL2) sb_ = new SpriteSB;
+		else sb_ = new SpriteSB2;
+		sb_->setUp();
+
 		type_ = type;
 		maxnum_ = maxnum;
 		static dx::FVF fvf[] = {
