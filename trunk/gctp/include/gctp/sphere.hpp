@@ -28,7 +28,7 @@ namespace gctp {
 		/// Ž©•ª‚Ærhs‚ð•ïŠ‡‚·‚é‹…‚É
 		Sphere &operator |= (const Sphere &rhs)
 		{
-			Vector diff = c - rhs.c;
+			Vector diff = rhs.c - c;
 			Real d = diff.length();
 			if(d+rhs.r > r) {
 				if(d > Real(0)) {

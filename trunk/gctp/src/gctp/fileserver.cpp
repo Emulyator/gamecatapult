@@ -366,6 +366,7 @@ namespace gctp {
 
 		Mutex monitor_;
 		Mutex read_list_monitor_;
+
 		Thread(FileServer *fs) : thread_(0), id_(0)
 		{
 			fs->synchronize(true);
@@ -380,10 +381,11 @@ namespace gctp {
 	private:
 		static unsigned int __stdcall threadfunc( void* arg )
 		{
-			FileServer *fs = (FileServer *)arg;
 			MSG msg;
 			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
-				fs->serviceRequest();
+				Pointer<FileServer> fs = (FileServer *)arg;
+				if(fs) fs->serviceRequest();
+				else break;
 			}
 			return 0;
 		}
@@ -595,6 +597,7 @@ namespace gctp {
 	{
 		if(thread_) {
 			ScopedLock sl(thread_->monitor_);
+			ScopedLock sl2(thread_->read_list_monitor_);
 			return thread_->requests_.empty() && thread_->read_.empty();
 		}
 		return true;
@@ -602,8 +605,8 @@ namespace gctp {
 
 	FileServer &FileServer::getInstance()
 	{
-		static FileServer instance;
-		return instance;
+		static Pointer<FileServer> pinstance = new FileServer;
+		return *pinstance;
 	}
 
 } // namespace gctp
