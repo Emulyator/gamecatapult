@@ -522,10 +522,10 @@ namespace gctp { namespace graphic {
 				x  = ofsx; y += line_height; line_height = default_line_height;
 			}
 
-			attr.tex_coords[c-32].left   = ((float)x+0.5f)/tsize.x;
-			attr.tex_coords[c-32].top    = ((float)y+0.5f)/tsize.y;
-			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx+0.5f))/tsize.x;
-			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy+0.5f))/tsize.y;
+			attr.tex_coords[c-32].left   = ((float)x)/tsize.x;
+			attr.tex_coords[c-32].top    = ((float)y)/tsize.y;
+			attr.tex_coords[c-32].right  = ((float)(x+gsize.cx))/tsize.x;
+			attr.tex_coords[c-32].bottom = ((float)(y+gsize.cy))/tsize.y;
 			
 			if(c == 32 || mode == DM_NORMAL) {
 				for(int dy = 0; dy < gsize.cy; dy++) {

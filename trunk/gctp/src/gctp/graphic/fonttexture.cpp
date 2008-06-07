@@ -419,10 +419,10 @@ namespace gctp { namespace graphic {
 				AllocBitMap<LEVEL>::Block block;
 				block.set(match->second.idx);
 				Size2 tsize = size();
-				ret.uv.left   = ((float)block.pos.x*cellSize()+0.5f)/tsize.x;
-				ret.uv.top    = ((float)block.pos.y*cellSize()+0.5f)/tsize.y;
-				ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x+0.5f))/tsize.x;
-				ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y+0.5f))/tsize.y;
+				ret.uv.left   = ((float)block.pos.x*cellSize())/tsize.x;
+				ret.uv.top    = ((float)block.pos.y*cellSize())/tsize.y;
+				ret.uv.right  = ((float)(block.pos.x*cellSize()+match->second.size.x))/tsize.x;
+				ret.uv.bottom = ((float)(block.pos.y*cellSize()+match->second.size.y))/tsize.y;
 				ret.size.x    = (float)match->second.size.x;
 				ret.size.y    = (float)match->second.size.y;
 				return ret;

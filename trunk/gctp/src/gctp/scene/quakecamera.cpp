@@ -19,6 +19,7 @@ namespace gctp { namespace scene {
 	QuakeCamera::QuakeCamera() : update_slot(1), yaw_(0), pitch_(0), speed_(5.0f)
 	{
 		update_slot.bind(this);
+		update_slot.setMask(0x10);
 	}
 
 	void QuakeCamera::activate(bool yes)

@@ -52,7 +52,7 @@ namespace gctp { namespace scene {
 			"\n"
 			"struct CubeVertexOutput\n"
 			"{\n"
-			"   	float4 Position	: POSITION;\n"
+			"    float4 Position	: POSITION;\n"
 			"    float3 UV		: TEXCOORD0;\n"
 			"};\n"
 			"\n"
@@ -90,7 +90,7 @@ namespace gctp { namespace scene {
 			"	}\n"
 			"}\n";
 
-		const int div_num = 5;
+		const int div_num = 9;
 	}
 
 	SkyBoxRenderer::SkyBoxRenderer() : radius(1000)
@@ -148,15 +148,17 @@ namespace gctp { namespace scene {
 		Handle<graphic::dx::HLSLShader> shader = shader_;
 		if(shader) {
 			Matrix proj;
+			Matrix view;
 			Size2f screen = Camera::current().screen();
 			Rectf subwindow = Camera::current().subwindow();
 			proj.setFOV(Camera::current().fov(), screen.x/screen.y, subwindow.left, subwindow.top, subwindow.right, subwindow.bottom, radius/2, radius);
-			(*shader)->SetMatrix("InvWorldViewProj", (Camera::current().view() * proj).inverse());
-			Vector4 screen_offset;
+			view = Camera::current().view();
+			view.position() = VectorC(0,0,0); // •ûŒü‚Ì‚ÝÌ—p
+			(*shader)->SetMatrix("InvWorldViewProj", (view * proj).inverse());
+			Vector2 screen_offset;
 			screen_offset.x = -1.0f/screen.x;
 			screen_offset.y = 1.0f/screen.y;
-			screen_offset.z = screen_offset.w = 0;
-			HRslt hr = (*shader)->SetVector("ScreenOffset", screen_offset);
+			HRslt hr = (*shader)->SetFloatArray("ScreenOffset", &screen_offset.x, 2);
 			if(!hr) GCTP_ERRORINFO(hr);
 			(*shader)->SetTexture("BgTexture", *texture_);
 			shader->begin();

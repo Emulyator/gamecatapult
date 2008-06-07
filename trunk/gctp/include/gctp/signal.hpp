@@ -80,8 +80,8 @@ namespace gctp {
 #define BACKUP_MIN_PRIORITY MIN_PRIORITY
 #undef MIN_PRIORITY
 #endif
-			MAX_PRIORITY = 0x7FFF,
-			MIN_PRIORITY = 0x8000
+			MAX_PRIORITY = SHRT_MAX,
+			MIN_PRIORITY = SHRT_MIN
 #ifdef BACKUP_MAX_PRIORITY
 #define MAX_PRIORITY BACKUP_MAX_PRIORITY
 #undef BACKUP_MAX_PRIORITY
@@ -92,7 +92,7 @@ namespace gctp {
 #endif
 		};
 		/// プライオリティーを指定して初期化
-		Slot(int16_t pri) : pri_(pri), mask_(0xFFFF) {}
+		Slot(int16_t pri) : pri_(pri), mask_(1) {}
 		/// プライオリティーを返す
 		int16_t priority() const { return pri_; }
 		/// プライオリティーを設定
