@@ -396,6 +396,7 @@ namespace gctp {
 	FileServer::FileServer() : thread_(0), update_slot(Slot::MAX_PRIORITY)
 	{
 		update_slot.bind(this);
+		update_slot.setMask(0x8000);
 		//mount(_T("."), NATIVE);
 	}
 

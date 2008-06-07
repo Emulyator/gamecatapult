@@ -172,6 +172,8 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)
 		TUKI_METHOD(Camera, getPosture)
+		TUKI_METHOD(Camera, setFov)
+		TUKI_METHOD(Camera, getFov)
 		TUKI_METHOD(Camera, setClip)
 		TUKI_METHOD(Camera, getClip)
 	TUKI_IMPLEMENT_END(Camera)

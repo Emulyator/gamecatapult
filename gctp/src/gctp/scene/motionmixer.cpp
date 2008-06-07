@@ -284,6 +284,15 @@ namespace gctp { namespace scene {
 		return 1;
 	}
 
+	int MotionMixer::getTotalTime(luapp::Stack &L)
+	{
+		if(L.top() >= 1 && tracks()[L[1].toInteger()].motion()) {
+			L << tracks()[L[1].toInteger()].motion()->time();
+			return 1;
+		}
+		return 0;
+	}
+
 	void MotionMixer::setKeyTime(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -365,6 +374,9 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(MotionMixer, trackNum)
 		TUKI_METHOD(MotionMixer, setMasterSpeed)
 		TUKI_METHOD(MotionMixer, getMasterSpeed)
+		TUKI_METHOD(MotionMixer, getTotalTime)
+		TUKI_METHOD(MotionMixer, setKeyTime)
+		TUKI_METHOD(MotionMixer, getKeyTime)
 		TUKI_METHOD(MotionMixer, setWeight)
 		TUKI_METHOD(MotionMixer, getWeight)
 		TUKI_METHOD(MotionMixer, setSpeed)

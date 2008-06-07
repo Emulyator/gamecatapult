@@ -138,6 +138,7 @@ namespace gctp { namespace scene {
 		void setMasterSpeed(luapp::Stack &L);
 		int getMasterSpeed(luapp::Stack &L);
 		int trackNum(luapp::Stack &L);
+		int getTotalTime(luapp::Stack &L);
 		void setKeyTime(luapp::Stack &L);
 		int getKeyTime(luapp::Stack &L);
 		void setWeight(luapp::Stack &L);
