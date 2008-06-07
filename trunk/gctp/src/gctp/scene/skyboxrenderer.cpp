@@ -3,7 +3,7 @@
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/02/08 6:08:56
- * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+ * Copyright (C) 2008 SAM (T&GG, Org.). All rights reserved.
  */
 #include "common.h"
 #include <gctp/scene/skyboxrenderer.hpp>
@@ -19,11 +19,6 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, SkyBoxRenderer, Renderer);
-	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, SkyBoxRenderer)
-		TUKI_METHOD(SkyBoxRenderer, load)
-	TUKI_IMPLEMENT_END(SkyBoxRenderer)
-
 	namespace {
 
 		struct Vertex {
@@ -31,9 +26,9 @@ namespace gctp { namespace scene {
 				FVF  = (D3DFVF_XYZ|D3DFVF_DIFFUSE),
 			};
 			D3DXVECTOR3 p; D3DCOLOR color;
-			void set(float x, float y, float z)
+			void set(float x, float y)
 			{
-				p.x = x; p.y = y; p.z = z;
+				p.x = x; p.y = y; p.z = 1.0f;
 				color = 0xFFFFFFFF;
 			}
 		};
@@ -45,12 +40,13 @@ namespace gctp { namespace scene {
 			"    Texture = <BgTexture>;\n"
 			"    MinFilter = LINEAR;\n"
 			"    MagFilter = LINEAR;\n"
-			"    MipFilter = LINEAR;\n"
+			"    MipFilter = NONE;\n"
 			"	AddressU = CLAMP;\n"
 			"	AddressV = CLAMP;\n"
 			"};\n"
 			"\n"
 			"float4x4 InvWorldViewProj;\n"
+			"float2 ScreenOffset;\n"
 			"\n"
 			"//////////////////////////\n"
 			"\n"
@@ -64,9 +60,11 @@ namespace gctp { namespace scene {
 			"		float4 Position : POSITION,\n"
 			"		uniform float4x4 ivp : ViewProjInverse\n"
 			") {\n"
-			"    CubeVertexOutput OUT;\n"
+			"   CubeVertexOutput OUT;\n"
 			"	OUT.Position = Position;\n"
-			"    OUT.UV = normalize(mul(Position, ivp));\n"
+			"	OUT.Position.x += ScreenOffset.x;\n"
+			"	OUT.Position.y += ScreenOffset.y;\n"
+			"   OUT.UV = normalize(mul(Position, ivp));\n"
 			"	return OUT;\n"
 			"}\n"
 			"\n"
@@ -92,35 +90,58 @@ namespace gctp { namespace scene {
 			"	}\n"
 			"}\n";
 
+		const int div_num = 5;
 	}
 
-	SkyBoxRenderer::SkyBoxRenderer()
+	SkyBoxRenderer::SkyBoxRenderer() : radius(1000)
 	{
-		if(vb_.setUp(graphic::VertexBuffer::STATIC, graphic::dx::FVF(Vertex::FVF), 4)) {
+		if(vb_.setUp(graphic::VertexBuffer::STATIC, graphic::dx::FVF(Vertex::FVF), (div_num+1)*(div_num+1))) {
 			graphic::VertexBuffer::ScopedLock al(vb_);
-			al.get<Vertex>(0).set(-1,  1,  1);
-			al.get<Vertex>(1).set( 1,  1,  1);
-			al.get<Vertex>(2).set(-1, -1,  1);
-			al.get<Vertex>(3).set( 1, -1,  1);
-		}
-		shader_ = graphic::device().db()[_T("skybox.fx")];
-		if(!shader_) {
-			default_shader_ = graphic::device().db()[_T("HLSL_SKYBOX")].lock();
-			if(!default_shader_) {
-				default_shader_ = new graphic::dx::HLSLShader;
-				default_shader_->setUp(skybox_fx, sizeof(skybox_fx));
-				graphic::device().db().insert(_T("HLSL_SKYBOX"), default_shader_);
+			float step = 2.0f/div_num;
+			for(int y = 0; y < div_num+1; y++) {
+				for(int x = 0; x < div_num+1; x++) {
+					al.get<Vertex>(y*(div_num+1)+x).set(-1+step*x, 1-step*y);
+					//dbgout << y*(div_num+1)+x << "(" << -1+step*x <<"," << 1-step*y << ") ";
+				}
+				//dbgout << endl;
 			}
-			shader_ = default_shader_;
+		}
+		if(ib_.setUp(graphic::IndexBuffer::STATIC, graphic::IndexBuffer::SHORT, div_num*div_num*6)) {
+			graphic::IndexBuffer::ScopedLock al(ib_);
+			for(int y = 0; y < div_num; y++) {
+				for(int x = 0; x < div_num; x++) {
+					al.get<ushort>((y*div_num+x)*6+0) = y*(div_num+1)+x;
+					al.get<ushort>((y*div_num+x)*6+1) = y*(div_num+1)+x+1;
+					al.get<ushort>((y*div_num+x)*6+2) = (y+1)*(div_num+1)+x;
+					al.get<ushort>((y*div_num+x)*6+3) = y*(div_num+1)+x+1;
+					al.get<ushort>((y*div_num+x)*6+4) = (y+1)*(div_num+1)+x+1;
+					al.get<ushort>((y*div_num+x)*6+5) = (y+1)*(div_num+1)+x;
+					/*dbgout << y*(div_num+1)+x << ", "
+						<< y*(div_num+1)+x+1 << ", "
+						<< (y+1)*(div_num+1)+x << ", "
+						<< y*(div_num+1)+x+1 << ", "
+						<< (y+1)*(div_num+1)+x+1 << ", "
+						<< (y+1)*(div_num+1)+x << endl;*/
+				}
+			}
+		}
+		shader_ = context().load(_T("skybox.fx"));
+		if(!shader_) {
+			shader_ = context()[_T("HLSL_SKYBOX")];
+			if(!shader_) {
+				Pointer<graphic::dx::HLSLShader> shader = new graphic::dx::HLSLShader;
+				shader->setUp(skybox_fx, sizeof(skybox_fx));
+				context().insert(shader, _T("HLSL_SKYBOX"));
+				shader_ = shader;
+			}
 		}
 	}
 
-	/** ワールド描画
+	/** スカイボックス描画
 	 *
-	 * レンダリングツリーに描画メッセージを送る
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 * @date 2005/01/11 2:34:02
+	 * @date 2008/01/11 2:34:02
 	 */	
 	bool SkyBoxRenderer::onReach(float delta) const
 	{
@@ -129,11 +150,17 @@ namespace gctp { namespace scene {
 			Matrix proj;
 			Size2f screen = Camera::current().screen();
 			Rectf subwindow = Camera::current().subwindow();
-			proj.setFOV(Camera::current().fov(), screen.x/screen.y, subwindow.left, subwindow.top, subwindow.right, subwindow.bottom, 1, 1000);
+			proj.setFOV(Camera::current().fov(), screen.x/screen.y, subwindow.left, subwindow.top, subwindow.right, subwindow.bottom, radius/2, radius);
 			(*shader)->SetMatrix("InvWorldViewProj", (Camera::current().view() * proj).inverse());
+			Vector4 screen_offset;
+			screen_offset.x = -1.0f/screen.x;
+			screen_offset.y = 1.0f/screen.y;
+			screen_offset.z = screen_offset.w = 0;
+			HRslt hr = (*shader)->SetVector("ScreenOffset", screen_offset);
+			if(!hr) GCTP_ERRORINFO(hr);
 			(*shader)->SetTexture("BgTexture", *texture_);
 			shader->begin();
-			vb_.draw(0, D3DPT_TRIANGLESTRIP, 2, 0);
+			ib_.draw(vb_, 0, D3DPT_TRIANGLELIST, div_num*div_num*2, 0);
 		}
 		return false;
 	}
@@ -153,6 +180,11 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
+	void SkyBoxRenderer::setRadius(luapp::Stack &L)
+	{
+		if(L.top() >=1) radius = (float)L[1].toNumber();
+	}
+
 	void SkyBoxRenderer::load(luapp::Stack &L)
 	{
 		if(L.top() >=1) {
@@ -169,5 +201,11 @@ namespace gctp { namespace scene {
 			}
 		}
 	}
+
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, SkyBoxRenderer, Renderer);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, SkyBoxRenderer)
+		TUKI_METHOD(SkyBoxRenderer, load)
+		TUKI_METHOD(SkyBoxRenderer, setRadius)
+	TUKI_IMPLEMENT_END(SkyBoxRenderer)
 
 }} // namespace gctp::scene

@@ -234,7 +234,7 @@ namespace gctp {
 	GameApp *GameApp::app_ = NULL;
 	uint GameApp::window_count_ = 0;
 
-	GameApp::GameApp() : lap(0.0f), profiler_("root"), draw_profile_(0)
+	GameApp::GameApp() : lap(0.0f), profiler_("root")
 	{
 #if !defined(_MSC_VER) || (_MSC_VER > 1300)
 		events_.event_signal.connect(guievents_.event_slot);
@@ -256,10 +256,6 @@ namespace gctp {
 
 	bool GameApp::canContinue()
 	{
-		if(draw_profile_) {
-			draw_profile_->end();
-			draw_profile_ = 0;
-		}
 		profiler_.end();
 
 		profiler_.commit();
@@ -271,17 +267,12 @@ namespace gctp {
 
 	bool GameApp::canDraw()
 	{
-		draw_profile_ = &profiler_.begin("draw");
 		return true;
 	}
 
 	void GameApp::present()
 	{
 		true_lap = lap = fps.update();
-		if(draw_profile_) {
-			draw_profile_->end();
-			draw_profile_ = 0;
-		}
 	}
 
 	ulong GameApp::basetime()

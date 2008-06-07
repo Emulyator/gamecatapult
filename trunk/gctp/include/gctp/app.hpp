@@ -164,7 +164,6 @@ namespace gctp {
 		GCTP_TLS static GameApp *app_;
 		static uint window_count_;
 		Profiler profiler_;
-		Profiler *draw_profile_;
 		bool present_;
 		EventQue events_;
 		GUIEvents guievents_;

@@ -87,7 +87,10 @@ namespace gctp { namespace graphic {
 		HRslt hr;
 		locked_ = 0;
 		cur_ = 0;
-		sb_ = createOnDB<ParticleSB>(_T("PARTICLESB"));
+		//sb_ = context().createAndSetUp<ParticleSB>(_T("PARTICLESB"));
+		// ‹¤—L‚ð‚â‚ß‚Ä‚Ý‚é
+		sb_ = new ParticleSB;
+		sb_->setUp();
 
 		dx::FVF fvf(FVF_L);
 		maxnum_ = maxnum;
@@ -285,13 +288,13 @@ namespace gctp { namespace graphic {
 	ParticleBuffer &ParticleBuffer::set(BlendMode blend)
 	{
 		switch(blend) {
-		case NONE:
+		case OPEQUE:
 			device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 			device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
 			device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
 			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
 			break;
-		case ALPHA:
+		case TRANSLUCENT:
 			device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 			device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
 			device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
@@ -309,12 +312,12 @@ namespace gctp { namespace graphic {
 			device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
 			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
 			break;
-	/*	case MUL:
+		case MUL:
 			device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_ZERO );
 			device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_SRCCOLOR );
 			device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
 			device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			break;*/
+			break;
 		}
 		return *this;
 	}

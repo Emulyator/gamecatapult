@@ -74,7 +74,7 @@ namespace gctp { namespace graphic { namespace dx {
 	 * @date 2004/02/24 17:23:09
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Device {
+	class Device : public Object {
 	public:
 		/// フルシーンアンチエイリアスの種類
 		enum FSAAType {

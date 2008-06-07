@@ -14,6 +14,7 @@
 #include <gctp/tuki.hpp>
 #include <gctp/pointer.hpp>
 #include <gctp/graphic/vertexbuffer.hpp>
+#include <gctp/graphic/indexbuffer.hpp>
 #include <gctp/scene/renderer.hpp>
 
 namespace gctp {
@@ -45,16 +46,17 @@ namespace gctp { namespace scene {
 			texture_ = texture;
 		}
 
+		float radius;
+
 	protected:
 		graphic::VertexBuffer vb_;
+		graphic::IndexBuffer ib_;
 		Handle<graphic::Shader> shader_;
 		Handle<graphic::CubeTexture> texture_;
 
 		bool setUp(luapp::Stack &L);
+		void setRadius(luapp::Stack &L);
 		void load(luapp::Stack &L);
-
-	private:
-		Pointer<graphic::dx::HLSLShader> default_shader_;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(SkyBoxRenderer)

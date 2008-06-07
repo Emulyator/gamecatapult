@@ -70,7 +70,6 @@ namespace gctp { namespace graphic {
 		float aspectRatio() const { return (float)width/(float)height; }
 	};
 
-	class DeviceImpl;
 	class Rsrc;
 	/** グラフィックＡＰＩクラス
 	 *
@@ -185,19 +184,6 @@ namespace gctp { namespace graphic {
 		Pointer<dx::StateBlock> endRecord();
 		/// 新規ステートブロック
 		Pointer<dx::StateBlock> createState(D3DSTATEBLOCKTYPE type);
-		// ステートスタックの仕組みさえあれば十分では？
-		// 確かに、ステートの変更は少ないほうが良く、変更するならステートブロックを使って
-		// 一括で設定したほうがいいのだろうけど、DirectXに密着した仕様だし、苦労の割に
-		// 劇的にパフォーマンスが上がるわけではないと思う。こんなことに苦労するくらいなら
-		// 全アーキテクチャで有効なテクスチャ切り替えの回数、プリミティブ描画命令の発行回数
-		// を減らすことを考えた方がいい。
-		// とおもったが、やるなら昔あったStateBlockRsrcを復活するしかない
-		// StateBlockはデバイス消失時の明示再構築の対象だ。めどいんで放置
-
-//		/// 現在のステートを退避
-//		HRslt pushState();
-//		/// 一個前のステートに復帰
-//		HRslt popState();
 
 		/** カレントオーディオデバイスの取得
 		 *
@@ -237,28 +223,10 @@ namespace gctp { namespace graphic {
 		 */
 		void registerRsrc(Handle<Rsrc> rsrc);
 
-		/** リソースデータベース
-		 *
-		 * いつかなくす
-		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-		 * @date 2004/01/28 15:20:16
-		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-		 */
-		const DB &db() const;
-
-		/** リソースデータベース
-		 *
-		 * いつかなくす
-		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-		 * @date 2004/01/28 15:20:16
-		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-		 */
-		DB &db();
-
 	private:
 		bool is_unique_;	///< 同じアダプタに対して製作する時、追加スワップチェーンでなく別デバイスにするか？
 		HRslt preSetUp(uint adpt, HWND hwnd);
-		Pointer<DeviceImpl> impl_;
+		Pointer<dx::Device> impl_;
 		Pointer<dx::View> view_;
 		GCTP_TLS static Device* current_;	///< カレントデバイスインスタンス
 	};
@@ -449,52 +417,6 @@ namespace gctp { namespace graphic {
 	{
 		return device().createState(type);
 	}
-	
-//	/// 現在のステートを退避
-//	inline HRslt pushState()
-//	{
-//		return device().pushState();
-//	}
-
-//	/// 一個前のステートに復帰
-//	inline HRslt popState()
-//	{
-//		return device().popState();
-//	}
-
-	/** データベースに登録しつつ製作
-	 *
-	 * すでにデータベースにあるならそれを返し、そうで無かったら新規製作しＤＢに登録する、という
-	 * 操作のテンプレート
-	 *
-	 * いつかなくす
-	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
-	 * @date 2004/07/16 14:03:54
-	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
-	 */
-	template<class _T>
-	Pointer<_T> createOnDB(const _TCHAR *name)
-	{
-		if(name) {
-			Handle<_T> h = device().db()[name];
-			if(h) return h.get();
-			else {
-				Pointer<_T> ret = new _T;
-				if(ret) {
-					if(ret->setUp(name)) {
-						PRNN(_T("リソース'")<<name<<_T("'を製作"));
-						h = ret;
-						device().db().insert(name, h);
-						return ret;
-					}
-				}
-				PRNN(_T("リソース'")<<name<<_T("'の制作に失敗"));
-			}
-		}
-		else PRNN(_T("リソースの製作に失敗。名前を指定してください"));
-		return 0;
-	}
-	/*@}*/
 
 	/** @defgroup GraphicSystemSetting システム設定に対するコントロール */
 	/* @{ */

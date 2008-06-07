@@ -292,6 +292,7 @@ extern "C" int main(int argc, char *argv[])
 
 	while(app().canContinue()) {
 		gctp::Profiler &update_profile = app().profiler().begin("update");
+
 		Pointer<scene::World> world = context[_T("world")].lock();
 		Pointer<scene::Camera> camera = context[_T("camera")].lock();
 		Pointer<scene::QuakeCamera> qcam = context[_T("qcam")].lock();
@@ -373,6 +374,7 @@ extern "C" int main(int argc, char *argv[])
 
 #ifdef PHYSICSTEST
 		if(phy_world) {
+			Profiling physics_profile("physics");
 			if(input().kbd().push(DIK_B)) {
 				addBox(phy_world, phy_collision_shapes, box_list, context, *world, btVector3(0, 2, 0));
 			}
@@ -395,6 +397,8 @@ extern "C" int main(int argc, char *argv[])
 		update_profile.end();
 
 		if(app().canDraw()) {
+			Profiling draw_profile("draw");
+
 			graphic::clear();
 			graphic::begin();
 
@@ -474,7 +478,10 @@ extern "C" int main(int argc, char *argv[])
 			text.draw(spr, *fonttex);
 
 			graphic::end();
-			app().present();
+			{
+				Profiling present_profile("present");
+				app().present();
+			}
 		}
 	}
 
