@@ -27,6 +27,7 @@ namespace gctp {
 
 		AABox() {}
 		AABox(const Vector &src) : upper(src), lower(src) {}
+		AABox(const Vector &upper, const Vector &lower) : upper(upper), lower(lower) {}
 
 		void initialize(const Vector &vec)
 		{

@@ -330,7 +330,7 @@ namespace gctp { namespace graphic {
 		RayLine ray;
 		ulong idx;
 		float u, v, dist, sdist;
-		for(uint i = 0; i < with.ib_.primitiveNum(); i++) {
+		for(uint i = 0; i < with.ib_.indexNum(); i++) {
 			for(int j = 0; j < 6; j++) {
 				switch(j) {
 				case 0: ray.s = vbl.get<Vector>(ibl.get<ushort>(i*3  )); ray.v = vbl.get<Vector>(ibl.get<ushort>(i*3+1)) - vbl.get<Vector>(ibl.get<ushort>(i*3  )); break;

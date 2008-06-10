@@ -21,7 +21,7 @@ namespace gctp { namespace graphic {
 		static DeviceImplList devicelist;
 	}
 
-	Device* Device::current_ = NULL;	///< カレントデバイスインスタンス
+	Device* Device::current__ = NULL;	///< カレントデバイスインスタンス
 
 	void initialize(bool with_WHQL)
 	{
@@ -157,7 +157,7 @@ namespace gctp { namespace graphic {
 
 	HRslt Device::setCurrent() const
 	{
-		current_ = const_cast<Device *>(this);
+		current__ = const_cast<Device *>(this);
 		if(view_) return view_->setCurrent();
 		if(impl_) return impl_->setCurrent();
 		return E_FAIL;

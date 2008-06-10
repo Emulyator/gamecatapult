@@ -243,6 +243,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\geometryfile.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\graphfile.cpp"
 				>
 			</File>
@@ -260,6 +264,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\scene\motionmixer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\scene\physicworld.cpp"
 				>
 			</File>
 			<File
@@ -345,6 +353,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\scene\geometryfile.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\scene\graphfile.hpp"
 				>
 			</File>
@@ -362,6 +374,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\motionmixer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\physicworld.hpp"
 				>
 			</File>
 			<File

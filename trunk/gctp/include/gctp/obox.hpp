@@ -23,8 +23,8 @@ namespace gctp {
 	 */
 	struct OBox {
 		Quat   posture;
-		Vector position;
 		Vector size;
+		Vector position;
 
 		OBox() {}
 		OBox(const Vector &posiiton, const Vector &size, const Quat &posture) : posture(posture), position(position), size(size) {}

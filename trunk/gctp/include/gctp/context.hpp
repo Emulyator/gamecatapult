@@ -239,8 +239,8 @@ namespace gctp { namespace core {
 		/// カレントコンテキストを返す
 		inline static Context &current()
 		{
-			GCTP_ASSERT(current_);
-			return *current_;
+			GCTP_ASSERT(current__);
+			return *current__;
 		}
 
 		/// 非同期読み込みによるロード処理か？（リアライズ関数の中などで使用）
@@ -274,7 +274,7 @@ namespace gctp { namespace core {
 		Handle<Context> parent_;
 		Handle<Context> prev_;
 
-		static Context *current_;
+		static Context *current__;
 
 		struct LuaPair {
 			DB *db;

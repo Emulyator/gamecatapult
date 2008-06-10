@@ -71,7 +71,18 @@ namespace gctp { namespace graphic {
 		HRslt setCurrent() const;
 		uint size() const;
 
-		uint primitiveNum() { return num_; }
+		uint indexNum() const { return num_; }
+
+		uint primitiveNum(D3DPRIMITIVETYPE prim_type) const
+		{
+			if(prim_type == D3DPT_POINTLIST) return num_;
+			else if(prim_type == D3DPT_LINELIST) return num_/2;
+			else if(prim_type == D3DPT_LINESTRIP) return num_-1;
+			else if(prim_type == D3DPT_TRIANGLELIST) return num_/3;
+			else if(prim_type == D3DPT_TRIANGLESTRIP) return num_-2;
+			else if(prim_type == D3DPT_TRIANGLEFAN) return num_-2;
+			return 0;
+		}
 
 		operator dx::IDirect3DIndexBuffer *() { return ptr_; }
 		operator const dx::IDirect3DIndexBuffer *() const { return ptr_; }

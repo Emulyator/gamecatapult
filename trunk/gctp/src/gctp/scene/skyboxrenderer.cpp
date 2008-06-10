@@ -90,10 +90,13 @@ namespace gctp { namespace scene {
 			"	}\n"
 			"}\n";
 
-		const int div_num = 9;
 	}
 
 	SkyBoxRenderer::SkyBoxRenderer() : radius(1000)
+	{
+	}
+
+	void SkyBoxRenderer::setUp(int div_num)
 	{
 		if(vb_.setUp(graphic::VertexBuffer::STATIC, graphic::dx::FVF(Vertex::FVF), (div_num+1)*(div_num+1))) {
 			graphic::VertexBuffer::ScopedLock al(vb_);
@@ -135,6 +138,7 @@ namespace gctp { namespace scene {
 				shader_ = shader;
 			}
 		}
+		div_num_ = div_num;
 	}
 
 	/** スカイボックス描画
@@ -154,6 +158,7 @@ namespace gctp { namespace scene {
 			proj.setFOV(Camera::current().fov(), screen.x/screen.y, subwindow.left, subwindow.top, subwindow.right, subwindow.bottom, radius/2, radius);
 			view = Camera::current().view();
 			view.position() = VectorC(0,0,0); // 方向のみ採用
+			// おかげで、Radiusに意味がなくなった。それより分割数を可変にしたほうがいい
 			(*shader)->SetMatrix("InvWorldViewProj", (view * proj).inverse());
 			Vector2 screen_offset;
 			screen_offset.x = -1.0f/screen.x;
@@ -162,7 +167,7 @@ namespace gctp { namespace scene {
 			if(!hr) GCTP_ERRORINFO(hr);
 			(*shader)->SetTexture("BgTexture", *texture_);
 			shader->begin();
-			ib_.draw(vb_, 0, D3DPT_TRIANGLELIST, div_num*div_num*2, 0);
+			ib_.draw(vb_, 0, D3DPT_TRIANGLELIST, div_num_*div_num_*2, 0);
 		}
 		return false;
 	}
@@ -201,13 +206,15 @@ namespace gctp { namespace scene {
 				Pointer<graphic::CubeTexture> texture = context()[filename].lock();
 				if(texture) texture_ = texture;
 			}
+			if(L.top() >=2) setUp(L[2].toInteger());
+			else setUp(7);
 		}
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, SkyBoxRenderer, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, SkyBoxRenderer)
-		TUKI_METHOD(SkyBoxRenderer, load)
 		TUKI_METHOD(SkyBoxRenderer, setRadius)
+		TUKI_METHOD(SkyBoxRenderer, load)
 	TUKI_IMPLEMENT_END(SkyBoxRenderer)
 
 }} // namespace gctp::scene
