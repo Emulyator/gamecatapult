@@ -194,6 +194,16 @@
 				RelativePath="..\..\..\gametest\main.cpp"
 				>
 			</File>
+			<Filter
+				Name="リソース ファイル"
+				Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
+				UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+				>
+				<File
+					RelativePath="..\..\..\gametest\Script1.rc"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -202,16 +212,6 @@
 			>
 			<File
 				RelativePath="..\..\..\gametest\resource.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="リソース ファイル"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
-			<File
-				RelativePath="..\..\..\gametest\Script1.rc"
 				>
 			</File>
 		</Filter>

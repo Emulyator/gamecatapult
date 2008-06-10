@@ -20,14 +20,6 @@ namespace gctp {
 
 namespace gctp { namespace graphic {
 
-	// やっぱりBrushに戻したいなぁ。
-	//!!
-	// シェーダーとブラッシュは分けなきゃだめ。
-	// Brushにおしゃれな名前以外の意義が出てきた。
-	// Shader＝シェーダそのもの。
-	// Brush=モデルごとのインスタンスデータ。
-	// いまのModelDetail=Brush
-
 	class Model;
 
 	/// シェーダーリソースクラス

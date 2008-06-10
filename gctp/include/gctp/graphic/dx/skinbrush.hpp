@@ -781,14 +781,14 @@ namespace gctp { namespace graphic { namespace dx {
 			for(ulong i = 0; i < bonecb_len_; i++) {
 				D3DXBONECOMBINATION *bonecb = reinterpret_cast<D3DXBONECOMBINATION*>(bonecb_->GetBufferPointer());
 				if(!target_.mtrls[bonecb[i].AttribId].shader) {
-					shader = context()[_T("skinnedmesh.fx")];
+					shader = context()[_T("skinned.fx")];
 					if(!shader) {
 						shader = context()[_T("HLSL_SKINNEDMESH")];
 						if(!shader) {
-							Pointer<dx::HLSLShader> skinnedmesh = new dx::HLSLShader;
-							skinnedmesh->setUp(skinnedmesh_fx, skinnedmesh_fx_size);
-							context().insert(skinnedmesh, _T("HLSL_SKINNEDMESH"));
-							shader = skinnedmesh;
+							Pointer<dx::HLSLShader> skinshader = new dx::HLSLShader;
+							skinshader->setUp(skinned_fx, skinned_fx_size);
+							context().insert(skinshader, _T("HLSL_SKINNEDMESH"));
+							shader = skinshader;
 						}
 					}
 					target_.mtrls[bonecb[i].AttribId].shader = shader;
@@ -924,8 +924,8 @@ namespace gctp { namespace graphic { namespace dx {
 		std::vector<D3DXMATRIX>		bone_matricies_;
 
 	private:
-		static const char skinnedmesh_fx[];
-		static const int skinnedmesh_fx_size;
+		static const char skinned_fx[];
+		static const int skinned_fx_size;
 	};
 
 }}} // namespace gctp::graphic::dx

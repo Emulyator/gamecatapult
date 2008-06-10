@@ -382,9 +382,13 @@ namespace gctp {
 		static unsigned int __stdcall threadfunc( void* arg )
 		{
 			MSG msg;
+			Handle<FileServer> hfs = (FileServer *)arg;
 			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
-				Pointer<FileServer> fs = (FileServer *)arg;
-				if(fs) fs->serviceRequest();
+				Pointer<FileServer> fs = hfs.lock();
+				if(fs) {
+					fs->serviceRequest();
+					fs->service(0);
+				}
 				else break;
 			}
 			return 0;
@@ -544,11 +548,17 @@ namespace gctp {
 	bool FileServer::service(float delta)
 	{
 		if(thread_) {
-			ScopedLock sl(thread_->read_list_monitor_);
-			while(!thread_->read_.empty()) {
-				AsyncBufferPtr buffer = thread_->read_.front().buffer;
-				if(buffer) buffer->ready_signal(thread_->read_.front().name.c_str(), buffer);
-				thread_->read_.pop();
+			while(1) {
+				Thread::Read read;
+				{
+					ScopedLock sl(thread_->read_list_monitor_);
+					if(thread_->read_.empty()) break;
+					else {
+						read = thread_->read_.front();
+						thread_->read_.pop();
+					}
+				}
+				if(read.buffer) read.buffer->ready_signal(read.name.c_str(), read.buffer);
 			}
 		}
 		return true;

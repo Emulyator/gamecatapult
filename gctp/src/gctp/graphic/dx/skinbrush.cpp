@@ -249,7 +249,7 @@ namespace gctp { namespace graphic { namespace dx {
 	Pointer<SkinningVertexShader> VertexShaderSkinBrush::vs_;
 	
 	// SkinnedMesh.fx
-	const char ShaderSkinBrush::skinnedmesh_fx[] =
+	const char ShaderSkinBrush::skinned_fx[] =
 		"//\n"
 		"// Skinned Mesh Effect file \n"
 		"// Copyright (c) 2000-2002 Microsoft Corporation. All rights reserved.\n"
@@ -359,6 +359,6 @@ namespace gctp { namespace graphic { namespace dx {
 		"    }\n"
 		"}\n";
 	
-	const int ShaderSkinBrush::skinnedmesh_fx_size = sizeof(skinnedmesh_fx);
+	const int ShaderSkinBrush::skinned_fx_size = sizeof(skinned_fx);
 
 }}} // namespace gctp::graphic::dx

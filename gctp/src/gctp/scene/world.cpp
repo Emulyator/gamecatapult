@@ -20,7 +20,6 @@
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/light.hpp>
 #include <gctp/app.hpp>
-#include <gctp/dbgout.hpp>
 
 #include <gctp/dbgout.hpp>
 

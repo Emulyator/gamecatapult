@@ -75,7 +75,7 @@ namespace gctp { namespace graphic { namespace dx {
 				return hr;
 			}
 		}
-		GCTP_ERRORINFO(hr);
+		if(!hr) GCTP_ERRORINFO(hr);
 		return hr;
 	}
 
@@ -125,7 +125,7 @@ namespace gctp { namespace graphic { namespace dx {
 				GCTP_ERRORINFO("\n"<<(const char *)err->GetBufferPointer());
 			}
 		}
-		GCTP_ERRORINFO(hr);
+		if(!hr) GCTP_ERRORINFO(hr);
 		return hr;
 	}
 

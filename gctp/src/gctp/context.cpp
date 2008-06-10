@@ -25,8 +25,8 @@ namespace gctp { namespace core {
 	 */
 	void Context::push()
 	{
-		prev_ = current_;
-		current_ = this;
+		prev_ = current__;
+		current__ = this;
 		is_pushed_ = true;
 	}
 
@@ -40,9 +40,9 @@ namespace gctp { namespace core {
 	{
 		if(is_pushed_) {
 			is_pushed_ = false;
-			GCTP_ASSERT(current_ == this);
-			if(prev_) current_ = prev_.get();
-			else current_ = parent_.get();
+			GCTP_ASSERT(current__ == this);
+			if(prev_) current__ = prev_.get();
+			else current__ = parent_.get();
 		}
 	}
 
@@ -67,11 +67,11 @@ namespace gctp { namespace core {
 			if(f) {
 				BufferPtr file = fileserver().getFile(uri.raw().c_str());
 				if(file) {
-					Context *backup = current_; // 一時的にカレントを差し替える
-					current_ = this;
+					Context *backup = current__; // 一時的にカレントを差し替える
+					current__ = this;
 					loading_async_ = false;
 					Ptr p = f(0, file);
-					current_ = backup;
+					current__ = backup;
 					if(p) {
 						ptrs_.push_back(p);
 						db_.insert(name, p);
@@ -93,6 +93,7 @@ namespace gctp { namespace core {
 	{
 		//GCTP_ASSERT(current_ == this); これ必要か？
 		if(name) {
+			synchronize(true);
 			Hndl h = find(name);
 			if(h) return h;
 			TURI uri(name);
@@ -161,10 +162,10 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const GCTP_TYPEINFO &typeinfo)
 	{
-		Context *backup = current_; // 一時的にカレントを差し替える
-		current_ = this;
+		Context *backup = current__; // 一時的にカレントを差し替える
+		current__ = this;
 		Ptr ret = Factory::create(typeinfo);
-		current_ = backup;
+		current__ = backup;
 		if(ret) ptrs_.push_back(ret);
 		return ret;
 	}
@@ -177,10 +178,10 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const char *classname)
 	{
-		Context *backup = current_; // 一時的にカレントを差し替える
-		current_ = this;
+		Context *backup = current__; // 一時的にカレントを差し替える
+		current__ = this;
 		Ptr ret = Factory::create(classname);
-		current_ = backup;
+		current__ = backup;
 		if(ret) ptrs_.push_back(ret);
 		return ret;
 	}
@@ -229,8 +230,8 @@ namespace gctp { namespace core {
 		std::basic_string<_TCHAR> ext = uri.extension();
 		RealizeMethod f = Extension::get(ext.c_str());
 		if(f) {
-			Context *backup = current_; // 一時的にカレントを差し替える
-			current_ = this;
+			Context *backup = current__; // 一時的にカレントを差し替える
+			current__ = this;
 			loading_async_ = true;
 			Ptr rsrc = find(name).lock();
 			if(rsrc) {
@@ -240,7 +241,7 @@ namespace gctp { namespace core {
 					ptrs_.remove(rsrc);
 				}
 			}
-			current_ = backup;
+			current__ = backup;
 		}
 		else {
 			dbgout << _T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)") << endl;
@@ -250,8 +251,8 @@ namespace gctp { namespace core {
 
 	void Context::serialize(Serializer &serializer)
 	{
-		Context *backup = current_; // 一時的にカレントを差し替える
-		current_ = this;
+		Context *backup = current__; // 一時的にカレントを差し替える
+		current__ = this;
 		if(serializer.isLoading()) {
 			int size;
 			serializer.istream() >> size;
@@ -268,14 +269,14 @@ namespace gctp { namespace core {
 				serializer << *i;
 			}
 		}
-		current_ = backup;
+		current__ = backup;
 	}
 
-	Context *Context::current_ = NULL;
+	Context *Context::current__ = NULL;
 
 	bool Context::setUp(luapp::Stack &L)
 	{
-		// gctp.core.Context.current().child()経由でなければ作れない
+		// gctp.core.Context.current().newChild()経由でなければ作れない
 		return false;
 	}
 
@@ -349,7 +350,7 @@ namespace gctp { namespace core {
 
 	int Context::current(luapp::Stack &L)
 	{
-		return gctp::TukiRegister::push(L, Hndl(current_));
+		return gctp::TukiRegister::push(L, Hndl(current__));
 	}
 
 	int Context::pairs(luapp::Stack &L)

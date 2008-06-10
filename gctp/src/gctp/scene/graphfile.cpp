@@ -231,9 +231,27 @@ namespace gctp { namespace scene {
 			model.setUp(data.name(), mesh, skin, adjc);
 
 			if(model.isSkin()) {
-				// デフォルトでHLSL
-				Pointer<graphic::dx::ShaderSkinBrush> p = new graphic::dx::ShaderSkinBrush(model);
-				if(p->setUp()) model.brush() = p;
+				Handle<graphic::dx::HLSLShader> shader = context()[_T("skinned.fx")];
+				if(shader) {
+					Pointer<graphic::dx::ShaderSkinBrush> p = new graphic::dx::ShaderSkinBrush(model);
+					if(p->setUp()) model.brush() = p;
+				}
+				else {
+					Pointer<graphic::dx::IndexedSkinBrush> p = new graphic::dx::IndexedSkinBrush(model);
+					if(p->setUp()) model.brush() = p;
+				}
+			}
+			else {
+				Handle<graphic::dx::HLSLShader> shader = context()[_T("solid.fx")];
+				if(shader) {
+					for(size_t i = 0; i < model.mtrls.size(); i++) {
+						if(!model.mtrls[i].shader) {
+							model.mtrls[i].shader = shader;
+						}
+					}
+					//Pointer<graphic::dx::SolidShaderBrush> p = new graphic::dx::SolidShaderBrush(model);
+					//model.brush() = p;
+				}
 			}
 
 			{

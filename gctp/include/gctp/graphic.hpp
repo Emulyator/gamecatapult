@@ -189,7 +189,7 @@ namespace gctp { namespace graphic {
 		 *
 		 * カレントデバイスを返す。
 		 */
-		inline static Device *current() { return current_; }
+		inline static Device *current() { return current__; }
 		/** カレントオーディオデバイスを設定
 		 *
 		 * カレントデバイスを設定する。
@@ -228,7 +228,7 @@ namespace gctp { namespace graphic {
 		HRslt preSetUp(uint adpt, HWND hwnd);
 		Pointer<dx::Device> impl_;
 		Pointer<dx::View> view_;
-		GCTP_TLS static Device* current_;	///< カレントデバイスインスタンス
+		static Device* current__;	///< カレントデバイスインスタンス
 	};
 
 	/** グラフィックデバイスの取得

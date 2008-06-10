@@ -48,6 +48,8 @@ namespace gctp { namespace scene {
 
 		float radius;
 
+		void setUp(int div_num);
+
 	protected:
 		graphic::VertexBuffer vb_;
 		graphic::IndexBuffer ib_;
@@ -57,6 +59,8 @@ namespace gctp { namespace scene {
 		bool setUp(luapp::Stack &L);
 		void setRadius(luapp::Stack &L);
 		void load(luapp::Stack &L);
+
+		int div_num_;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(SkyBoxRenderer)

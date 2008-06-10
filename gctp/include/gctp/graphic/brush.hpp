@@ -22,14 +22,24 @@ namespace gctp { namespace graphic {
 		Brush(Model &target) : target_(target) {}
 		virtual HRslt begin(Handle<Shader> shader, const Skeleton &skl) const
 		{
+			return begin(shader, skl.root()->val.wtm());
+		}
+		virtual HRslt begin(Handle<Shader> shader, const Matrix &mat) const
+		{
 			return S_OK;
 		}
 		virtual HRslt end() const
 		{
 			return S_OK;
 		}
-		virtual HRslt draw(uint subset_no, const Skeleton &skl) const = 0;
-		//virtual HRslt draw(uint subset_no, const Matrix &mat) const = 0;
+		virtual HRslt draw(uint subset_no, const Skeleton &skl) const
+		{
+			return draw(subset_no, skl.root()->val.wtm());
+		}
+		virtual HRslt draw(uint subset_no, const Matrix &mat) const
+		{
+			return S_OK;
+		}
 		/// ƒƒbƒVƒ…’f•Ğî•ñ
 		virtual const std::vector<SubsetInfo> &subsets() const { return target_.subsets(); }
 		Model &target_;
