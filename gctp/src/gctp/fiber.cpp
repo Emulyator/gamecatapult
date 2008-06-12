@@ -175,6 +175,7 @@ namespace gctp {
 	const int usage_per_fiber = 1000;
 	// Temporarily turn off optimizations, because otherwise this function
 	// will be optimized away completely.
+	#pragma warning( disable:4748 )
 	#pragma optimize( "", off )
 	static char* useless_buffer;
 	static void primeStack(int x)
@@ -185,6 +186,7 @@ namespace gctp {
 		if(x > 0) primeStack(x - 1);
 	}
 	#pragma optimize( "", on ) 
+	#pragma warning( default:4748 )
 #endif
 
 	//Fiber::Fiber(const boost::function0<void>& func) : req_quit_(false), joinable_(false)
