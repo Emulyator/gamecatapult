@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="audio"
 	ProjectGUID="{AFE10A19-B27D-44A9-BBD5-DB636227E5A4}"
+	RootNamespace="audio"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -52,6 +53,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4819;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -117,72 +119,7 @@
 				PrecompiledHeaderThrough="common.h"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\gctp_$(ProjectName).lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Develop|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/O2 /Ob1"
-				AdditionalIncludeDirectories="../../../include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="0"
-				ForceConformanceInForLoopScope="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="common.h"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				DisableSpecificWarnings="4819;4996;4390"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -257,14 +194,6 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
-				<FileConfiguration
-					Name="Develop|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\audio\track.cpp"
@@ -294,15 +223,6 @@
 							XMLDocumentationFileName="$(IntDir)\dx\"
 						/>
 					</FileConfiguration>
-					<FileConfiguration
-						Name="Develop|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\..\src\gctp\audio\dx\device.cpp"
@@ -325,15 +245,6 @@
 							XMLDocumentationFileName="$(IntDir)\dx\"
 						/>
 					</FileConfiguration>
-					<FileConfiguration
-						Name="Develop|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\..\src\gctp\audio\dx\wavfile.cpp"
@@ -349,15 +260,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\dx\"
-							XMLDocumentationFileName="$(IntDir)\dx\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Develop|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"

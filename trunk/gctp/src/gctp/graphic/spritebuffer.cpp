@@ -30,7 +30,7 @@ namespace gctp { namespace graphic {
 		}
 		else {
 			Size2 texsize = tex.size();
-			setUV(RectfC(0, 0, size.x/texsize.x, size.y/texsize.y));
+			setUV(RectfC(0, 0, size.x/(Real)texsize.x, size.y/(Real)texsize.y));
 		}
 		setColor(Color32(255, 255, 255));
 		setHilight(Color32(0, 0, 0));
