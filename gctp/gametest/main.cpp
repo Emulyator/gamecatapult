@@ -29,6 +29,7 @@
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/rendertree.hpp>
 #include <gctp/scene/worldrenderer.hpp>
+#include <gctp/scene/attrmodel.hpp>
 
 //#define MOVIETEST
 #define PHYSICSTEST
@@ -53,12 +54,13 @@ namespace {
 	}
 #ifdef PHYSICSTEST
 	// 箱追加
-	void addBox(scene::PhysicWorld &physic_world, scene::World &world, core::Context &context, const Vector &pos)
+	void addBox(scene::PhysicWorld &physic_world, scene::World &world, core::Context &context, const Vector &pos, const Vector &vel = VectorC(0, 0, 0))
 	{
 		if(physic_world.canAdd()) {
 			Handle<scene::Entity> entity = newEntity(context, world, "gctp.scene.Entity", 0, _T("gradriel.x"));
 			if(entity) {
-				physic_world.addBox(entity->target(), pos, 10);
+				entity->target()->root()->val.getLCM().position() = pos;
+				physic_world.addBox2(entity->target(), pos, 10, vel);
 			}
 		}
 	}
@@ -101,7 +103,20 @@ extern "C" int main(int argc, char *argv[])
 #ifdef PHYSICSTEST
 	scene::PhysicWorld physics;
 	physics.setUp(AABox(VectorC(-1000,-1000,-1000),VectorC(1000,1000,1000)), 100);
-	physics.addPlane(VectorC(0, 1, 0), VectorC(0, -3, 0), 0);
+	Handle<scene::GraphFile> colfile = context.load(_T("cell.col.x"));
+	if(colfile) {
+		for(scene::GraphFile::iterator i = colfile->begin(); i != colfile->end(); ++i) {
+			Pointer<scene::Body> body = (*i);
+			if(body) {
+				Pointer<scene::AttrFlesh> attr = body->attributes().front();
+				if(attr) {
+					physics.addMesh(attr, 0);
+					break;
+				}
+			}
+		}
+	}
+	else physics.addPlane(VectorC(0, 1, 0), VectorC(0, -3, 0), 0);
 #endif
 
 	graphic::Text text;
@@ -131,7 +146,7 @@ extern "C" int main(int argc, char *argv[])
 				rtree->root()->push(wr);
 				Handle<scene::World> world = context.create("gctp.scene.World", _T("world"));
 				if(world) {
-					world->postupdate_signal.connectOnce(physics.postupdate_slot);
+					world->update_signal.connectOnce(physics.update_slot);
 					wr->add(world);
 					Pointer<scene::QuakeCamera> qcam = context.create("gctp.scene.QuakeCamera", _T("qcam")).lock();
 					if(qcam) qcam->target() = camera;
@@ -304,6 +319,10 @@ extern "C" int main(int argc, char *argv[])
 		if(input().kbd().push(DIK_B)) {
 			addBox(physics, *world, context, VectorC(0, 2, 0));
 		}
+		if(input().kbd().push(DIK_PERIOD)) {
+			Matrix m = camera->stance().posture.toMatrix();
+			addBox(physics, *world, context, camera->stance().position, m.at()*10.0f);
+		}
 		app().update_signal(app().lap);
 #endif
 
@@ -353,7 +372,7 @@ extern "C" int main(int argc, char *argv[])
 					<< "	" << chr->mixer().tracks()[2].keytime() << endl << endl;
 				text.out()
 #ifdef PHYSICSTEST
-//					<< _T("箱　  :") << box_list.size() << endl
+					<< _T("箱　  :") << physics.numBodies() << endl
 #endif
 					<< _T("ヨー  :") << qcam->yaw_ << endl
 					<< _T("ピッチ:") << qcam->pitch_ << endl
@@ -412,8 +431,7 @@ extern "C" int main(int argc, char *argv[])
 #  pragma comment(lib, "libbulletdynamics_d.lib")
 #  pragma comment(lib, "libbulletcollision_d.lib")
 #  pragma comment(lib, "libbulletmath_d.lib")
-#  pragma comment(lib, "libGIMPACT_d.lib")
-#  pragma comment(lib, "libGIMPACTUtils_d.lib")
+#  pragma comment(lib, "libconvexdecomposition_d.lib")
 # endif
 #else
 # pragma comment(lib, "zlib.lib")
@@ -425,7 +443,6 @@ extern "C" int main(int argc, char *argv[])
 #  pragma comment(lib, "libbulletdynamics.lib")
 #  pragma comment(lib, "libbulletcollision.lib")
 #  pragma comment(lib, "libbulletmath.lib")
-#  pragma comment(lib, "libGIMPACT.lib")
-#  pragma comment(lib, "libGIMPACTUtils.lib")
+#  pragma comment(lib, "libconvexdecomposition.lib")
 # endif
 #endif

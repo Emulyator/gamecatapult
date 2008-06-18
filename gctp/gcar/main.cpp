@@ -96,7 +96,7 @@ int _tmain(int argc, _TCHAR *argv[])
 	locale::global(locale("japanese"));
 	_setmode(_fileno(stdout), _O_BINARY);
 	_setmode(_fileno(stderr), _O_BINARY);
-	GCTP_LOGFILE_OPEN(_T("log.txt"));
+	//GCTP_LOGFILE_OPEN(_T("log.txt"));
 	
 	TArgMap arg;
 	arg.defAlias(_T('o'), _T("output"));

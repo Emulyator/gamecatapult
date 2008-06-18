@@ -19,6 +19,7 @@
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/motion.hpp>
+#include <gctp/scene/attrmodel.hpp>
 #include <gctp/extension.hpp>
 #include <gctp/context.hpp>
 #include <gctp/buffer.hpp>
@@ -106,6 +107,11 @@ namespace gctp { namespace scene {
 	namespace {
 		GCTP_REGISTER_REALIZER2(x, GraphFile, &GraphFile::setUpFromX);
 		//Extention extention_x("x", Realizer<XFile>);
+
+		Ptr _GraphFile_col_x_realize(Ptr self, BufferPtr buffer) {
+			return gctp::realize<GraphFile, &GraphFile::setUpAsColFromX>(self, buffer);
+		}
+		Extension _GraphFile_col_x_realizer(_T("col.x"), _GraphFile_col_x_realize);
 
 		/** モデルのマテリアルをセットアップ
 		 */
@@ -225,7 +231,7 @@ namespace gctp { namespace scene {
 			ID3DXBufferPtr adjc, effect, mtrls;
 			ulong mtrl_num;
 			// 指定したチャンクからスキン（かも知れない）モデルをロードする。
-			HRslt hr = D3DXLoadSkinMeshFromXof(data, D3DXMESH_SYSTEMMEM, graphic::device().impl(), &adjc, &mtrls, &effect, &mtrl_num, &skin, &mesh);
+			HRslt hr = D3DXLoadSkinMeshFromXof(data, D3DXMESH_MANAGED, graphic::device().impl(), &adjc, &mtrls, &effect, &mtrl_num, &skin, &mesh);
 			if(!hr) return hr;
 			setUpModelMaterial(self, model, mtrls, mtrl_num, effect);
 			model.setUp(data.name(), mesh, skin, adjc);
@@ -256,11 +262,11 @@ namespace gctp { namespace scene {
 
 			{
 				// マテリアル名から追加の属性を読み取る
-				uint n = (uint)data.size();
+				uint n = (uint)data.numChildren();
 				for(uint i = 0; i < n; i++) {
 					XData child = data.getChild(i);
 					if(TID_D3DRMMeshMaterialList == child.type()) {
-						uint n = (uint)child.size();
+						uint n = (uint)child.numChildren();
 						for(uint i = 0; i < n; i++) {
 							XData mtrl = child.getChild(i);
 							std::string name(mtrl.name().c_str());
@@ -314,7 +320,7 @@ namespace gctp { namespace scene {
 			ulong mtrl_num = 0;
 			const gctp::XMeshMaterialList *mtrllist = 0;
 			// マテリアル情報かき集め
-			for(uint i = 0; i < data.size(); i++) {
+			for(uint i = 0; i < data.numChildren(); i++) {
 				XData child = data.getChild(i);
 				if(child.type() == TID_D3DRMMeshMaterialList) {
 					mtrllist = reinterpret_cast<const gctp::XMeshMaterialList *>(child.data());
@@ -322,7 +328,7 @@ namespace gctp { namespace scene {
 					D3DXCreateBuffer(sizeof(D3DXMATERIAL)*mtrllist->mtrlnum, &mtrls);
 					D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
 					int mn = 0;
-					for(uint i = 0; i < child.size(); i++) {
+					for(uint i = 0; i < child.numChildren(); i++) {
 						XData mlchild = child.getChild(i);
 						if(mlchild.type() == TID_D3DRMMaterial) {
 							const XMaterial *xmtrl = reinterpret_cast<const XMaterial *>(mlchild.data());
@@ -338,7 +344,7 @@ namespace gctp { namespace scene {
 							_mtrls[mn].MatD3D.Emissive.g = xmtrl->emissive_g;
 							_mtrls[mn].MatD3D.Emissive.b = xmtrl->emissive_b;
 							_mtrls[mn].pTextureFilename  = 0;
-							for(uint i = 0; i < mlchild.size(); i++) {
+							for(uint i = 0; i < mlchild.numChildren(); i++) {
 								XData mchild = mlchild.getChild(i);
 								if(mchild.type() == TID_D3DRMTextureFilename) {
 									_mtrls[mn].pTextureFilename = const_cast<LPSTR>(reinterpret_cast<LPCSTR>(mchild.data()));
@@ -352,6 +358,14 @@ namespace gctp { namespace scene {
 			}
 			setUpModelMaterial(self, model, mtrls, mtrl_num, ID3DXBufferPtr());
 			return model.setUpWire(data.name(), data.data(), mtrllist, mtrls, mtrl_num);
+		}
+
+		/** 属性モデル製作
+		 *
+		 */
+		HRslt setUpAttrModel(GraphFile &self, AttrModel &model, const XData &data)
+		{
+			return model.setUp(data.name(), data.data());
 		}
 
 		/** XFileからの読みこみ
@@ -435,7 +449,7 @@ namespace gctp { namespace scene {
 		)
 		{
 			HRslt hr;
-			for(uint i = 0; i < cur.size(); i++) {
+			for(uint i = 0; i < cur.numChildren(); i++) {
 				XData setdat = cur[i];
 				if(TID_D3DRMAnimation == setdat.type()) {
 					bool is_open = true;
@@ -443,7 +457,7 @@ namespace gctp { namespace scene {
 					CStr framename;
 					MotionChannelVector channels;
 					//PRNN("chunk name : "<<cur.name());
-					for(uint i = 0; i < setdat.size(); i++) {
+					for(uint i = 0; i < setdat.numChildren(); i++) {
 						XData dat = setdat[i];
 						if(!dat.isRef()) {
 							if( TID_D3DRMFrame == dat.type() ) {
@@ -492,11 +506,19 @@ namespace gctp { namespace scene {
 			return hr;
 		}
 
+		bool isColName(const XData &data)
+		{
+			std::string name(data.name().c_str());
+			if(name.find("_COL_") != std::string::npos) return true;
+			return false;
+		}
+
 		struct XFileReadingWork {
-			XFileReadingWork() : ticks_per_sec(60), body(0), multi_body(false) {}
+			XFileReadingWork() : ticks_per_sec(60), body(0), multi_body(false), is_col(false) {}
 			ulong ticks_per_sec;
 			Body *body;
 			bool multi_body;
+			bool is_col;
 		};
 
 		/** XFileの読みこみ
@@ -511,39 +533,64 @@ namespace gctp { namespace scene {
 			//PRNN("chunk name : "<<cur.name());
 			if(TID_D3DRMMesh == cur.type()) {
 				//PRNN("TID_D3DRMMesh found");
-				Pointer<graphic::Model> w = new graphic::Model;
-				if(w) {
-					HRslt hr = setUpModel(self, *w, cur);
-					if(hr) {
-						self.push_back(w);
-						if(body) {
-							Pointer<Flesh> ww = new Flesh;
-							if(ww) {
-								ww->setUp(w, body, cnode);
-								body->fleshies().push_back(ww);
+				if(*(ulong *)cur.data() > 0) {
+					bool model_valid = true;
+					if(work.is_col || isColName(cur)) {
+						model_valid = false; // デバッグ用に両方作る手段も後で提供
+						Pointer<AttrModel> w = new AttrModel;
+						if(w) {
+							HRslt hr = setUpAttrModel(self, *w, cur);
+							if(hr) {
+								self.push_back(w);
+								if(body) {
+									Pointer<AttrFlesh> ww = new AttrFlesh;
+									if(ww) {
+										ww->setUp(w, cnode);
+										body->attributes().push_back(ww);
+									}
+								}
 							}
+							else GCTP_TRACE(hr);
 						}
 					}
-					else GCTP_TRACE(hr);
+					if(model_valid) {
+						Pointer<graphic::Model> w = new graphic::Model;
+						if(w) {
+							HRslt hr = setUpModel(self, *w, cur);
+							if(hr) {
+								self.push_back(w);
+								if(body) {
+									Pointer<Flesh> ww = new Flesh;
+									if(ww) {
+										ww->setUp(w, body, cnode);
+										body->fleshies().push_back(ww);
+									}
+								}
+							}
+							else GCTP_TRACE(hr);
+						}
+					}
 				}
 				//PRNN("TID_D3DRMMesh end");
 			}
 			else if(xext::TID_Wire == cur.type()) {
 				//PRNN("xext::TID_Wire found");
-				Pointer<graphic::Model> w = new graphic::Model;
-				if(w) {
-					HRslt hr = setUpWireModel(self, *w, cur);
-					if(hr) {
-						self.push_back(w);
-						if(body) {
-							Pointer<Flesh> ww = new Flesh;
-							if(ww) {
-								ww->setUp(w, body, cnode);
-								body->fleshies().push_back(ww);
+				if(*(ulong *)cur.data() > 0) {
+					Pointer<graphic::Model> w = new graphic::Model;
+					if(w) {
+						HRslt hr = setUpWireModel(self, *w, cur);
+						if(hr) {
+							self.push_back(w);
+							if(body) {
+								Pointer<Flesh> ww = new Flesh;
+								if(ww) {
+									ww->setUp(w, body, cnode);
+									body->fleshies().push_back(ww);
+								}
 							}
 						}
+						else GCTP_TRACE(hr);
 					}
-					else GCTP_TRACE(hr);
 				}
 				//PRNN("xext::TID_Wire end");
 			}
@@ -594,7 +641,7 @@ namespace gctp { namespace scene {
 					}
 				}
 				
-				for(uint i = 0; i < cur.size(); i++) loadX(self, work, cur[i], body, cnode);
+				for(uint i = 0; i < cur.numChildren(); i++) loadX(self, work, cur[i], body, cnode);
 				//PRNN("TID_D3DRMFrame end");
 			}
 			else {
@@ -737,6 +784,47 @@ namespace gctp { namespace scene {
 			if(!hr) GCTP_ERRORINFO(hr);
 		}
 		else GCTP_ERRORINFO("Xfile error : "<<hr);
+		return hr;
+	}
+
+	/** メモリ上のXファイルからシーンファイルリソースを生成する。
+	 *
+	 * @return エラー値
+	 */
+	bool GraphFile::setUpAsColFromX(BufferPtr buffer)
+	{
+		HRslt hr;
+		XFileReader file;
+		hr = file.open(buffer->buf(), buffer->size());
+		int retry_count = 0;
+		// これが、なぜかE_OUTOFMEMORYを返すことがある。
+		while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+			::Sleep(1);
+			hr = file.open(buffer->buf(), buffer->size());
+		}
+		// まったく条件を変えずにリトライでもうまくいく、となると、絶対D3DXのバグだと思うんだけど。。。
+		if(hr) {
+			PRNN(_T("Begin read Xfile"));
+			XFileReadingWork work;
+			work.is_col = true;
+			for(uint i = 0; i < file.size(); i++) {
+				hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
+				retry_count = 0;
+				while(hr == E_OUTOFMEMORY && ++retry_count < 100) { // …めんどいんで100回試行することにする…
+					::Sleep(1);
+					hr = loadX(*this, work, file[i], work.multi_body ? work.body : 0, work.multi_body ? work.body->root() : 0);
+				}
+				if(!hr) break;
+			}
+			PRNN(_T("End read Xfile"));
+			if(!hr) GCTP_ERRORINFO(hr);
+		}
+		else GCTP_ERRORINFO("Xfile error : "<<hr);
+
+		for(iterator i = begin(); i != end(); ++i) {
+			Pointer<Body> pbody = *i;
+			if(pbody) pbody->setTransform();
+		}
 		return hr;
 	}
 

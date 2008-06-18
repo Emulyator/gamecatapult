@@ -18,6 +18,7 @@
 namespace gctp { namespace scene {
 
 	class Flesh;
+	class AttrFlesh;
 	/** ボディクラス
 	 *
 	 * SkeletonとFleshのセット
@@ -29,8 +30,15 @@ namespace gctp { namespace scene {
 	 */
 	class Body : public Skeleton {
 	public:
+		/// Fleshのリスト
 		PointerList<Flesh> &fleshies() { return fleshies_; }
+		/// Fleshのリスト
 		const PointerList<Flesh> &fleshies() const { return fleshies_; }
+
+		/// AttrFleshのリスト
+		PointerList<AttrFlesh> &attributes() { return attributes_; }
+		/// AttrFleshのリスト
+		const PointerList<AttrFlesh> &attributes() const { return attributes_; }
 
 		/// 複製
 		Pointer<Body> dup() const;
@@ -49,6 +57,7 @@ namespace gctp { namespace scene {
 
 	private:
 		PointerList<Flesh> fleshies_;
+		PointerList<AttrFlesh> attributes_;
 		Sphere bs_;
 	};
 

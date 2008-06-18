@@ -10,11 +10,13 @@
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/world.hpp>
+#include <gctp/scene/attrmodel.hpp>
+#include <gctp/scene/graphfile.hpp>
+#include <gctp/scene/entity.hpp>
 #include <gctp/graphic/model.hpp>
+#include <gctp/context.hpp>
 #include <gctp/app.hpp>
 #include <btBulletDynamicsCommon.h> // for Bullet
-#include <GIMPACT/Bullet/btGImpactCollisionAlgorithm.h>
-#include <btGImpactConvexDecompositionShape.h>
 
 #include <gctp/dbgout.hpp>
 
@@ -29,9 +31,15 @@ namespace gctp { namespace scene {
 		btConstraintSolver							*solver_;
 		btBroadphaseInterface						*overlapping_pair_cache_;
 		btAlignedObjectArray<btCollisionShape *>	collision_shapes_;
-		
-		HandleList<Body>							sync_targets_;
 		uint max_bodies_;
+		
+		struct SyncPair {
+			StrutumTree::NodeHndl node;
+			Vector offset;
+			btCollisionObject *object;
+		};
+		typedef std::list<SyncPair> SyncList;
+		SyncList									sync_targets_;
 
 		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0)
 		{
@@ -45,6 +53,7 @@ namespace gctp { namespace scene {
 		void setUp(const AABox &aabb, uint max_bodies)
 		{
 			tearDown();
+			max_bodies_ = max_bodies;
 
 			collision_configuration_ = new btDefaultCollisionConfiguration();
 
@@ -52,7 +61,6 @@ namespace gctp { namespace scene {
 			
 			// シミュレーションするShapeの限度
 			overlapping_pair_cache_ = new btAxisSweep3(*(btVector3 *)&aabb.lower, *(btVector3 *)&aabb.upper, max_bodies);
-			max_bodies_ = max_bodies;
 
 			// ソルバー
 			btSequentialImpulseConstraintSolver *solver = new btSequentialImpulseConstraintSolver;
@@ -62,8 +70,8 @@ namespace gctp { namespace scene {
 			world_ = new btDiscreteDynamicsWorld(dispatcher_, overlapping_pair_cache_, solver_, collision_configuration_);
 
 			// GIMPACT登録
-			btCollisionDispatcher *dispatcher = static_cast<btCollisionDispatcher *>(world_->getDispatcher());
-			btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
+			//btCollisionDispatcher *dispatcher = static_cast<btCollisionDispatcher *>(world_->getDispatcher());
+			//btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
 		}
 
 		void tearDown()
@@ -96,12 +104,27 @@ namespace gctp { namespace scene {
 			}
 		}
 
+		void feedback()
+		{
+			if(world_) {
+				// 現在位置を反映
+				for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+				{
+					StrutumTree::NodePtr node = i->node.lock();
+					if(node && node->val.isUpdated()) {
+						Matrix mat = Matrix().trans(-i->offset)*node->val.wtm();
+						i->object->getWorldTransform().setFromOpenGLMatrix(&mat._11);
+					}
+				}
+			}
+		}
+
 		void update(float delta)
 		{
 			if(world_) {
 				Profiling physics_profile("physics");
 				// シミュレーションを進める
-				world_->stepSimulation(app().lap);
+				world_->stepSimulation(delta);
 			}
 		}
 
@@ -109,35 +132,34 @@ namespace gctp { namespace scene {
 		{
 			if(world_) {
 				// 結果を適用
-				int ii = 1;
-				for(HandleList<scene::Body>::iterator i = sync_targets_.begin(); i != sync_targets_.end() && ii < world_->getCollisionObjectArray().size(); ++i, ++ii)
+				for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
 				{
-					float mat[16];
-					world_->getCollisionObjectArray()[ii]->getWorldTransform().getOpenGLMatrix(mat);
-					memcpy(&(*i)->root()->val.getLCM(), mat, sizeof(float)*16);
-					AABox aabb = (*i)->fleshies().front()->model()->getAABB();
-					(*i)->root()->val.getLCM() = Matrix().trans(-aabb.center())*(*i)->root()->val.lcm();
+					StrutumTree::NodePtr node = i->node.lock();
+					if(node) {
+						Matrix mat;
+						i->object->getWorldTransform().getOpenGLMatrix(&mat._11);
+						node->val.getLCM() = Matrix().trans(i->offset)*mat;
+					}
 				}
 			}
 		}
 
 		// 箱追加
-		void addBox(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
+		// これ適当だから後で変えるように
+		void addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_velocity)
 		{
-			if(body && world_->getCollisionObjectArray().size() < (int)max_bodies_) {
-				sync_targets_.push_back(body);
+			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
 				AABox aabb = body->fleshies().front()->model()->getAABB();
-
 				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
 				collision_shapes_.push_back(col_shape);
 				
 				btTransform start_transform;
 				start_transform.setIdentity();
-
-				btVector3 local_inertia(initial_local_inertia.x, initial_local_inertia.y, initial_local_inertia.z);
-				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
-
 				start_transform.setOrigin(*(btVector3 *)&initial_pos);
+				//start_transform.setFromOpenGLMatrix(&body->root()->val.lcm()._11);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
 				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
@@ -145,13 +167,61 @@ namespace gctp { namespace scene {
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = body->root();
+					pair.offset = -aabb.center();
+					pair.object = rigid_body;
+					sync_targets_.push_back(pair);
+				}
+			}
+		}
+
+		// 箱追加
+		// これ適当だから後で変えるように
+		void addBox(Handle<Body> body, float mass, const Vector &initial_velocity)
+		{
+			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
+				AABox aabb = body->fleshies().front()->model()->getAABB();
+				for(PointerList<Flesh>::iterator i = body->fleshies().begin(); i != body->fleshies().end(); ++i)
+				{
+					aabb |= (*i)->model()->getAABB();
+				}
+				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/2));
+				collision_shapes_.push_back(col_shape);
+				
+				btTransform start_transform;
+				start_transform.setFromOpenGLMatrix(&body->root()->val.lcm()._11);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
+
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
+
+				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = body->root();
+					pair.offset = -aabb.center();
+					pair.object = rigid_body;
+					sync_targets_.push_back(pair);
+				}
 			}
 		}
 
 		// 地平面の生成
-		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
+		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_velocity)
 		{
-			if(world_->getCollisionObjectArray().size() < (int)max_bodies_) {
+			if(world_->getNumCollisionObjects() < (int)max_bodies_) {
 				btCollisionShape *col_shape = new btStaticPlaneShape(*(btVector3 *)&normal,0);
 				collision_shapes_.push_back(col_shape);
 
@@ -159,58 +229,66 @@ namespace gctp { namespace scene {
 				ground_transform.setIdentity();
 				ground_transform.setOrigin(*(btVector3 *)&initial_pos);
 
-				btVector3 local_inertia(initial_local_inertia.x, initial_local_inertia.y, initial_local_inertia.z);
+				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
 				// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
 				btDefaultMotionState *my_motion_state = new btDefaultMotionState(ground_transform);
 				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
-				btRigidBody *body = new btRigidBody(rbinfo);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				// add the body to the dynamics world
-				world_->addRigidBody(body);
+				world_->addRigidBody(rigid_body);
+				
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
+
 		// ポリゴン当たり制作
-		void addMesh(const graphic::Model &model, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
+		void addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_velocity)
 		{
-			const void *vd = model.vertexbuffer().lock(0,0);
-			const short *id = (const short *)model.indexbuffer().lock(0,0);
-			int *_id = new int[model.indexbuffer().indexNum()];
-			for(uint i = 0; i < model.indexbuffer().indexNum(); i++) {
-				_id[i] = id[i];
+			if(attr && world_->getNumCollisionObjects() < (int)max_bodies_) {
+				const btCollisionShape *col_shape = attr->model()->shape();
+
+				btTransform start_transform;
+				start_transform.setFromOpenGLMatrix(&attr->node()->val.wtm()._11);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
+
+				// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, const_cast<btCollisionShape *>(col_shape), local_inertia);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
+
+				// add the body to the dynamics world
+				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = attr->node();
+					pair.offset = VectorC(0, 0, 0);
+					pair.object = rigid_body;
+					sync_targets_.push_back(pair);
+				}
 			}
-
-			btTriangleIndexVertexArray *m_indexVertexArrays2 = new btTriangleIndexVertexArray(
-				model.indexbuffer().indexNum()*3,
-				_id,
-				3*sizeof(int),
-				model.vertexbuffer().numVerticies(),
-				(btScalar *)vd,
-				model.vertexbuffer().fvf().stride());
-
-			btGImpactConvexDecompositionShape *trimesh2 = new btGImpactConvexDecompositionShape(
-				m_indexVertexArrays2, btVector3(4.f,4.f,4.f),btScalar(0.01));
-
-			trimesh2->updateBound();
-
-			model.vertexbuffer().unlock();
-			model.indexbuffer().unlock();
-
-			delete m_indexVertexArrays2;
-			delete trimesh2;
 		}
 
 	};
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, PhysicWorld, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, PhysicWorld)
+		TUKI_METHOD(PhysicWorld, makeup)
+		TUKI_METHOD(PhysicWorld, addBox)
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
+		TUKI_METHOD(PhysicWorld, numBodies)
 	TUKI_IMPLEMENT_END(PhysicWorld)
 
-	PhysicWorld::PhysicWorld()
+	PhysicWorld::PhysicWorld() : update_slot(SLOT_PRI)
 	{
-		postupdate_slot.bind(this);
+		update_slot.bind(this);
 		impl_ = new PhysicWorldImpl;
 	}
 
@@ -224,19 +302,65 @@ namespace gctp { namespace scene {
 		impl_->setUp(aabb, max_bodies);
 	}
 
+	void PhysicWorld::load(const _TCHAR *filename, uint max_bodies)
+	{
+		if(filename) {
+			Pointer<GraphFile> file = context()[filename].lock();
+			if(file) {
+				AABox box(VectorC(10, 10, 10), VectorC(-10, -10, -10));
+				Pointer<Body> pbody;
+				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+					pbody = *i;
+					if(pbody) {
+						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
+							box |= (*i)->getAABB();
+						}
+					}
+				}
+
+				PRNN("physic world aabb : "<<box);
+				setUp(box, max_bodies);
+
+				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+					pbody = *i;
+					if(pbody) {
+						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
+							addMesh(*i, 0);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	bool PhysicWorld::canAdd()
 	{
-		return impl_->world_->getCollisionObjectArray().size() < (int)impl_->max_bodies_;
+		return impl_->world_->getNumCollisionObjects() < (int)impl_->max_bodies_;
 	}
 	
+	int PhysicWorld::numBodies()
+	{
+		return impl_->world_->getNumCollisionObjects();
+	}
+
 	void PhysicWorld::addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
 	{
 		impl_->addPlane(normal, initial_pos, mass, initial_local_inertia);
 	}
 
-	void PhysicWorld::addBox(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
+	void PhysicWorld::addBox(Handle<Body> body, float mass, const Vector &initial_local_inertia)
 	{
-		impl_->addBox(body, initial_pos, mass, initial_local_inertia);
+		impl_->addBox(body, mass, initial_local_inertia);
+	}
+
+	void PhysicWorld::addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
+	{
+		impl_->addBox2(body, initial_pos, mass, initial_local_inertia);
+	}
+
+	void PhysicWorld::addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_local_inertia)
+	{
+		impl_->addMesh(attr, mass, initial_local_inertia);
 	}
 
 	/** シーン更新
@@ -256,6 +380,7 @@ namespace gctp { namespace scene {
 
 	bool PhysicWorld::doOnUpdate(float delta)
 	{
+		//impl_->feedback();
 		impl_->update(delta);
 		impl_->sync();
 		return true;
@@ -267,12 +392,53 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
+	void PhysicWorld::makeup(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			if(L[1].isString()) {
+#ifdef UNICODE
+				load(WCStr(L[1].toCStr()).c_str(), L[2].toInteger());
+#else
+				load(L[1].toCStr(), L[2].toInteger());
+#endif
+			}
+			else if(L.top() >= 7) {
+				AABox aabb;
+				aabb.upper.x = (float)L[1].toNumber();
+				aabb.upper.y = (float)L[2].toNumber();
+				aabb.upper.z = (float)L[3].toNumber();
+				aabb.lower.x = (float)L[4].toNumber();
+				aabb.lower.y = (float)L[5].toNumber();
+				aabb.lower.z = (float)L[6].toNumber();
+				setUp(aabb, L[7].toInteger());
+			}
+		}
+	}
+
+	void PhysicWorld::addBox(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<Entity> entity = tuki_cast<Entity>(L[1]);
+			if(entity) {
+				if(L.top() >= 5) {
+					addBox(entity->target(), (float)L[2].toNumber(), VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber()));
+				}
+				else if(L.top() >= 2) {
+					addBox(entity->target(), (float)L[2].toNumber());
+				}
+				else {
+					addBox(entity->target(), 0);
+				}
+			}
+		}
+	}
+
 	void PhysicWorld::attach(luapp::Stack &L)
 	{
 		//これじゃだめ
 		if(L.top() >= 1) {
 			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) world->postupdate_signal.connectOnce(postupdate_slot);
+			if(world) world->update_signal.connectOnce(update_slot);
 		}
 	}
 
@@ -280,8 +446,14 @@ namespace gctp { namespace scene {
 	{
 		if(L.top() >= 1) {
 			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) world->postupdate_signal.disconnect(postupdate_slot);
+			if(world) world->update_signal.disconnect(update_slot);
 		}
+	}
+
+	int PhysicWorld::numBodies(luapp::Stack &L)
+	{
+		L << numBodies();
+		return 1;
 	}
 
 }} // namespace gctp::scene

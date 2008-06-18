@@ -9,6 +9,7 @@
 #include "common.h"
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/flesh.hpp>
+#include <gctp/scene/attrmodel.hpp>
 #include <gctp/scene/camera.hpp>
 
 using namespace std;
@@ -19,7 +20,7 @@ namespace gctp { namespace scene {
 
 	/** Bodyをインスタンス用にディープコピー返す
 	 *
-	 * CloneModelを複製し、自分のスケルトンの対応するノードにアタッチして保持。
+	 * FleshとAttrFleshを複製し、自分のスケルトンの対応するノードにアタッチして保持。
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * Copyright &copy; 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/27 16:35:05
@@ -37,6 +38,15 @@ namespace gctp { namespace scene {
 						if(flesh) {
 							flesh->setUp((*i)->model(), ret, &*dit);
 							ret->fleshies_.push_back(flesh);
+						}
+					}
+				}
+				for(PointerList<AttrFlesh>::const_iterator i = attributes_.begin(); i != attributes_.end(); ++i) {
+					if((*i)->node().lock().get() == &*sit) {
+						Pointer<AttrFlesh> flesh = new AttrFlesh;
+						if(flesh) {
+							flesh->setUp((*i)->model(), &*dit);
+							ret->attributes_.push_back(flesh);
 						}
 					}
 				}

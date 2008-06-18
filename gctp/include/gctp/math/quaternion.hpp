@@ -190,7 +190,7 @@ namespace gctp { namespace math {
 		/// 姿勢を定義する互いに直交するベクトルから四元数を設定
 		Quaternion &set(const Vector3d<_Type> &left, const Vector3d<_Type> &up, const Vector3d<_Type> &at)
 		{
-			return set(Matrix4x4C<_Type>(left, up, at));
+			return set(Matrix3x3C<_Type>(left, up, at));
 		}
 
 		// 代入演算子を外部にさらす

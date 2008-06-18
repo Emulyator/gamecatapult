@@ -367,24 +367,39 @@ namespace gctp {
 		Mutex monitor_;
 		Mutex read_list_monitor_;
 
-		Thread(FileServer *fs) : thread_(0), id_(0)
+		Thread(FileServer *fs) : thread_(0), id_(0), fs_(fs)
 		{
 			fs->synchronize(true);
-			thread_ = (HANDLE)_beginthreadex( NULL, 0, &threadfunc, fs, 0, (unsigned int *)&id_ );
 		}
 		~Thread()
 		{
-			::PostThreadMessage( id_, WM_QUIT, 0, 0 );
-			::WaitForSingleObject( thread_, INFINITE );
-			::CloseHandle( thread_ );
+			end();
 		}
+
+		void begin()
+		{
+			if(!thread_) {
+				thread_ = (HANDLE)_beginthreadex( NULL, 0, &threadfunc, this, 0, (unsigned int *)&id_ );
+				::Sleep(0);
+			}
+		}
+		void end()
+		{
+			if(thread_) {
+				::PostThreadMessage( id_, WM_QUIT, 0, 0 );
+				::WaitForSingleObject( thread_, INFINITE );
+				::CloseHandle( thread_ );
+				thread_ = 0;
+			}
+		}
+
 	private:
 		static unsigned int __stdcall threadfunc( void* arg )
 		{
 			MSG msg;
-			Handle<FileServer> hfs = (FileServer *)arg;
+			Thread *self = (Thread *)arg;
 			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
-				Pointer<FileServer> fs = hfs.lock();
+				Pointer<FileServer> fs = self->fs_.lock();
 				if(fs) {
 					fs->serviceRequest();
 					fs->service(0);
@@ -395,6 +410,7 @@ namespace gctp {
 		}
 		HANDLE thread_;
 		DWORD  id_;
+		Handle<FileServer> fs_;
 	};
 
 	FileServer::FileServer() : thread_(0), update_slot(Slot::MAX_PRIORITY)
@@ -596,7 +612,19 @@ namespace gctp {
 	
 	void FileServer::startAsync()
 	{
-		if(!thread_) thread_ = new Thread(this);
+		if(!thread_) {
+			thread_ = new Thread(this);
+			thread_->begin();
+		}
+	}
+
+	void FileServer::endAsync()
+	{
+		if(thread_) {
+			thread_->end();
+			delete thread_;
+			thread_ = 0;
+		}
 	}
 	
 	bool FileServer::busy()

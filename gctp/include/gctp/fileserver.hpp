@@ -79,6 +79,8 @@ namespace gctp {
 
 		/// 非同期読み込みサービス開始
 		void startAsync();
+		/// 非同期読み込みサービス終了
+		void endAsync();
 		/// 非同期読み込みを受け入れ不可能か？
 		bool busy();
 		/// 非同期読み込みリクエストがすべて処理されたか？

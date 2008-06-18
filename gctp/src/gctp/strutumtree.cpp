@@ -27,6 +27,7 @@ namespace gctp {
 	}
 
 	namespace {
+
 		class PrintVisitor {
 			std::ostream &os_;
 			int	indent_;
@@ -56,25 +57,12 @@ namespace gctp {
 			return true;
 		}
 
-		bool transformVisitor_(StrutumTree::NodeType &n)
-		{
-			n.val.preupdate();
-			if(n.parent()) {
-				if(n.parent()->val.isUpdated() || n.val.isDirty()) n.val.update(n.parent()->val.wtm());
-			}
-			else if(n.val.isDirty()) {
-				n.val.wtm() = n.val.lcm();
-				n.val.refresh();
-			}
-			n.visitChildren(transformVisitor_);
-			return true;
-		}
-
 		bool identifyVisitor(StrutumTree::NodeType &n)
 		{
 			n.val.getLCM().identify();
 			return true;
 		}
+
 	}
 
 	std::ostream &StrutumTree::print(std::ostream &os) const
@@ -86,8 +74,7 @@ namespace gctp {
 
 	StrutumTree &StrutumTree::setTransform()
 	{
-		for_each(beginTraverse(), endTraverse(), transformVisitor); // “®‚¢‚Ä‚È‚¢‚¶‚á‚ñ
-		//visit(transformVisitor_);
+		for_each(beginTraverse(), endTraverse(), transformVisitor);
 		return *this;
 	}
 

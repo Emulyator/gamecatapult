@@ -24,6 +24,7 @@ namespace gctp { namespace scene {
 
 	class World;
 	class Body;
+	class AttrFlesh;
 
 	struct PhysicWorldImpl;
 
@@ -36,6 +37,9 @@ namespace gctp { namespace scene {
 	class PhysicWorld : public Object
 	{
 	public:
+		enum {
+			SLOT_PRI = 3000,
+		};
 		/// コンストラクタ
 		PhysicWorld();
 		/// デストラクタ
@@ -43,16 +47,24 @@ namespace gctp { namespace scene {
 
 		/// Bulletオブジェクト制作
 		void setUp(const AABox &aabb, uint max_bodies);
+		/// GraphFileから地形コリジョン追加
+		void load(const _TCHAR *filename, uint max_bodies);
 		/// 追加可能か？
 		bool canAdd();
+		/// 現在存在する体の数
+		int numBodies();
 		/// Bodyを箱として追加
-		void addBox(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_local_inertia = VectorC(0,0,0));
+		void addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
+		/// Bodyを箱として追加
+		void addBox(Handle<Body> body, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 		/// 平面を追加
-		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_local_inertia = VectorC(0,0,0));
+		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
+		/// AttrFlesh追加
+		void addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 
 		bool onUpdate(float delta);
-		/// 更新スロット(postupdatesignal用)
-		MemberSlot1<PhysicWorld, float /*delta*/, &PhysicWorld::onUpdate> postupdate_slot;
+		/// 更新スロット
+		MemberSlot1<PhysicWorld, float /*delta*/, &PhysicWorld::onUpdate> update_slot;
 
 	GCTP_DECLARE_CLASS
 	TUKI_DECLARE(PhysicWorld)
@@ -61,8 +73,11 @@ namespace gctp { namespace scene {
 		virtual bool doOnUpdate(float delta);
 
 		bool setUp(luapp::Stack &L);
+		void makeup(luapp::Stack &L);
+		void addBox(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void detach(luapp::Stack &L);
+		int numBodies(luapp::Stack &L);
 
 	private:
 		/// コピー不可

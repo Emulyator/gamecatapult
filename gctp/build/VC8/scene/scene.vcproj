@@ -159,6 +159,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\attrmodel.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\body.cpp"
 				>
 			</File>
@@ -176,10 +180,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gctp\scene\flesh.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gctp\scene\geometryfile.cpp"
 				>
 			</File>
 			<File
@@ -257,6 +257,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\include\gctp\scene\attrmodel.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\scene\body.hpp"
 				>
 			</File>
@@ -278,10 +282,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\flesh.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\scene\geometryfile.hpp"
 				>
 			</File>
 			<File
