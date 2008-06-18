@@ -160,7 +160,7 @@ namespace gctp { namespace scene {
 	void Entity::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			if(target_ && target_->root()) target_->root()->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[1].toNumber(),(float)L[1].toNumber()));
+			if(target_ && target_->root()) target_->root()->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[2].toNumber(),(float)L[3].toNumber()));
 		}
 	}
 

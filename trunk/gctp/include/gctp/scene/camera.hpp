@@ -107,6 +107,8 @@ namespace gctp { namespace scene {
 		int getPosition(luapp::Stack &L);
 		void setPosture(luapp::Stack &L);
 		int getPosture(luapp::Stack &L);
+		void setDirection(luapp::Stack &L);
+		int getDirection(luapp::Stack &L);
 		void setClip(luapp::Stack &L);
 		int getClip(luapp::Stack &L);
 		void setFov(luapp::Stack &L);

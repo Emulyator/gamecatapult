@@ -203,7 +203,7 @@ namespace gctp {
 		/** 子データの数を取得
 		 *
 		 */
-		size_t size() const {
+		size_t numChildren() const {
 			if(*this) {
 				SIZE_T ret;
 				HRslt hr;
@@ -247,6 +247,20 @@ namespace gctp {
 				return lock_->data();
 			}
 			return 0;
+		}
+
+		/// データサイズ取得
+		ulong size() const {
+			ulong ret = 0;
+			if(!lock_) {
+				lock();
+				if(lock_) {
+					ret = lock_->size();
+					unlock();
+				}
+			}
+			else ret = lock_->size();
+			return ret;
 		}
 		
 		/// データ取得
@@ -467,7 +481,7 @@ namespace gctp {
 		XSaveData &operator<<(const XData &data)
 		{
 			XSaveData w = newData(data);
-			if(w) for(uint i = 0; i < data.size(); i++) w << data[i];
+			if(w) for(uint i = 0; i < data.numChildren(); i++) w << data[i];
 			return *this;
 		}
 	};
@@ -542,7 +556,7 @@ namespace gctp {
 		XFileWriter &operator<<(const XData &data)
 		{
 			XSaveData w = newData(data);
-			if(w) for(uint i = 0; i < data.size(); i++) w << data[i];
+			if(w) for(uint i = 0; i < data.numChildren(); i++) w << data[i];
 			return *this;
 		}
 	};

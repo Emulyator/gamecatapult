@@ -139,6 +139,31 @@ namespace gctp { namespace scene {
 		return 3;
 	}
 
+	void Camera::setDirection(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			Stance newstance = stance();
+			VectorC dir((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+			math::Matrix3x3<float> mat = newstance.posture.toMatrix3x3();
+			Vector c = mat.up3d()%dir;
+			if(c.length2() > FLT_EPSILON*10) {
+				newstance.posture.set(c, mat.up3d(), dir);
+			}
+			else {
+				c = mat.right3d()%dir;
+				newstance.posture.set(-mat.right3d(), c, dir);
+			}
+			setStance(newstance);
+		}
+	}
+
+	int Camera::getDirection(luapp::Stack &L)
+	{
+		Vector at = stance().posture.toMatrix().at();
+		L << at.x << at.y << at.z;
+		return 3;
+	}
+
 	void Camera::setClip(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -172,6 +197,8 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)
 		TUKI_METHOD(Camera, getPosture)
+		TUKI_METHOD(Camera, setDirection)
+		TUKI_METHOD(Camera, getDirection)
 		TUKI_METHOD(Camera, setFov)
 		TUKI_METHOD(Camera, getFov)
 		TUKI_METHOD(Camera, setClip)

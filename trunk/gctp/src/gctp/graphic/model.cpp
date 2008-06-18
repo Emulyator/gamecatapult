@@ -88,14 +88,14 @@ namespace gctp { namespace graphic {
 #pragma warning(push)
 #pragma warning(disable:4200)
 #endif
-		struct Verticies {
+		struct Vertices {
 			ulong num;
-			Vector verticies[];
+			Vector vertices[];
 		};
 
-		struct Indicies {
+		struct Lines {
 			ulong num;
-			LineIndex indicies[];
+			LineIndex indices[];
 		};
 
 		struct XMeshMaterialList {
@@ -117,8 +117,8 @@ namespace gctp { namespace graphic {
 		name_ = name;
 		HRslt hr;
 		const XMeshMaterialList *mtrllist = reinterpret_cast<const XMeshMaterialList *>(mlist);
-		const Verticies *vert = reinterpret_cast<const Verticies *>(data);
-		const Indicies *idx = reinterpret_cast<const Indicies *>(&vert->verticies[vert->num]);
+		const Vertices *vert = reinterpret_cast<const Vertices *>(data);
+		const Lines *idx = reinterpret_cast<const Lines *>(&vert->vertices[vert->num]);
 
 		hr = vb_.setUp(VertexBuffer::STATIC, dx::FVF(FVF_L), vert->num);
 		if(hr) {
@@ -127,7 +127,7 @@ namespace gctp { namespace graphic {
 			LVertex *vtx = reinterpret_cast<LVertex *>(al.buf);
 			D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
 			for(uint i = 0; i < vert->num; i++) {
-				vtx[i].p = vert->verticies[i];
+				vtx[i].p = vert->vertices[i];
 				if(_mtrls) vtx[i].color = Color32(_mtrls[mtrllist->mtrlno[i]].MatD3D.Diffuse);
 				else vtx[i].color = Color32(128, 128, 128);
 			}
@@ -147,8 +147,8 @@ namespace gctp { namespace graphic {
 					if(idx->num*2 > 0xFFFF) {
 						for(uint i = 0; i < idx->num && ii < idx->num; i++) {
 							if(mtrllist->mtrlno[i] == mno) {
-								al.buf32[2*ii  ] = static_cast<ushort>(idx->indicies[i].start);
-								al.buf32[2*ii+1] = static_cast<ushort>(idx->indicies[i].end);
+								al.buf32[2*ii  ] = static_cast<ushort>(idx->indices[i].start);
+								al.buf32[2*ii+1] = static_cast<ushort>(idx->indices[i].end);
 								ii++;
 							}
 						}
@@ -156,8 +156,8 @@ namespace gctp { namespace graphic {
 					else {
 						for(uint i = 0; i < idx->num && ii < idx->num; i++) {
 							if(mtrllist->mtrlno[i] == mno) {
-								al.buf16[2*ii  ] = static_cast<ushort>(idx->indicies[i].start);
-								al.buf16[2*ii+1] = static_cast<ushort>(idx->indicies[i].end);
+								al.buf16[2*ii  ] = static_cast<ushort>(idx->indices[i].start);
+								al.buf16[2*ii+1] = static_cast<ushort>(idx->indices[i].end);
 								ii++;
 							}
 						}
@@ -172,11 +172,11 @@ namespace gctp { namespace graphic {
 				subsets_[0].primitive_num = idx->num;
 				subsets_[0].vertex_offset = 0;
 				subsets_[0].vertex_num = 0;
-				if(idx->num*2 > 0xFFFF) memcpy(al.buf, idx->indicies, idx->num*2*sizeof(ulong));
+				if(idx->num*2 > 0xFFFF) memcpy(al.buf, idx->indices, idx->num*2*sizeof(ulong));
 				else {
 					for(uint i = 0; i < idx->num; i++) {
-						al.buf16[2*i  ] = static_cast<ushort>(idx->indicies[i].start);
-						al.buf16[2*i+1] = static_cast<ushort>(idx->indicies[i].end);
+						al.buf16[2*i  ] = static_cast<ushort>(idx->indices[i].start);
+						al.buf16[2*i+1] = static_cast<ushort>(idx->indices[i].end);
 					}
 				}
 			}

@@ -150,7 +150,7 @@ namespace gctp { namespace scene {
 	bool SkyBoxRenderer::onReach(float delta) const
 	{
 		Handle<graphic::dx::HLSLShader> shader = shader_;
-		if(shader) {
+		if(shader && *shader) {
 			Matrix proj;
 			Matrix view;
 			Size2f screen = Camera::current().screen();
@@ -165,7 +165,7 @@ namespace gctp { namespace scene {
 			screen_offset.y = 1.0f/screen.y;
 			HRslt hr = (*shader)->SetFloatArray("ScreenOffset", &screen_offset.x, 2);
 			if(!hr) GCTP_ERRORINFO(hr);
-			(*shader)->SetTexture("BgTexture", *texture_);
+			if(texture_) (*shader)->SetTexture("BgTexture", *texture_);
 			shader->begin();
 			ib_.draw(vb_, 0, D3DPT_TRIANGLELIST, div_num_*div_num_*2, 0);
 		}
@@ -175,7 +175,7 @@ namespace gctp { namespace scene {
 	bool SkyBoxRenderer::onLeave(float delta) const
 	{
 		Handle<graphic::dx::HLSLShader> shader = shader_;
-		if(shader) {
+		if(shader && *shader) {
 			shader->end();
 		}
 		return true;

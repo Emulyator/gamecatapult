@@ -98,6 +98,7 @@ namespace gctp { namespace scene {
 				if(body) body->update();
 			}
 			postupdate_signal(delta);
+			//strutum_tree.resync();
 		end();
 		return true;
 	}

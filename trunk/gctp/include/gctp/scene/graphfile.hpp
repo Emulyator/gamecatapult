@@ -53,6 +53,8 @@ namespace gctp { namespace scene {
 		bool setUpFromX(const _TCHAR *fn);
 		/// XFileの読みこみ
 		bool setUpFromX(BufferPtr buffer);
+		/// (コリジョンファイルとして)XFileの読みこみ
+		bool setUpAsColFromX(BufferPtr buffer);
 		
 	GCTP_DECLARE_CLASS;
 	};

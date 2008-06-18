@@ -58,7 +58,7 @@ namespace gctp {
 	XSaver &XSaver::operator<<(const XData &data)
 	{
 		XSaveData w = newData(data);
-		if(w) for(uint i = 0; i < data.size(); i++) w << data[i];
+		if(w) for(uint i = 0; i < data.numChildren(); i++) w << data[i];
 		return *this;
 	}
 
@@ -191,8 +191,10 @@ namespace gctp {
 
 		void Wire::read(XData &cur)
 		{
-			buf_ = new ulong[(cur.size()+3)/4];
-			memcpy(buf_, cur.data(), cur.size());
+			ulong size;
+			const void *data = cur.data(size);
+			buf_ = new ulong[(size+3)/4];
+			memcpy(buf_, data, size);
 			vert = reinterpret_cast<Verticies *>(buf_);
 			idx = reinterpret_cast<Indicies *>(&vert->verticies[vert->num]);
 		}

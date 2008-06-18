@@ -52,28 +52,36 @@ namespace gctp {
 			return false;
 		}
 
+		AABox operator &= (const AABox &rhs)
+		{
+			upper.x = (std::min)(upper.x, rhs.upper.x);
+			upper.y = (std::min)(upper.y, rhs.upper.y);
+			upper.z = (std::min)(upper.z, rhs.upper.z);
+			lower.x = (std::max)(lower.x, rhs.lower.x);
+			lower.y = (std::max)(lower.y, rhs.lower.y);
+			lower.z = (std::max)(lower.z, rhs.lower.z);
+			return *this;
+		}
+
+		AABox &operator |= (const AABox &rhs)
+		{
+			upper.x = (std::max)(upper.x, rhs.upper.x);
+			upper.y = (std::max)(upper.y, rhs.upper.y);
+			upper.z = (std::max)(upper.z, rhs.upper.z);
+			lower.x = (std::min)(lower.x, rhs.lower.x);
+			lower.y = (std::min)(lower.y, rhs.lower.y);
+			lower.z = (std::min)(lower.z, rhs.lower.z);
+			return *this;
+		}
+
 		AABox operator & (const AABox &rhs) const
 		{
-			AABox ret;
-			ret.upper.x = (std::min)(upper.x, rhs.upper.x);
-			ret.upper.y = (std::min)(upper.y, rhs.upper.y);
-			ret.upper.z = (std::min)(upper.z, rhs.upper.z);
-			ret.lower.x = (std::max)(lower.x, rhs.lower.x);
-			ret.lower.y = (std::max)(lower.y, rhs.lower.y);
-			ret.lower.z = (std::max)(lower.z, rhs.lower.z);
-			return ret;
+			return AABox(*this)&=rhs;
 		}
 
 		AABox operator | (const AABox &rhs) const
 		{
-			AABox ret;
-			ret.upper.x = (std::max)(upper.x, rhs.upper.x);
-			ret.upper.y = (std::max)(upper.y, rhs.upper.y);
-			ret.upper.z = (std::max)(upper.z, rhs.upper.z);
-			ret.lower.x = (std::min)(lower.x, rhs.lower.x);
-			ret.lower.y = (std::min)(lower.y, rhs.lower.y);
-			ret.lower.z = (std::min)(lower.z, rhs.lower.z);
-			return ret;
+			return AABox(*this)|=rhs;
 		}
 
 		bool isCorrect() const
