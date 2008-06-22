@@ -784,6 +784,15 @@ namespace gctp { namespace scene {
 			if(!hr) GCTP_ERRORINFO(hr);
 		}
 		else GCTP_ERRORINFO("Xfile error : "<<hr);
+
+		// ‚±‚Á‚¿‚àˆê‰žŒvŽZ‚µ‚Ä‚¨‚­isource_‚ªŒvŽZÏ‚Ý‚¾‚Æ•Ö—˜‚È‚Ì‚Åj
+		for(iterator i = begin(); i != end(); ++i) {
+			Pointer<Body> pbody = *i;
+			if(pbody) {
+				pbody->setTransform();
+				pbody->update();
+			}
+		}
 		return hr;
 	}
 
@@ -823,7 +832,10 @@ namespace gctp { namespace scene {
 
 		for(iterator i = begin(); i != end(); ++i) {
 			Pointer<Body> pbody = *i;
-			if(pbody) pbody->setTransform();
+			if(pbody) {
+				pbody->setTransform();
+				pbody->update();
+			}
 		}
 		return hr;
 	}

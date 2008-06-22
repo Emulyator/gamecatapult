@@ -241,6 +241,12 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	int Entity::printHierarchy(luapp::Stack &L)
+	{
+		if(source_) source_->printLCM(gctp::dbgout);
+		return 0;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Entity, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Entity)
 		TUKI_METHOD(Entity, load)
@@ -254,6 +260,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getScale)
 		TUKI_METHOD(Entity, getMotionMixer)
 		TUKI_METHOD(Entity, getBoundingSphere)
+		TUKI_METHOD(Entity, printHierarchy)
 	TUKI_IMPLEMENT_END(Entity)
 	
 	Handle<Entity> newEntity(core::Context &context, World &world, const char *classname, const _TCHAR *name, const _TCHAR *srcfilename)

@@ -171,6 +171,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\chasecamera.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\drawpacket.cpp"
 				>
 			</File>
@@ -243,6 +247,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\updater.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\scene\vehicle.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\world.cpp"
 				>
 			</File>
@@ -266,6 +278,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\camera.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\chasecamera.hpp"
 				>
 			</File>
 			<File
@@ -326,6 +342,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\skyboxrenderer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\updater.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\vehicle.hpp"
 				>
 			</File>
 			<File

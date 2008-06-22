@@ -374,9 +374,9 @@ extern "C" int main(int argc, char *argv[])
 #ifdef PHYSICSTEST
 					<< _T("箱　  :") << physics.numBodies() << endl
 #endif
-					<< _T("ヨー  :") << qcam->yaw_ << endl
-					<< _T("ピッチ:") << qcam->pitch_ << endl
-					<< _T("速度  :") << qcam->speed_ << endl
+					<< _T("ヨー  :") << qcam->yaw << endl
+					<< _T("ピッチ:") << qcam->pitch << endl
+					<< _T("速度  :") << qcam->speed << endl
 					<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
 					<< _T("位置  :") << camera->stance().position << endl << endl
 					<< _T("モード: ") << mesh_mode << endl << endl

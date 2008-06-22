@@ -24,6 +24,7 @@ namespace gctp { namespace scene {
 		model_ = model;
 		node_ = node;
 		skl_ = 0;
+		calcBS();
 		return S_OK;
 	}
 
@@ -33,6 +34,7 @@ namespace gctp { namespace scene {
 		model_ = model;
 		if(skl) node_ = skl->root();
 		skl_ = skl;
+		calcBS();
 		return S_OK;
 	}
 
@@ -42,6 +44,7 @@ namespace gctp { namespace scene {
 		model_ = model;
 		node_ = node;
 		skl_ = skl;
+		calcBS();
 		return S_OK;
 	}
 

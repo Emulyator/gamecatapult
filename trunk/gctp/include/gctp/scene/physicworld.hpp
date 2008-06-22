@@ -16,9 +16,14 @@
 #include <gctp/pointer.hpp>
 #include <gctp/vector.hpp>
 #include <gctp/aabox.hpp>
+#include <gctp/strutumtree.hpp>
 #ifdef _MT
 #include <gctp/mutex.hpp>
 #endif
+
+class btRigidBody;
+class btCollisionObject;
+class btDynamicsWorld;
 
 namespace gctp { namespace scene {
 
@@ -57,10 +62,18 @@ namespace gctp { namespace scene {
 		void addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 		/// Bodyを箱として追加
 		void addBox(Handle<Body> body, float mass, const Vector &initial_velocity = VectorC(0,0,0));
+		/// Bodyを箱として追加
+		void addBox(Handle<Body> body, Handle<Body> src, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 		/// 平面を追加
 		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 		/// AttrFlesh追加
 		void addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_velocity = VectorC(0,0,0));
+
+		/// StrutumNodeに関連付けられたbtRigidBodyを取得
+		btRigidBody *getRigidBody(StrutumTree::NodeHndl node);
+
+		/// btDynamicsWorldを取得
+		btDynamicsWorld *getDynamicsWorld();
 
 		bool onUpdate(float delta);
 		/// 更新スロット
@@ -75,6 +88,7 @@ namespace gctp { namespace scene {
 		bool setUp(luapp::Stack &L);
 		void makeup(luapp::Stack &L);
 		void addBox(luapp::Stack &L);
+		void addBoxAsCompound(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void detach(luapp::Stack &L);
 		int numBodies(luapp::Stack &L);
