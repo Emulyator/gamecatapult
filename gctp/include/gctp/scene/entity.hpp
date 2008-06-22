@@ -64,6 +64,8 @@ namespace gctp { namespace scene {
 
 		/// 操作対象
 		Handle<Body> target() { return target_; }
+		/// テンプレート階層
+		Handle<Body> source() { return source_; }
 
 		/// ターゲットのローカル座標位置
 		const Vector &lpos() const { return target_->root()->val.lcm().position(); }
@@ -100,6 +102,7 @@ namespace gctp { namespace scene {
 		int getScale(luapp::Stack &L);
 		int getMotionMixer(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
+		int printHierarchy(luapp::Stack &L);
 		
 		virtual bool doOnUpdate(float delta);
 		Pointer<MotionMixer> mixer_;

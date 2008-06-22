@@ -16,56 +16,52 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	QuakeCamera::QuakeCamera() : update_slot(1), yaw_(0), pitch_(0), speed_(5.0f)
+	QuakeCamera::QuakeCamera() : Updater(1, 0x10), yaw(0), pitch(0), speed(5.0f)
 	{
-		update_slot.bind(this);
-		update_slot.setMask(0x10);
 	}
 
 	void QuakeCamera::activate(bool yes)
 	{
+		Updater::activate(yes);
 		if(yes) {
-			app().update_signal.connectOnce(update_slot);
-			if(target_) {
-				Pointer<Camera> target = target_.lock();
-				if(target->node()) {
-					yaw_ = atan2f(target->node()->val.lcm().at().x, target->node()->val.lcm().at().z);
-					Matrix m;
-					m.rotY(-yaw_);
-					Vector v = m.transformVector(target->node()->val.lcm().at());
-					pitch_ = atan2f(-v.y, v.z);
-				}
+			Pointer<Camera> target = target_.lock();
+			if(target) {
+				math::Matrix3x3<Real> posture_mat = target->stance().posture.toMatrix3x3();
+				yaw = atan2f(posture_mat.at().x, posture_mat.at().z);
+				Matrix m;
+				m.rotY(-yaw);
+				Vector v = m.transformVector(posture_mat.at());
+				pitch = atan2f(-v.y, v.z);
 			}
 		}
-		else app().update_signal.disconnect(update_slot);
 	}
 
-	bool QuakeCamera::update(float delta)
+	bool QuakeCamera::doUpdate(float delta)
 	{
 		Pointer<Camera> target = target_.lock();
 		if(target) {
 			Stance newstance = target->stance();
 			float neck_speed = 0.01f;
 #ifdef GCTP_COORD_RH
-			yaw_ += -neck_speed*input().mouse().dx;
+			yaw += -neck_speed*input().mouse().dx;
 #else
-			yaw_ += neck_speed*input().mouse().dx;
+			yaw += neck_speed*input().mouse().dx;
 #endif
-			if(yaw_ > g_pi) yaw_ -= (((int)yaw_/g_pi)+1)*g_pi;
-			else if(yaw_ < -g_pi) yaw_ -= (((int)yaw_/g_pi)-1)*g_pi;
-			pitch_ += neck_speed*input().mouse().dy;
-			if(pitch_ > g_pi/2) pitch_ = g_pi/2;
-			else if(pitch_ < -g_pi/2) pitch_ = -g_pi/2;
+			if(yaw > g_pi) yaw -= (((int)yaw/g_pi)+1)*g_pi;
+			else if(yaw < -g_pi) yaw -= (((int)yaw/g_pi)-1)*g_pi;
+			pitch += neck_speed*input().mouse().dy;
+			if(pitch > g_pi/2) pitch = g_pi/2;
+			else if(pitch < -g_pi/2) pitch = -g_pi/2;
 			target->fov() += 0.0005f*input().mouse().dz;
 			if(target->fov() > g_pi) target->fov() = g_pi;
 			if(target->fov() < 0) target->fov() = 0;
 			float roll = 0;
 			if(input().kbd().press(DIK_Q)) roll += 1.0f;
 			if(input().kbd().press(DIK_E)) roll -= 1.0f;
-			newstance.posture = QuatC(yaw_, pitch_, roll);
+			newstance.posture = QuatC(yaw, pitch, roll);
 
-			if(input().kbd().push(DIK_PGUP)) speed_ += 1.0f;
-			if(input().kbd().push(DIK_PGDN)) speed_ -= 1.0f;
+			if(input().kbd().push(DIK_PGUP)) speed += 1.0f;
+			if(input().kbd().push(DIK_PGDN)) speed -= 1.0f;
 
 			Vector dir = {0, 0, 0};
 			if(input().kbd().press(DIK_W)) dir.z += 1.0f;
@@ -79,17 +75,12 @@ namespace gctp { namespace scene {
 #endif
 			if(input().kbd().press(DIK_SPACE)) dir.y += 1.0f;
 			if(input().kbd().press(DIK_LCONTROL)) dir.y -= 1.0f;
-			dir = Quat().rotY(yaw_).transform(dir);
-			newstance.position += dir.normalize()*speed_*delta;
+			dir = Quat().rotY(yaw).transform(dir);
+			newstance.position += dir.normalize()*speed*delta;
 
 			target->setStance(newstance);
 		}
 		return true;
-	}
-
-	bool QuakeCamera::setUp(luapp::Stack &L)
-	{
-		return false;
 	}
 	
 	void QuakeCamera::attach(luapp::Stack &L)
@@ -102,17 +93,10 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void QuakeCamera::activate(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			activate(L[1].toBoolean());
-		}
-	}
-
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Object);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Updater);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, QuakeCamera)
+		TUKI_METHOD2(QuakeCamera, Updater, activate)
 		TUKI_METHOD(QuakeCamera, attach)
-		TUKI_METHOD(QuakeCamera, activate)
 	TUKI_IMPLEMENT_END(QuakeCamera)
 
 }} // namespace gctp::scene

@@ -32,13 +32,15 @@ namespace gctp {
 			FORCE_UINT_SIZE = sizeof(uint)*8-1,
 		};
 		/// コンストラクタ
-		Strutum() {}
+		Strutum() : flags_(0) { wtm_.identify(); lcm_.identify();}
+		/// コピーコンストラクタ
+		Strutum(const Strutum &src) : wtm_(src.wtm_), lcm_(src.lcm_), flags_(DIRTY) {}
 		/// コンストラクタ
-		Strutum(const Matrix &src) : lcm_(src), flags_(DIRTY) {}
+		Strutum(const Matrix &src) : lcm_(src), flags_(DIRTY) { wtm_.identify(); }
 		/// コンストラクタ
-//		Strutum(const Stance &src) : lcm_(src), flags_(DIRTY) {}
+//		Strutum(const Stance &src) : lcm_(src), flags_(DIRTY) { wtm_.identify(); }
 		/// コンストラクタ
-//		Strutum(const Coord &src) : lcm_(src), flags_(DIRTY) {}
+//		Strutum(const Coord &src) : lcm_(src), flags_(DIRTY) { wtm_.identify(); }
 		
 		/// 代入演算子
 		Strutum &operator=(const Matrix &src) { dirty(); lcm_ = src; return *this; }

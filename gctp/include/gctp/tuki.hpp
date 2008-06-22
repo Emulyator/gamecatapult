@@ -303,10 +303,14 @@ namespace gctp {
 
 #define TUKI_IMPLEMENT_BEGIN_NS3(ns1, ns2, ns3, T)	TUKI_IMPLEMENT_BEGIN_EX(#ns1"."#ns2"."#ns3"."#T, T)
 
-#define TUKI_METHOD_EX(T, name, method)	\
-	gctp::Tuki<T>::Method(name, &T::method),
+#define TUKI_METHOD_EX2(T, name, B, method)	\
+	gctp::Tuki<T>::Method(name, &B::method),
 
-#define TUKI_METHOD(T, name)	TUKI_METHOD_EX(T, #name, name)
+#define TUKI_METHOD_EX(T, name, method)	TUKI_METHOD_EX2(T, name, T, method)
+
+#define TUKI_METHOD2(T, B, name)		TUKI_METHOD_EX2(T, #name, B, name)
+
+#define TUKI_METHOD(T, name)			TUKI_METHOD_EX(T, #name, name)
 
 #define TUKI_IMPLEMENT_END(T)	\
 	gctp::Tuki<T>::Method() };

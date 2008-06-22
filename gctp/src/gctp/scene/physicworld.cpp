@@ -35,11 +35,11 @@ namespace gctp { namespace scene {
 		
 		struct SyncPair {
 			StrutumTree::NodeHndl node;
-			Vector offset;
 			btCollisionObject *object;
+			Vector offset;
 		};
 		typedef std::list<SyncPair> SyncList;
-		SyncList									sync_targets_;
+		SyncList sync_targets_;
 
 		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0)
 		{
@@ -68,6 +68,8 @@ namespace gctp { namespace scene {
 
 			// シミュレーションするワールドの生成
 			world_ = new btDiscreteDynamicsWorld(dispatcher_, overlapping_pair_cache_, solver_, collision_configuration_);
+
+			world_->setGravity(btVector3(0, -9.80665f, 0));
 
 			// GIMPACT登録
 			//btCollisionDispatcher *dispatcher = static_cast<btCollisionDispatcher *>(world_->getDispatcher());
@@ -112,8 +114,7 @@ namespace gctp { namespace scene {
 				{
 					StrutumTree::NodePtr node = i->node.lock();
 					if(node && node->val.isUpdated()) {
-						Matrix mat = Matrix().trans(-i->offset)*node->val.wtm();
-						i->object->getWorldTransform().setFromOpenGLMatrix(&mat._11);
+						i->object->getWorldTransform().setFromOpenGLMatrix(&node->val.wtm()._11);
 					}
 				}
 			}
@@ -122,9 +123,8 @@ namespace gctp { namespace scene {
 		void update(float delta)
 		{
 			if(world_) {
-				Profiling physics_profile("physics");
 				// シミュレーションを進める
-				world_->stepSimulation(delta);
+				world_->stepSimulation(delta, 10);
 			}
 		}
 
@@ -150,8 +150,8 @@ namespace gctp { namespace scene {
 		{
 			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
 				AABox aabb = body->fleshies().front()->model()->getAABB();
-				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
-				collision_shapes_.push_back(col_shape);
+				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
+				collision_shapes_.push_back(box);
 				
 				btTransform start_transform;
 				start_transform.setIdentity();
@@ -159,11 +159,11 @@ namespace gctp { namespace scene {
 				//start_transform.setFromOpenGLMatrix(&body->root()->val.lcm()._11);
 
 				btVector3 local_inertia(0, 0, 0);
-				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
+				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
 				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -173,8 +173,8 @@ namespace gctp { namespace scene {
 
 					SyncPair pair;
 					pair.node = body->root();
-					pair.offset = -aabb.center();
 					pair.object = rigid_body;
+					pair.offset = -aabb.center();
 					sync_targets_.push_back(pair);
 				}
 			}
@@ -185,23 +185,24 @@ namespace gctp { namespace scene {
 		void addBox(Handle<Body> body, float mass, const Vector &initial_velocity)
 		{
 			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
-				AABox aabb = body->fleshies().front()->model()->getAABB();
-				for(PointerList<Flesh>::iterator i = body->fleshies().begin(); i != body->fleshies().end(); ++i)
+				AABox aabb = body->fleshies().front()->model()->getAABB(body->fleshies().front()->node()->val.wtm());
+				for(PointerList<Flesh>::iterator i = ++body->fleshies().begin(); i != body->fleshies().end(); ++i)
 				{
-					aabb |= (*i)->model()->getAABB();
+					aabb |= (*i)->model()->getAABB((*i)->node()->val.wtm());
 				}
-				btCollisionShape *col_shape = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/2));
-				collision_shapes_.push_back(col_shape);
-				
+				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/2));
+				collision_shapes_.push_back(box);
+
 				btTransform start_transform;
-				start_transform.setFromOpenGLMatrix(&body->root()->val.lcm()._11);
+				Matrix m = Matrix().trans(aabb.center())*body->root()->val.lcm();
+				start_transform.setFromOpenGLMatrix(&m._11);
 
 				btVector3 local_inertia(0, 0, 0);
-				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
+				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
 				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, col_shape, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -211,8 +212,96 @@ namespace gctp { namespace scene {
 
 					SyncPair pair;
 					pair.node = body->root();
-					pair.offset = -aabb.center();
 					pair.object = rigid_body;
+					pair.offset = -aabb.center();
+					sync_targets_.push_back(pair);
+				}
+			}
+		}
+
+		// 箱追加
+		// これ適当だから後で変えるように
+		void addBox(Handle<Body> body, Handle<Body> src, float mass, const Vector &initial_velocity)
+		{
+			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
+				AABox aabb = src->fleshies().front()->model()->getAABB(src->fleshies().front()->node()->val.wtm());
+				for(PointerList<Flesh>::iterator i = ++src->fleshies().begin(); i != src->fleshies().end(); ++i)
+				{
+					aabb |= (*i)->model()->getAABB((*i)->node()->val.wtm());
+				}
+				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/2));
+				collision_shapes_.push_back(box);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
+
+				btTransform start_transform;
+				Matrix m = Matrix().trans(aabb.center())*body->root()->val.lcm();
+				start_transform.setFromOpenGLMatrix(&m._11);
+
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
+
+				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = body->root();
+					pair.object = rigid_body;
+					pair.offset = -aabb.center();
+					sync_targets_.push_back(pair);
+				}
+			}
+		}
+
+		// 箱追加
+		// これ適当だから後で変えるように
+		void addBoxAsCompound(Handle<Body> body, Handle<Body> src, float mass, const Vector &center_of_mass, const Vector &box_margin, const Vector &initial_velocity)
+		{
+			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
+				AABox aabb = src->fleshies().front()->model()->getAABB(src->fleshies().front()->node()->val.wtm());
+				for(PointerList<Flesh>::iterator i = ++src->fleshies().begin(); i != src->fleshies().end(); ++i)
+				{
+					aabb |= (*i)->model()->getAABB((*i)->node()->val.wtm());
+				}
+				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2+box_margin.x,(aabb.upper.y-aabb.lower.y)/2+box_margin.y,(aabb.upper.z-aabb.lower.z)/2+box_margin.z));
+				collision_shapes_.push_back(box);
+
+				btCompoundShape* compound = new btCompoundShape;
+				collision_shapes_.push_back(compound);
+				
+				btTransform local_trans;
+				local_trans.setIdentity();
+				//local_trans effectively shifts the center of mass with respect to the chassis
+				local_trans.setOrigin(btVector3(-center_of_mass.x, -center_of_mass.y, -center_of_mass.z));
+				compound->addChildShape(local_trans, box);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
+
+				btTransform start_transform;
+				Matrix m = Matrix().trans(aabb.center()+center_of_mass)*body->root()->val.lcm();
+				start_transform.setFromOpenGLMatrix(&m._11);
+
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, compound, local_inertia);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
+
+				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = body->root();
+					pair.object = rigid_body;
+					//pair.offset = center_of_mass-aabb.center();
+					pair.offset = -aabb.center()-center_of_mass;
 					sync_targets_.push_back(pair);
 				}
 			}
@@ -268,11 +357,20 @@ namespace gctp { namespace scene {
 
 					SyncPair pair;
 					pair.node = attr->node();
-					pair.offset = VectorC(0, 0, 0);
 					pair.object = rigid_body;
+					pair.offset = VectorC(0, 0, 0);
 					sync_targets_.push_back(pair);
 				}
 			}
+		}
+
+		btRigidBody *getRigidBody(StrutumTree::NodeHndl node)
+		{
+			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+			{
+				if(node == i->node) return btRigidBody::upcast(i->object);
+			}
+			return 0;
 		}
 
 	};
@@ -281,6 +379,7 @@ namespace gctp { namespace scene {
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, PhysicWorld)
 		TUKI_METHOD(PhysicWorld, makeup)
 		TUKI_METHOD(PhysicWorld, addBox)
+		TUKI_METHOD(PhysicWorld, addBoxAsCompound)
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
 		TUKI_METHOD(PhysicWorld, numBodies)
@@ -353,6 +452,11 @@ namespace gctp { namespace scene {
 		impl_->addBox(body, mass, initial_local_inertia);
 	}
 
+	void PhysicWorld::addBox(Handle<Body> body, Handle<Body> src, float mass, const Vector &initial_local_inertia)
+	{
+		impl_->addBox(body, src, mass, initial_local_inertia);
+	}
+
 	void PhysicWorld::addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
 	{
 		impl_->addBox2(body, initial_pos, mass, initial_local_inertia);
@@ -361,6 +465,16 @@ namespace gctp { namespace scene {
 	void PhysicWorld::addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_local_inertia)
 	{
 		impl_->addMesh(attr, mass, initial_local_inertia);
+	}
+	
+	btRigidBody *PhysicWorld::getRigidBody(StrutumTree::NodeHndl node)
+	{
+		return impl_->getRigidBody(node);
+	}
+
+	btDynamicsWorld *PhysicWorld::getDynamicsWorld()
+	{
+		return impl_->world_;
 	}
 
 	/** シーン更新
@@ -380,6 +494,7 @@ namespace gctp { namespace scene {
 
 	bool PhysicWorld::doOnUpdate(float delta)
 	{
+		Profiling physics_profile("physics");
 		//impl_->feedback();
 		impl_->update(delta);
 		impl_->sync();
@@ -421,13 +536,52 @@ namespace gctp { namespace scene {
 			Pointer<Entity> entity = tuki_cast<Entity>(L[1]);
 			if(entity) {
 				if(L.top() >= 5) {
-					addBox(entity->target(), (float)L[2].toNumber(), VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber()));
+					addBox(entity->target(), entity->source(), (float)L[2].toNumber(), VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber()));
 				}
 				else if(L.top() >= 2) {
-					addBox(entity->target(), (float)L[2].toNumber());
+					addBox(entity->target(), entity->source(), (float)L[2].toNumber());
 				}
 				else {
-					addBox(entity->target(), 0);
+					addBox(entity->target(), entity->source(), 0);
+				}
+			}
+		}
+	}
+
+	void PhysicWorld::addBoxAsCompound(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<Entity> entity = tuki_cast<Entity>(L[1]);
+			if(entity) {
+				if(L.top() >= 11) {
+					impl_->addBoxAsCompound(entity->target(), entity->source(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC((float)L[6].toNumber(), (float)L[7].toNumber(), (float)L[8].toNumber())
+						, VectorC((float)L[9].toNumber(), (float)L[10].toNumber(), (float)L[11].toNumber()));
+				}
+				else if(L.top() >= 8) {
+					impl_->addBoxAsCompound(entity->target(), entity->source(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC((float)L[6].toNumber(), (float)L[7].toNumber(), (float)L[8].toNumber())
+						, VectorC(0, 0, 0));
+				}
+				else if(L.top() >= 5) {
+					impl_->addBoxAsCompound(entity->target(), entity->source(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+				else if(L.top() >= 2) {
+					impl_->addBoxAsCompound(entity->target(), entity->source(), (float)L[2].toNumber()
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+				else {
+					impl_->addBoxAsCompound(entity->target(), entity->source(), 0
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
 				}
 			}
 		}
