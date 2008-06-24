@@ -13,7 +13,7 @@
 #include <dinput.h>
 #include <gctp/com_ptr.hpp>
 #include <gctp/hrslt.hpp>
-#include <gctp/pointer.hpp>
+#include <gctp/pointerlist.hpp>
 
 namespace gctp {
 
@@ -105,7 +105,25 @@ namespace gctp {
 		static int stringToKey(const char *name);
 	private:
 		char buffer_[BUFFER_SIZE];
-		bool first_;
+	};
+
+	/** パッドデバイス基底クラス
+	 *
+	 * パッド入力デバイスをあらわすクラス。
+	 */
+	class PadDevice : public InputDevice {
+		enum { PRESS = 1, PUSH = 1<<1, RELEASE = 1<<2, MAX_BUTTON = 128 };
+	public:
+		HRslt setUp(IDirectInput8Ptr input, REFGUID rguid, HWND hwnd);
+		virtual HRslt update();
+		inline bool press(int key) { return (buttons_[key]&PRESS)?true:false; }
+		inline bool push(int key) { return (buttons_[key]&PUSH)?true:false; }
+		inline bool release(int key) { return (buttons_[key]&RELEASE)?true:false; }
+
+		DIJOYSTATE2 buffer_;
+
+	private:
+		char buttons_[MAX_BUTTON];
 	};
 
 	/** DirectInputクラス
@@ -170,10 +188,14 @@ namespace gctp {
 
 		HRslt update();
 
+		Handle<PadDevice> newPad(const Device &device);
+		Handle<PadDevice> getPad(int i) const;
+
 	private:
 		HWND hwnd_;
 		MouseDevice mouse_;
 		KbdDevice kbd_;
+		PointerList<PadDevice> pads_;
 	};
 
 	inline Input &input() { return *Input::input_; }

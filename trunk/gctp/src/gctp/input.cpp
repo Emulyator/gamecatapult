@@ -518,7 +518,34 @@ namespace gctp {
 			hr = kbd_.update();
 			if(!hr) ret = hr;
 		}
+		for(PointerList<PadDevice>::iterator i = pads_.begin(); i != pads_.end(); ++i) {
+			hr = (*i)->update();
+			if(!hr) ret = hr;
+		}
 		return ret;
+	}
+
+	Handle<PadDevice> Input::newPad(const Device &device)
+	{
+		for(PointerList<PadDevice>::const_iterator i = pads_.begin(); i != pads_.end(); ++i) {
+			DIDEVICEINSTANCE info;
+			(**i)->GetDeviceInfo(&info);
+			if(info.guidInstance == device.guidInstance) return *i;
+		}
+		Pointer<PadDevice> pad = new PadDevice;
+		HRslt hr = pad->setUp(api_, device.guidInstance, hwnd_);
+		if(hr) pads_.push_back(pad);
+		else GCTP_ERRORINFO(hr);
+		return pad;
+	}
+	
+	Handle<PadDevice> Input::getPad(int i) const
+	{
+		int ii = 0;
+		for(PointerList<PadDevice>::const_iterator j = pads_.begin(); j != pads_.end() && ii <= i; ++j, ii++) {
+			if(i == ii) return *j;
+		}
+		return 0;
 	}
 
 	/////////////////////
@@ -711,7 +738,6 @@ namespace gctp {
 		if(!hr) return hr;
 		hr = get()->SetDataFormat(&c_dfDIKeyboard);
 		memset(buffer_, 0, sizeof(buffer_));
-		first_ = true;
 		return hr;
 	}
 
@@ -719,13 +745,13 @@ namespace gctp {
 	{
 		HRslt hr;
 		char buffer[BUFFER_SIZE];
-		hr = getState(sizeof(buffer), &buffer);
+		hr = getState(sizeof(buffer), buffer);
 		if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
 			// 失敗の場合、デバイスは失われている。
 			// (hr == DIERR_INPUTLOST) をチェックし、
 			// 再取得を試みる必要がある。
 			hr = acquire();
-			if(hr) hr = getState(sizeof(buffer), &buffer);
+			if(hr) hr = getState(sizeof(buffer), buffer);
 		}
 		if(!hr) memset(buffer, 0, sizeof(buffer));
 		for(int i = 0; i < BUFFER_SIZE; i++) {
@@ -739,6 +765,40 @@ namespace gctp {
 	int KbdDevice::stringToKey(const char *name)
 	{
 		return DIKMap::getInstance().get(name);
+	}
+
+	/////////////////////
+	// PadDevice
+	//
+	HRslt PadDevice::setUp(IDirectInput8Ptr input, REFGUID rguid, HWND hwnd)
+	{
+		HRslt hr;
+		hr = InputDevice::setUp(input, rguid, hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
+		if(!hr) return hr;
+		hr = get()->SetDataFormat(&c_dfDIJoystick2);
+		memset(&buffer_, 0, sizeof(buffer_));
+		memset(&buttons_, 0, sizeof(buttons_));
+		return hr;
+	}
+
+	HRslt PadDevice::update()
+	{
+		HRslt hr;
+		hr = getState(sizeof(buffer_), &buffer_);
+		if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
+			// 失敗の場合、デバイスは失われている。
+			// (hr == DIERR_INPUTLOST) をチェックし、
+			// 再取得を試みる必要がある。
+			hr = acquire();
+			if(hr) hr = getState(sizeof(buffer_), &buffer_);
+		}
+		if(!hr) memset(&buffer_, 0, sizeof(buffer_));
+		for(int i = 0; i < MAX_BUTTON; i++) {
+			char prev = buttons_[i];
+			if(buffer_.rgbButtons[i]&0x80) buttons_[i] = PRESS|(prev&PRESS ? 0 : PUSH);
+			else buttons_[i] = (prev&PRESS ? RELEASE : 0);
+		}
+		return hr;
 	}
 
 } // !gctp

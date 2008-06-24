@@ -42,6 +42,8 @@ public:
 		if(!hr) GCTP_TRACE(hr);
 		i_.setCurrent();
 
+		if(i_.devicies().size()>0) pad_ = i_.newPad(i_.devicies()[0]);
+
 		sw::Command com( _T("Update") );
 		createTimer(&Self::onTimer, 16, com);
 		PRNN("Create Done");
@@ -80,6 +82,12 @@ private:
 		str << input().mouse().dx << " "<< input().mouse().dy << " " << input().mouse().dz << endl;
 		str << " " << input().mouse().press[0] << " "<< input().mouse().press[1] << " " << input().mouse().press[2] << endl;
 		str << " A=" << input().kbd().press(DIK_A) << " S=" << input().kbd().press(DIK_S) << endl;
+		if(pad_) {
+			str << " pad 0=" << pad_->press(0) << " pad 1=" << pad_->press(1) << " pad 2=" << pad_->press(2) << " pad 3=" << pad_->press(3) << endl;
+			str << " pad x=" << pad_->buffer_.lX << " pad y=" << pad_->buffer_.lY << " pad z=" << pad_->buffer_.lZ << endl;
+			str << " pad ax=" << pad_->buffer_.lAX << " pad ay=" << pad_->buffer_.lAY << " pad az=" << pad_->buffer_.lAZ << endl;
+			str << " pad rx=" << pad_->buffer_.lRx << " pad ry=" << pad_->buffer_.lRy << " pad rz=" << pad_->buffer_.lRz << endl;
+		}
 		str << hr << ends;
 		text_->setText(str.str());
 		text_->updateWidget();
@@ -89,6 +97,7 @@ private:
 	}
 
 	Input i_;
+	Handle<PadDevice> pad_;
 	WidgetStaticPtr text_;
 };
 
@@ -96,9 +105,9 @@ int SmartWinMain( SmartWin::Application & app )
 {
 	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
 	Input::initialize(app.getAppHandle());
-	PRNN("列挙されたデバイス");
+	dbgout << _T("列挙されたデバイス") << endl;
 	for(Input::DeviceList::const_iterator i = Input::devicies().begin(); i != Input::devicies().end(); i++) {
-		PRNN(*i);
+		dbgout << (*i) << endl;
 	}
 	new TestDialog();
 	return app.run();

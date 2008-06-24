@@ -24,7 +24,7 @@ namespace gctp { namespace scene {
 	{
 	public:
 		//bool allow_direction;
-		//float dumping_factor;
+		float dumping_factor;
 		Vector position_offset;
 		Vector posture_offset;
 
@@ -43,6 +43,7 @@ namespace gctp { namespace scene {
 
 		void setPositionOffset(luapp::Stack &L);
 		void setPostureOffset(luapp::Stack &L);
+		void setDumpingFactor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 
 		GCTP_DECLARE_CLASS;
