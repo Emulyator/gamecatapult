@@ -163,6 +163,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\bindcamera.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\body.cpp"
 				>
 			</File>
@@ -270,6 +274,10 @@
 			>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\attrmodel.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\bindcamera.hpp"
 				>
 			</File>
 			<File

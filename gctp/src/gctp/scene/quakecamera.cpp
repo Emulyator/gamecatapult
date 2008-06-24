@@ -96,6 +96,7 @@ namespace gctp { namespace scene {
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Updater);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, QuakeCamera)
 		TUKI_METHOD2(QuakeCamera, Updater, activate)
+		TUKI_METHOD(QuakeCamera, setPriority)
 		TUKI_METHOD(QuakeCamera, attach)
 	TUKI_IMPLEMENT_END(QuakeCamera)
 

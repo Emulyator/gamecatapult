@@ -38,6 +38,7 @@ namespace gctp { namespace scene {
 
 		bool setUp(luapp::Stack &L);
 		void activate(luapp::Stack &L);
+		void setPriority(luapp::Stack &L);
 
 		GCTP_DECLARE_TYPEINFO;
 		TUKI_DECLARE(Updater);

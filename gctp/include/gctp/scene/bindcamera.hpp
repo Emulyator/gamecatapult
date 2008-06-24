@@ -13,14 +13,14 @@
 namespace gctp { namespace scene {
 
 	class Camera;
-	/** 追跡カメラ
+	/** ノードにくっつくカメラ
 	 *
 	 * シーンカメラノードにアタッチするビヘイビア
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class ChaseCamera : public Updater
+	class BindCamera : public Updater
 	{
 	public:
 		//bool allow_direction;
@@ -28,7 +28,7 @@ namespace gctp { namespace scene {
 		Vector position_offset;
 		Vector posture_offset;
 
-		ChaseCamera();
+		BindCamera();
 
 		Handle<Camera> &target() { return target_; }
 		Handle<Camera> target() const { return target_; }
@@ -46,7 +46,7 @@ namespace gctp { namespace scene {
 		void attach(luapp::Stack &L);
 
 		GCTP_DECLARE_CLASS;
-		TUKI_DECLARE(ChaseCamera);
+		TUKI_DECLARE(BindCamera);
 	};
 
 }} // namespace gctp::scene

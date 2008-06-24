@@ -58,6 +58,7 @@ namespace gctp { namespace scene {
 		void update(luapp::Stack &L);
 		void reset(luapp::Stack &L);
 		void addWheel(luapp::Stack &L);
+		int getWheelRotation(luapp::Stack &L);
 		int getSizeAndOffset(luapp::Stack &L);
 		int speed(luapp::Stack &L);
 

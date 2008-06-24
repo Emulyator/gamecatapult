@@ -210,6 +210,15 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	int Vehicle::getWheelRotation(luapp::Stack &L)
+	{
+		if(L.top()>=1) {
+			btWheelInfo &wheel = impl_->vehicle_->getWheelInfo(L[1].toInteger());
+			L << wheel.m_rotation << wheel.m_deltaRotation;
+			return 2;
+		}
+	}
+
 	int Vehicle::getSizeAndOffset(luapp::Stack &L)
 	{
 		Vector size, offset;
@@ -220,10 +229,7 @@ namespace gctp { namespace scene {
 
 	int Vehicle::speed(luapp::Stack &L)
 	{
-		btRigidBody *chassis = impl_->vehicle_->getRigidBody();
-		btVector3 vel = chassis->getLinearVelocity();
-		vel += btVector3(0, -9.80665f, 0)/60.0f; // ínñ Ç©ÇÁâüÇµï‘Ç≥ÇÍÇΩë¨ìxÇèúãé
-		L << vel.length();
+		L << impl_->vehicle_->getCurrentSpeedKmHour();
 		return 1;
 	}
 
@@ -239,6 +245,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Vehicle, update)
 		TUKI_METHOD(Vehicle, reset)
 		TUKI_METHOD(Vehicle, addWheel)
+		TUKI_METHOD(Vehicle, getWheelRotation)
 		TUKI_METHOD(Vehicle, getSizeAndOffset)
 		TUKI_METHOD(Vehicle, speed)
 	TUKI_IMPLEMENT_END(Vehicle)

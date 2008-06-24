@@ -1,12 +1,12 @@
 /** @file
- * GameCatapult 追跡カメラクラス
+ * GameCatapult ノードにくっつくカメラクラス
  *
  * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
  * @date 2004/02/08 6:08:56
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include "common.h"
-#include <gctp/scene/chasecamera.hpp>
+#include <gctp/scene/bindcamera.hpp>
 #include <gctp/scene/camera.hpp>
 #include <gctp/scene/entity.hpp>
 #include <gctp/skeleton.hpp>
@@ -17,11 +17,11 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	ChaseCamera::ChaseCamera() : Updater(1, 0x10), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
+	BindCamera::BindCamera() : Updater(1, 0x10), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
 	{
 	}
 
-	bool ChaseCamera::doUpdate(float delta)
+	bool BindCamera::doUpdate(float delta)
 	{
 		Pointer<Camera> target = target_.lock();
 		if(target) {
@@ -31,13 +31,13 @@ namespace gctp { namespace scene {
 
 			Stance oldstance = target->stance();
 			Stance newstance;
-			newstance.set2PInterpolation(oldstance, chasee_stance, 0.3f);
+			newstance.set2PInterpolation(oldstance, chasee_stance, 0.5f);
 			target->setStance(newstance);
 		}
 		return true;
 	}
 	
-	void ChaseCamera::attach(luapp::Stack &L)
+	void BindCamera::attach(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
 			target_ = tuki_cast<Camera>(L[1]);
@@ -57,26 +57,26 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	void ChaseCamera::setPositionOffset(luapp::Stack &L)
+	void BindCamera::setPositionOffset(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
 			position_offset = VectorC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
 		}
 	}
 
-	void ChaseCamera::setPostureOffset(luapp::Stack &L)
+	void BindCamera::setPostureOffset(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
 			posture_offset = VectorC((float)L[2].toNumber(), (float)L[1].toNumber(), (float)L[3].toNumber());
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, ChaseCamera, Updater);
-	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, ChaseCamera)
-		TUKI_METHOD(ChaseCamera, activate)
-		TUKI_METHOD(ChaseCamera, attach)
-		TUKI_METHOD(ChaseCamera, setPositionOffset)
-		TUKI_METHOD(ChaseCamera, setPostureOffset)
-	TUKI_IMPLEMENT_END(ChaseCamera)
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, BindCamera, Updater);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, BindCamera)
+		TUKI_METHOD(BindCamera, activate)
+		TUKI_METHOD(BindCamera, attach)
+		TUKI_METHOD(BindCamera, setPositionOffset)
+		TUKI_METHOD(BindCamera, setPostureOffset)
+	TUKI_IMPLEMENT_END(BindCamera)
 
 }} // namespace gctp::scene
