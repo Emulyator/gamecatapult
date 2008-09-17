@@ -18,8 +18,6 @@ namespace gctp { namespace audio { namespace dx {
 		TYPEDEF_DXCOMPTR(IDirectSoundBuffer);
 		TYPEDEF_DXCOMPTR(IDirectSoundBuffer8);
 		TYPEDEF_DXCOMPTR(IDirectSound3DBuffer8);
-		TYPEDEF_DXCOMPTR(IDirectSound3DListener8);
-		TYPEDEF_DXCOMPTR(IDirectSoundNotify);
 
 		const float min_gain = -5000;
 	}
@@ -29,9 +27,10 @@ namespace gctp { namespace audio { namespace dx {
 	}
 
 	namespace {
+
 		class StaticBuffer : public Buffer {
 		public:
-			HRslt setUp(IDirectSound8Ptr device, bool global_focus)
+			HRslt setUp(IDirectSound8Ptr device, bool for_3d, bool global_focus)
 			{
 				if( !device ) return CO_E_NOTINITIALIZED;
 				PCMWAVEFORMAT pcmwf;
@@ -40,7 +39,7 @@ namespace gctp { namespace audio { namespace dx {
 				// ウェーブ フォーマット構造体を設定する。
 				memset(&pcmwf, 0, sizeof(PCMWAVEFORMAT));
 				pcmwf.wf.wFormatTag = WAVE_FORMAT_PCM;
-				pcmwf.wf.nChannels = 2;
+				pcmwf.wf.nChannels = for_3d ? 1 : 2;
 				pcmwf.wf.nSamplesPerSec = 22050;
 				pcmwf.wf.nBlockAlign = 4;
 				pcmwf.wf.nAvgBytesPerSec = pcmwf.wf.nSamplesPerSec * pcmwf.wf.nBlockAlign;
@@ -49,7 +48,7 @@ namespace gctp { namespace audio { namespace dx {
 				// DSBUFFERDESC 構造体を設定する。
 				memset(&dsbd, 0, sizeof(DSBUFFERDESC));
 				dsbd.dwSize = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags = DSBCAPS_LOCDEFER | DSBCAPS_CTRLPAN | DSBCAPS_CTRLVOLUME;
+				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME;
 				dsbd.dwBufferBytes = 3 * pcmwf.wf.nAvgBytesPerSec; // 約３秒分
 				dsbd.lpwfxFormat = (LPWAVEFORMATEX)&pcmwf;
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
@@ -64,7 +63,7 @@ namespace gctp { namespace audio { namespace dx {
 				return hr;
 			}
 
-			HRslt setUp(IDirectSound8Ptr device, Clip &clip, bool global_focus)
+			HRslt setUp(IDirectSound8Ptr device, Clip &clip, bool for_3d, bool global_focus)
 			{
 				if( !device ) return CO_E_NOTINITIALIZED;
 				DSBUFFERDESC dsbd;
@@ -72,7 +71,7 @@ namespace gctp { namespace audio { namespace dx {
 				// DSBUFFERDESC 構造体を設定する。
 				memset(&dsbd, 0, sizeof(DSBUFFERDESC));
 				dsbd.dwSize = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags = DSBCAPS_LOCDEFER | DSBCAPS_CTRLPAN | DSBCAPS_CTRLVOLUME;
+				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME;
 				buffersize_ = dsbd.dwBufferBytes = (DWORD)clip.size();
 				dsbd.lpwfxFormat = const_cast<WAVEFORMATEX *>(clip.format());
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
@@ -239,6 +238,66 @@ namespace gctp { namespace audio { namespace dx {
 				return 0;
 			}
 
+			virtual void setPosition(const Vector &)
+			{
+			}
+			virtual Vector getPosition()
+			{
+				return VectorC(0,0,0);
+			}
+			virtual void setVelocity(const Vector &)
+			{
+			}
+			virtual Vector getVelocity()
+			{
+				return VectorC(0,0,0);
+			}
+			virtual void setMaxDistance(float)
+			{
+			}
+			virtual float getMaxDistance()
+			{
+				return 0;
+			}
+			virtual void setMinDistance(float)
+			{
+			}
+			virtual float getMinDistance()
+			{
+				return 0;
+			}
+			virtual void setDirection(const Vector &)
+			{
+			}
+			virtual Vector getDirection()
+			{
+				return VectorC(0,0,0);
+			}
+			virtual void setTheta(float)
+			{
+			}
+			virtual float getTheta()
+			{
+				return 0;
+			}
+			virtual void setPhi(float)
+			{
+			}
+			virtual float getPhi()
+			{
+				return 0;
+			}
+			virtual void setOutsideVolume(float)
+			{
+			}
+			virtual float getOutsideVolume()
+			{
+				return 0;
+			}
+			virtual void commit()
+			{
+			}
+
 		protected:
 			size_t buffersize_;
 			IDirectSoundBuffer8Ptr ptr_;
@@ -279,7 +338,7 @@ namespace gctp { namespace audio { namespace dx {
 			}
 #endif
 
-			HRslt setUp(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
+			HRslt setUp(IDirectSound8Ptr device, Handle<Clip> clip, bool for_3d, bool global_focus)
 			{
 				HRslt hr;
 
@@ -293,7 +352,7 @@ namespace gctp { namespace audio { namespace dx {
 				DSBUFFERDESC dsbd;
 				ZeroMemory( &dsbd, sizeof(DSBUFFERDESC) );
 				dsbd.dwSize          = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags         = DSBCAPS_LOCDEFER | DSBCAPS_CTRLPAN | DSBCAPS_CTRLVOLUME
+				dsbd.dwFlags         = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME
 #ifndef GCTP_AUDIO_USE_TIMER
 									   | DSBCAPS_CTRLPOSITIONNOTIFY
 #endif
@@ -527,9 +586,102 @@ namespace gctp { namespace audio { namespace dx {
 			int count_;				///< 再生カウント
 			Mutex monitor_;
 		};
+
+		template<class T>
+		class _3DBuffer : public T {
+		public:
+			void setUp3D()
+			{
+				params_.dwSize = sizeof(DS3DBUFFER);
+				ptr_ = T::ptr_;
+				HRslt hr = ptr_->GetAllParameters(&params_);
+				GCTP_ERROR(hr, hr);
+			}
+
+			virtual void setPosition(const Vector &pos)
+			{
+				params_.vPosition = pos;
+			}
+			virtual Vector getPosition()
+			{
+				return VectorC(params_.vPosition);
+			}
+			virtual void setVelocity(const Vector &vel)
+			{
+				params_.vVelocity = vel;
+			}
+			virtual Vector getVelocity()
+			{
+				return VectorC(params_.vVelocity);
+			}
+			virtual void setMaxDistance(float val)
+			{
+				params_.flMaxDistance = val;
+			}
+			virtual float getMaxDistance()
+			{
+				return params_.flMaxDistance;
+			}
+			virtual void setMinDistance(float val)
+			{
+				params_.flMinDistance = val;
+			}
+			virtual float getMinDistance()
+			{
+				return params_.flMinDistance;
+			}
+			virtual void setDirection(const Vector &dir)
+			{
+				params_.vConeOrientation = dir;
+			}
+			virtual Vector getDirection()
+			{
+				return VectorC(params_.vConeOrientation);
+			}
+			virtual void setTheta(float rad)
+			{
+				params_.dwInsideConeAngle = (DWORD)toDeg(rad);
+			}
+			virtual float getTheta()
+			{
+				return toRad((float)params_.dwInsideConeAngle);
+			}
+			virtual void setPhi(float rad)
+			{
+				params_.dwOutsideConeAngle = (DWORD)toDeg(rad);
+			}
+			virtual float getPhi()
+			{
+				return toRad((float)params_.dwOutsideConeAngle);
+			}
+			virtual void setOutsideVolume(float vol)
+			{
+				params_.lConeOutsideVolume = (DWORD)vol;
+			}
+			virtual float getOutsideVolume()
+			{
+				return (float)params_.lConeOutsideVolume;
+			}
+			virtual void commit()
+			{
+				ptr_->SetAllParameters(&params_, DS3D_DEFERRED);
+			}
+		protected:
+			IDirectSound3DBuffer8Ptr ptr_;
+			DS3DBUFFER params_;
+		};
+
+		class Static3DBuffer : public _3DBuffer<StaticBuffer>
+		{
+		};
+
+		class Streaming3DBuffer : public _3DBuffer<StreamingBuffer>
+		{
+		};
+
 	}
 
-	/** 普通のバッファを製作して返す
+	/** オンメモリバッファを製作して返す
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/01/25 19:43:00
@@ -540,7 +692,7 @@ namespace gctp { namespace audio { namespace dx {
 		if(clip) {
 			Pointer<StaticBuffer> buffer = new StaticBuffer;
 			if(buffer) {
-				HRslt hr = buffer->setUp(device, *clip, global_focus);
+				HRslt hr = buffer->setUp(device, *clip, false, global_focus);
 				if(hr) return buffer;
 				else GCTP_TRACE(hr);
 			}
@@ -559,8 +711,52 @@ namespace gctp { namespace audio { namespace dx {
 		if(clip) {
 			Pointer<StreamingBuffer> buffer = new StreamingBuffer;
 			if(buffer) {
-				HRslt hr = buffer->setUp(device, clip, global_focus);
+				HRslt hr = buffer->setUp(device, clip, false, global_focus);
 				if(hr) return buffer;
+				else GCTP_TRACE(hr);
+			}
+		}
+		return 0;
+	}
+
+	/** 3Dサウンド対応のオンメモリバッファを製作して返す
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:43:00
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Pointer<Buffer> newStatic3DBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
+	{
+		if(clip) {
+			Pointer<Static3DBuffer> buffer = new Static3DBuffer;
+			if(buffer) {
+				HRslt hr = buffer->setUp(device, *clip, true, global_focus);
+				if(hr) {
+					buffer->setUp3D();
+					return buffer;
+				}
+				else GCTP_TRACE(hr);
+			}
+		}
+		return 0;
+	}
+
+	/** 3Dサウンド対応のストリーミングバッファを製作して返す
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:43:00
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Pointer<Buffer> newStreaming3DBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus)
+	{
+		if(clip) {
+			Pointer<Streaming3DBuffer> buffer = new Streaming3DBuffer;
+			if(buffer) {
+				HRslt hr = buffer->setUp(device, clip, true, global_focus);
+				if(hr) {
+					buffer->setUp3D();
+					return buffer;
+				}
 				else GCTP_TRACE(hr);
 			}
 		}

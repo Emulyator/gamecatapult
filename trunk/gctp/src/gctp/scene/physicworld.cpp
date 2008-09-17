@@ -307,6 +307,50 @@ namespace gctp { namespace scene {
 			}
 		}
 
+		// ” ’Ç‰Á
+		// ‚±‚ê“K“–‚¾‚©‚çŒã‚Å•Ï‚¦‚é‚æ‚¤‚É
+		void addBoxAsCompound2(Handle<Body> body, float mass, const Vector &center_of_mass, const Vector &box_size, const Vector &offset, const Vector &initial_velocity)
+		{
+			if(body && world_->getNumCollisionObjects() < (int)max_bodies_) {
+				btBoxShape *box = new btBoxShape(btVector3(box_size.x,box_size.y,box_size.z));
+				collision_shapes_.push_back(box);
+
+				btCompoundShape* compound = new btCompoundShape;
+				collision_shapes_.push_back(compound);
+				
+				btTransform local_trans;
+				local_trans.setIdentity();
+				//local_trans effectively shifts the center of mass with respect to the chassis
+				local_trans.setOrigin(btVector3(-center_of_mass.x, -center_of_mass.y, -center_of_mass.z));
+				compound->addChildShape(local_trans, box);
+
+				btVector3 local_inertia(0, 0, 0);
+				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
+
+				btTransform start_transform;
+				Matrix m = Matrix().trans(-offset+center_of_mass)*body->root()->val.lcm();
+				start_transform.setFromOpenGLMatrix(&m._11);
+
+				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, compound, local_inertia);
+				btRigidBody *rigid_body = new btRigidBody(rbinfo);
+
+				world_->addRigidBody(rigid_body);
+
+				if(mass > 0) {
+					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+
+					SyncPair pair;
+					pair.node = body->root();
+					pair.object = rigid_body;
+					//pair.offset = center_of_mass-aabb.center();
+					pair.offset = offset-center_of_mass;
+					sync_targets_.push_back(pair);
+				}
+			}
+		}
+
 		// ’n•½–Ê‚Ì¶¬
 		void addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_velocity)
 		{
@@ -380,6 +424,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(PhysicWorld, makeup)
 		TUKI_METHOD(PhysicWorld, addBox)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound)
+		TUKI_METHOD(PhysicWorld, addBoxAsCompound2)
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
 		TUKI_METHOD(PhysicWorld, numBodies)
@@ -579,6 +624,57 @@ namespace gctp { namespace scene {
 				}
 				else {
 					impl_->addBoxAsCompound(entity->target(), entity->source(), 0
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+			}
+		}
+	}
+
+	void PhysicWorld::addBoxAsCompound2(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<Entity> entity = tuki_cast<Entity>(L[1]);
+			if(entity) {
+				if(L.top() >= 14) {
+					impl_->addBoxAsCompound2(entity->target(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC((float)L[6].toNumber(), (float)L[7].toNumber(), (float)L[8].toNumber())
+						, VectorC((float)L[9].toNumber(), (float)L[10].toNumber(), (float)L[11].toNumber())
+						, VectorC((float)L[12].toNumber(), (float)L[13].toNumber(), (float)L[14].toNumber()));
+				}
+				else if(L.top() >= 11) {
+					impl_->addBoxAsCompound2(entity->target(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC((float)L[6].toNumber(), (float)L[7].toNumber(), (float)L[8].toNumber())
+						, VectorC((float)L[9].toNumber(), (float)L[10].toNumber(), (float)L[11].toNumber())
+						, VectorC(0, 0, 0));
+				}
+				else if(L.top() >= 8) {
+					impl_->addBoxAsCompound2(entity->target(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC((float)L[6].toNumber(), (float)L[7].toNumber(), (float)L[8].toNumber())
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+				else if(L.top() >= 5) {
+					impl_->addBoxAsCompound2(entity->target(), (float)L[2].toNumber()
+						, VectorC((float)L[3].toNumber(), (float)L[4].toNumber(), (float)L[5].toNumber())
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+				else if(L.top() >= 2) {
+					impl_->addBoxAsCompound2(entity->target(), (float)L[2].toNumber()
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0)
+						, VectorC(0, 0, 0));
+				}
+				else {
+					impl_->addBoxAsCompound2(entity->target(), 0
+						, VectorC(0, 0, 0)
 						, VectorC(0, 0, 0)
 						, VectorC(0, 0, 0)
 						, VectorC(0, 0, 0));

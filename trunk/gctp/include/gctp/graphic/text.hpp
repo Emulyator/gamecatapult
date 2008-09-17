@@ -12,6 +12,7 @@
 #include <gctp/class.hpp>
 #include <gctp/color.hpp>
 #include <gctp/vector.hpp>
+#include <gctp/hrslt.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace gctp {
@@ -41,7 +42,7 @@ namespace gctp { namespace graphic {
 		Text();
 		~Text();
 
-		// まだ未実装
+		/// アライメント指定定数
 		enum Alignment {
 			LEFT,
 			CENTER,
@@ -66,8 +67,9 @@ namespace gctp { namespace graphic {
 		Point2f getPos(graphic::FontTextureSet &fonttex, int ofs = 0);
 		void reset();
 
-		void setClip(const Rect &rc);
-		void setLayoutRectangle(const Rect &rc);
+		Point2 size;
+		Point2 offset;
+		Rect bounds;
 		std::basic_ostream<_TCHAR> &out();
 
 	GCTP_DECLARE_CLASS
@@ -76,8 +78,6 @@ namespace gctp { namespace graphic {
 		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTexture &font, SpriteDescVector *descvec, Point2f *lastpos, int ofs) const;
 		HRslt proccess(graphic::SpriteBuffer *spr, graphic::FontTextureSet &font, SpriteDescVector *descvec, Point2f *lastpos, int ofs) const;
 		boost::scoped_ptr<detail::TextImpl> impl_;
-		RectC clip_;
-		RectC layout_;
 	};
 
 }} //namespace gctp::graphic

@@ -14,7 +14,9 @@
 #include <gctp/db.hpp>
 #include <gctp/strutumtree.hpp>
 #include <gctp/signal.hpp>
+#include <gctp/handlevector.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/color.hpp>
 #ifdef _MT
 #include <gctp/mutex.hpp>
 #endif
@@ -29,6 +31,8 @@ namespace gctp { namespace scene {
 
 	class Body;
 	class Light;
+	class Speaker;
+
 	/** ワールドクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -42,9 +46,11 @@ namespace gctp { namespace scene {
 		StrutumTree strutum_tree;
 		/// Bodyリスト
 		HandleList<Body> body_list;
-		// Lightリスト(ModifierListと抽象化すべき？)
+		/// Lightリスト
 		HandleList<Light> light_list;
-
+		/// Speakerリスト
+		HandleList<Speaker> speaker_list;
+		
 		/** 更新シグナル
 		 *
 		 * 更新スロットはこれに接続する
@@ -75,12 +81,15 @@ namespace gctp { namespace scene {
 		/// （標準の）描画処理
 		void draw() const;
 
-		/// カレントワールド（そのワールドのupdate、draw…などの間だけ有効）
-		World &current() { return *current_; }
+		/// 影響の強いライトを有効に
+		void applyLights(const Sphere &bs, int max_area_num, int max_point_num, int max_spot_num) const;
+		/// 影響の強いライトを選択
+		void selectLights(const Sphere &bs, HandleVector<Light> &area_lights, HandleVector<Light> &point_lights, HandleVector<Light> &spot_lights) const;
 
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(World)
-	
+		/// カレントワールド（そのワールドのupdate、draw…などの間だけ有効）
+		static World &current() { return *current_; }
+		static bool isActive() { return current_ ? true : false; }
+
 	protected:
 		Pointer<Body> world_body_;
 
@@ -91,6 +100,7 @@ namespace gctp { namespace scene {
 		void activate(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
+		int getStrutumNode(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
 		int printHierarchy(luapp::Stack &L);
 
@@ -100,6 +110,9 @@ namespace gctp { namespace scene {
 #endif
 		mutable World* backup_current_;
 		GCTP_TLS static World* current_;
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(World);
 	};
 
 }} // namespace gctp::scene

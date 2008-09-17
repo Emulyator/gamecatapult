@@ -26,11 +26,11 @@ namespace gctp { namespace scene {
 		if(yes) {
 			Pointer<Camera> target = target_.lock();
 			if(target) {
-				math::Matrix3x3<Real> posture_mat = target->stance().posture.toMatrix3x3();
-				yaw = atan2f(posture_mat.at().x, posture_mat.at().z);
+				Matrix mtx = target->node()->val.wtm();
+				yaw = atan2f(mtx.at().x, mtx.at().z);
 				Matrix m;
 				m.rotY(-yaw);
-				Vector v = m.transformVector(posture_mat.at());
+				Vector v = m.transformVector(mtx.at());
 				pitch = atan2f(-v.y, v.z);
 			}
 		}
@@ -40,7 +40,7 @@ namespace gctp { namespace scene {
 	{
 		Pointer<Camera> target = target_.lock();
 		if(target) {
-			Stance newstance = target->stance();
+			Stance newstance = target->node()->val.wtm();
 			float neck_speed = 0.01f;
 #ifdef GCTP_COORD_RH
 			yaw += -neck_speed*input().mouse().dx;
@@ -78,7 +78,7 @@ namespace gctp { namespace scene {
 			dir = Quat().rotY(yaw).transform(dir);
 			newstance.position += dir.normalize()*speed*delta;
 
-			target->setStance(newstance);
+			target->node()->val.updateWTM(newstance.toMatrix());
 		}
 		return true;
 	}

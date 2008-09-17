@@ -232,6 +232,26 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	int Entity::getStrutumNode(luapp::Stack &L)
+	{
+		if(target_) {
+			if(L.top()>=1) {
+				StrutumNode *node = target_->get(L[1].toCStr());
+				if(node) {
+					TukiRegister::push(L, Hndl(node));
+					return 1;
+				}
+			}
+			else {
+				if(target_->root()) {
+					TukiRegister::push(L, Hndl(target_->root()));
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+
 	int Entity::getBoundingSphere(luapp::Stack &L)
 	{
 		if(target_) {
@@ -239,6 +259,17 @@ namespace gctp { namespace scene {
 			return 4;
 		}
 		return 0;
+	}
+
+	int Entity::getModelAABB(luapp::Stack &L)
+	{
+		AABox aabb = source()->fleshies().front()->model()->getAABB(source()->fleshies().front()->node()->val.wtm());
+		for(PointerList<Flesh>::iterator i = ++source()->fleshies().begin(); i != source()->fleshies().end(); ++i)
+		{
+			aabb |= (*i)->model()->getAABB((*i)->node()->val.wtm());
+		}
+		L << aabb.upper.x << aabb.upper.y << aabb.upper.z << aabb.lower.x << aabb.lower.y << aabb.lower.z;
+		return 6;
 	}
 
 	int Entity::printHierarchy(luapp::Stack &L)
@@ -259,7 +290,9 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, setScale)
 		TUKI_METHOD(Entity, getScale)
 		TUKI_METHOD(Entity, getMotionMixer)
+		TUKI_METHOD(Entity, getStrutumNode)
 		TUKI_METHOD(Entity, getBoundingSphere)
+		TUKI_METHOD(Entity, getModelAABB)
 		TUKI_METHOD(Entity, printHierarchy)
 	TUKI_IMPLEMENT_END(Entity)
 	

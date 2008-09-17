@@ -228,14 +228,14 @@ namespace gctp { namespace graphic {
 		return impl_->getView();
 	}
 
-	HRslt Device::setAmbient(const Color &col)
+	HRslt Device::setAmbientColor(Color32 col)
 	{
-		return impl_->setAmbient(col);
+		return impl_->setAmbientColor(col);
 	}
 
-	const Color &Device::getAmbient() const
+	Color32 Device::getAmbientColor() const
 	{
-		return impl_->getAmbient();
+		return impl_->getAmbientColor();
 	}
 
 	HRslt Device::pushLight(const DirectionalLight &lgt)
@@ -286,6 +286,11 @@ namespace gctp { namespace graphic {
 	void Device::setMaterial(const Material &mtrl)
 	{
 		impl_->setMaterial(mtrl);
+	}
+
+	void Device::setBlendState(const Material &mtrl)
+	{
+		impl_->setBlendState(mtrl);
 	}
 
 	/// デバイス消失時のリソース解放

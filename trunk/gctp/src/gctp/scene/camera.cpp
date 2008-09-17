@@ -20,21 +20,23 @@ namespace gctp { namespace scene {
 	{
 		window_.set(0, 0);
 		subwindow_.set(0,0,1,1);
-		stance_.setDefault();
 	}
 
 	Camera* Camera::current_ = NULL;	///< カレントカメラ（そのシーンのupdate、draw…などの間だけ有効）
 
-	void Camera::setStance(Stance &src)
+	void Camera::newNode()
 	{
-		stance_ = src;
-		if(node_) node_->val.getLCM() = stance_.toMatrix();
+		own_node_ = StrutumNode::create();
+		node_ = own_node_;
 	}
 
 	void Camera::attach(Handle<StrutumNode> node)
 	{
+		if(own_node_) {
+			own_node_->remove();
+			own_node_ = 0;
+		}
 		node_ = node;
-		if(node_) stance_ = node_->val.lcm().orthoNormal();
 	}
 
 	void Camera::setToSystem() const
@@ -74,7 +76,6 @@ namespace gctp { namespace scene {
 	{
 		Matrix m;
 		if(node_) m = node_->val.wtm().orthoNormal();
-		else m = stance_.toMatrix();
 		return Matrix().setView(m.right(), m.up(), m.at(), m.position());
 	}
 
@@ -96,7 +97,6 @@ namespace gctp { namespace scene {
 	void Camera::update()
 	{
 		frustum_.set(view()*projection());
-		if(node_) stance_ = node_->val.lcm().orthoNormal();
 	}
 	
 	bool Camera::setUp(luapp::Stack &L)
@@ -105,44 +105,60 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
+	void Camera::newNode(luapp::Stack &L)
+	{
+		newNode();
+	}
+
+	void Camera::attach(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			attach(tuki_cast<StrutumNode>(L[1]));
+		}
+	}
+
 	void Camera::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			Stance newstance = stance();
-			newstance.position.x = (float)L[1].toNumber();
-			newstance.position.y = (float)L[2].toNumber();
-			newstance.position.z = (float)L[3].toNumber();
-			setStance(newstance);
+			if(node_) node_->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[2].toNumber(),(float)L[3].toNumber()));
 		}
 	}
 
 	int Camera::getPosition(luapp::Stack &L)
 	{
-		Stance nowstance = stance();
-		L << nowstance.position.x << nowstance.position.y << nowstance.position.z;
-		return 3;
+		if(node_) {
+			Vector v = node_->val.lcm().position();
+			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
 	}
 
 	void Camera::setPosture(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			Stance newstance = stance();
-			newstance.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-			setStance(newstance);
+			if(node_) {
+				Coord c = node_->val.lcm();
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+				node_->val.getLCM() = c.toMatrix();
+			}
 		}
 	}
 
 	int Camera::getPosture(luapp::Stack &L)
 	{
-		Quat q = stance().posture;
-		L << q.yaw() << q.pitch() << q.roll();
-		return 3;
+		if(node_) {
+			Coord c = node_->val.lcm();
+			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
+			return 3;
+		}
+		return 0;
 	}
 
 	void Camera::setDirection(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
-			Stance newstance = stance();
+			/*Stance newstance = stance();
 			VectorC dir((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
 			math::Matrix3x3<float> mat = newstance.posture.toMatrix3x3();
 			Vector c = mat.up3d()%dir;
@@ -153,14 +169,14 @@ namespace gctp { namespace scene {
 				c = mat.right3d()%dir;
 				newstance.posture.set(-mat.right3d(), c, dir);
 			}
-			setStance(newstance);
+			setStance(newstance);*/
 		}
 	}
 
 	int Camera::getDirection(luapp::Stack &L)
 	{
-		Vector at = stance().posture.toMatrix().at();
-		L << at.x << at.y << at.z;
+		/*Vector at = stance().posture.toMatrix().at();
+		L << at.x << at.y << at.z;*/
 		return 3;
 	}
 
@@ -193,12 +209,14 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Camera, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Camera)
+		TUKI_METHOD(Camera, newNode)
+		TUKI_METHOD(Camera, attach)
 		TUKI_METHOD(Camera, setPosition)
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)
 		TUKI_METHOD(Camera, getPosture)
-		TUKI_METHOD(Camera, setDirection)
-		TUKI_METHOD(Camera, getDirection)
+		/*TUKI_METHOD(Camera, setDirection)
+		TUKI_METHOD(Camera, getDirection)*/
 		TUKI_METHOD(Camera, setFov)
 		TUKI_METHOD(Camera, getFov)
 		TUKI_METHOD(Camera, setClip)

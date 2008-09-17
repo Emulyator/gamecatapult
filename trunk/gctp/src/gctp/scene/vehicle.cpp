@@ -38,11 +38,8 @@ namespace gctp { namespace scene {
 			// never deactivate the vehicle
 			chassis->setActivationState(DISABLE_DEACTIVATION);
 
-			int rightIndex = 0;
-			int upIndex = 1;
-			int forwardIndex = 2;
 			//choose coordinate system
-			vehicle_->setCoordinateSystem(rightIndex, upIndex, forwardIndex);
+			vehicle_->setCoordinateSystem(0, 1, 2);
 
 			world->addVehicle(vehicle_);
 			return S_OK;
@@ -217,6 +214,7 @@ namespace gctp { namespace scene {
 			L << wheel.m_rotation << wheel.m_deltaRotation;
 			return 2;
 		}
+		return 0;
 	}
 
 	int Vehicle::getSizeAndOffset(luapp::Stack &L)

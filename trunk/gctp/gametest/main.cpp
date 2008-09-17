@@ -288,28 +288,28 @@ extern "C" int main(int argc, char *argv[])
 			}
 			if(input().kbd().push(DIK_1)) {
 				mesh_mode = "Software";
-				Pointer<graphic::dx::SoftwareSkinBrush> brush = new graphic::dx::SoftwareSkinBrush(*chr->target().lock()->fleshies().front()->model());
-				if(brush->setUp()) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
+				Pointer<graphic::dx::SoftwareSkinBrush> brush = new graphic::dx::SoftwareSkinBrush;
+				if(brush && brush->setUp(chr->target().lock()->fleshies().front()->model())) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
 			}
 			else if(input().kbd().push(DIK_2)) {
 				mesh_mode = "Indexed";
-				Pointer<graphic::dx::BlendedSkinBrush> brush = new graphic::dx::BlendedSkinBrush(*chr->target().lock()->fleshies().front()->model());
-				if(brush->setUp()) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
+				Pointer<graphic::dx::BlendedSkinBrush> brush = new graphic::dx::BlendedSkinBrush;
+				if(brush && brush->setUp(chr->target().lock()->fleshies().front()->model())) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
 			}
 			else if(input().kbd().push(DIK_3)) {
 				mesh_mode = "Blended";
-				Pointer<graphic::dx::IndexedSkinBrush> brush = new graphic::dx::IndexedSkinBrush(*chr->target().lock()->fleshies().front()->model());
-				if(brush->setUp()) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
+				Pointer<graphic::dx::IndexedSkinBrush> brush = new graphic::dx::IndexedSkinBrush;
+				if(brush && brush->setUp(chr->target().lock()->fleshies().front()->model())) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
 			}
 			else if(input().kbd().push(DIK_4)) {
 				mesh_mode = "Vertex Shader";
-				Pointer<graphic::dx::VertexShaderSkinBrush> brush = new graphic::dx::VertexShaderSkinBrush(*chr->target().lock()->fleshies().front()->model());
-				if(brush->setUp()) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
+				Pointer<graphic::dx::VertexShaderSkinBrush> brush = new graphic::dx::VertexShaderSkinBrush;
+				if(brush && brush->setUp(chr->target().lock()->fleshies().front()->model())) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
 			}
 			else if(input().kbd().push(DIK_5)) {
 				mesh_mode = "HLSL";
-				Pointer<graphic::dx::ShaderSkinBrush> brush = new graphic::dx::ShaderSkinBrush(*chr->target().lock()->fleshies().front()->model());
-				if(brush->setUp()) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
+				Pointer<graphic::dx::ShaderSkinBrush> brush = new graphic::dx::ShaderSkinBrush;
+				if(brush && brush->setUp(chr->target().lock()->fleshies().front()->model())) hr = chr->target().lock()->fleshies().front()->model().lock()->brush() = brush;
 			}
 			if(!hr) GCTP_TRACE(hr);
 		}

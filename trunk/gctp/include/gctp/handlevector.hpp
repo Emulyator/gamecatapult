@@ -15,6 +15,24 @@
 #include <gctp/pointer.hpp>
 
 namespace gctp {
+
+#if defined _MSC_VER && _MSC_VER == 1400
+
+	/** Handle配列クラス
+	 *
+	 * よく使われるので、std::vector<Hndl>を共通の実装にするようにしてみる
+	 *
+	 * 現在意味がない
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/02/08 22:45:38
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	template<class _T>
+	class HandleVector : public std::vector< Handle<_T> >
+	{
+	};
+
+#else
 	/** Handle配列基底クラス
 	 *
 	 * よく使われるので、std::vector<HandleBase>を共通の実装にするようにしてみる
@@ -91,7 +109,7 @@ namespace gctp {
 # endif
 #endif
 	};
-
+#endif
 } // namespace gctp
 
 #endif //_GCTP_HANDLEVECTOR_HPP_

@@ -336,10 +336,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\include\gctp\graphic\asciifonttexture.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\gctp\graphic\brush.hpp"
 				>
 			</File>
@@ -419,6 +415,10 @@
 				Name="dx"
 				>
 				<File
+					RelativePath="..\..\..\include\gctp\graphic\asciifonttexture.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\include\gctp\graphic\dx\device.hpp"
 					>
 				</File>
@@ -432,6 +432,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\include\gctp\graphic\dx\skinbrush.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\include\gctp\graphic\dx\solidbrush.hpp"
 					>
 				</File>
 				<File

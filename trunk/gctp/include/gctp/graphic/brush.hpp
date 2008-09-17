@@ -19,7 +19,11 @@ namespace gctp { namespace graphic {
 	/// 描画手段クラス
 	class Brush : public Object {
 	public:
-		Brush(Model &target) : target_(target) {}
+		virtual HRslt setUp(Handle<Model> target)
+		{
+			target_ = target;
+			return S_OK;
+		}
 		virtual HRslt begin(Handle<Shader> shader, const Skeleton &skl) const
 		{
 			return begin(shader, skl.root()->val.wtm());
@@ -41,8 +45,11 @@ namespace gctp { namespace graphic {
 			return S_OK;
 		}
 		/// メッシュ断片情報
-		virtual const std::vector<SubsetInfo> &subsets() const { return target_.subsets(); }
-		Model &target_;
+		virtual const std::vector<SubsetInfo> &subsets() const { return target_->subsets_; }
+
+		Handle<Model> target() const { return target_; }
+	private:
+		Handle<Model> target_;
 	};
 
 }} //namespace gctp

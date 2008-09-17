@@ -89,6 +89,7 @@ namespace gctp { namespace scene {
 		void makeup(luapp::Stack &L);
 		void addBox(luapp::Stack &L);
 		void addBoxAsCompound(luapp::Stack &L);
+		void addBoxAsCompound2(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void detach(luapp::Stack &L);
 		int numBodies(luapp::Stack &L);

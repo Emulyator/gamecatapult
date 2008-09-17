@@ -55,9 +55,9 @@ namespace gctp { namespace graphic {
 		Color  diffuse;
 		Color  specular;
 		Vector pos;
+		Vector dir;
 		float  range;
 		float  attenuation[3];
-		Vector dir;
 		float  falloff;
 		float  theta;
 		float  phi;

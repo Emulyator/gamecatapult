@@ -85,8 +85,9 @@ private:
 		if(pad_) {
 			str << " pad 0=" << pad_->press(0) << " pad 1=" << pad_->press(1) << " pad 2=" << pad_->press(2) << " pad 3=" << pad_->press(3) << endl;
 			str << " pad x=" << pad_->buffer_.lX << " pad y=" << pad_->buffer_.lY << " pad z=" << pad_->buffer_.lZ << endl;
-			str << " pad ax=" << pad_->buffer_.lAX << " pad ay=" << pad_->buffer_.lAY << " pad az=" << pad_->buffer_.lAZ << endl;
 			str << " pad rx=" << pad_->buffer_.lRx << " pad ry=" << pad_->buffer_.lRy << " pad rz=" << pad_->buffer_.lRz << endl;
+			/*str << " pad ax=" << pad_->buffer_.lAX << " pad ay=" << pad_->buffer_.lAY << " pad az=" << pad_->buffer_.lAZ << endl;
+			str << " pad arx=" << pad_->buffer_.lARx << " pad ary=" << pad_->buffer_.lARy << " pad arz=" << pad_->buffer_.lARz << endl;*/
 		}
 		str << hr << ends;
 		text_->setText(str.str());

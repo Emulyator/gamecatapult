@@ -159,7 +159,7 @@ namespace gctp { namespace graphic {
 		D3DXVECTOR3 p; D3DCOLOR color; D3DCOLOR high; float tu, tv;
 		void set(Point2f pos, Color32 col, Color32 hi, Point2f uv)
 		{
-			p.x = pos.x-0.5f; p.y = pos.y-0.5f; p.z = 0.0f; color = col; high = hi; tu = uv.x; tv = uv.y;
+			p.x = pos.x; p.y = pos.y; p.z = 0.0f; color = col; high = hi; tu = uv.x; tv = uv.y;
 		}
 	};
 
@@ -175,7 +175,7 @@ namespace gctp { namespace graphic {
 		D3DXVECTOR3 p; D3DCOLOR color; D3DCOLOR high; float tu1, tv1; float tu2, tv2;
 		void set(Point2f pos, Color32 col, Color32 hi, Point2f uv1, Point2f uv2)
 		{
-			p.x = pos.x-0.5f; p.y = pos.y-0.5f; p.z = 0.0f; color = col; high = hi; tu1 = uv1.x; tv1 = uv1.y; tu2 = uv2.x; tv2 = uv2.y;
+			p.x = pos.x; p.y = pos.y; p.z = 0.0f; color = col; high = hi; tu1 = uv1.x; tv1 = uv1.y; tu2 = uv2.x; tv2 = uv2.y;
 		}
 	};
 

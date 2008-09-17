@@ -52,6 +52,7 @@ namespace gctp {
 #define GCTP_LOCATION	__FILE__<<_T("(")<<__LINE__<<_T(") : ")
 
 #define GCTP_ERRORINFO(_S)	(gctp::dbgout<<_T("Error in ")<<GCTP_LOCATION<<_S<<std::endl)
+#define GCTP_ERROR(_E, _S)	(_E ? gctp::dbgout : GCTP_ERRORINFO(_S))
 
 #if GCTP_DBGOUT
 # define PRN(_S)	(gctp::dbgout << _S)

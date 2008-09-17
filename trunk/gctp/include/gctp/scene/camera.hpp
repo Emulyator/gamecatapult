@@ -31,13 +31,11 @@ namespace gctp { namespace scene {
 		virtual bool onReach(float delta) const;
 		virtual bool onLeave(float delta) const;
 
-		/// カメラ位置設定
-		void setStance(Stance &src);
-		/// 階層ノードにアタッチ
+		/// 新規にノードを持つ
+		void newNode();
+		/// 既存ノードにアタッチ
 		void attach(Handle<StrutumNode> node);
 
-		/// カメラ位置
-		const Stance &stance() const { return stance_; }
 		/// ニアクリップ
 		const float &nearclip() const { return nearclip_; }
 		/// ニアクリップ
@@ -85,7 +83,7 @@ namespace gctp { namespace scene {
 		/// カメラ設定終了
 		void end() const;
 
-		/// カレントカメラ（このカメラの子レンダリング要素にのみ有効）		
+		/// カレントカメラ（このカメラの子レンダリング要素にのみ有効）
 		static Camera &current() { return *current_; }
 
 		/// ヴューフラスタム内か判定
@@ -102,7 +100,8 @@ namespace gctp { namespace scene {
 
 	protected:
 		bool setUp(luapp::Stack &L);
-		void activate(luapp::Stack &L);
+		void newNode(luapp::Stack &L);
+		void attach(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
 		void setPosture(luapp::Stack &L);
@@ -115,7 +114,6 @@ namespace gctp { namespace scene {
 		int getFov(luapp::Stack &L);
 
 	private:
-		Stance stance_;
 		float nearclip_;
 		float farclip_;
 		float fov_;
@@ -125,12 +123,13 @@ namespace gctp { namespace scene {
 		mutable Matrix viewprojection_;
 
 		Handle<StrutumNode> node_;
+		Pointer<StrutumNode> own_node_;
 
-		mutable Camera* backup_current_;
-		GCTP_TLS static Camera* current_;
+		mutable Camera *backup_current_;
+		GCTP_TLS static Camera *current_;
 
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(Camera)
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(Camera);
 	};
 
 }} // namespace gctp::scene

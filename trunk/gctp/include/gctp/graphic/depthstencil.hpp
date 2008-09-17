@@ -26,7 +26,6 @@ namespace gctp { namespace graphic {
 
 		DepthStencil();
 
-		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(int width, int height, int format = D3DFMT_D24S8, bool discardable = false);
 
 		HRslt restore();

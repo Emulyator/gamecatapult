@@ -136,6 +136,8 @@ namespace gctp {
 		}
 		/// スロット切断
 		void disconnect(const Slot &slot);
+		/// スロットが接続されていないか？
+		bool empty() const { return slots_.empty(); }
 		/// 接続されているスロットの数を返す
 		std::size_t num() const;
 		/// マスク値を返す
@@ -178,7 +180,7 @@ namespace gctp {
 		{
 			if(slot_ == Handle<Slot>(const_cast<Slot *>(&slot))) slot_ = 0;
 		}
-		/// スロットが接続されているか？
+		/// スロットが接続されていないか？
 		bool empty() const { return !slot_; }
 	protected:
 		Handle<Slot> slot_;

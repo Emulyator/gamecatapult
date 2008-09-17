@@ -12,6 +12,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/pointer.hpp>
+#include <gctp/hrslt.hpp>
 #include "smartwin/font.h"
 
 namespace gctp {

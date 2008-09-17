@@ -554,7 +554,7 @@ namespace gctp {
 
 	/** InputDeviceを取得
 	 *
-	 * この時点では、Acquireしない。<BR>
+	 * この時点では、Acquireしない。@n
 	 * 派生クラスで、完全なセットアップが終わった時点で、acquireする必要がある。
 	 */
 	HRslt InputDevice::setUp(IDirectInput8Ptr input, REFGUID rguid, HWND hwnd, ulong flags)
@@ -607,6 +607,7 @@ namespace gctp {
 	HRslt InputDevice::getState(DWORD size, void *buf)
 	{
 		if(!is_acquire_) return DIERR_INPUTLOST;
+		ptr_->Poll();
 		HRslt hr = ptr_->GetDeviceState(size, buf);
 		if(hr == DIERR_INPUTLOST) is_acquire_ = false;
 		return hr;
@@ -774,8 +775,12 @@ namespace gctp {
 	{
 		HRslt hr;
 		hr = InputDevice::setUp(input, rguid, hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
-		if(!hr) return hr;
+		if(!hr) {
+			GCTP_ERRORINFO(hr);
+			return hr;
+		}
 		hr = get()->SetDataFormat(&c_dfDIJoystick2);
+		if(!hr) GCTP_ERRORINFO(hr);
 		memset(&buffer_, 0, sizeof(buffer_));
 		memset(&buttons_, 0, sizeof(buttons_));
 		return hr;
@@ -792,7 +797,9 @@ namespace gctp {
 			hr = acquire();
 			if(hr) hr = getState(sizeof(buffer_), &buffer_);
 		}
-		if(!hr) memset(&buffer_, 0, sizeof(buffer_));
+		if(!hr) {
+			memset(&buffer_, 0, sizeof(buffer_));
+		}
 		for(int i = 0; i < MAX_BUTTON; i++) {
 			char prev = buttons_[i];
 			if(buffer_.rgbButtons[i]&0x80) buttons_[i] = PRESS|(prev&PRESS ? 0 : PUSH);

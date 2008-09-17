@@ -40,23 +40,23 @@ namespace gctp { namespace scene {
 		WorldSorter();
 
 		virtual bool onReach(float delta) const;
+		virtual bool onLeave(float delta) const;
 
-		/// 描画対象追加
-		void add(Handle<World> world);
-		/// 描画対象削除
-		void remove(Handle<World> world);
+		/// 描画対象設定
+		void attach(Handle<World> target) { target_ = target; }
+		/// ワールド取得
+		Handle<World> target() const { return target_; }
 
 		mutable DrawPacketVector packets;
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(WorldSorter)
 	
 	protected:
-		HandleList<World> worlds_;
+		Handle<World> target_;
 
 		bool setUp(luapp::Stack &L);
-		void add(luapp::Stack &L);
-		void remove(luapp::Stack &L);
+		void attach(luapp::Stack &L);
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(WorldSorter);
 	};
 
 	/** 簡易効果ノードクラス
@@ -72,12 +72,12 @@ namespace gctp { namespace scene {
 
 		virtual bool onReach(float delta) const;
 		virtual bool onLeave(float delta) const;
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(WorldRenderer)
 	
 	private:
 		Pointer<graphic::dx::StateBlockRsrc> sb_;
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(WorldRenderer);
 	};
 
 	/** 不透明体描画効果ノードクラス
@@ -108,8 +108,8 @@ namespace gctp { namespace scene {
 	private:
 		Pointer<graphic::dx::StateBlockRsrc> sb_;
 
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(OpequeWorldRenderer)
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(OpequeWorldRenderer);
 	};
 
 	/** 半透明体描画ノードクラス
@@ -140,8 +140,8 @@ namespace gctp { namespace scene {
 	private:
 		Pointer<graphic::dx::StateBlockRsrc> sb_;
 
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(TranslucentWorldRenderer)
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(TranslucentWorldRenderer);
 	};
 
 	/** Zフィル用
@@ -160,9 +160,6 @@ namespace gctp { namespace scene {
 		void add(Handle<World> world);
 		/// 描画対象削除
 		void remove(Handle<World> world);
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(ZFillRenderer)
 	
 	protected:
 		HandleList<World> worlds_;
@@ -174,8 +171,11 @@ namespace gctp { namespace scene {
 
 	private:
 		Pointer<graphic::dx::StateBlockRsrc> sb_;
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(ZFillRenderer);
 	};
 
 }} // namespace gctp::scene
 
-#endif // _GCTP_SCENE_GENERICEFFECTER_HPP_
+#endif // _GCTP_SCENE_WORLDRENDERER_HPP_

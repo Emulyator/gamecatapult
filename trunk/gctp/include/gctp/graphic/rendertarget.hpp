@@ -34,7 +34,6 @@ namespace gctp { namespace graphic {
 
 		RenderTarget();
 
-		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(Type type, int width, int height, int format, int miplevel=1);
 
 		HRslt restore();
@@ -74,8 +73,6 @@ namespace gctp { namespace graphic {
 		HRslt save(const _TCHAR *fn);
 		HRslt save(BufferPtr &ret, D3DXIMAGE_FILEFORMAT format);
 
-	GCTP_DECLARE_CLASS
-
 	protected:
 		dx::IDirect3DSurfacePtr ptr_;
 		dx::IDirect3DSurfacePtr backup_;
@@ -88,6 +85,8 @@ namespace gctp { namespace graphic {
 		int org_miplevel_;
 		int index_for_system_;
 		Type type_;
+
+		GCTP_DECLARE_CLASS;
 	};
 
 }} //namespace gctp
