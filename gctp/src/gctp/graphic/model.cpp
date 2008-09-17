@@ -500,42 +500,19 @@ namespace gctp { namespace graphic {
 	 */
 	HRslt Model::draw(int subset_no, const Matrix &mat) const
 	{
-		HRslt hr;
-		if(vb_ && ib_) {
-			device().setMaterial(mtrls[subsets_[subset_no].material_no]);
-			Handle<dx::HLSLShader> shader = mtrls[subsets_[subset_no].material_no].shader;
-			if(shader && *shader) {
-//				hr = (*shader)->SetMatrix("WorldView", &(mat*getView()));
-				hr = (*shader)->SetMatrix("WorldView", mat);
-				if(!hr) GCTP_TRACE(hr);
-				hr = (*shader)->SetMatrix("Projection", getProjection());
-				if(!hr) GCTP_TRACE(hr);
-
-				// ライトスタック上の、最初のディレクショナルライトを採用
-				for(uint i = 0; i < lightNum(); i++) {
-					DirectionalLight light;
-					if(getLight(i, light)) {
-						hr = (*shader)->SetVector("lightDir", Vector4C(-light.dir, 0));
-						if(!hr) GCTP_TRACE(hr);
-						hr = (*shader)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
-						if(!hr) GCTP_TRACE(hr);
-						break;
-					}
-				}
-			}
-			else {
+		if(brush_) return brush_->draw(subset_no, mat);
+		else {
+			HRslt hr;
+			if(vb_ && ib_) {
+				device().setMaterial(mtrls[subsets_[subset_no].material_no]);
 				device().impl()->SetTransform(D3DTS_WORLD, mat);
-			}
-			if(shader && *shader) {
-				hr = (*shader)->CommitChanges();
+				hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subset_no].vertex_offset, subsets_[subset_no].vertex_num, subsets_[subset_no].index_offset, subsets_[subset_no].primitive_num);
 				if(!hr) GCTP_TRACE(hr);
-			}
-			hr = device().impl()->DrawIndexedPrimitive(type_ == TYPE_POLYGON ? D3DPT_TRIANGLELIST : D3DPT_LINELIST, 0, subsets_[subset_no].vertex_offset, subsets_[subset_no].vertex_num, subsets_[subset_no].index_offset, subsets_[subset_no].primitive_num);
-			if(!hr) GCTP_TRACE(hr);
 
-			if(!hr) return hr;
+				if(!hr) return hr;
+			}
+			return hr;
 		}
-		return hr;
 	}
 
 	/** (スキニング済みであれば）スキンモデルとして描画

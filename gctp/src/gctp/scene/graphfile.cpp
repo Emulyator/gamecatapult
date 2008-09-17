@@ -15,6 +15,7 @@
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/dx/hlslshader.hpp>
 #include <gctp/graphic/dx/skinbrush.hpp>
+#include <gctp/graphic/dx/solidbrush.hpp>
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/body.hpp>
@@ -124,6 +125,10 @@ namespace gctp { namespace scene {
 				for(uint i = 0; i < mtrl_num; i++) {
 					model.mtrls[i].diffuse  = _mtrls[i].MatD3D.Diffuse;
 					model.mtrls[i].ambient  = _mtrls[i].MatD3D.Ambient;
+					if(model.mtrls[i].ambient == Color(0, 0, 0)) {
+						model.mtrls[i].ambient = model.mtrls[i].diffuse;
+						// うーん。。。
+					}
 					model.mtrls[i].specular = _mtrls[i].MatD3D.Specular;
 					model.mtrls[i].emissive = _mtrls[i].MatD3D.Emissive;
 					model.mtrls[i].power    = _mtrls[i].MatD3D.Power;
@@ -239,12 +244,23 @@ namespace gctp { namespace scene {
 			if(model.isSkin()) {
 				Handle<graphic::dx::HLSLShader> shader = context()[_T("skinned.fx")];
 				if(shader) {
-					Pointer<graphic::dx::ShaderSkinBrush> p = new graphic::dx::ShaderSkinBrush(model);
-					if(p->setUp()) model.brush() = p;
+					for(size_t i = 0; i < model.mtrls.size(); i++) {
+						if(!model.mtrls[i].shader) {
+							model.mtrls[i].shader = shader;
+						}
+					}
+					if(GraphFile::getCustomSkinnedShaderBrush()) {
+						Pointer<graphic::Brush> p = Factory::create(*GraphFile::getCustomSkinnedShaderBrush());
+						if(p && p->setUp(&model)) model.brush() = p;
+					}
+					else {
+						Pointer<graphic::Brush> p = new graphic::dx::ShaderSkinBrush;
+						if(p && p->setUp(&model)) model.brush() = p;
+					}
 				}
 				else {
-					Pointer<graphic::dx::IndexedSkinBrush> p = new graphic::dx::IndexedSkinBrush(model);
-					if(p->setUp()) model.brush() = p;
+					Pointer<graphic::Brush> p = new graphic::dx::IndexedSkinBrush;
+					if(p && p->setUp(&model)) model.brush() = p;
 				}
 			}
 			else {
@@ -255,8 +271,14 @@ namespace gctp { namespace scene {
 							model.mtrls[i].shader = shader;
 						}
 					}
-					//Pointer<graphic::dx::SolidShaderBrush> p = new graphic::dx::SolidShaderBrush(model);
-					//model.brush() = p;
+					if(GraphFile::getCustomSolidShaderBrush()) {
+						Pointer<graphic::Brush> p = Factory::create(*GraphFile::getCustomSolidShaderBrush());
+						if(p && p->setUp(&model)) model.brush() = p;
+					}
+					else {
+						Pointer<graphic::Brush> p = new graphic::dx::ShaderSolidBrush;
+						if(p && p->setUp(&model)) model.brush() = p;
+					}
 				}
 			}
 
@@ -710,7 +732,22 @@ namespace gctp { namespace scene {
 
 	} // namespace anonymous
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, GraphFile, Object);
+	const GCTP_TYPEINFO *GraphFile::custom_skinned_shader_brush_typeinfo__ = 0;
+	const GCTP_TYPEINFO *GraphFile::custom_solid_shader_brush_typeinfo__ = 0;
+
+	void GraphFile::setCustomSkinnedShaderBrush(const char *classname)
+	{
+		const GCTP_TYPEINFO *typeinfo = Class::get(classname);
+		GCTP_ERROR(typeinfo, _T(" GraphFile::setCustomSkinnedShaderBrush:不明なクラス名:")<<classname);
+		setCustomSkinnedShaderBrush(typeinfo);
+	}
+
+	void GraphFile::setCustomSolidShaderBrush(const char *classname)
+	{
+		const GCTP_TYPEINFO *typeinfo = Class::get(classname);
+		GCTP_ERROR(typeinfo, _T(" GraphFile::setCustomSolidShaderBrush:不明なクラス名:")<<classname);
+		setCustomSolidShaderBrush(typeinfo);
+	}
 
 	/** Xファイルからシーンファイルリソースを生成する。
 	 *
@@ -839,5 +876,59 @@ namespace gctp { namespace scene {
 		}
 		return hr;
 	}
+
+	bool GraphFile::setUp(luapp::Stack &L)
+	{
+		/// 直接制作不可
+		return false;
+	}
+
+	int GraphFile::setCustomSkinnedShaderBrush(luapp::Stack &L)
+	{
+		if(L.top()>=1) setCustomSkinnedShaderBrush(L[1].toCStr());
+		return 0;
+	}
+
+	int GraphFile::getCustomSkinnedShaderBrush(luapp::Stack &L)
+	{
+		Class::Name name = Class::get(*getCustomSkinnedShaderBrush());
+		if(name.classname) {
+			if(name.ns) {
+				L << name.ns << "." << name.classname;
+				lua_concat(L, 3);
+			}
+			else L << name.classname;
+			return 1;
+		}
+		return 0;
+	}
+
+	int GraphFile::setCustomSolidShaderBrush(luapp::Stack &L)
+	{
+		if(L.top()>=1) setCustomSolidShaderBrush(L[1].toCStr());
+		return 0;
+	}
+
+	int GraphFile::getCustomSolidShaderBrush(luapp::Stack &L)
+	{
+		Class::Name name = Class::get(*getCustomSolidShaderBrush());
+		if(name.classname) {
+			if(name.ns) {
+				L << name.ns << "." << name.classname;
+				lua_concat(L, 3);
+			}
+			else L << name.classname;
+			return 1;
+		}
+		return 0;
+	}
+
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, GraphFile, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, GraphFile)
+		TUKI_METHOD(GraphFile, setCustomSkinnedShaderBrush)
+		TUKI_METHOD(GraphFile, getCustomSkinnedShaderBrush)
+		TUKI_METHOD(GraphFile, setCustomSolidShaderBrush)
+		TUKI_METHOD(GraphFile, getCustomSolidShaderBrush)
+	TUKI_IMPLEMENT_END(GraphFile)
 
 }} // namespace gctp::scene

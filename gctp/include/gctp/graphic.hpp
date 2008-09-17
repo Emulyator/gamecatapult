@@ -15,6 +15,7 @@
 #include <gctp/db.hpp>
 #include <gctp/object.hpp>
 #include <gctp/matrix.hpp>
+#include <gctp/color.hpp>
 #include <iosfwd>
 #include <vector>
 #include <stack>
@@ -22,7 +23,6 @@
 struct IDirect3DDevice9;
 
 namespace gctp {
-	struct Color;
 	/** グラフィック関連のモジュール
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
@@ -68,6 +68,7 @@ namespace gctp { namespace graphic {
 			: x(_pos.x), y(_pos.y), width(_size.x), height(_size.y), min_z(0.0f), max_z(1.0f) {}
 		Point2 size() const { return Point2C(width, height); }
 		float aspectRatio() const { return (float)width/(float)height; }
+		Rect getRect() { return RectC(x, y, x+width, y+height); }
 	};
 
 	class Rsrc;
@@ -116,10 +117,10 @@ namespace gctp { namespace graphic {
 		/// ビューマトリクス取得
 		Matrix getView();
 
-		/// グローバルアンビエントライトを設定
-		HRslt setAmbient(const Color &col);
-		/// グローバルアンビエントライトを取得
-		const Color &getAmbient() const;
+		/// アンビエント色を設定
+		HRslt setAmbientColor(Color32 col);
+		/// アンビエント色を取得
+		Color32 getAmbientColor() const;
 		/// ライトを追加
 		HRslt pushLight(const DirectionalLight &lgt);
 		/// ライトを追加
@@ -141,6 +142,8 @@ namespace gctp { namespace graphic {
 
 		/// マテリアル適用
 		void setMaterial(const Material &mtrl);
+		/// マテリアル情報のうちテクスチャとブレンド設定のみ適用
+		void setBlendState(const Material &mtrl);
 
 		/// 深度テスト比較方法
 		enum ZFunc {
@@ -329,15 +332,15 @@ namespace gctp { namespace graphic {
 	}
 
 	/// 環境光を設定
-	inline HRslt setAmbient(const Color &col)
+	inline HRslt setAmbientColor(Color32 col)
 	{
-		return device().setAmbient(col);
+		return device().setAmbientColor(col);
 	}
 
-	/// 環境光を設定
-	inline const Color &getAmbient()
+	/// 環境光色を取得
+	inline Color32 getAmbientColor()
 	{
-		return device().getAmbient();
+		return device().getAmbientColor();
 	}
 
 	/// 平行光源を追加
@@ -398,6 +401,12 @@ namespace gctp { namespace graphic {
 	inline void setMaterial(const Material &mtrl)
 	{
 		device().setMaterial(mtrl);
+	}
+	
+	/// マテリアル情報のうちテクスチャとブレンド設定のみ適用
+	inline void setBlendState(const Material &mtrl)
+	{
+		device().setBlendState(mtrl);
 	}
 
 	/// ステートブロック記録開始

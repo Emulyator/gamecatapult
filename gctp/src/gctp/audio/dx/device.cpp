@@ -21,6 +21,8 @@ namespace gctp { namespace audio { namespace dx {
 
 	namespace {
 		TYPEDEF_DXCOMPTR(IDirectSoundBuffer);
+		TYPEDEF_DXCOMPTR(IDirectSound3DListener8);
+		//TYPEDEF_DXCOMPTR(IDirectSoundNotify);
 	}
 
 	////////////////////
@@ -29,6 +31,7 @@ namespace gctp { namespace audio { namespace dx {
 
 	Device::Device() : notify_thread_id_(0), notify_thread_(NULL)
 	{
+		listener_.dwSize = sizeof(DS3DLISTENER);
 	}
 
 	Device::~Device()
@@ -132,6 +135,55 @@ namespace gctp { namespace audio { namespace dx {
 		return CO_E_NOTINITIALIZED;
 	}
 
+	HRslt Device::initListener()
+	{
+		if(ptr_) {
+			// Get the primary buffer
+			DSBUFFERDESC dsbd;
+			ZeroMemory(&dsbd, sizeof(DSBUFFERDESC));
+			dsbd.dwSize        = sizeof(DSBUFFERDESC);
+			dsbd.dwFlags       = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRL3D;
+			dsbd.dwBufferBytes = 0;
+			dsbd.lpwfxFormat   = NULL;
+			
+			HRslt hr;
+			IDirectSoundBufferPtr primary;
+			if(hr = ptr_->CreateSoundBuffer(&dsbd, &primary, NULL)) {
+				IDirectSound3DListener8Ptr listener = primary;
+				if(listener) hr = listener->GetAllParameters(&listener_);
+				else return CO_E_NOTINITIALIZED;
+			}
+			return hr;
+		}
+		return CO_E_NOTINITIALIZED;
+	}
+
+	HRslt Device::updateListener()
+	{
+		if(ptr_) {
+			// Get the primary buffer
+			DSBUFFERDESC dsbd;
+			ZeroMemory(&dsbd, sizeof(DSBUFFERDESC));
+			dsbd.dwSize        = sizeof(DSBUFFERDESC);
+			dsbd.dwFlags       = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRL3D;
+			dsbd.dwBufferBytes = 0;
+			dsbd.lpwfxFormat   = NULL;
+			
+			HRslt hr;
+			IDirectSoundBufferPtr primary;
+			if(hr = ptr_->CreateSoundBuffer(&dsbd, &primary, NULL)) {
+				IDirectSound3DListener8Ptr listener = primary;
+				if(listener) {
+					hr = listener->SetAllParameters(&listener_, DS3D_DEFERRED);
+					if(hr) hr = listener->CommitDeferredSettings();
+				}
+				else return CO_E_NOTINITIALIZED;
+			}
+			return hr;
+		}
+		return CO_E_NOTINITIALIZED;
+	}
+
 	/** サウンドバッファを用意する
 	 *
 	 * ストリーミングサウンドバッファを作ってクリップに関連付けして返す
@@ -159,6 +211,38 @@ namespace gctp { namespace audio { namespace dx {
 		Pointer<Buffer> ret;
 		if(clip && clip->isOpen()) {
 			ret = newStaticBuffer(ptr_, clip, global_focus_);
+			add(Handle<Buffer>(ret));
+		}
+		return ret;
+	}
+
+	/** 3Dサウンドバッファを用意する
+	 *
+	 * ストリーミングサウンドバッファを作ってクリップに関連付けして返す
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:44:56
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Pointer<Buffer> Device::new3DStream(Handle<Clip> clip) {
+		Pointer<Buffer> ret;
+		if(clip && clip->isOpen()) {
+			ret = newStreaming3DBuffer(ptr_, clip, global_focus_);
+			add(Handle<Buffer>(ret));
+		}
+		return ret;
+	}
+
+	/** ワンショット用3Dサウンドバッファを用意する
+	 *
+	 * 静的サウンドバッファを作ってクリップに関連付けして返す
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/25 19:44:56
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Pointer<Buffer> Device::new3DBuffer(Handle<Clip> clip) {
+		Pointer<Buffer> ret;
+		if(clip && clip->isOpen()) {
+			ret = newStatic3DBuffer(ptr_, clip, global_focus_);
 			add(Handle<Buffer>(ret));
 		}
 		return ret;

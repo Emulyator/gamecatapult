@@ -1,5 +1,5 @@
-#ifndef _GCTP_STATICQUEUE_HPP_
-#define _GCTP_STATICQUEUE_HPP_
+#ifndef _GCTP_STATICRINGBUFFER_HPP_
+#define _GCTP_STATICRINGBUFFER_HPP_
 #ifdef GCTP_ONCE
 #pragma once
 #endif // GCTP_ONCE
@@ -10,29 +10,23 @@
 
 namespace gctp {
 
-	/// 固定サイズのキュー
+	/// 固定サイズのリングバッファ
 	template<typename _T, int _MAX_SIZE>
-	class StaticQueue {
+	class StaticRingBuffer {
 	public:
 		enum Const {
 			MAX_SIZE = _MAX_SIZE
 		};
-		StaticQueue() : front_(0), size_(0) {}
-		bool push(const _T &v)
+		StaticRingBuffer() : front_(0), size_(0) {}
+		void push(const _T &v)
 		{
-			if(push()) {
-				back() = v;
-				return true;
-			}
-			return false;
+			push();
+			back() = v;
 		}
-		bool push()
+		void push()
 		{
-			if(size_<MAX_SIZE) {
-				size_++;
-				return true;
-			}
-			return false;
+			if(size_==MAX_SIZE) pop();
+			size_++;
 		}
 		void pop()
 		{
@@ -84,4 +78,4 @@ namespace gctp {
 	};
 
 } // namespace gctp
-#endif // _GCTP_STATICQUEUE_HPP_
+#endif // _GCTP_STATICRINGBUFFER_HPP_

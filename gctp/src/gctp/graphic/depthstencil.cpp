@@ -22,14 +22,6 @@ namespace gctp { namespace graphic {
 	{
 	}
 
-	/// createOnDB—p
-	HRslt DepthStencil::setUp(const _TCHAR *fname)
-	{
-		assert("not implement.");
-		return S_OK;
-		//return setUp(width, height, format, miplevel);
-	}
-
 	/// —ÌˆæŠm•Û
 	HRslt DepthStencil::setUp(int width, int height, int format, bool discardable)
 	{

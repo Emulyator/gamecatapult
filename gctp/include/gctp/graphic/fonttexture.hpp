@@ -8,6 +8,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/graphic/texture.hpp>
+#include <gctp/color.hpp>
 #include <gctp/types.hpp>
 #include <gctp/vector.hpp>
 #include <boost/scoped_ptr.hpp>

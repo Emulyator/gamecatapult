@@ -56,7 +56,37 @@ namespace gctp { namespace scene {
 		/// (コリジョンファイルとして)XFileの読みこみ
 		bool setUpAsColFromX(BufferPtr buffer);
 		
-	GCTP_DECLARE_CLASS;
+		static void setCustomSkinnedShaderBrush(const char *classname);
+		static void setCustomSkinnedShaderBrush(const GCTP_TYPEINFO *typeinfo)
+		{
+			custom_skinned_shader_brush_typeinfo__ = typeinfo;
+		}
+		static const GCTP_TYPEINFO *getCustomSkinnedShaderBrush()
+		{
+			return custom_skinned_shader_brush_typeinfo__;
+		}
+		static void setCustomSolidShaderBrush(const char *classname);
+		static void setCustomSolidShaderBrush(const GCTP_TYPEINFO *typeinfo)
+		{
+			custom_solid_shader_brush_typeinfo__ = typeinfo;
+		}
+		static const GCTP_TYPEINFO *getCustomSolidShaderBrush()
+		{
+			return custom_solid_shader_brush_typeinfo__;
+		}
+
+	protected:
+		bool setUp(luapp::Stack &L);
+		static int setCustomSkinnedShaderBrush(luapp::Stack &L);
+		static int getCustomSkinnedShaderBrush(luapp::Stack &L);
+		static int setCustomSolidShaderBrush(luapp::Stack &L);
+		static int getCustomSolidShaderBrush(luapp::Stack &L);
+
+	private:
+		static const GCTP_TYPEINFO *custom_skinned_shader_brush_typeinfo__; // とりあえず。。。
+		static const GCTP_TYPEINFO *custom_solid_shader_brush_typeinfo__; // とりあえず。。。
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(GraphFile);
 	};
 
 }} //namespace gctp::scene

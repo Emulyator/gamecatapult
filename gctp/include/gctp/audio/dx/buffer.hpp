@@ -8,6 +8,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/audio/dx/device.hpp>
+#include <gctp/vector.hpp>
 
 namespace gctp { namespace audio {
 	class Clip;
@@ -39,10 +40,31 @@ namespace gctp { namespace audio { namespace dx {
 #endif
 		virtual HRslt restore() = 0;
 		virtual void cleanUp() = 0;
+
+		// 3DÉTÉEÉìÉhån
+		virtual void setPosition(const Vector &) = 0;
+		virtual Vector getPosition() = 0;
+		virtual void setVelocity(const Vector &) = 0;
+		virtual Vector getVelocity() = 0;
+		virtual void setMaxDistance(float) = 0;
+		virtual float getMaxDistance() = 0;
+		virtual void setMinDistance(float) = 0;
+		virtual float getMinDistance() = 0;
+		virtual void setDirection(const Vector &) = 0;
+		virtual Vector getDirection() = 0;
+		virtual void setTheta(float) = 0;
+		virtual float getTheta() = 0;
+		virtual void setPhi(float) = 0;
+		virtual float getPhi() = 0;
+		virtual void setOutsideVolume(float) = 0;
+		virtual float getOutsideVolume() = 0;
+		virtual void commit() = 0;
 	};
 
 	Pointer<Buffer> newStaticBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
 	Pointer<Buffer> newStreamingBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
+	Pointer<Buffer> newStatic3DBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
+	Pointer<Buffer> newStreaming3DBuffer(IDirectSound8Ptr device, Handle<Clip> clip, bool global_focus);
 
 }}} // namespace gctp
 

@@ -29,10 +29,10 @@ namespace gctp { namespace scene {
 			chasee_stance.position += chasee_stance.posture.transform(position_offset);
 			chasee_stance.posture *= QuatC(posture_offset.y, posture_offset.x, posture_offset.z);
 
-			Stance oldstance = target->stance();
+			Stance oldstance = target->node()->val.wtm();
 			Stance newstance;
 			newstance.set2PInterpolation(oldstance, chasee_stance, dumping_factor);
-			target->setStance(newstance);
+			target->node()->val.updateWTM(newstance.toMatrix());
 		}
 		return true;
 	}
@@ -41,15 +41,8 @@ namespace gctp { namespace scene {
 	{
 		if(L.top() >= 2) {
 			target_ = tuki_cast<Camera>(L[1]);
-			Pointer<Entity> entity = tuki_cast<Entity>(L[2]);
-			if(entity) {
-				if(L.top() >= 3) {
-					chasee_ = entity->skeleton()[L[3].toCStr()];
-				}
-				else {
-					chasee_ = entity->skeleton().root();
-				}
-			}
+			Pointer<StrutumNode> node = tuki_cast<StrutumNode>(L[2]);
+			chasee_ = node;
 		}
 		else {
 			target_ = 0;

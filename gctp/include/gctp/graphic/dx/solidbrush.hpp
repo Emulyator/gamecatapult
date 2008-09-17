@@ -4,7 +4,7 @@
 #pragma once
 #endif // GCTP_ONCE
 /** @file
- * GameCatapult スキンメッシュクラス
+ * GameCatapult ソリッドシェーダーブラシクラス
  *
  * @author SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>
  * @date 2001/8/6
@@ -22,18 +22,16 @@
 namespace gctp { namespace graphic { namespace dx {
 
 	/// 非スキンHLSLシェーダーブラシ基底クラス
-	class SolidShaderBrush : public Brush {
+	class ShaderSolidBrush : public Brush {
 	public:
-		SolidShaderBrush(Model &target) : Brush(target) {}
-		
 		/// 描画準備
-		HRslt begin(Handle<Shader> _shader, const Matrix &mat/**< モデル行列*/) const
+		virtual HRslt begin(Handle<Shader> _shader, const Matrix &mat/**< モデル行列*/) const
 		{
 			Handle<dx::HLSLShader> shader = _shader;
-			if(mesh_ && shader) {
+			if(shader) {
 				HRslt hr;
 				dx::IDirect3DDevicePtr dev;
-				hr = mesh_->GetDevice(&dev);
+				hr = target()->mesh()->GetDevice(&dev);
 				if(!hr) return hr;
 								
 				// Set Light for vertex shader
@@ -55,7 +53,7 @@ namespace gctp { namespace graphic { namespace dx {
 					dev->GetTransform(D3DTS_VIEW, &view_proj_mat);
 					dev->GetTransform(D3DTS_PROJECTION, &mat);
 					D3DXMatrixMultiply(&view_proj_mat, &view_proj_mat, &mat);
-					hr = (*shader)->SetMatrix("mViewProj", &view_proj_mat);
+					hr = (*shader)->SetMatrix("ViewProj", &view_proj_mat);
 					if(!hr) GCTP_TRACE(hr);
 				}
 				return hr;
@@ -64,26 +62,26 @@ namespace gctp { namespace graphic { namespace dx {
 		}
 		
 		/// 描画
-		HRslt draw(uint subset_no, const Matrix &mat/**< モデル行列*/) const
+		virtual HRslt draw(uint subset_no, const Matrix &mat/**< モデル行列*/) const
 		{
 			HRslt hr;
-			Handle<dx::HLSLShader> shader = target_.mtrls[bonecb[subset_no].AttribId].shader;
+			Handle<dx::HLSLShader> shader = target()->mtrls[subsets()[subset_no].material_no].shader;
 			if(shader) {
 				dx::IDirect3DDevicePtr dev;
-				hr = mesh_->GetDevice(&dev);
+				hr = target()->mesh()->GetDevice(&dev);
 				if(!hr) return hr;
 				
 				// Sum of all ambient and emissive contribution
-				Color amb_emm = target_.mtrls[bonecb[subset_no].AttribId].ambient*getAmbient()+target_.mtrls[bonecb[subset_no].AttribId].emissive;
+				Color amb_emm = target()->mtrls[subsets()[subset_no].material_no].ambient*Color(getAmbientColor())+target()->mtrls[subsets()[subset_no].material_no].emissive;
 				hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
 				if(!hr) GCTP_TRACE(hr);
 				// set material color properties 
-				hr = (*shader)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&target_.mtrls[bonecb[subset_no].AttribId].diffuse);
+				hr = (*shader)->SetVector("MaterialDiffuse", (D3DXVECTOR4*)&target()->mtrls[subsets()[subset_no].material_no].diffuse);
 				if(!hr) GCTP_TRACE(hr);
 				
 				(*shader)->CommitChanges();
-				device().setMaterial(target_.mtrls[bonecb[subset_no].AttribId]);
-				hr = mesh_->DrawSubset(subset_no);
+				device().setMaterial(target()->mtrls[subsets()[subset_no].material_no]);
+				hr = target()->mesh()->DrawSubset(subset_no);
 				if(!hr) {
 					GCTP_TRACE(hr);
 					PRNN("subset_no = "<<subset_no<<";passnum = "<<shader->passnum());

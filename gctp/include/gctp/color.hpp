@@ -93,6 +93,16 @@ namespace gctp {
 			return rhs/lhs;
 		}
 
+		// ”äŠr‰‰ŽZŽq
+		bool operator==(const Color &rhs)
+		{
+			return (r == rhs.r && g == rhs.g && b == rhs.b && a == rhs.a);
+		}
+		bool operator!=(const Color &rhs)
+		{
+			return (r != rhs.r && g != rhs.g && b != rhs.b && a != rhs.a);
+		}
+
 		operator float *() { return &r; }
 		operator const float *() const { return &r; }
 #ifdef GCTP_USE_D3DXMATH
@@ -229,6 +239,16 @@ namespace gctp {
 		friend Color32 operator/(float lhs, const Color32 &rhs)
 		{
 			return rhs/lhs;
+		}
+
+		// ”äŠr‰‰ŽZŽq
+		bool operator==(const Color32 &rhs)
+		{
+			return i32 == rhs.i32;
+		}
+		bool operator!=(const Color32 &rhs)
+		{
+			return i32 != rhs.i32;
 		}
 
 #ifdef D3DCOLOR_DEFINED

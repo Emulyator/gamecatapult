@@ -27,26 +27,12 @@ namespace gctp { namespace scene {
 	// 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, WorldSorter, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, WorldSorter)
-		TUKI_METHOD(WorldSorter, add)
-		TUKI_METHOD(WorldSorter, remove)
+		TUKI_METHOD(WorldSorter, attach)
 	TUKI_IMPLEMENT_END(WorldSorter)
 
 	WorldSorter::WorldSorter()
 	{
 		packets.reserve(1024);
-	}
-
-	void WorldSorter::add(Handle<World> world)
-	{
-		if(world) {
-			worlds_.push_back(world);
-			worlds_.unique();
-		}
-	}
-
-	void WorldSorter::remove(Handle<World> world)
-	{
-		if(world) worlds_.remove(world);
 	}
 
 	/** ワールド描画
@@ -55,29 +41,30 @@ namespace gctp { namespace scene {
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/11 2:34:02
-	 */	
+	 */
 	bool WorldSorter::onReach(float delta) const
 	{
 		WorldSorter *self = const_cast<WorldSorter *>(this);
 		packets.clear();
-		for(HandleList<World>::iterator world = self->worlds_.begin(); world != self->worlds_.end();) {
-			if(*world) {
-				(*world)->begin();
-				for(HandleList<Body>::iterator i = (*world)->body_list.begin(); i != (*world)->body_list.end();) {
-					if(*i) {
-						//(*i)->draw(); // パスに関する情報をここで送るべき？
-						(*i)->pushPackets(packets);
-						++i;
-					}
-					else i = (*world)->body_list.erase(i);
+		if(target_) {
+			target_->begin();
+			for(HandleList<Body>::iterator i = self->target_->body_list.begin(); i != self->target_->body_list.end();) {
+				if(*i) {
+					//(*i)->draw(); // パスに関する情報をここで送るべき？
+					(*i)->pushPackets(packets);
+					++i;
 				}
-				(*world)->end();
-				++world;
+				else i = self->target_->body_list.erase(i);
 			}
-			else world = self->worlds_.erase(world);
+			packets.sort();
 		}
-		packets.sort();
 		return false;
+	}
+
+	bool WorldSorter::onLeave(float delta) const
+	{
+		if(target_) target_->end();
+		return true;
 	}
 
 	bool WorldSorter::setUp(luapp::Stack &L)
@@ -86,19 +73,11 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
-	void WorldSorter::add(luapp::Stack &L)
+	void WorldSorter::attach(luapp::Stack &L)
 	{
 		if(L.top() >=1) {
 			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) add(world);
-		}
-	}
-
-	void WorldSorter::remove(luapp::Stack &L)
-	{
-		if(L.top() >=1) {
-			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) remove(world);
+			attach(world);
 		}
 	}
 
@@ -119,6 +98,7 @@ namespace gctp { namespace scene {
 				graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
 				graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESS );
+				graphic::device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
@@ -160,8 +140,7 @@ namespace gctp { namespace scene {
 	// 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, WorldRenderer, WorldSorter);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, WorldRenderer)
-		TUKI_METHOD(WorldRenderer, add)
-		TUKI_METHOD(WorldRenderer, remove)
+		TUKI_METHOD(WorldRenderer, attach)
 	TUKI_IMPLEMENT_END(WorldRenderer)
 
 	WorldRenderer::WorldRenderer()
@@ -180,10 +159,6 @@ namespace gctp { namespace scene {
 	bool WorldRenderer::onReach(float delta) const
 	{
 		WorldSorter::onReach(delta);
-#ifndef __ee__
-		graphic::setAmbient(graphic::getAmbient());
-		graphic::clearLight();
-#endif
 		sb_->begin();
 		packets.draw();
 		return false;
@@ -192,6 +167,7 @@ namespace gctp { namespace scene {
 	bool WorldRenderer::onLeave(float delta) const
 	{
 		sb_->end();
+		WorldSorter::onLeave(delta);
 		return true;
 	}
 
@@ -232,11 +208,8 @@ namespace gctp { namespace scene {
 	 */	
 	bool OpequeWorldRenderer::onReach(float delta) const
 	{
-#ifndef __ee__
-		graphic::setAmbient(graphic::getAmbient());
-		graphic::clearLight();
-#endif
 		if(target_) {
+			if(target_->target()) target_->target()->begin();
 			sb_->begin();
 			target_->packets.drawOpeque();
 		}
@@ -245,7 +218,10 @@ namespace gctp { namespace scene {
 
 	bool OpequeWorldRenderer::onLeave(float delta) const
 	{
-		if(target_) sb_->end();
+		if(target_) {
+			sb_->end();
+			if(target_->target()) target_->target()->end();
+		}
 		return true;
 	}
 
@@ -286,11 +262,8 @@ namespace gctp { namespace scene {
 	 */	
 	bool TranslucentWorldRenderer::onReach(float delta) const
 	{
-#ifndef __ee__
-		graphic::setAmbient(graphic::getAmbient());
-		graphic::clearLight();
-#endif
 		if(target_) {
+			if(target_->target()) target_->target()->begin();
 			sb_->begin();
 			target_->packets.drawTranslucent();
 		}
@@ -299,7 +272,10 @@ namespace gctp { namespace scene {
 
 	bool TranslucentWorldRenderer::onLeave(float delta) const
 	{
-		if(target_) sb_->end();
+		if(target_) {
+			sb_->end();
+			if(target_->target()) target_->target()->end();
+		}
 		return true;
 	}
 

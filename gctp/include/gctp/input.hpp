@@ -119,6 +119,7 @@ namespace gctp {
 		inline bool press(int key) { return (buttons_[key]&PRESS)?true:false; }
 		inline bool push(int key) { return (buttons_[key]&PUSH)?true:false; }
 		inline bool release(int key) { return (buttons_[key]&RELEASE)?true:false; }
+		inline int getHat(int index) { return LOWORD(buffer_.rgdwPOV[index]) == 0xFFFF ? 0 : buffer_.rgdwPOV[index]/4500+1; }
 
 		DIJOYSTATE2 buffer_;
 

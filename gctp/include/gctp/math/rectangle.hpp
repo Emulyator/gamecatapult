@@ -137,7 +137,7 @@ namespace gctp { namespace math {
 			return *this;
 		}
 		Rectangle regular() const {
-			return Rectangle(*this).regular();
+			return Rectangle(*this).regularize();
 		}
 		bool isHit(const Vector2d<_Type> &p) const {
 			return (left <= p.x && p.x <= right && top <= p.y && p.y <= bottom);

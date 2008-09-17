@@ -150,7 +150,7 @@ namespace gctp { namespace graphic { namespace dx {
 		ptr_->SetCursorPosition(pos.x, pos.y, 0);
 	}
 
-	Device::Device() : clear_color_(89/255.0f,135/255.0f,179/255.0f), ambient_light_(0.0f,0.0f,0.0f), cursor_backup_(NULL)
+	Device::Device() : clear_color_(89/255.0f,135/255.0f,179/255.0f), cursor_backup_(NULL)
 	{
 	}
 
@@ -474,10 +474,16 @@ namespace gctp { namespace graphic { namespace dx {
 		return 0;
 	}
 
-	HRslt Device::setAmbient(const Color &col)
+	HRslt Device::setAmbientColor(Color32 col)
 	{
-		ambient_light_ = col;
 		return ptr_->SetRenderState( D3DRS_AMBIENT, col );
+	}
+
+	Color32 Device::getAmbientColor() const
+	{
+		DWORD ret;
+		ptr_->GetRenderState( D3DRS_AMBIENT, &ret );
+		return Color32(ret);
 	}
 
 	HRslt Device::pushLight(const D3DLIGHT9 &lgt)
@@ -673,6 +679,11 @@ namespace gctp { namespace graphic { namespace dx {
 		if(tex) ptr_->SetTexture(2, *tex);
 		else ptr_->SetTexture(2, NULL);
 
+		setBlendState(mtrl);
+	}
+
+	void Device::setBlendState(const Material &mtrl)
+	{
 		switch(mtrl.blend) {
 		case Material::OPEQUE:
 			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );

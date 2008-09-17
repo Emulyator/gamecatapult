@@ -172,13 +172,13 @@ namespace gctp { namespace graphic {
 	
 	using namespace detail;
 
-	Text::Text() : impl_(new TextImpl), clip_(0,0,0,0), layout_(0,0,0,0)
+	Text::Text() : impl_(new TextImpl), size(Point2C(0, 0)), offset(Point2C(0, 0)), bounds(RectC(0,0,LONG_MAX,LONG_MAX))
 	{
 	}
 
 	Text::~Text()
 	{
-		//TextImplを公開していないので、空のデストラクタを宣言しないと使用側でTextImplの削除法がわからないといわれる
+		//TextImplを公開していないので、空のデストラクタを宣言しないと使用側でTextImplの解体方がわからないといわれる
 	}
 
 	Text &Text::setPos(float x, float y, int ofs)
@@ -222,16 +222,6 @@ namespace gctp { namespace graphic {
 		Point2f ret;
 		proccess(NULL, fonttex, NULL, &ret, ofs);
 		return ret;
-	}
-
-	void Text::setClip(const Rect &rc)
-	{
-		clip_ = rc;
-	}
-
-	void Text::setLayoutRectangle(const Rect &rc)
-	{
-		layout_ = rc;
 	}
 
 	/// 書き込みバッファを巻き戻す
@@ -285,7 +275,7 @@ namespace gctp { namespace graphic {
 		// 描画開始
 		bool setvp = false;
 		ViewPort vp_bu;
-		if(clip_.width() > 0 || clip_.height() > 0) {
+		if(bounds.width() > 0 || bounds.height() > 0) {
 			setvp = true;
 			if(spr) {
 				Point2 screen = getScreenSize();
@@ -293,17 +283,17 @@ namespace gctp { namespace graphic {
 				ViewPort vp;
 				vp.min_z = 0;
 				vp.max_z = 1;
-				if(clip_.width() > 0) {
-					vp.x = clip_.left;
-					vp.width = clip_.width();
+				if(bounds.width() > 0) {
+					vp.x = bounds.left;
+					vp.width = bounds.width();
 				}
 				else {
 					vp.x = 0;
 					vp.width = screen.x;
 				}
-				if(clip_.height() > 0) {
-					vp.y = clip_.top;
-					vp.height = clip_.height();
+				if(bounds.height() > 0) {
+					vp.y = bounds.top;
+					vp.height = bounds.height();
 				}
 				else {
 					vp.y = 0;
@@ -312,9 +302,11 @@ namespace gctp { namespace graphic {
 				setViewPort(vp);
 			}
 		}
+		Rectf clip = RectfC(getViewPort().getRect());
 		if(spr)	spr->begin(fonttex, false);
 		int prev_c = 0, now_disp_count = 0;
-		float x = (float)layout_.left, y = (float)layout_.top;
+		Point2 base_position = Point2C(bounds.left+offset.x, bounds.top+offset.y);
+		float x = (float)base_position.x, y = (float)base_position.y;
 		Text::Alignment alignment = Text::LEFT;
 		Color32 color(0, 0, 0);
 		uint line_height = 0, default_line_height = 0, space_size = 0;
@@ -326,7 +318,7 @@ namespace gctp { namespace graphic {
 			if(n == 0) break;
 			for(AttrMap::iterator attri = impl_->attrs_.lower_bound(i); attri != impl_->attrs_.upper_bound(i+ios::pos_type(n-1)); attri++) {
 				if(attri->second.type == Attr::POSITION) {
-					x = layout_.left+attri->second.pos.x; y = layout_.top+attri->second.pos.y;
+					x = base_position.x+attri->second.pos.x; y = base_position.y+attri->second.pos.y;
 					prev_c = 0;
 				}
 				else if(attri->second.type == Attr::COLOR) {
@@ -353,14 +345,14 @@ namespace gctp { namespace graphic {
 
 			if(c == _T('\n') || c == _T('\r')) {
 				if(!loopback) {
-					x = (float)layout_.left; y += line_height; line_height = default_line_height;
+					x = (float)base_position.x; y += line_height; line_height = default_line_height;
 				}
 				loopback = false;
 				prev_c = c;
 				continue;
 			}
 			else if( c == _T('\t') ) {
-				x = layout_.left+toTabbed(x-layout_.left, space_size*4);
+				x = base_position.x+toTabbed(x-base_position.x, space_size*4);
 				prev_c = c;
 				continue;
 			}
@@ -385,12 +377,12 @@ namespace gctp { namespace graphic {
 					_text += n;
 					_i += n;
 				}
-				if(width < layout_.width()) {
+				if(width < this->size.x) {
 					if(alignment == Text::CENTER) {
-						x += (float)(layout_.width()-width)/2;
+						x += (int)((this->size.x-width)/2);
 					}
 					else {
-						x += (float)(layout_.width()-width);
+						x += (int)(this->size.x-width);
 					}
 				}
 			}
@@ -400,17 +392,17 @@ namespace gctp { namespace graphic {
 					glyph = fonttex.find(font, c);
 					if(glyph) {
 						if(line_height < glyph.size.y) line_height = static_cast<uint>(glyph.size.y);
-						if(layout_.width() > 0) {
+						if(this->size.x > 0) {
 							// 折り返し処理
-							if(x > layout_.right+font->maxWidth()
-							|| (x+glyph.size.x > layout_.right && !forbidden().toLineEnd((_TCHAR)prev_c) && !forbidden().toLineTop((_TCHAR)c) && !(forbidden().toSeparate((_TCHAR)c)&&prev_c==c))
-							|| (forbidden().toLineEnd((_TCHAR)c) && x+glyph.size.x+font->maxWidth() > layout_.right)) {
-								x = (float)layout_.left; y += line_height;
+							if(x > (base_position.x+this->size.x)+font->maxWidth()
+							|| (x+glyph.size.x > (base_position.x+this->size.x) && !forbidden().toLineEnd((_TCHAR)prev_c) && !forbidden().toLineTop((_TCHAR)c) && !(forbidden().toSeparate((_TCHAR)c)&&prev_c==c))
+							|| (forbidden().toLineEnd((_TCHAR)c) && x+glyph.size.x+font->maxWidth() > (base_position.x+this->size.x))) {
+								x = (float)base_position.x; y += line_height;
 								loopback = true;
 							}
 						}
 						if(spr || descvec) {
-							if(!isSpaceChar(c) && (!setvp || clip_.isHit(RectC((uint_t)x, (uint_t)y, (uint_t)(x+glyph.size.x), (uint_t)(y+line_height))))) {
+							if(!isSpaceChar(c) && (!setvp || clip.isHit(RectfC(x, y, x+glyph.size.x, y+line_height)))) {
 								if(font->exStyle()!=Font::EX_NONE) {
 									// 影文字袋文字のときの特別処理
 									if((c == _T('―') // 全角ダッシュ

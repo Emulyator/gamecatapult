@@ -26,14 +26,6 @@ namespace gctp { namespace graphic {
 	{
 	}
 
-	/// createOnDB—p
-	HRslt RenderTarget::setUp(const _TCHAR *fname)
-	{
-		assert("not implement.");
-		return S_OK;
-		//return setUp(width, height, format, miplevel);
-	}
-
 	/// —ÌˆæŠm•Û
 	HRslt RenderTarget::setUp(Type type, int width, int height, int format, int miplevel)
 	{

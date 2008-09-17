@@ -10,6 +10,7 @@
 #include "common.h"
 #include <gctp/scene/drawpacket.hpp>
 #include <gctp/scene/flesh.hpp>
+#include <gctp/scene/world.hpp>
 #include <gctp/graphic/shader.hpp>
 #include <gctp/graphic/model.hpp>
 #include <gctp/graphic/brush.hpp>
@@ -67,6 +68,7 @@ namespace gctp { namespace scene {
 					Pointer<Skeleton> skl = i->flesh->skeleton().lock();
 					if(skl) {
 						if(i->model->brush()) i->model->brush()->begin(const_cast<graphic::Shader *>(current_shader), *skl);
+						if(World::isActive()) World::current().applyLights(i->flesh->bs(), 2, 3, 0);
 						i->model->draw(i->subset_no, *skl);
 						if(i->model->brush()) i->model->brush()->end();
 					}
@@ -75,9 +77,10 @@ namespace gctp { namespace scene {
 				else if(i->flesh->node()) {
 					Pointer<StrutumNode> node = i->flesh->node().lock();
 					if(node) {
-						//if(i->model->brush()) i->model->brush()->begin(const_cast<graphic::Shader *>(current_shader));
+						if(i->model->brush()) i->model->brush()->begin(const_cast<graphic::Shader *>(current_shader), node->val.wtm());
+						if(World::isActive()) World::current().applyLights(i->flesh->bs(), 2, 3, 0);
 						i->model->draw(i->subset_no, node->val.wtm());
-						//if(i->model->brush()) i->model->brush()->end();
+						if(i->model->brush()) i->model->brush()->end();
 					}
 					// ƒGƒ‰[•\¦‚µ‚½‚Ù‚¤‚ª‚¢‚¢‚Ì‚©‚È
 				}

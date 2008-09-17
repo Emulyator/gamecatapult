@@ -158,7 +158,8 @@ namespace gctp {
 		CSVSASchema schema_;
 	};
 
-	typedef unsigned int uint32_t;
+	typedef unsigned long uint32_t;
+	// なんだこれ？？
 
 	/** CSVSA表記の１チャンクを保持
 	 *
@@ -183,10 +184,10 @@ namespace gctp {
 		std::string str4CC()
 		{
 			char c[5] = {
-				(fourcc_>>24)&0xFF,
-				(fourcc_>>16)&0xFF,
-				(fourcc_>>8)&0xFF,
-				(fourcc_)&0xFF,
+				static_cast<char>((fourcc_>>24)&0xFF),
+				static_cast<char>((fourcc_>>16)&0xFF),
+				static_cast<char>((fourcc_>>8)&0xFF),
+				static_cast<char>((fourcc_)&0xFF),
 				'\0'
 			};
 			return c;

@@ -11,131 +11,427 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/light.hpp>
 #include <gctp/dbgout.hpp>
+#include <limits>
 
 using namespace std;
 
 namespace gctp { namespace scene {
 
-	AmbientLight::AmbientLight() {}
-
-	AmbientLight::AmbientLight(const Color &color) : color_(color) {}
-	
-	void AmbientLight::set(const Color &color)
-	{
-		color_ = color;
+	Light::Light() {
+		ambient = Color(0, 0, 0);
+		diffuse = Color(1, 1, 1);
+		specular = Color(0, 0, 0);
+		range = 1;
+		attenuation[0] = 0;
+		attenuation[1] = 1;
+		attenuation[0] = 0;
 	}
 
-	bool AmbientLight::onReach() const
+	Light::Light(const graphic::DirectionalLight &light)
 	{
-		graphic::setAmbient(color_);
-		return true;
+		attenuation[0] = 0;
+		attenuation[1] = 1;
+		attenuation[0] = 0;
+		set(light);
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, AmbientLight, Object);
-
-
-	ParallelLight::ParallelLight() {}
-
-	ParallelLight::ParallelLight(const graphic::DirectionalLight &light) : light_(light) {}
-	
-	void ParallelLight::set(const graphic::DirectionalLight &light)
+	Light::Light(const graphic::PointLight &light)
 	{
-		light_ = light;
+		set(light);
 	}
 
-	bool ParallelLight::onReach() const
+	Light::Light(const graphic::SpotLight &light)
 	{
-		graphic::pushLight(light_);
-		return true;
+		set(light);
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, ParallelLight, Object);
-
-
-	Light::Light() {}
-	Light::Light(const graphic::PointLight &point) { set(point); }
-	Light::Light(const graphic::SpotLight &spot) { set(spot); }
+	void Light::set(const graphic::DirectionalLight &light)
+	{
+		type = AREA;
+		ambient = light.ambient;
+		diffuse = light.diffuse;
+		specular = light.specular;
+		range = numeric_limits<float>::infinity();
+	}
 	
 	void Light::set(const graphic::PointLight &light)
 	{
-		type_ = POINT;
-		ambient_ = light.ambient;
-		diffuse_ = light.diffuse;
-		specular_ = light.specular;
-		range_ = light.range;
-		attenuation_[0] = light.attenuation[0];
-		attenuation_[1] = light.attenuation[1];
-		attenuation_[2] = light.attenuation[2];
-		//stance_.pos = light.pos;
-		//stance_.ort = Quat::identity();
+		type = POINT;
+		ambient = light.ambient;
+		diffuse = light.diffuse;
+		specular = light.specular;
+		range = light.range;
+		attenuation[0] = light.attenuation[0];
+		attenuation[1] = light.attenuation[1];
+		attenuation[2] = light.attenuation[2];
+		if(node_) {
+		}
 	}
 
 	void Light::set(const graphic::SpotLight &light)
 	{
-		type_ = SPOT;
-		ambient_ = light.ambient;
-		diffuse_ = light.diffuse;
-		specular_ = light.specular;
-		range_ = light.range;
-		attenuation_[0] = light.attenuation[0];
-		attenuation_[1] = light.attenuation[1];
-		attenuation_[2] = light.attenuation[2];
-		falloff_ = light.falloff;
-		theta_ = light.theta;
-		phi_ = light.phi;
-		//stance_.pos = light.pos;
-		//stance_.ort.setSmallestArc(Vector(0.0f, 0.0f, 1.0f), light.dir);
+		type = SPOT;
+		ambient = light.ambient;
+		diffuse = light.diffuse;
+		specular = light.specular;
+		range = light.range;
+		attenuation[0] = light.attenuation[0];
+		attenuation[1] = light.attenuation[1];
+		attenuation[2] = light.attenuation[2];
+		falloff = light.falloff;
+		theta = light.theta;
+		phi = light.phi;
 	}
 
-	void Light::setUp()
+	void Light::newNode()
 	{
-		//stance_.setDefault();
-		node_ = StrutumNode::create();
+		own_node_ = StrutumNode::create();
+		node_ = own_node_;
+	}
+
+	void Light::attach(Handle<StrutumNode> node)
+	{
+		if(own_node_) {
+			own_node_->remove();
+			own_node_ = 0;
+		}
+		node_ = node;
 	}
 
 	void Light::enter(World &world)
 	{
-		world.strutum_tree.root()->push(node_.get());
-		//world.rendering_tree->push(this);
+		world.light_list.push_back(this);
+		world.light_list.unique();
+		if(own_node_) world.strutum_tree.root()->push(own_node_);
 	}
 
-	bool Light::onReach() const
+	void Light::exit(World &world)
 	{
-		switch(type_) {
+		world.light_list.remove(this);
+		if(own_node_) own_node_->remove();
+	}
+
+	void Light::apply() const
+	{
+		switch(type) {
+		case AREA:	{
+			graphic::DirectionalLight light;
+			light.ambient = ambient;
+			light.diffuse = diffuse;
+			light.specular = specular;
+			light.dir = node_->val.wtm().at();
+			graphic::pushLight(light);
+					}
+			break;
 		case POINT:	{
 			graphic::PointLight light;
-			light.ambient = ambient_;
-			light.diffuse = diffuse_;
-			light.specular = specular_;
+			light.ambient = ambient;
+			light.diffuse = diffuse;
+			light.specular = specular;
 			light.pos = node_->val.wtm().position();
-			light.range = range_;
-			light.attenuation[0] = attenuation_[0];
-			light.attenuation[1] = attenuation_[1];
-			light.attenuation[2] = attenuation_[2];
+			light.range = range;
+			light.attenuation[0] = attenuation[0];
+			light.attenuation[1] = attenuation[1];
+			light.attenuation[2] = attenuation[2];
 			graphic::pushLight(light);
 					}
 			break;
 		case SPOT:	{
 			graphic::SpotLight light;
-			light.ambient = ambient_;
-			light.diffuse = diffuse_;
-			light.specular = specular_;
+			light.ambient = ambient;
+			light.diffuse = diffuse;
+			light.specular = specular;
 			light.pos = node_->val.wtm().position();
-			light.range = range_;
-			light.attenuation[0] = attenuation_[0];
-			light.attenuation[1] = attenuation_[1];
-			light.attenuation[2] = attenuation_[2];
-			light.dir = node_->val.wtm().transformVector(VectorC(0.0f, 0.0f, 1.0f));
-			light.falloff = falloff_;
-			light.theta = theta_;
-			light.phi = phi_;
+			light.range = range;
+			light.attenuation[0] = attenuation[0];
+			light.attenuation[1] = attenuation[1];
+			light.attenuation[2] = attenuation[2];
+			light.dir = node_->val.wtm().at();
+			light.falloff = falloff;
+			light.theta = theta;
+			light.phi = phi;
 			graphic::pushLight(light);
 					}
 			break;
 		}
-		return true;
+	}
+
+	void Light::update()
+	{
+		switch(type) {
+		case AREA:
+		case POINT:
+			bs_.r = range;
+			bs_.c = node_->val.wtm().position();
+			break;
+		case SPOT:
+			// â~êçÇ™ì‡ê⁄Ç∑ÇÈãÖÇãÅÇﬂÇÈ
+			bs_.r = range*tanf(0.5f*phi);
+			if(bs_.r < range) {
+				float cos_phi_half = cosf(0.5f*phi);
+				bs_.r = range/(cos_phi_half*cos_phi_half*2);
+				bs_.c = node_->val.wtm().position()+node_->val.wtm().at().normal()*bs_.r;
+			}
+			else {
+				bs_.c = node_->val.wtm().position()+node_->val.wtm().at().normal()*range;
+			}
+			break;
+		}
+	}
+
+	bool Light::setUp(luapp::Stack &L)
+	{
+		// Context:createÇ≈êªçÏÇ∑ÇÈ
+		return false;
+	}
+
+	void Light::newNode(luapp::Stack &L)
+	{
+		newNode();
+	}
+
+	void Light::attach(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			attach(tuki_cast<StrutumNode>(L[1]));
+		}
+	}
+
+	void Light::enter(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) enter(*world);
+		}
+	}
+
+	void Light::exit(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) exit(*world);
+		}
+	}
+
+	void Light::setPosition(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(node_) node_->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[2].toNumber(),(float)L[3].toNumber()));
+		}
+	}
+
+	int Light::getPosition(luapp::Stack &L)
+	{
+		if(node_) {
+			Vector v = node_->val.lcm().position();
+			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
+	}
+
+	void Light::setPosture(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			if(node_) {
+				Coord c = node_->val.lcm();
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+				node_->val.getLCM() = c.toMatrix();
+			}
+		}
+	}
+
+	int Light::getPosture(luapp::Stack &L)
+	{
+		if(node_) {
+			Coord c = node_->val.lcm();
+			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
+			return 3;
+		}
+		return 0;
+	}
+
+	void Light::setType(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			if(L[1].isNumber()) {
+				type = (Type)L[1].toInteger();
+			}
+			else {
+				const char *s = L[1].toCStr();
+				if(s) {
+					switch(*s) {
+					case 'a':
+					case 'A':
+					case 'd':
+					case 'D':
+						type = AREA;
+						break;
+					case 'p':
+					case 'P':
+						type = POINT;
+						break;
+					case 's':
+					case 'S':
+						type = SPOT;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	int Light::getType(luapp::Stack &L)
+	{
+		switch(type) {
+		case AREA:
+			L << "AREA";
+			return 1;
+		case POINT:
+			L << "POINT";
+			return 1;
+		case SPOT:
+			L << "SPOT";
+			return 1;
+		}
+		return 0;
+	}
+
+	void Light::setAmbient(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			ambient.r = (float)L[1].toNumber();
+			ambient.g = (float)L[2].toNumber();
+			ambient.b = (float)L[3].toNumber();
+			if(L.top() >= 4) ambient.a = (float)L[4].toNumber();
+		}
+	}
+
+	int Light::getAmbient(luapp::Stack &L)
+	{
+		L << ambient.r << ambient.g << ambient.b << ambient.a;
+		return 4;
+	}
+
+	void Light::setDiffuse(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			diffuse.r = (float)L[1].toNumber();
+			diffuse.g = (float)L[2].toNumber();
+			diffuse.b = (float)L[3].toNumber();
+			if(L.top() >= 4) diffuse.a = (float)L[4].toNumber();
+		}
+	}
+
+	int Light::getDiffuse(luapp::Stack &L)
+	{
+		L << diffuse.r << diffuse.g << diffuse.b << diffuse.a;
+		return 4;
+	}
+
+	void Light::setSpecular(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			specular.r = (float)L[1].toNumber();
+			specular.g = (float)L[2].toNumber();
+			specular.b = (float)L[3].toNumber();
+			if(L.top() >= 4) specular.a = (float)L[4].toNumber();
+		}
+	}
+
+	int Light::getSpecular(luapp::Stack &L)
+	{
+		L << specular.r << specular.g << specular.b << specular.a;
+		return 4;
+	}
+
+	void Light::setRange(luapp::Stack &L)
+	{
+		if(L.top() >= 1) range = (float)L[1].toNumber();
+	}
+
+	int Light::getRange(luapp::Stack &L)
+	{
+		L << range;
+		return 1;
+	}
+
+	void Light::setAttenuation(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			attenuation[0] = (float)L[1].toNumber();
+			attenuation[1] = (float)L[2].toNumber();
+			attenuation[2] = (float)L[3].toNumber();
+		}
+	}
+
+	int Light::getAttenuation(luapp::Stack &L)
+	{
+		L << attenuation[0] << attenuation[1] << attenuation[2];
+		return 3;
+	}
+
+	void Light::setFalloff(luapp::Stack &L)
+	{
+		if(L.top() >= 1) falloff = (float)L[1].toNumber();
+	}
+
+	int Light::getFalloff(luapp::Stack &L)
+	{
+		L << falloff;
+		return 1;
+	}
+
+	void Light::setTheta(luapp::Stack &L)
+	{
+		if(L.top() >= 1) theta = (float)L[1].toNumber();
+	}
+
+	int Light::getTheta(luapp::Stack &L)
+	{
+		L << theta;
+		return 1;
+	}
+
+	void Light::setPhi(luapp::Stack &L)
+	{
+		if(L.top() >= 1) phi = (float)L[1].toNumber();
+	}
+
+	int Light::getPhi(luapp::Stack &L)
+	{
+		L << phi;
+		return 1;
 	}
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Light, Object);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Light)
+		TUKI_METHOD(Light, newNode)
+		TUKI_METHOD(Light, attach)
+		TUKI_METHOD(Light, enter)
+		TUKI_METHOD(Light, exit)
+		TUKI_METHOD(Light, setPosition)
+		TUKI_METHOD(Light, getPosition)
+		TUKI_METHOD(Light, setPosture)
+		TUKI_METHOD(Light, getPosture)
+		TUKI_METHOD(Light, setType)
+		TUKI_METHOD(Light, getType)
+		TUKI_METHOD(Light, setAmbient)
+		TUKI_METHOD(Light, getAmbient)
+		TUKI_METHOD(Light, setDiffuse)
+		TUKI_METHOD(Light, getDiffuse)
+		TUKI_METHOD(Light, setSpecular)
+		TUKI_METHOD(Light, getSpecular)
+		TUKI_METHOD(Light, setRange)
+		TUKI_METHOD(Light, getRange)
+		TUKI_METHOD(Light, setAttenuation)
+		TUKI_METHOD(Light, getAttenuation)
+		TUKI_METHOD(Light, setFalloff)
+		TUKI_METHOD(Light, getFalloff)
+		TUKI_METHOD(Light, setTheta)
+		TUKI_METHOD(Light, getTheta)
+		TUKI_METHOD(Light, setPhi)
+		TUKI_METHOD(Light, getPhi)
+	TUKI_IMPLEMENT_END(Light)
 
 }} // namespace gctp::scene

@@ -12,6 +12,7 @@
 #include <gctp/hrslt.hpp>
 #include <gctp/mutex.hpp>
 #include <gctp/com_ptr.hpp>
+#include <gctp/vector.hpp>
 #include <vector>
 
 // 割り込み(DirectSoundNotify)でなくタイマーで通知制御にするには以下のフラグをオンにする
@@ -42,7 +43,6 @@ namespace gctp { namespace audio { namespace dx {
 		};
 #endif
 		Device();
-
 		~Device();
 
 		HRslt open(HWND hwnd, DWORD coop_mode, bool global_focus);
@@ -55,6 +55,8 @@ namespace gctp { namespace audio { namespace dx {
 
 		Pointer<Buffer> newStream(Handle<Clip> clip);
 		Pointer<Buffer> newBuffer(Handle<Clip> clip);
+		Pointer<Buffer> new3DStream(Handle<Clip> clip);
+		Pointer<Buffer> new3DBuffer(Handle<Clip> clip);
 
 		void setVolume(float volume);
 		
@@ -64,6 +66,64 @@ namespace gctp { namespace audio { namespace dx {
 		void cleanUp();
 
 		IDirectSound8Ptr ptr() { return ptr_; }
+
+		// 3Dサウンド系
+		void setListenerPosition(const Vector &pos)
+		{
+			listener_.vPosition = pos;
+		}
+		Vector getListenerPosition()
+		{
+			return VectorC(listener_.vPosition);
+		}
+		void setListenerVelocity(const Vector &vel)
+		{
+			listener_.vVelocity = vel;
+		}
+		Vector getListenerVelocity()
+		{
+			return VectorC(listener_.vVelocity);
+		}
+		void setListenerPosture(const Vector &front, const Vector &up)
+		{
+			listener_.vOrientFront = front;
+			listener_.vOrientTop = up;
+		}
+		Vector getListenerFrontDirection()
+		{
+			return VectorC(listener_.vOrientFront);
+		}
+		Vector getListenerUpDirection()
+		{
+			return VectorC(listener_.vOrientTop);
+		}
+		void setListenerDistanceFactor(float val)
+		{
+			listener_.flDistanceFactor = val;
+		}
+		float getListenerDistanceFactor()
+		{
+			return listener_.flDistanceFactor;
+		}
+		void setListenerRolloffFactor(float val)
+		{
+			listener_.flRolloffFactor = val;
+		}
+		float getListenerRolloffFactor()
+		{
+			return listener_.flRolloffFactor;
+		}
+		void setListenerDopplerFactor(float val)
+		{
+			listener_.flDopplerFactor = val;
+		}
+		float getListenerDopplerFactor()
+		{
+			return listener_.flDopplerFactor;
+		}
+		HRslt initListener();
+		HRslt updateListener();
+
 	private:
 		void add(Handle<Buffer> buffer);
 		/// 通知イベント監視スレッドの処理
@@ -80,6 +140,7 @@ namespace gctp { namespace audio { namespace dx {
 		bool global_focus_;
 
 		IDirectSound8Ptr ptr_;
+		DS3DLISTENER listener_;
 	};
 
 }}} // namespace gctp

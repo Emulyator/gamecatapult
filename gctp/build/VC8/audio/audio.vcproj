@@ -176,6 +176,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\audio\speaker.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -293,6 +297,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\audio\player.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\audio\speaker.hpp"
 				>
 			</File>
 			<File

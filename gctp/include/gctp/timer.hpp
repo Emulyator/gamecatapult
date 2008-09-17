@@ -13,6 +13,62 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 
+#define GCTP_USE_QueryPerformanceCounter
+
+#ifdef GCTP_USE_QueryPerformanceCounter
+#include <windows.h>
+
+namespace gctp {
+
+	/** 低レベルカウンタークラス
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 18:09:26
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class Timer
+	{
+	public:
+		typedef LARGE_INTEGER TickType;
+		/// ストップウォッチをリセット
+		inline void reset() { QueryPerformanceCounter(&start_); }
+		/// ストップウォッチのラップボタン（その前のreset()との経過時間を秒で返す）
+		inline float elapsed() { return static_cast<float>(static_cast<double>(tick().QuadPart-start_.QuadPart)/frequency_.QuadPart); }
+		
+		/** チックカウントを返す
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/01/29 18:09:35
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		inline static TickType tick()
+		{
+			TickType ret;
+			QueryPerformanceCounter(&ret);
+			return ret;
+		}
+
+		/// 1tickが何秒に相当するか？
+		inline static double ticks_per_sec() { return 1.0/(double)frequency_.QuadPart; }
+
+		/// 起動からの経過時間をミリ秒単位で取得
+		inline static ulong time() { return timeGetTime(); }
+
+		/** Windows特有
+		 *
+		 * クロックカウントが何秒に相当するかを計測するための準備
+		 */
+		static void coinitialize();
+		static void initialize();
+
+	private:
+		TickType start_;
+		static TickType frequency_;
+	};
+
+} //namespace gctp
+
+#else
 // Win32専用
 #include <mmsystem.h>
 
@@ -47,16 +103,13 @@ namespace gctp {
 		 * @date 2004/01/29 18:09:35
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
-		inline static TickType tick()
+		inline static TickType __fastcall tick()
 		{
-			uint32_t _low, _high;
 			__asm {
+				cpuid
 				rdtsc
-				mov	_low, eax
-				mov	_high, edx
 			}
-			return ((TickType)_high << 32) | (TickType)_low;
-		}
+		};
 
 		/// 1tickが何秒に相当するか？
 		inline static double ticks_per_sec() { return ticks_per_sec_; }
@@ -77,5 +130,7 @@ namespace gctp {
 	};
 
 } //namespace gctp
+
+#endif
 
 #endif //_GCTP_TIMER_HPP_

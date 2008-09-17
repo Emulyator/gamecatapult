@@ -101,7 +101,9 @@ namespace gctp { namespace scene {
 		void setScale(luapp::Stack &L);
 		int getScale(luapp::Stack &L);
 		int getMotionMixer(luapp::Stack &L);
+		int getStrutumNode(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
+		int getModelAABB(luapp::Stack &L);
 		int printHierarchy(luapp::Stack &L);
 		
 		virtual bool doOnUpdate(float delta);
@@ -109,8 +111,8 @@ namespace gctp { namespace scene {
 		Pointer<Body> target_;
 		Handle<Body> source_;
 
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(Entity)
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(Entity);
 	};
 
 	/// エンティティーをシーンに追加

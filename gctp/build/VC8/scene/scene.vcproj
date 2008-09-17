@@ -163,6 +163,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\audiorenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\bindcamera.cpp"
 				>
 			</File>
@@ -223,11 +227,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\rendertarget.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\rendertree.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\shadowrenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\skyboxrenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gctp\scene\speaker.cpp"
 				>
 			</File>
 			<File
@@ -274,6 +290,10 @@
 			>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\attrmodel.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\audiorenderer.hpp"
 				>
 			</File>
 			<File
@@ -345,11 +365,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\scene\rendertarget.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\scene\rendertree.hpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\scene\shadowrenderer.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\scene\skyboxrenderer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\speaker.hpp"
 				>
 			</File>
 			<File

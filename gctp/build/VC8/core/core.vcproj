@@ -650,6 +650,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\staticringbuffer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\streamringbuf.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\stringmap.hpp"
 				>
 			</File>

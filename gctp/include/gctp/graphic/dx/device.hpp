@@ -338,10 +338,10 @@ namespace gctp { namespace graphic { namespace dx {
 
 		/// 扱える最大のライト数を取得
 		uint maxLightNum() const;
-		/// グローバルアンビエントライトを設定
-		HRslt setAmbient(const Color &col);
-		/// グローバルアンビエントライトを取得
-		const Color &getAmbient() const { return ambient_light_; }
+		/// 環境光色を設定
+		HRslt setAmbientColor(Color32 col);
+		/// 環境光色を取得
+		Color32 getAmbientColor() const;
 		/// ライトを追加
 		HRslt pushLight(const D3DLIGHT &lgt);
 		/// ライトを追加
@@ -367,6 +367,8 @@ namespace gctp { namespace graphic { namespace dx {
 
 		/// マテリアル適用
 		void setMaterial(const Material &mtrl);
+		/// マテリアル情報のうちブレンド設定のみ適用
+		void setBlendState(const Material &mtrl);
 
 		/// ステートブロック記録開始
 		HRslt beginRecord();

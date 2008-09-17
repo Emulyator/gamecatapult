@@ -29,10 +29,10 @@ namespace gctp { namespace scene {
 			chasee_stance.position += chasee_stance.posture.transform(position_offset);
 			chasee_stance.posture *= QuatC(posture_offset.y, posture_offset.x, posture_offset.z);
 
-			Stance oldstance = target->stance();
+			Stance oldstance = target->node()->val.wtm().orthoNormal();
 			Stance newstance;
 			newstance.set2PInterpolation(oldstance, chasee_stance, 0.5f);
-			target->setStance(newstance);
+			target->node()->val.updateWTM(newstance.toMatrix());
 		}
 		return true;
 	}

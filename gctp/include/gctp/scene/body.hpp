@@ -53,12 +53,12 @@ namespace gctp { namespace scene {
 		/// •`‰æƒpƒPƒbƒg“o˜^
 		void pushPackets(DrawPacketVector &packets) const;
 
-	GCTP_DECLARE_CLASS
-
 	private:
 		PointerList<Flesh> fleshies_;
 		PointerList<AttrFlesh> attributes_;
 		Sphere bs_;
+
+		GCTP_DECLARE_CLASS;
 	};
 
 }} //namespace gctp::scene
