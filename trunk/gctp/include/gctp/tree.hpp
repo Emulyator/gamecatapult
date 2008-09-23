@@ -26,18 +26,25 @@ namespace gctp {
 		/// コンストラクタ
 		TreeNodeBase() : parent_(0), older_(0) {}
 
+//#ifdef _DEBUG
+		~TreeNodeBase()
+		{
+			// スタックオーバーフローするので、専用の開放処理
+			Pointer<TreeNodeBase> it = children_;
+			while(it) it = erase(it);
+		}
+//#endif
 		/// 子リストの最初を指すポインタを返す
 		TreeNodeBase *begin() { return children_.get(); }
 		/// 子リストの終端を指すポインタを返す
 		TreeNodeBase *end() { return 0; }
-
 		/// 子リストの最初を指すポインタを返す
 		const TreeNodeBase *begin() const { return children_.get(); }
 		/// 子リストの終端を指すポインタを返す
 		const TreeNodeBase *end() const { return 0; }
 
 		/// posの直前に子を挿入
-		void insert(TreeNodeBase *pos, Pointer<TreeNodeBase> node)
+		void insert(Pointer<TreeNodeBase> pos, Pointer<TreeNodeBase> node)
 		{
 			/// デバッグ版では本とは渡されたイテレータが本当に自分の子か調べたほうが良いな
 			if(pos) {
@@ -52,10 +59,10 @@ namespace gctp {
 			else push(node);
 		}
 		/// posを削除し、直後のItrを返す
-		TreeNodeBase *erase(TreeNodeBase *pos)
+		Pointer<TreeNodeBase> erase(Pointer<TreeNodeBase> pos)
 		{
 			if(pos != end()) {
-				TreeNodeBase *ret = pos->younger_.get();
+				Pointer<TreeNodeBase> ret = pos->younger_;
 				pos->remove();
 				return ret;
 			}
@@ -63,15 +70,15 @@ namespace gctp {
 		}
 
 		/// posを削除し、直後のItrを返す
-		TreeNodeBase *eraseTraverse(TreeNodeBase *root, TreeNodeBase *pos)
+		Pointer<TreeNodeBase> eraseTraverse(Pointer<TreeNodeBase> root, Pointer<TreeNodeBase> pos)
 		{
 			if(pos != end()) {
-				TreeNodeBase *ret = pos->younger_.get();
+				Pointer<TreeNodeBase> ret = pos->younger_.get();
 				if(ret) {
 					pos->remove();
 					return ret;
 				}
-				else return _next_DF2(root, pos);
+				else return _next_DF2(root.get(), pos.get());
 			}
 			return end();
 		}
@@ -442,12 +449,12 @@ namespace gctp {
 		/// posを削除し、直後のItrを返す
 		SiblingItr erase(SiblingItr pos)
 		{
-			return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::erase(&*pos)));
+			return SiblingItr(reinterpret_cast<TreeNode *>(TreeNodeBase::erase(&*pos).get()));
 		}
 		/// posを削除し、直後のItrを返す
 		TraverseItr erase(TraverseItr pos)
 		{
-			return TraverseItr(pos.root_, reinterpret_cast<TreeNode *>(TreeNodeBase::eraseTraverse(pos.root_, &*pos)));
+			return TraverseItr(pos.root_, reinterpret_cast<TreeNode *>(TreeNodeBase::eraseTraverse(pos.root_, &*pos).get()));
 		}
 		/// 子に追加
 		TreeNode *push(Pointer<TreeNode> node)

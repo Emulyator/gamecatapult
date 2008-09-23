@@ -102,6 +102,7 @@ namespace gctp { namespace scene {
 		int getScale(luapp::Stack &L);
 		int getMotionMixer(luapp::Stack &L);
 		int getStrutumNode(luapp::Stack &L);
+		int getFlesh(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
 		int getModelAABB(luapp::Stack &L);
 		int printHierarchy(luapp::Stack &L);

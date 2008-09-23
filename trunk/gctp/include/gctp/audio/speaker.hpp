@@ -35,6 +35,10 @@ namespace gctp { namespace audio {
 		void stop();
 		void release();
 		void reset();
+		void setVolume(float);
+		float getVolume();
+		void setFrequency(ulong);
+		ulong getFrequency();
 		void setPosition(const Vector &pos);
 		Vector getPosition();
 		void setVelocity(const Vector &vel);

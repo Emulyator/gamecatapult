@@ -15,7 +15,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	Speaker::Speaker()
+	Speaker::Speaker() : vol_delta(0)
 	{
 	}
 
@@ -59,7 +59,7 @@ namespace gctp { namespace scene {
 		if(own_node_) own_node_->remove();
 	}
 
-	void Speaker::apply() const
+	void Speaker::apply(float delta) const
 	{
 		Speaker *self = const_cast<Speaker *>(this);
 		switch(type_) {
@@ -68,6 +68,27 @@ namespace gctp { namespace scene {
 			break;
 		case OMNI:		{
 			self->speaker_.setPosition(node_->val.wtm().position());
+			if(delta != 0) self->speaker_.setVelocity((node_->val.wtm().position()-node_->val.prevWTM().position())/delta);
+			if(vol_delta != 0) {
+				self->cur_vol += vol_delta*delta;
+				if(vol_delta > 0 && cur_vol > 1) {
+					self->vol_delta = 0;
+					self->cur_vol = 1;
+				}
+				if(vol_delta < 0 && cur_vol < 0) {
+					self->vol_delta = 0;
+					self->cur_vol = 0;
+				}
+				if(cur_vol > 0 && !self->speaker_.isPlaying()) {
+					//dbgout << "PLAY!" << range_coeff << endl;
+					self->speaker_.play(0);
+				}
+				if(cur_vol == 0 && self->speaker_.isPlaying()) {
+					//dbgout << "STOP!" << range_coeff << endl;
+					self->speaker_.stop();
+				}
+				self->speaker_.setVolume(cur_vol);
+			}
 			self->speaker_.commit();
 						}
 			break;
@@ -249,6 +270,48 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	int Speaker::getRange(luapp::Stack &L)
+	{
+		L << speaker_.getMaxDistance() << speaker_.getMinDistance();
+		return 2;
+	}
+
+	void Speaker::setVolume(luapp::Stack &L)
+	{
+		if(L.top() >= 1) speaker_.setVolume((float)L[1].toNumber());
+	}
+
+	int Speaker::getVolume(luapp::Stack &L)
+	{
+		L << speaker_.getVolume();
+		return 1;
+	}
+
+	int Speaker::getFrequency(luapp::Stack &L)
+	{
+		L << (int)speaker_.getFrequency();
+		return 1;
+	}
+
+	void Speaker::setFrequency(luapp::Stack &L)
+	{
+		if(L.top() >= 1) speaker_.setFrequency(L[1].toInteger());
+	}
+
+	void Speaker::fadein(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			vol_delta = 1.0f/(float)L[1].toNumber();
+		}
+	}
+
+	void Speaker::fadeout(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			vol_delta = -1.0f/(float)L[1].toNumber();
+		}
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Speaker, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Speaker)
 		TUKI_METHOD(Speaker, newNode)
@@ -265,6 +328,13 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Speaker, setPosture)
 		TUKI_METHOD(Speaker, getPosture)
 		TUKI_METHOD(Speaker, setRange)
+		TUKI_METHOD(Speaker, getRange)
+		TUKI_METHOD(Speaker, setVolume)
+		TUKI_METHOD(Speaker, getVolume)
+		TUKI_METHOD(Speaker, setFrequency)
+		TUKI_METHOD(Speaker, getFrequency)
+		TUKI_METHOD(Speaker, fadein)
+		TUKI_METHOD(Speaker, fadeout)
 	TUKI_IMPLEMENT_END(Speaker)
 
 }} // namespace gctp::scene

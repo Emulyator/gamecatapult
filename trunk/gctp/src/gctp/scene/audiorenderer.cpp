@@ -33,13 +33,14 @@ namespace gctp { namespace scene {
 	{
 		AudioRenderer *self = const_cast<AudioRenderer *>(this);
 		audio::device().initListener();
-		Matrix m = Camera::current().node()->val.wtm();
-		audio::device().setListenerPosition(m.position());
-		audio::device().setListenerPosture(-m.at(), m.up());
+		const Matrix &wtm = Camera::current().node()->val.wtm();
+		audio::device().setListenerPosition(wtm.position());
+		audio::device().setListenerPosture(wtm.at(), wtm.up());
+		if(delta != 0) audio::device().setListenerVelocity((wtm.position()-Camera::current().node()->val.prevWTM().position())/delta);
 		if(target_) {
 			for(HandleList<Speaker>::iterator i = self->target_->speaker_list.begin(); i != self->target_->speaker_list.end();) {
 				if(*i) {
-					(*i)->apply();
+					(*i)->apply(delta);
 					++i;
 				}
 				else i = self->target_->speaker_list.erase(i);

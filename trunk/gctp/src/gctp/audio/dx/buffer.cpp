@@ -19,7 +19,15 @@ namespace gctp { namespace audio { namespace dx {
 		TYPEDEF_DXCOMPTR(IDirectSoundBuffer8);
 		TYPEDEF_DXCOMPTR(IDirectSound3DBuffer8);
 
-		const float min_gain = -5000;
+		const float half_vol_factor = 3321.92809488736f; // = -1000/log10(0.5)
+		long rate2mb(float rate)
+		{
+			return (long)(half_vol_factor*log10(rate));
+		}
+		float mb2rate(ulong db)
+		{
+			return pow(10.0f, db/half_vol_factor);
+		}
 	}
 
 	Buffer::~Buffer()
@@ -48,7 +56,7 @@ namespace gctp { namespace audio { namespace dx {
 				// DSBUFFERDESC 構造体を設定する。
 				memset(&dsbd, 0, sizeof(DSBUFFERDESC));
 				dsbd.dwSize = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME;
+				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLFREQUENCY;
 				dsbd.dwBufferBytes = 3 * pcmwf.wf.nAvgBytesPerSec; // 約３秒分
 				dsbd.lpwfxFormat = (LPWAVEFORMATEX)&pcmwf;
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
@@ -71,7 +79,7 @@ namespace gctp { namespace audio { namespace dx {
 				// DSBUFFERDESC 構造体を設定する。
 				memset(&dsbd, 0, sizeof(DSBUFFERDESC));
 				dsbd.dwSize = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME;
+				dsbd.dwFlags = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLFREQUENCY;
 				buffersize_ = dsbd.dwBufferBytes = (DWORD)clip.size();
 				dsbd.lpwfxFormat = const_cast<WAVEFORMATEX *>(clip.format());
 				if(global_focus) dsbd.dwFlags |= DSBCAPS_GLOBALFOCUS;
@@ -184,7 +192,7 @@ namespace gctp { namespace audio { namespace dx {
 				LONG arg = 0;
 				if(volume >= 1) arg = DSBVOLUME_MAX;
 				else if(volume <= 0) arg = DSBVOLUME_MIN;
-				else if(volume > 0) arg = (LONG)((1-volume)*min_gain);
+				else arg = rate2mb(volume);
 				return ptr_->SetVolume(arg);
 			}
 
@@ -198,9 +206,7 @@ namespace gctp { namespace audio { namespace dx {
 					float volume;
 					if(ret >= DSBVOLUME_MAX) volume = 1;
 					if(ret <= DSBVOLUME_MIN) volume = 0;
-					else if(ret > 1) volume = (min_gain-ret)/min_gain;
-					if(volume < 0) volume = 0;
-					else if(volume > 1) volume = 1;
+					else volume = mb2rate(ret);
 					return volume;
 				}
 				else GCTP_TRACE(hr);
@@ -214,7 +220,8 @@ namespace gctp { namespace audio { namespace dx {
 				LONG arg = 0;
 				if(pan >= 1) arg = DSBPAN_RIGHT;
 				else if(pan <= -1) arg = DSBPAN_LEFT;
-				else if(pan != 0) arg = (LONG)(-pan*min_gain);
+				else if(pan > 0) arg = -rate2mb(1.0f-pan);
+				else if(pan < 0) arg = rate2mb(1.0f+pan);
 				return ptr_->SetPan(arg);
 			}
 
@@ -226,13 +233,30 @@ namespace gctp { namespace audio { namespace dx {
 				else hr = ptr_->GetPan(&ret);
 				if(hr) {
 					float pan = 0;
-					if(ret == DSBPAN_RIGHT) pan = 1;
-					else if(ret > 0) pan = -ret/min_gain;
-					else if(ret == DSBPAN_LEFT) pan = -1;
-					else if(ret < 0) pan = ret/min_gain;
-					if(pan < -1) pan = -1;
-					else if(pan > 1) pan = 1;
+					if(ret >= DSBPAN_RIGHT) pan = 1;
+					else if(ret <= DSBPAN_LEFT) pan = -1;
+					else if(ret > 0) pan = 1.0f-mb2rate(-ret);
+					else if(ret < 0) pan = mb2rate(ret)-1.0f;
 					return pan;
+				}
+				else GCTP_TRACE(hr);
+				return 0;
+			}
+
+			virtual HRslt setFrequency(ulong freq)
+			{
+				if(!ptr_) return CO_E_NOTINITIALIZED;
+				return ptr_->SetFrequency((DWORD)freq);
+			}
+
+			virtual ulong getFrequency()
+			{
+				DWORD ret;
+				HRslt hr;
+				if(!ptr_) hr = CO_E_NOTINITIALIZED;
+				else hr = ptr_->GetFrequency(&ret);
+				if(hr) {
+					return (ulong)ret;
 				}
 				else GCTP_TRACE(hr);
 				return 0;
@@ -352,7 +376,7 @@ namespace gctp { namespace audio { namespace dx {
 				DSBUFFERDESC dsbd;
 				ZeroMemory( &dsbd, sizeof(DSBUFFERDESC) );
 				dsbd.dwSize          = sizeof(DSBUFFERDESC);
-				dsbd.dwFlags         = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME
+				dsbd.dwFlags         = DSBCAPS_LOCDEFER | (for_3d ? (DSBCAPS_CTRL3D | DSBCAPS_MUTE3DATMAXDISTANCE) : DSBCAPS_CTRLPAN) | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLFREQUENCY;
 #ifndef GCTP_AUDIO_USE_TIMER
 									   | DSBCAPS_CTRLPOSITIONNOTIFY
 #endif

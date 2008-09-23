@@ -33,10 +33,8 @@ namespace gctp { namespace scene {
 			SPOT		///< スポット音源
 		};
 
-		float  range;
-		float  min_distance;
-		float  theta;
-		float  phi;
+		float cur_vol;
+		float vol_delta;
 		
 		Speaker();
 
@@ -66,7 +64,7 @@ namespace gctp { namespace scene {
 		void reset();
 
 		/// オーディオデバイスに音源情報をセット
-		void apply() const;
+		void apply(float delta) const;
 		/// 境界球の更新
 		void update();
 		
@@ -92,6 +90,13 @@ namespace gctp { namespace scene {
 		void setPosture(luapp::Stack &L);
 		int getPosture(luapp::Stack &L);
 		void setRange(luapp::Stack &L);
+		int getRange(luapp::Stack &L);
+		void setVolume(luapp::Stack &L);
+		int getVolume(luapp::Stack &L);
+		void setFrequency(luapp::Stack &L);
+		int getFrequency(luapp::Stack &L);
+		void fadein(luapp::Stack &L);
+		void fadeout(luapp::Stack &L);
 
 	private:
 		Type   type_;

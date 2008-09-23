@@ -34,6 +34,8 @@ namespace gctp { namespace audio { namespace dx {
 		virtual float getVolume() = 0;
 		virtual HRslt setPan(float) = 0;
 		virtual float getPan() = 0;
+		virtual HRslt setFrequency(ulong) = 0;
+		virtual ulong getFrequency() = 0;
 		virtual HRslt onNotified() = 0;
 #ifndef GCTP_AUDIO_USE_TIMER
 		virtual HANDLE event() = 0;

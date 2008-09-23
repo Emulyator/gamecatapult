@@ -7,10 +7,12 @@
  */
 #include "common.h"
 #include <gctp/scene/camera.hpp>
+#include <gctp/scene/world.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/aabox.hpp>
 #include <gctp/app.hpp>
 #include <gctp/dbgout.hpp>
+#include <gctp/graphic/dx/device.hpp>
 
 using namespace std;
 
@@ -39,6 +41,16 @@ namespace gctp { namespace scene {
 		node_ = node;
 	}
 
+	void Camera::enter(World &world)
+	{
+		if(own_node_) world.strutum_tree.root()->push(own_node_);
+	}
+
+	void Camera::exit(World &world)
+	{
+		if(own_node_) own_node_->remove();
+	}
+
 	void Camera::setToSystem() const
 	{
 		graphic::setView(view());
@@ -52,10 +64,25 @@ namespace gctp { namespace scene {
 		current_ = const_cast<Camera *>(this);
 		current_->update();
 		setToSystem();
+		graphic::clear(false, true);
+		if(fog_enable_) {
+			// Enable fog blending.
+			graphic::device().impl()->SetRenderState(D3DRS_FOGENABLE, TRUE);
+			// Set the fog color.
+			graphic::device().impl()->SetRenderState(D3DRS_FOGCOLOR, fog_color_.i32);
+			// Set fog parameters.
+			graphic::device().impl()->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_LINEAR);
+			graphic::device().impl()->SetRenderState(D3DRS_FOGSTART, *(DWORD *)(&fog_start_));
+			graphic::device().impl()->SetRenderState(D3DRS_FOGEND,   *(DWORD *)(&fog_end_));
+		}
 	}
 
 	void Camera::end() const
 	{
+		if(fog_enable_) {
+			// Disable fog blending.
+			graphic::device().impl()->SetRenderState(D3DRS_FOGENABLE, FALSE);
+		}
 		current_ = backup_current_;
 		if(current_) current_->setToSystem();
 	}
@@ -117,6 +144,22 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	void Camera::enter(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) enter(*world);
+		}
+	}
+
+	void Camera::exit(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			if(world) exit(*world);
+		}
+	}
+
 	void Camera::setPosition(luapp::Stack &L)
 	{
 		if(L.top() >= 3) {
@@ -155,31 +198,6 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
-	void Camera::setDirection(luapp::Stack &L)
-	{
-		if(L.top() >= 3) {
-			/*Stance newstance = stance();
-			VectorC dir((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-			math::Matrix3x3<float> mat = newstance.posture.toMatrix3x3();
-			Vector c = mat.up3d()%dir;
-			if(c.length2() > FLT_EPSILON*10) {
-				newstance.posture.set(c, mat.up3d(), dir);
-			}
-			else {
-				c = mat.right3d()%dir;
-				newstance.posture.set(-mat.right3d(), c, dir);
-			}
-			setStance(newstance);*/
-		}
-	}
-
-	int Camera::getDirection(luapp::Stack &L)
-	{
-		/*Vector at = stance().posture.toMatrix().at();
-		L << at.x << at.y << at.z;*/
-		return 3;
-	}
-
 	void Camera::setClip(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -207,20 +225,57 @@ namespace gctp { namespace scene {
 		return 1;
 	}
 
+	int Camera::getDirection(luapp::Stack &L)
+	{
+		Vector at = node_->val.wtm().at();
+		L << at.x << at.y << at.z;
+		return 3;
+	}
+
+	void Camera::setFogColor(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			if(L.top() >= 4) {
+				fog_color_ = Color32(L[1].toInteger(), L[2].toInteger(), L[3].toInteger(), L[4].toInteger());
+			}
+			else if(L.top() >= 3) {
+				fog_color_ = Color32(L[1].toInteger(), L[2].toInteger(), L[3].toInteger());
+			}
+			else {
+				fog_color_ = Color32(L[1].toCStr());
+			}
+		}
+	}
+
+	void Camera::setFogParam(luapp::Stack &L)
+	{
+		if(L.top() >= 2) {
+			fog_enable_ = true;
+			fog_start_ = (float)L[1].toNumber();
+			fog_end_ = (float)L[2].toNumber();
+		}
+		else {
+			fog_enable_ = false;
+		}
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Camera, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Camera)
 		TUKI_METHOD(Camera, newNode)
 		TUKI_METHOD(Camera, attach)
+		TUKI_METHOD(Camera, enter)
+		TUKI_METHOD(Camera, exit)
 		TUKI_METHOD(Camera, setPosition)
 		TUKI_METHOD(Camera, getPosition)
 		TUKI_METHOD(Camera, setPosture)
 		TUKI_METHOD(Camera, getPosture)
-		/*TUKI_METHOD(Camera, setDirection)
-		TUKI_METHOD(Camera, getDirection)*/
 		TUKI_METHOD(Camera, setFov)
 		TUKI_METHOD(Camera, getFov)
 		TUKI_METHOD(Camera, setClip)
 		TUKI_METHOD(Camera, getClip)
+		TUKI_METHOD(Camera, getDirection)
+		TUKI_METHOD(Camera, setFogColor)
+		TUKI_METHOD(Camera, setFogParam)
 	TUKI_IMPLEMENT_END(Camera)
 
 }} // namespace gctp::scene

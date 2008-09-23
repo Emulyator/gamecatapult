@@ -334,6 +334,22 @@ namespace gctp { namespace core {
 		return 0;
 	}
 
+	int Context::insert(luapp::Stack &L)
+	{
+		/* ( const char *classname, const char *name) */
+		Hndl ret;
+		if(L.top() >= 2) {
+			Ptr p = toObject(L[1]);
+#ifdef UNICODE
+			ret = insert(p, WCStr(L[2].toCStr()).c_str());
+#else
+			ret = insert(p, L[2].toCStr());
+#endif
+		}
+		if(ret) return gctp::TukiRegister::push(L, ret);
+		return 0;
+	}
+
 	int Context::find(luapp::Stack &L)
 	{
 		Hndl ret;
@@ -346,6 +362,12 @@ namespace gctp { namespace core {
 		}
 		if(ret) return gctp::TukiRegister::push(L, ret);
 		return 0;
+	}
+
+	int Context::size(luapp::Stack &L)
+	{
+		L << (int)size();
+		return 1;
 	}
 
 	int Context::current(luapp::Stack &L)
@@ -442,7 +464,9 @@ namespace gctp { namespace core {
 		TUKI_METHOD(Context, load)
 		TUKI_METHOD(Context, loadAsync)
 		TUKI_METHOD(Context, create)
+		TUKI_METHOD(Context, insert)
 		TUKI_METHOD(Context, find)
+		TUKI_METHOD(Context, size)
 		TUKI_METHOD(Context, pairs)
 		TUKI_METHOD(Context, ipairs)
 		TUKI_METHOD(Context, current)

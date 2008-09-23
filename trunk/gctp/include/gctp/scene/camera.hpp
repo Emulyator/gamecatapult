@@ -13,8 +13,11 @@
 #include <gctp/frustum.hpp>
 #include <gctp/tuki.hpp>
 #include <gctp/scene/renderer.hpp>
+#include <gctp/color.hpp>
 
 namespace gctp { namespace scene {
+
+	class World;
 
 	/** カメラ
 	 *
@@ -35,6 +38,10 @@ namespace gctp { namespace scene {
 		void newNode();
 		/// 既存ノードにアタッチ
 		void attach(Handle<StrutumNode> node);
+		/// 独自ノードをワールドにぶら下げる
+		void enter(World &world);
+		/// 独自ノードをワールドからはずす
+		void exit(World &world);
 
 		/// ニアクリップ
 		const float &nearclip() const { return nearclip_; }
@@ -102,16 +109,21 @@ namespace gctp { namespace scene {
 		bool setUp(luapp::Stack &L);
 		void newNode(luapp::Stack &L);
 		void attach(luapp::Stack &L);
+		void enter(luapp::Stack &L);
+		void exit(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
 		void setPosture(luapp::Stack &L);
 		int getPosture(luapp::Stack &L);
-		void setDirection(luapp::Stack &L);
-		int getDirection(luapp::Stack &L);
 		void setClip(luapp::Stack &L);
 		int getClip(luapp::Stack &L);
 		void setFov(luapp::Stack &L);
 		int getFov(luapp::Stack &L);
+
+		int getDirection(luapp::Stack &L);
+
+		void setFogColor(luapp::Stack &L);
+		void setFogParam(luapp::Stack &L);
 
 	private:
 		float nearclip_;
@@ -121,6 +133,12 @@ namespace gctp { namespace scene {
 		Rectf subwindow_;
 		Frustum frustum_;
 		mutable Matrix viewprojection_;
+
+		// フォグ関連（暫定）
+		bool fog_enable_;
+		float fog_start_;
+		float fog_end_;
+		Color32 fog_color_;
 
 		Handle<StrutumNode> node_;
 		Pointer<StrutumNode> own_node_;

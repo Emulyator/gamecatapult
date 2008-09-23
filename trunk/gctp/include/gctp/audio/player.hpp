@@ -36,6 +36,7 @@ namespace gctp { namespace audio {
 		float getVolume();
 		void setPan(float);
 		float getPan();
+
 	private:
 		Pointer<Track> track_;
 		Pointer<Clip> clip_;

@@ -82,6 +82,34 @@ namespace gctp { namespace audio {
 		if(track_) track_->stop();
 	}
 
+	void Speaker::setVolume(float volume)
+	{
+		if(track_) {
+			HRslt hr = track_->setVolume(volume);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	float Speaker::getVolume()
+	{
+		if(track_) return track_->getVolume();
+		return 0;
+	}
+
+	void Speaker::setFrequency(ulong freq)
+	{
+		if(track_) {
+			HRslt hr = track_->setFrequency(freq);
+			if(!hr) GCTP_TRACE(hr);
+		}
+	}
+
+	ulong Speaker::getFrequency()
+	{
+		if(track_) track_->getFrequency();
+		return 0;
+	}
+
 	void Speaker::setPosition(const Vector &pos)
 	{
 		if(track_) track_->setPosition(pos);

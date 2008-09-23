@@ -251,7 +251,45 @@ namespace gctp { namespace scene {
 		}
 		return 0;
 	}
+	
+	int Entity::getFlesh(luapp::Stack &L)
+	{
+		if(target_) {
+			if(L.top() >= 1) {
+				if(L[1].isNumber()) {
+					int modelidx = L[1].toInteger();
+					int j = 0;
+					for(PointerList<Flesh>::iterator i = target_->fleshies().begin(); i != target_->fleshies().end(); ++i) {
+						if(j == modelidx) {
+							TukiRegister::push(L, (*i));
+							return 1;
+						}
+						j++;
+					}
+				}
+				else {
+					const char *modelname = L[1].toCStr();
+					if(modelname) {
+						for(PointerList<Flesh>::iterator i = target_->fleshies().begin(); i != target_->fleshies().end(); ++i) {
+							/*if((*i)->model() && (*i)->model()->name()) dbgout << "MODEL NAME : " << (*i)->model()->name() << endl;
+							else dbgout << "MODEL NAME : NONAME" << endl;*/
 
+							if((*i)->model() && (*i)->model()->name() && (strcmp((*i)->model()->name(), modelname)==0)) {
+								TukiRegister::push(L, (*i));
+								return 1;
+							}
+						}
+					}
+				}
+			}
+			else {
+				TukiRegister::push(L, Hndl(target_->fleshies().front().get()));
+				return 1;
+			}
+		}
+		return 0;
+	}
+	
 	int Entity::getBoundingSphere(luapp::Stack &L)
 	{
 		if(target_) {
@@ -271,7 +309,7 @@ namespace gctp { namespace scene {
 		L << aabb.upper.x << aabb.upper.y << aabb.upper.z << aabb.lower.x << aabb.lower.y << aabb.lower.z;
 		return 6;
 	}
-
+	
 	int Entity::printHierarchy(luapp::Stack &L)
 	{
 		if(source_) source_->printLCM(gctp::dbgout);
@@ -291,6 +329,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getScale)
 		TUKI_METHOD(Entity, getMotionMixer)
 		TUKI_METHOD(Entity, getStrutumNode)
+		TUKI_METHOD(Entity, getFlesh)
 		TUKI_METHOD(Entity, getBoundingSphere)
 		TUKI_METHOD(Entity, getModelAABB)
 		TUKI_METHOD(Entity, printHierarchy)
