@@ -186,6 +186,10 @@ namespace gctp { namespace scene {
 			btVector3 p((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
 			start_transform.setOrigin(p);
 		}
+		if(L.top()>=6) {
+			btQuaternion q((float)L[4].toNumber(), (float)L[5].toNumber(), (float)L[6].toNumber());
+			start_transform.setRotation(q);
+		}
 		chassis->setCenterOfMassTransform(start_transform);
 		chassis->setLinearVelocity(btVector3(0,0,0));
 		chassis->setAngularVelocity(btVector3(0,0,0));

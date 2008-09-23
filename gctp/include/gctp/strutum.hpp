@@ -33,11 +33,11 @@ namespace gctp {
 		};
 	public:
 		/// コンストラクタ
-		Strutum() : bone_(VectorC(0,0,0)), flags_(0) { wtm_.identify(); lcm_.identify();}
+		Strutum() : /*bone_(VectorC(0,0,0)),*/ flags_(0) { wtm_.identify(); lcm_.identify();}
 		/// コピーコンストラクタ
-		Strutum(const Strutum &src) : wtm_(src.wtm_), lcm_(src.lcm_), bone_(src.bone_), flags_(DIRTY) {}
+		Strutum(const Strutum &src) : wtm_(src.wtm_), lcm_(src.lcm_), /*bone_(src.bone_),*/ flags_(DIRTY) {}
 		/// コンストラクタ
-		Strutum(const Matrix &src) : lcm_(src), bone_(VectorC(0,0,0)), flags_(DIRTY) { wtm_.identify(); }
+		Strutum(const Matrix &src) : lcm_(src), /*bone_(VectorC(0,0,0)),*/ flags_(DIRTY) { wtm_.identify(); }
 		/// コンストラクタ
 //		Strutum(const Stance &src) : lcm_(src), flags_(DIRTY) { wtm_.identify(); }
 		/// コンストラクタ
@@ -58,10 +58,12 @@ namespace gctp {
 		const Matrix &lcm() const { return lcm_; }
 		/// 局所座標系行列(ダーティーフラグがセットされる)
 		Matrix &getLCM() { dirty(); return lcm_; }
-		/// ボーンベクトル
+
+/*		/// ボーンベクトル
 		const Vector &bone() const { return bone_; }
 		/// ボーンベクトル
-		Vector &bone() { return bone_; }
+		Vector &bone() { return bone_; }*/
+
 		/// 再計算が必要か？
 		bool isDirty() const { return (flags_ & DIRTY) > 0; }
 		/// ダーティーフラグを寝かす
@@ -75,20 +77,25 @@ namespace gctp {
 		/// 更新
 		void update(const Matrix &parent)
 		{
-			if(!isDependent()) {
+			if(isIndependent()) {
+				if(isContinuos()) prev_wtm_ = wtm_;
+				lcm_ = wtm_ * parent.inverse();
+				if(!isContinuos()) prev_wtm_ = wtm_;
+			}
+			else {
 				if(isContinuos()) prev_wtm_ = wtm_;
 				wtm_ = lcm_ * parent;
 				if(!isContinuos()) prev_wtm_ = wtm_;
-				flags_ = UPDATED|CONTINUITY;
 			}
+			flags_ = UPDATED|CONTINUITY;
 		}
 		/// wtmを強制セット
 		void updateWTM(const Matrix &wtm)
 		{
 			if(isContinuos()) prev_wtm_ = wtm_;
-			wtm_ = wtm;
+			lcm_ = wtm_ = wtm;
 			if(!isContinuos()) prev_wtm_ = wtm_;
-			flags_ = UPDATED|INDEPENDENT|CONTINUITY;
+			flags_ = DIRTY|UPDATED|CONTINUITY|INDEPENDENT;
 		}
 
 		/// 前回ワールド変換行列
@@ -99,8 +106,9 @@ namespace gctp {
 		bool isContinuos() const { return (flags_ & CONTINUITY) > 0; }
 		/// 連続フラグを寝かす
 		void discreet() { flags_ &= ~CONTINUITY; }
+
 		/// 独立か？
-		bool isDependent() { return (flags_ & INDEPENDENT) > 0; }
+		bool isIndependent() { return (flags_ & INDEPENDENT) > 0; }
 		/// 独立フラグを寝かす
 		void depend() { flags_ &= ~INDEPENDENT; }
 
@@ -108,7 +116,7 @@ namespace gctp {
 		Matrix prev_wtm_;
 		Matrix wtm_;
 		Matrix lcm_;
-		Vector bone_; // ボーンベクトル
+		//Vector bone_; // ボーンベクトル
 		uint flags_;
 	};
 

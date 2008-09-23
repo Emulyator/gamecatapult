@@ -1441,13 +1441,13 @@ namespace luapp {
 		{
 			return aux_do(lua_, luaL_loadfile(lua_, filename));
 		}
-		inline bool run(const std::string &str)
-		{
-			return aux_do(lua_, luaL_loadstring(lua_, str.c_str()));
-		}
 		inline bool run(const char *buff, size_t size, const char *name = 0)
 		{
 			return aux_do(lua_, luaL_loadbuffer(lua_, buff, size, name));
+		}
+		inline bool runstring(const char *string)
+		{
+			return aux_do(lua_, luaL_loadstring(lua_, string));
 		}
 
 		inline bool main()

@@ -233,6 +233,11 @@ namespace gctp { namespace core {
 		{
 			return ptrs_.end();
 		}
+		/// シーケンスのサイズを返す
+		PtrList::size_type size() const
+		{
+			return ptrs_.size();
+		}
 
 		virtual void serialize(Serializer &);
 
@@ -257,7 +262,9 @@ namespace gctp { namespace core {
 		int loadAsync(luapp::Stack &L);
 		int isReady(luapp::Stack &L);
 		int create(luapp::Stack &L);
+		int insert(luapp::Stack &L);
 		int find(luapp::Stack &L);
+		int size(luapp::Stack &L);
 		int pairs(luapp::Stack &L);
 		int ipairs(luapp::Stack &L);
 		static int current(luapp::Stack &L);

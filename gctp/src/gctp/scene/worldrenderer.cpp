@@ -11,6 +11,7 @@
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/light.hpp>
 #include <gctp/scene/world.hpp>
+#include <gctp/scene/flesh.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/shader.hpp>
 #include <gctp/graphic/dx/stateblock.hpp>
@@ -278,5 +279,76 @@ namespace gctp { namespace scene {
 		}
 		return true;
 	}
+
+	////////////////////////
+	// IsVisibleOperator
+	// 
+	void IsVisibleOperator::set(Handle<Camera> camera)
+	{
+		camera_ = camera;
+	}
+
+	void IsVisibleOperator::add(Handle<Flesh> flesh)
+	{
+		fleshies_.push_back(flesh);
+		fleshies_.unique();
+	}
+
+	void IsVisibleOperator::remove(Handle<Flesh> flesh)
+	{
+		fleshies_.remove(flesh);
+	}
+
+	/** •`‰æ”»’è
+	 *
+	 * Žw’èFlesh‚ª‚·‚×‚ÄŒ©‚¦‚Ä‚¢‚È‚©‚Á‚½‚ç•`‰æ‚ðƒLƒƒƒ“ƒZƒ‹
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 * @date 2005/01/11 2:34:02
+	 */	
+	bool IsVisibleOperator::onReach(float delta) const
+	{
+		if(camera_) {
+			for(HandleList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
+				if((*i) && camera_->isVisible((*i)->bs())) return true;
+			}
+		}
+		return false;
+	}
+
+	bool IsVisibleOperator::setUp(luapp::Stack &L)
+	{
+		// Context:create‚Å»ì‚·‚é
+		return false;
+	}
+
+	void IsVisibleOperator::set(luapp::Stack &L)
+	{
+		if(L.top() >=1) {
+			set(tuki_cast<Camera>(L[1]));
+		}
+	}
+
+	void IsVisibleOperator::add(luapp::Stack &L)
+	{
+		if(L.top() >=1) {
+			add(tuki_cast<Flesh>(L[1]));
+		}
+	}
+
+	void IsVisibleOperator::remove(luapp::Stack &L)
+	{
+		if(L.top() >=1) {
+			remove(tuki_cast<Flesh>(L[1]));
+		}
+	}
+
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, IsVisibleOperator, Renderer);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, IsVisibleOperator)
+		TUKI_METHOD(IsVisibleOperator, set)
+		TUKI_METHOD(IsVisibleOperator, add)
+		TUKI_METHOD(IsVisibleOperator, remove)
+	TUKI_IMPLEMENT_END(IsVisibleOperator)
+
 
 }} // namespace gctp::scene

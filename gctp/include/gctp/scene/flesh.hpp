@@ -64,7 +64,6 @@ namespace gctp { namespace scene {
 		/// ‹«ŠE‹…‚ÌXV
 		bool update();
 
-	GCTP_DECLARE_CLASS
 	private:
 		void calcBS();
 		Pointer<ModelMixer>		modelmixer_;
@@ -73,6 +72,8 @@ namespace gctp { namespace scene {
 		Handle<Skeleton>		skl_;
 		Sphere bs_;
 		float dissolve_rate_;
+
+		GCTP_DECLARE_CLASS;
 	};
 
 }} //namespace gctp::scene

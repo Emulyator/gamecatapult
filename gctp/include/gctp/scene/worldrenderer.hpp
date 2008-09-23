@@ -27,6 +27,8 @@ namespace gctp {
 namespace gctp { namespace scene {
 
 	class World;
+	class Camera;
+	class Flesh;
 	
 	/** ソート済み描画パケットを保持するノードクラス
 	 *
@@ -174,6 +176,34 @@ namespace gctp { namespace scene {
 
 		GCTP_DECLARE_CLASS;
 		TUKI_DECLARE(ZFillRenderer);
+	};
+
+	/** レンダリングノードのフラスタムカリング用
+	 *
+	 */
+	class IsVisibleOperator : public Renderer
+	{
+	public:
+		virtual bool onReach(float delta) const;
+
+		/// 対象のカメラを指定
+		void set(Handle<Camera> camera);
+		/// チェック対象追加
+		void add(Handle<Flesh> flesh);
+		/// チェック対象削除
+		void remove(Handle<Flesh> flesh);
+	
+	protected:
+		Handle<Camera> camera_;
+		HandleList<Flesh> fleshies_;
+
+		bool setUp(luapp::Stack &L);
+		void set(luapp::Stack &L);
+		void add(luapp::Stack &L);
+		void remove(luapp::Stack &L);
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(IsVisibleOperator);
 	};
 
 }} // namespace gctp::scene

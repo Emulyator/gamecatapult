@@ -138,7 +138,8 @@ namespace gctp { namespace scene {
 					if(node) {
 						Matrix mat;
 						i->object->getWorldTransform().getOpenGLMatrix(&mat._11);
-						node->val.getLCM() = Matrix().trans(i->offset)*mat;
+						//node->val.getLCM() = Matrix().trans(i->offset)*mat;
+						node->val.updateWTM(Matrix().trans(i->offset)*mat);
 					}
 				}
 			}
