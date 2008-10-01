@@ -14,7 +14,7 @@
 #include <gctp/signal.hpp>
 #include <gctp/tuki.hpp>
 #include <gctp/pointer.hpp>
-#include <gctp/vector.hpp>
+#include <gctp/matrix.hpp>
 #include <gctp/aabox.hpp>
 #include <gctp/strutumtree.hpp>
 #ifdef _MT
@@ -56,8 +56,9 @@ namespace gctp { namespace scene {
 		void load(const _TCHAR *filename, uint max_bodies);
 		/// 追加可能か？
 		bool canAdd();
-		/// 現在存在する体の数
+		/// 現在存在する物体の数
 		int numBodies();
+
 		/// Bodyを箱として追加
 		void addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 		/// Bodyを箱として追加
@@ -69,8 +70,21 @@ namespace gctp { namespace scene {
 		/// AttrFlesh追加
 		void addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 
+		/// 既存RigidBodyとStrutumNodeを紐付け
+		void bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset = MatrixC(true));
+		/// RigidBodyとStrutumNodeの紐付け解除
+		void unbind(const btRigidBody *body);
+
 		/// StrutumNodeに関連付けられたbtRigidBodyを取得
 		btRigidBody *getRigidBody(StrutumTree::NodeHndl node);
+		/// StrutumNodeに関連付けられたbtRigidBodyを取得
+		const btRigidBody *getRigidBody(StrutumTree::NodeHndl node) const;
+		/// btRigidBodyに関連付けられたをStrutumNode取得
+		StrutumTree::NodeHndl getStrutumNode(const btRigidBody *body) const;
+		/// btRigidBodyに関連付けられたをオフセット行列を取得
+		Matrix *getOffsetMatrix(const btRigidBody *body);
+		/// btRigidBodyに関連付けられたをオフセット行列を取得
+		const Matrix *getOffsetMatrix(const btRigidBody *body) const;
 
 		/// btDynamicsWorldを取得
 		btDynamicsWorld *getDynamicsWorld();
@@ -78,9 +92,6 @@ namespace gctp { namespace scene {
 		bool onUpdate(float delta);
 		/// 更新スロット
 		MemberSlot1<PhysicWorld, float /*delta*/, &PhysicWorld::onUpdate> update_slot;
-
-	GCTP_DECLARE_CLASS
-	TUKI_DECLARE(PhysicWorld)
 	
 	protected:
 		virtual bool doOnUpdate(float delta);
@@ -101,6 +112,8 @@ namespace gctp { namespace scene {
 #ifdef _MT
 		mutable Mutex monitor_;
 #endif
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(PhysicWorld);
 	};
 
 }} // namespace gctp::scene

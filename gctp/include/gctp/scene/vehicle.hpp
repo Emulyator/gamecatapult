@@ -12,13 +12,14 @@
  */
 #include <gctp/class.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/scene/physiccontroller.hpp>
 
-class btDynamicsWorld;
 class btRigidBody;
 class btRaycastVehicle;
 
 namespace gctp { namespace scene {
 
+	class PhysicWorld;
 	class VehicleImpl;
 	/** 車両クラス
 	 *
@@ -26,12 +27,12 @@ namespace gctp { namespace scene {
 	 * @date 2008/06/21 17:55:36
 	 * Copyright (C) 2008 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Vehicle : public Object {
+	class Vehicle : public PhysicController {
 	public:
 		Vehicle() : engine_force(0), breaking_force(0), steering(0) {}
 
 		/// セットアップ
-		HRslt setUp(btRigidBody *chassis, btDynamicsWorld *world);
+		void setUp(btRigidBody *chassis, Pointer<PhysicWorld> physic);
 
 		/*void addWheel(Vector pos, bool is_front_wheel
 			, float wheel_radius, float wheel_width, float wheel_friction

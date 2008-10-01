@@ -268,7 +268,7 @@ namespace gctp { namespace scene {
 	void MotionMixer::setMasterSpeed(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
-			speed_ = (float)L[2].toNumber();
+			speed_ = (float)L[1].toNumber();
 		}
 	}
 

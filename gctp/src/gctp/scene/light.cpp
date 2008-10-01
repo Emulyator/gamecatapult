@@ -64,7 +64,7 @@ namespace gctp { namespace scene {
 		attenuation[0] = light.attenuation[0];
 		attenuation[1] = light.attenuation[1];
 		attenuation[2] = light.attenuation[2];
-		if(node_) {
+		if(node()) {
 		}
 	}
 
@@ -83,32 +83,17 @@ namespace gctp { namespace scene {
 		phi = light.phi;
 	}
 
-	void Light::newNode()
-	{
-		own_node_ = StrutumNode::create();
-		node_ = own_node_;
-	}
-
-	void Light::attach(Handle<StrutumNode> node)
-	{
-		if(own_node_) {
-			own_node_->remove();
-			own_node_ = 0;
-		}
-		node_ = node;
-	}
-
 	void Light::enter(World &world)
 	{
 		world.light_list.push_back(this);
 		world.light_list.unique();
-		if(own_node_) world.strutum_tree.root()->push(own_node_);
+		AspectStrutumNode<Object>::enter(world);
 	}
 
 	void Light::exit(World &world)
 	{
 		world.light_list.remove(this);
-		if(own_node_) own_node_->remove();
+		AspectStrutumNode<Object>::exit(world);
 	}
 
 	void Light::apply() const
@@ -119,7 +104,7 @@ namespace gctp { namespace scene {
 			light.ambient = ambient;
 			light.diffuse = diffuse;
 			light.specular = specular;
-			light.dir = node_->val.wtm().at();
+			light.dir = node()->val.wtm().at();
 			graphic::pushLight(light);
 					}
 			break;
@@ -128,7 +113,7 @@ namespace gctp { namespace scene {
 			light.ambient = ambient;
 			light.diffuse = diffuse;
 			light.specular = specular;
-			light.pos = node_->val.wtm().position();
+			light.pos = node()->val.wtm().position();
 			light.range = range;
 			light.attenuation[0] = attenuation[0];
 			light.attenuation[1] = attenuation[1];
@@ -141,12 +126,12 @@ namespace gctp { namespace scene {
 			light.ambient = ambient;
 			light.diffuse = diffuse;
 			light.specular = specular;
-			light.pos = node_->val.wtm().position();
+			light.pos = node()->val.wtm().position();
 			light.range = range;
 			light.attenuation[0] = attenuation[0];
 			light.attenuation[1] = attenuation[1];
 			light.attenuation[2] = attenuation[2];
-			light.dir = node_->val.wtm().at();
+			light.dir = node()->val.wtm().at();
 			light.falloff = falloff;
 			light.theta = theta;
 			light.phi = phi;
@@ -162,7 +147,7 @@ namespace gctp { namespace scene {
 		case AREA:
 		case POINT:
 			bs_.r = range;
-			bs_.c = node_->val.wtm().position();
+			bs_.c = node()->val.wtm().position();
 			break;
 		case SPOT:
 			// â~êçÇ™ì‡ê⁄Ç∑ÇÈãÖÇãÅÇﬂÇÈ
@@ -170,10 +155,10 @@ namespace gctp { namespace scene {
 			if(bs_.r < range) {
 				float cos_phi_half = cosf(0.5f*phi);
 				bs_.r = range/(cos_phi_half*cos_phi_half*2);
-				bs_.c = node_->val.wtm().position()+node_->val.wtm().at().normal()*bs_.r;
+				bs_.c = node()->val.wtm().position()+node()->val.wtm().at().normal()*bs_.r;
 			}
 			else {
-				bs_.c = node_->val.wtm().position()+node_->val.wtm().at().normal()*range;
+				bs_.c = node()->val.wtm().position()+node()->val.wtm().at().normal()*range;
 			}
 			break;
 		}
@@ -183,18 +168,6 @@ namespace gctp { namespace scene {
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
-	}
-
-	void Light::newNode(luapp::Stack &L)
-	{
-		newNode();
-	}
-
-	void Light::attach(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			attach(tuki_cast<StrutumNode>(L[1]));
-		}
 	}
 
 	void Light::enter(luapp::Stack &L)
@@ -211,44 +184,6 @@ namespace gctp { namespace scene {
 			Pointer<World> world = tuki_cast<World>(L[1]);
 			if(world) exit(*world);
 		}
-	}
-
-	void Light::setPosition(luapp::Stack &L)
-	{
-		if(L.top() >= 3) {
-			if(node_) node_->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[2].toNumber(),(float)L[3].toNumber()));
-		}
-	}
-
-	int Light::getPosition(luapp::Stack &L)
-	{
-		if(node_) {
-			Vector v = node_->val.lcm().position();
-			L << v.x << v.y << v.z;
-			return 3;
-		}
-		return 0;
-	}
-
-	void Light::setPosture(luapp::Stack &L)
-	{
-		if(L.top() >= 3) {
-			if(node_) {
-				Coord c = node_->val.lcm();
-				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-				node_->val.getLCM() = c.toMatrix();
-			}
-		}
-	}
-
-	int Light::getPosture(luapp::Stack &L)
-	{
-		if(node_) {
-			Coord c = node_->val.lcm();
-			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
-			return 3;
-		}
-		return 0;
 	}
 
 	void Light::setType(luapp::Stack &L)
@@ -406,14 +341,7 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Light, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Light)
-		TUKI_METHOD(Light, newNode)
-		TUKI_METHOD(Light, attach)
-		TUKI_METHOD(Light, enter)
-		TUKI_METHOD(Light, exit)
-		TUKI_METHOD(Light, setPosition)
-		TUKI_METHOD(Light, getPosition)
-		TUKI_METHOD(Light, setPosture)
-		TUKI_METHOD(Light, getPosture)
+		GCTP_SCENE_ASPECTSTRUTUMNODE_TUKI_METHODS(Light)
 		TUKI_METHOD(Light, setType)
 		TUKI_METHOD(Light, getType)
 		TUKI_METHOD(Light, setAmbient)

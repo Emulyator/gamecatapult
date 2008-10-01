@@ -16,13 +16,13 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	QuakeCamera::QuakeCamera() : Updater(1, 0x10), yaw(0), pitch(0), speed(5.0f)
+	QuakeCamera::QuakeCamera() : AspectUpdater<Object>(1, 0x10), yaw(0), pitch(0), speed(5.0f)
 	{
 	}
 
 	void QuakeCamera::activate(bool yes)
 	{
-		Updater::activate(yes);
+		AspectUpdater<Object>::activate(yes);
 		if(yes) {
 			Pointer<Camera> target = target_.lock();
 			if(target) {
@@ -83,6 +83,12 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
+	bool QuakeCamera::setUp(luapp::Stack &L)
+	{
+		// Context:create‚Å»ì‚·‚é
+		return false;
+	}
+
 	void QuakeCamera::attach(luapp::Stack &L)
 	{
 		if(L.top() >= 1) {
@@ -93,9 +99,9 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Updater);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, QuakeCamera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, QuakeCamera)
-		TUKI_METHOD2(QuakeCamera, Updater, activate)
+		TUKI_METHOD2(QuakeCamera, AspectUpdater<Object>, activate)
 		TUKI_METHOD(QuakeCamera, setPriority)
 		TUKI_METHOD(QuakeCamera, attach)
 	TUKI_IMPLEMENT_END(QuakeCamera)

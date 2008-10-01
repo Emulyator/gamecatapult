@@ -176,12 +176,18 @@ namespace gctp { namespace scene {
 
 	void Entity::setPosture(luapp::Stack &L)
 	{
-		if(L.top() >= 3) {
-			if(target_ && target_->root()) {
-				Coord c = target_->root()->val.lcm();
-				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-				target_->root()->val.getLCM() = c.toMatrix();
+		if(target_ && target_->root()) {
+			Coord c = target_->root()->val.lcm();
+			if(L.top() == 1) {
+				c.posture = QuatC((float)L[1].toNumber(), 0.0f, 0.0f);
 			}
+			else if(L.top() == 3) {
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+			}
+			else if(L.top() >= 4) {
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber(), (float)L[4].toNumber());
+			}
+			target_->root()->val.getLCM() = c.toMatrix();
 		}
 	}
 
@@ -189,8 +195,8 @@ namespace gctp { namespace scene {
 	{
 		if(target_ && target_->root()) {
 			Coord c = target_->root()->val.lcm();
-			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
-			return 3;
+			L << c.posture.w << c.posture.x << c.posture.y << c.posture.z;
+			return 4;
 		}
 		return 0;
 	}
@@ -198,16 +204,16 @@ namespace gctp { namespace scene {
 	void Entity::setScale(luapp::Stack &L)
 	{
 		if(target_ && target_->root()) {
-			if(L.top() >= 3) {
+			if(L.top() == 1) {
+				Coord c = target_->root()->val.lcm();
+				c.scale.x = c.scale.y = c.scale.z = (float)L[1].toNumber();
+				target_->root()->val.getLCM() = c.toMatrix();
+			}
+			else if(L.top() >= 3) {
 				Coord c = target_->root()->val.lcm();
 				c.scale.x = (float)L[1].toNumber();
 				c.scale.y = (float)L[2].toNumber();
 				c.scale.z = (float)L[3].toNumber();
-				target_->root()->val.getLCM() = c.toMatrix();
-			}
-			else if(L.top() >= 1) {
-				Coord c = target_->root()->val.lcm();
-				c.scale.x = c.scale.y = c.scale.z = (float)L[1].toNumber();
 				target_->root()->val.getLCM() = c.toMatrix();
 			}
 		}
@@ -218,6 +224,16 @@ namespace gctp { namespace scene {
 		if(target_ && target_->root()) {
 			Vector v = target_->root()->val.lcm().getScale();
 			L << v.x << v.y << v.z;
+			return 3;
+		}
+		return 0;
+	}
+
+	int Entity::getDirection(luapp::Stack &L)
+	{
+		if(target_ && target_->root()) {
+			Vector at = target_->root()->val.wtm().at();
+			L << at.x << at.y << at.z;
 			return 3;
 		}
 		return 0;
@@ -327,6 +343,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Entity, getPosture)
 		TUKI_METHOD(Entity, setScale)
 		TUKI_METHOD(Entity, getScale)
+		TUKI_METHOD(Entity, getDirection)
 		TUKI_METHOD(Entity, getMotionMixer)
 		TUKI_METHOD(Entity, getStrutumNode)
 		TUKI_METHOD(Entity, getFlesh)

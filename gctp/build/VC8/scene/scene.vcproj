@@ -215,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gctp\scene\physiccontroller.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gctp\scene\physicworld.cpp"
 				>
 			</File>
@@ -267,10 +271,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gctp\scene\updater.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\gctp\scene\vehicle.cpp"
 				>
 			</File>
@@ -288,6 +288,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\aspectstrutumnode.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\gctp\scene\aspectupdater.hpp"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\attrmodel.hpp"
 				>
@@ -382,10 +390,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\gctp\scene\speaker.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\gctp\scene\updater.hpp"
 				>
 			</File>
 			<File
