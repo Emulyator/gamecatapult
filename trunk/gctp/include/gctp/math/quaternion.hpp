@@ -243,7 +243,10 @@ namespace gctp { namespace math {
 		Vector3d<_Type> &vector() { return *reinterpret_cast<Vector3d<_Type> *>(&x); }
 		/// ƒxƒNƒgƒ‹•”‚ğ•Ô‚·
 		const Vector3d<_Type> &vector() const { return *reinterpret_cast<const Vector3d<_Type> *>(&x); }
-		
+
+#if 0
+		// ‚±‚ê‘S‘RŠÔˆá‚Á‚Ä‚é
+
 		/// ƒˆ[‚ğ•Ô‚·(³‹K‰»‚³‚ê‚Ä‚é‚±‚Æ)
 		_Type yaw() const
 		{
@@ -259,6 +262,7 @@ namespace gctp { namespace math {
 		{
 			return atan2(2*(x*y + w*z), w*w + x*x - y*y - z*z);
 		}
+#endif
 
 		/// ‰ñ“]²‚Æ‰ñ“]Šp‚ğ•Ô‚·(³‹K‰»‚³‚ê‚Ä‚é‚±‚Æ)
 		_Type toAxisAngle(Vector3d<_Type> &axis_out) const

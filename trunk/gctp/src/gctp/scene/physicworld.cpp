@@ -7,6 +7,7 @@
  */
 #include "common.h"
 #include <gctp/scene/physicworld.hpp>
+#include <gctp/scene/physiccontroller.hpp>
 #include <gctp/scene/body.hpp>
 #include <gctp/scene/flesh.hpp>
 #include <gctp/scene/world.hpp>
@@ -17,6 +18,10 @@
 #include <gctp/context.hpp>
 #include <gctp/app.hpp>
 #include <btBulletDynamicsCommon.h> // for Bullet
+
+extern ContactProcessedCallback	gContactProcessedCallback;
+extern ContactAddedCallback		gContactAddedCallback;
+extern ContactDestroyedCallback	gContactDestroyedCallback;
 
 #include <gctp/dbgout.hpp>
 
@@ -36,13 +41,16 @@ namespace gctp { namespace scene {
 		struct SyncPair {
 			StrutumTree::NodeHndl node;
 			btCollisionObject *object;
-			Vector offset;
+			Matrix offset;
 		};
 		typedef std::list<SyncPair> SyncList;
 		SyncList sync_targets_;
 
 		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0)
 		{
+			gContactProcessedCallback = onContactProcessed;
+			gContactAddedCallback = onContactAdded;
+			gContactDestroyedCallback = onContactDestroyed;
 		}
 
 		~PhysicWorldImpl()
@@ -82,19 +90,25 @@ namespace gctp { namespace scene {
 				for(int i = world_->getNumCollisionObjects()-1; i >= 0; i--)
 				{
 					btCollisionObject *obj = world_->getCollisionObjectArray()[i];
-					btRigidBody *body = btRigidBody::upcast(obj);
-					if(body && body->getMotionState())
-					{
-						delete body->getMotionState();
+					if(obj->getUserPointer()) {
+						world_->removeCollisionObject( obj );
 					}
-					world_->removeCollisionObject( obj );
-					delete obj;
+					else {
+						btRigidBody *body = btRigidBody::upcast(obj);
+						if(body && body->getMotionState())
+						{
+							delete body->getMotionState();
+						}
+						world_->removeCollisionObject( obj );
+						delete obj;
+					}
 				}
 
 				for(int i = 0; i < collision_shapes_.size(); i++)
 				{
 					delete collision_shapes_[i];
 				}
+				collision_shapes_.clear();
 
 				delete overlapping_pair_cache_;
 				delete dispatcher_;
@@ -138,10 +152,30 @@ namespace gctp { namespace scene {
 					if(node) {
 						Matrix mat;
 						i->object->getWorldTransform().getOpenGLMatrix(&mat._11);
-						//node->val.getLCM() = Matrix().trans(i->offset)*mat;
-						node->val.updateWTM(Matrix().trans(i->offset)*mat);
+						//node->val.getLCM() = i->offset*mat;
+						node->val.updateWTM(i->offset*mat);
 					}
 				}
+			}
+		}
+
+		/// 既存RigidBodyとStrutumNodeを紐付け
+		void bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset = MatrixC(true))
+		{
+			SyncPair pair;
+			pair.node = node;
+			pair.object = body;
+			pair.offset = offset;
+			sync_targets_.push_back(pair);
+		}
+
+		/// 紐付け解除
+		void unbind(const btRigidBody *body)
+		{
+			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end();)
+			{
+				if(body == i->object) i = sync_targets_.erase(i);
+				++i;
 			}
 		}
 
@@ -172,11 +206,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = body->root();
-					pair.object = rigid_body;
-					pair.offset = -aabb.center();
-					sync_targets_.push_back(pair);
+					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
 				}
 			}
 		}
@@ -211,11 +241,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = body->root();
-					pair.object = rigid_body;
-					pair.offset = -aabb.center();
-					sync_targets_.push_back(pair);
+					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
 				}
 			}
 		}
@@ -250,11 +276,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = body->root();
-					pair.object = rigid_body;
-					pair.offset = -aabb.center();
-					sync_targets_.push_back(pair);
+					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
 				}
 			}
 		}
@@ -298,12 +320,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = body->root();
-					pair.object = rigid_body;
-					//pair.offset = center_of_mass-aabb.center();
-					pair.offset = -aabb.center()-center_of_mass;
-					sync_targets_.push_back(pair);
+					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()-center_of_mass));
 				}
 			}
 		}
@@ -342,12 +359,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = body->root();
-					pair.object = rigid_body;
-					//pair.offset = center_of_mass-aabb.center();
-					pair.offset = offset-center_of_mass;
-					sync_targets_.push_back(pair);
+					bind(body->root(), rigid_body, Matrix().trans(offset-center_of_mass));
 				}
 			}
 		}
@@ -400,11 +412,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) {
 					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 
-					SyncPair pair;
-					pair.node = attr->node();
-					pair.object = rigid_body;
-					pair.offset = VectorC(0, 0, 0);
-					sync_targets_.push_back(pair);
+					bind(attr->node(), rigid_body);
 				}
 			}
 		}
@@ -418,6 +426,70 @@ namespace gctp { namespace scene {
 			return 0;
 		}
 
+		const btRigidBody *getRigidBody(StrutumTree::NodeHndl node) const
+		{
+			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+			{
+				if(node == i->node) return btRigidBody::upcast(i->object);
+			}
+			return 0;
+		}
+
+		StrutumTree::NodeHndl getStrutumNode(const btRigidBody *body) const
+		{
+			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+			{
+				if(body == i->object) return i->node;
+			}
+			return 0;
+		}
+
+		Matrix *getOffsetMatrix(const btRigidBody *body)
+		{
+			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+			{
+				if(body == i->object) return &i->offset;
+			}
+			return 0;
+		}
+
+		const Matrix *getOffsetMatrix(const btRigidBody *body) const
+		{
+			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
+			{
+				if(body == i->object) return &i->offset;
+			}
+			return 0;
+		}
+
+		static bool onContactAdded(btManifoldPoint &cp, const btCollisionObject *colobj0, int partid0, int index0, const btCollisionObject* colobj1, int partid1, int index1)
+		{
+			for(int i = 0; i < 2; i++) {
+				Object *obj = (Object *)((i == 0 ? colobj0 : colobj1)->getUserPointer());
+				if(obj) {
+					Pointer<PhysicController> pc = obj;
+					if(pc) pc->onContactAdded(cp, colobj0, partid0, index0, colobj1, partid1, index1);
+				}
+			}
+			//dbgout << "onContactAdded " << cp.getDistance() << ", "
+			//	<< colobj0 << ", " << partid0 << ", " << index0 << ", " << colobj1 << ", " << partid1 << ", " << index1 << endl;
+			return true;
+		}
+
+		static bool onContactProcessed(btManifoldPoint &cp, void *body0, void *body1)
+		{
+			//btRigidBody *rbody0 = btRigidBody::upcast((btCollisionObject *)body0);
+			//btRigidBody *rbody1 = btRigidBody::upcast((btCollisionObject *)body1);
+
+			//dbgout << "onContactProcessed" << endl;
+			return true;
+		}
+		
+		static bool onContactDestroyed(void *user_persistent_data)
+		{
+			dbgout << "onContactDestroyed" << endl;
+			return true;
+		}
 	};
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, PhysicWorld, Object);
@@ -451,6 +523,8 @@ namespace gctp { namespace scene {
 	{
 		if(filename) {
 			Pointer<GraphFile> file = context()[filename].lock();
+			//Pointer<GraphFile> file = context()load(filename).lock();
+			// どっちがいいんだろう。。。
 			if(file) {
 				AABox box(VectorC(10, 10, 10), VectorC(-10, -10, -10));
 				Pointer<Body> pbody;
@@ -491,6 +565,16 @@ namespace gctp { namespace scene {
 	void PhysicWorld::addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
 	{
 		impl_->addPlane(normal, initial_pos, mass, initial_local_inertia);
+	}
+
+	void PhysicWorld::bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset)
+	{
+		impl_->bind(node, body, offset);
+	}
+
+	void PhysicWorld::unbind(const btRigidBody *body)
+	{
+		impl_->unbind(body);
 	}
 
 	void PhysicWorld::addBox(Handle<Body> body, float mass, const Vector &initial_local_inertia)

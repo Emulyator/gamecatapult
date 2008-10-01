@@ -252,7 +252,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	int Speaker::getPosture(luapp::Stack &L)
+	/*int Speaker::getPosture(luapp::Stack &L)
 	{
 		if(node_) {
 			Coord c = node_->val.lcm();
@@ -260,7 +260,7 @@ namespace gctp { namespace scene {
 			return 3;
 		}
 		return 0;
-	}
+	}*/
 
 	void Speaker::setRange(luapp::Stack &L)
 	{
@@ -326,7 +326,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(Speaker, setPosition)
 		TUKI_METHOD(Speaker, getPosition)
 		TUKI_METHOD(Speaker, setPosture)
-		TUKI_METHOD(Speaker, getPosture)
+		//TUKI_METHOD(Speaker, getPosture)
 		TUKI_METHOD(Speaker, setRange)
 		TUKI_METHOD(Speaker, getRange)
 		TUKI_METHOD(Speaker, setVolume)

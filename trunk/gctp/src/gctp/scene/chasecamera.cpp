@@ -17,7 +17,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	ChaseCamera::ChaseCamera() : Updater(-1, 0x10), dumping_factor(0.3f), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
+	ChaseCamera::ChaseCamera() : AspectUpdater<Object>(-1, 0x10), dumping_factor(0.3f), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
 	{
 	}
 
@@ -37,6 +37,12 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
+	bool ChaseCamera::setUp(luapp::Stack &L)
+	{
+		// Context:create‚Å»ì‚·‚é
+		return false;
+	}
+
 	void ChaseCamera::attach(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -71,10 +77,9 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, ChaseCamera, Updater);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, ChaseCamera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, ChaseCamera)
-		TUKI_METHOD(ChaseCamera, activate)
-		TUKI_METHOD(ChaseCamera, setPriority)
+		GCTP_SCENE_ASPECTUPDATER_TUKI_METHODS(ChaseCamera)
 		TUKI_METHOD(ChaseCamera, attach)
 		TUKI_METHOD(ChaseCamera, setPositionOffset)
 		TUKI_METHOD(ChaseCamera, setPostureOffset)

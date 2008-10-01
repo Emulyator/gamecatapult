@@ -7,7 +7,7 @@
  * @date 2004/02/08 11:18:38
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
-#include <gctp/scene/updater.hpp>
+#include <gctp/scene/aspectupdater.hpp>
 
 namespace gctp { namespace scene {
 
@@ -19,7 +19,7 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class QuakeCamera : public Updater
+	class QuakeCamera : public AspectUpdater<Object>
 	{
 	public:
 		float yaw;
@@ -38,6 +38,7 @@ namespace gctp { namespace scene {
 
 		Handle<Camera> target_;
 
+		bool setUp(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 
 		GCTP_DECLARE_CLASS;

@@ -17,7 +17,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	BindCamera::BindCamera() : Updater(1, 0x10), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
+	BindCamera::BindCamera() : AspectUpdater<Object>(1, 0x10), position_offset(VectorC(0, 0, 0)), posture_offset(VectorC(0, 0, 0))
 	{
 	}
 
@@ -37,6 +37,12 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
+	bool BindCamera::setUp(luapp::Stack &L)
+	{
+		// Context:create‚Å»ì‚·‚é
+		return false;
+	}
+
 	void BindCamera::attach(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -71,9 +77,9 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, BindCamera, Updater);
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, BindCamera, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, BindCamera)
-		TUKI_METHOD(BindCamera, activate)
+		GCTP_SCENE_ASPECTUPDATER_TUKI_METHODS(BindCamera)
 		TUKI_METHOD(BindCamera, attach)
 		TUKI_METHOD(BindCamera, setPositionOffset)
 		TUKI_METHOD(BindCamera, setPostureOffset)

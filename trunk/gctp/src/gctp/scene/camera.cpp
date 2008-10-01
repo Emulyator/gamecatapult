@@ -18,38 +18,13 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	Camera::Camera() : nearclip_(1.0f), farclip_(100.0f), fov_(g_pi/4)
+	Camera::Camera() : nearclip_(1.0f), farclip_(100.0f), fov_(g_pi/4), fog_enable_(false)
 	{
 		window_.set(0, 0);
 		subwindow_.set(0,0,1,1);
 	}
 
 	Camera* Camera::current_ = NULL;	///< カレントカメラ（そのシーンのupdate、draw…などの間だけ有効）
-
-	void Camera::newNode()
-	{
-		own_node_ = StrutumNode::create();
-		node_ = own_node_;
-	}
-
-	void Camera::attach(Handle<StrutumNode> node)
-	{
-		if(own_node_) {
-			own_node_->remove();
-			own_node_ = 0;
-		}
-		node_ = node;
-	}
-
-	void Camera::enter(World &world)
-	{
-		if(own_node_) world.strutum_tree.root()->push(own_node_);
-	}
-
-	void Camera::exit(World &world)
-	{
-		if(own_node_) own_node_->remove();
-	}
 
 	void Camera::setToSystem() const
 	{
@@ -102,7 +77,7 @@ namespace gctp { namespace scene {
 	Matrix Camera::view() const
 	{
 		Matrix m;
-		if(node_) m = node_->val.wtm().orthoNormal();
+		if(node()) m = node()->val.wtm().orthoNormal();
 		return Matrix().setView(m.right(), m.up(), m.at(), m.position());
 	}
 
@@ -132,72 +107,6 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
-	void Camera::newNode(luapp::Stack &L)
-	{
-		newNode();
-	}
-
-	void Camera::attach(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			attach(tuki_cast<StrutumNode>(L[1]));
-		}
-	}
-
-	void Camera::enter(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) enter(*world);
-		}
-	}
-
-	void Camera::exit(luapp::Stack &L)
-	{
-		if(L.top() >= 1) {
-			Pointer<World> world = tuki_cast<World>(L[1]);
-			if(world) exit(*world);
-		}
-	}
-
-	void Camera::setPosition(luapp::Stack &L)
-	{
-		if(L.top() >= 3) {
-			if(node_) node_->val.getLCM().setPos(VectorC((float)L[1].toNumber(),(float)L[2].toNumber(),(float)L[3].toNumber()));
-		}
-	}
-
-	int Camera::getPosition(luapp::Stack &L)
-	{
-		if(node_) {
-			Vector v = node_->val.lcm().position();
-			L << v.x << v.y << v.z;
-			return 3;
-		}
-		return 0;
-	}
-
-	void Camera::setPosture(luapp::Stack &L)
-	{
-		if(L.top() >= 3) {
-			if(node_) {
-				Coord c = node_->val.lcm();
-				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
-				node_->val.getLCM() = c.toMatrix();
-			}
-		}
-	}
-
-	int Camera::getPosture(luapp::Stack &L)
-	{
-		if(node_) {
-			Coord c = node_->val.lcm();
-			L << c.posture.yaw() << c.posture.pitch() << c.posture.roll();
-			return 3;
-		}
-		return 0;
-	}
-
 	void Camera::setClip(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
@@ -223,13 +132,6 @@ namespace gctp { namespace scene {
 	{
 		L << fov_;
 		return 1;
-	}
-
-	int Camera::getDirection(luapp::Stack &L)
-	{
-		Vector at = node_->val.wtm().at();
-		L << at.x << at.y << at.z;
-		return 3;
 	}
 
 	void Camera::setFogColor(luapp::Stack &L)
@@ -261,14 +163,7 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Camera, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Camera)
-		TUKI_METHOD(Camera, newNode)
-		TUKI_METHOD(Camera, attach)
-		TUKI_METHOD(Camera, enter)
-		TUKI_METHOD(Camera, exit)
-		TUKI_METHOD(Camera, setPosition)
-		TUKI_METHOD(Camera, getPosition)
-		TUKI_METHOD(Camera, setPosture)
-		TUKI_METHOD(Camera, getPosture)
+		GCTP_SCENE_ASPECTSTRUTUMNODE_TUKI_METHODS(Camera)
 		TUKI_METHOD(Camera, setFov)
 		TUKI_METHOD(Camera, getFov)
 		TUKI_METHOD(Camera, setClip)

@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_ENTITY_HPP_
 #define _GCTP_SCENE_ENTITY_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult エンティティクラスヘッダファイル
  *
@@ -100,6 +103,7 @@ namespace gctp { namespace scene {
 		int getPosture(luapp::Stack &L);
 		void setScale(luapp::Stack &L);
 		int getScale(luapp::Stack &L);
+		int getDirection(luapp::Stack &L);
 		int getMotionMixer(luapp::Stack &L);
 		int getStrutumNode(luapp::Stack &L);
 		int getFlesh(luapp::Stack &L);

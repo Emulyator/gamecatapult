@@ -25,14 +25,14 @@ namespace gctp { namespace scene {
 
 		~VehicleImpl()
 		{
-			if(vehicle_) delete vehicle_;
-			if(vehicle_raycaster_) delete vehicle_raycaster_;
+			tearDown();
 		}
 
 		/// セットアップ
-		HRslt setUp(btRigidBody *chassis, btDynamicsWorld *world)
+		void setUp(btRigidBody *chassis, Pointer<PhysicWorld> physic)
 		{
-			vehicle_raycaster_ = new btDefaultVehicleRaycaster(world);
+			physic_ = physic;
+			vehicle_raycaster_ = new btDefaultVehicleRaycaster(physic->getDynamicsWorld());
 			vehicle_ = new btRaycastVehicle(tuning_, chassis, vehicle_raycaster_);
 
 			// never deactivate the vehicle
@@ -41,10 +41,28 @@ namespace gctp { namespace scene {
 			//choose coordinate system
 			vehicle_->setCoordinateSystem(0, 1, 2);
 
-			world->addVehicle(vehicle_);
-			return S_OK;
+			physic->getDynamicsWorld()->addVehicle(vehicle_);
 		}
-		
+
+		void tearDown()
+		{
+			if(vehicle_) {
+				if(physic_) {
+					physic_->getDynamicsWorld()->removeVehicle(vehicle_);
+					physic_->getDynamicsWorld()->removeRigidBody(vehicle_->getRigidBody());
+				}
+				delete vehicle_->getRigidBody()->getMotionState();
+				delete vehicle_->getRigidBody();
+				delete vehicle_;
+				vehicle_ = 0;
+			}
+			if(vehicle_raycaster_) {
+				delete vehicle_raycaster_;
+				vehicle_raycaster_ = 0;
+			}
+			physic_ = 0;
+		}
+
 		void getSizeAndOffset(Vector &out_size, Vector &out_offset)
 		{
 			btRigidBody *rigid_body = vehicle_->getRigidBody();
@@ -80,6 +98,7 @@ namespace gctp { namespace scene {
 			wheel.m_rollInfluence = roll_influence;
 		}
 
+		Handle<PhysicWorld>					physic_;
 		btRaycastVehicle::btVehicleTuning	tuning_;
 		btDefaultVehicleRaycaster			*vehicle_raycaster_;
 		btRaycastVehicle					*vehicle_;
@@ -87,10 +106,11 @@ namespace gctp { namespace scene {
 
 
 
-	HRslt Vehicle::setUp(btRigidBody *chassis, btDynamicsWorld *world)
+	void Vehicle::setUp(btRigidBody *chassis, Pointer<PhysicWorld> physic)
 	{
 		impl_ = new VehicleImpl;
-		return impl_->setUp(chassis, world);
+		impl_->setUp(chassis, physic);
+		impl_->vehicle_->getRigidBody()->setUserPointer(this);
 	}
 
 	/*void Vehicle::addWheel(Vector pos, bool is_front_wheel
@@ -133,7 +153,7 @@ namespace gctp { namespace scene {
 			if(physic && entity) {
 				btRigidBody *chassis = physic->getRigidBody(entity->target()->root());
 				if(chassis) {
-					setUp(chassis, physic->getDynamicsWorld());
+					setUp(chassis, physic);
 				}
 			}
 		}

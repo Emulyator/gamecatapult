@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_LIGHT_HPP_
 #define _GCTP_SCENE_LIGHT_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult ライトオブジェクトクラスヘッダファイル
  *
@@ -8,14 +11,10 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <gctp/class.hpp>
-#include <gctp/tuki.hpp>
-#include <gctp/scene/renderer.hpp>
-#include <gctp/strutumnode.hpp>
+#include <gctp/scene/aspectstrutumnode.hpp>
 #include <gctp/graphic/light.hpp>
 
 namespace gctp { namespace scene {
-
-	class World;
 
 	/** シーン内のライトオブジェクト
 	 *
@@ -23,7 +22,7 @@ namespace gctp { namespace scene {
 	 * @date 2004/07/15 2:11:01
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Light : public Object
+	class Light : public AspectStrutumNode<Object>
 	{
 	public:
 		/// ライト種
@@ -52,16 +51,9 @@ namespace gctp { namespace scene {
 		void set(const graphic::PointLight &light);
 		void set(const graphic::SpotLight &light);
 
-		/// 新規にノードを持つ
-		void newNode();
-		/// 既存ノードにアタッチ
-		void attach(Handle<StrutumNode> node);
-
 		void enter(World &world);
 		void exit(World &world);
 
-		/// アタッチしているノード
-		Handle<StrutumNode> node() const { return node_; }
 		/// 境界球
 		const Sphere &bs() const { return bs_; }
 		
@@ -71,19 +63,11 @@ namespace gctp { namespace scene {
 		void update();
 		
 	protected:
-		Handle<StrutumNode> node_;
-		Pointer<StrutumNode> own_node_;
 		Sphere bs_;
 		
 		bool setUp(luapp::Stack &L);
-		void newNode(luapp::Stack &L);
-		void attach(luapp::Stack &L);
 		void enter(luapp::Stack &L);
 		void exit(luapp::Stack &L);
-		void setPosition(luapp::Stack &L);
-		int getPosition(luapp::Stack &L);
-		void setPosture(luapp::Stack &L);
-		int getPosture(luapp::Stack &L);
 		void setType(luapp::Stack &L);
 		int getType(luapp::Stack &L);
 		void setAmbient(luapp::Stack &L);

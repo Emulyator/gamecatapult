@@ -1,5 +1,8 @@
 #ifndef _GCTP_SCENE_CAMERA_HPP_
 #define _GCTP_SCENE_CAMERA_HPP_
+#ifdef GCTP_ONCE
+#pragma once
+#endif // GCTP_ONCE
 /** @file
  * GameCatapult カメラクラスヘッダファイル
  *
@@ -10,6 +13,7 @@
 #include <gctp/class.hpp>
 #include <gctp/types.hpp>
 #include <gctp/strutumnode.hpp>
+#include <gctp/scene/aspectstrutumnode.hpp>
 #include <gctp/frustum.hpp>
 #include <gctp/tuki.hpp>
 #include <gctp/scene/renderer.hpp>
@@ -25,7 +29,7 @@ namespace gctp { namespace scene {
 	 * @date 2004/02/16 8:10:04
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
-	class Camera : public Renderer
+	class Camera : public AspectStrutumNode<Renderer>
 	{
 	public:
 		/// コンストラクタ
@@ -33,15 +37,6 @@ namespace gctp { namespace scene {
 
 		virtual bool onReach(float delta) const;
 		virtual bool onLeave(float delta) const;
-
-		/// 新規にノードを持つ
-		void newNode();
-		/// 既存ノードにアタッチ
-		void attach(Handle<StrutumNode> node);
-		/// 独自ノードをワールドにぶら下げる
-		void enter(World &world);
-		/// 独自ノードをワールドからはずす
-		void exit(World &world);
 
 		/// ニアクリップ
 		const float &nearclip() const { return nearclip_; }
@@ -59,8 +54,6 @@ namespace gctp { namespace scene {
 		const Rectf &subwindow() const { return subwindow_; }
 		/// サブウィンドウ
 		Rectf &subwindow() { return subwindow_; }
-		/// アタッチしているノードを返す
-		Handle<StrutumNode> node() const { return node_; }
 		/// 独自にウィンドウサイズを指定
 		void setWindow(float w, float h)
 		{
@@ -107,21 +100,10 @@ namespace gctp { namespace scene {
 
 	protected:
 		bool setUp(luapp::Stack &L);
-		void newNode(luapp::Stack &L);
-		void attach(luapp::Stack &L);
-		void enter(luapp::Stack &L);
-		void exit(luapp::Stack &L);
-		void setPosition(luapp::Stack &L);
-		int getPosition(luapp::Stack &L);
-		void setPosture(luapp::Stack &L);
-		int getPosture(luapp::Stack &L);
 		void setClip(luapp::Stack &L);
 		int getClip(luapp::Stack &L);
 		void setFov(luapp::Stack &L);
 		int getFov(luapp::Stack &L);
-
-		int getDirection(luapp::Stack &L);
-
 		void setFogColor(luapp::Stack &L);
 		void setFogParam(luapp::Stack &L);
 
@@ -139,9 +121,6 @@ namespace gctp { namespace scene {
 		float fog_start_;
 		float fog_end_;
 		Color32 fog_color_;
-
-		Handle<StrutumNode> node_;
-		Pointer<StrutumNode> own_node_;
 
 		mutable Camera *backup_current_;
 		GCTP_TLS static Camera *current_;
