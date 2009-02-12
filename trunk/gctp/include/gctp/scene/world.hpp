@@ -100,6 +100,8 @@ namespace gctp { namespace scene {
 		void activate(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);
 		int getPosition(luapp::Stack &L);
+		void setPosture(luapp::Stack &L);
+		int getPosture(luapp::Stack &L);
 		int getStrutumNode(luapp::Stack &L);
 		int getBoundingSphere(luapp::Stack &L);
 		int printHierarchy(luapp::Stack &L);

@@ -883,6 +883,68 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
+	int GraphFile::get(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			int n = L[1].toInteger();
+			if(n > 0 && n <= (int)PtrList::size()) {
+				for(PtrList::iterator i = begin(); i != end(); ++i) {
+					if(--n == 0) {
+						if(gctp::TukiRegister::push(L, *i) == 0) L << i->get();
+						return 1;
+					}
+				}
+			}
+		}
+		return 0;
+	}
+
+	int GraphFile::size(luapp::Stack &L)
+	{
+		L << (int)PtrList::size();
+		return 1;
+	}
+
+	int GraphFile::ipairs(luapp::Stack &L)
+	{
+		LuaIPair *ud = new(lua_newuserdata(L, sizeof(LuaIPair))) LuaIPair;
+		ud->n = 1; ud->list = this; ud->i = begin();
+		lua_newtable(L);
+		lua_pushliteral(L, "__call");
+		lua_pushcfunction(L, _ipair_next);
+		lua_settable(L, -3);
+		lua_pushliteral(L, "__gc");
+		lua_pushcfunction(L, _ipair_gc);
+		lua_settable(L, -3);
+		lua_setmetatable(L, -2);
+		return 1;
+	}
+
+	int GraphFile::_ipair_next(lua_State *l)
+	{
+		LuaIPair *ud = static_cast<LuaIPair *>(lua_touserdata(l, 1));
+		if(ud && ud->list && ud->i != ud->list->end()) {
+			luapp::Stack L(l);
+			L << ud->n;
+			int r = gctp::TukiRegister::push(L, *ud->i);
+			if(r == 0) {
+				L << ud->i->get();
+				r = 1;
+			}
+			++ud->i;
+			ud->n++;
+			return 1+r;
+		}
+		return 0;
+	}
+
+	int GraphFile::_ipair_gc(lua_State *l)
+	{
+		LuaIPair *ud = static_cast<LuaIPair *>(lua_touserdata(l, -1));
+		if(ud) ud->~LuaIPair();
+		return 0;
+	}
+
 	int GraphFile::setCustomSkinnedShaderBrush(luapp::Stack &L)
 	{
 		if(L.top()>=1) setCustomSkinnedShaderBrush(L[1].toCStr());
@@ -925,6 +987,9 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, GraphFile, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, GraphFile)
+		TUKI_METHOD(GraphFile, get)
+		TUKI_METHOD(GraphFile, size)
+		TUKI_METHOD(GraphFile, ipairs)
 		TUKI_METHOD(GraphFile, setCustomSkinnedShaderBrush)
 		TUKI_METHOD(GraphFile, getCustomSkinnedShaderBrush)
 		TUKI_METHOD(GraphFile, setCustomSolidShaderBrush)

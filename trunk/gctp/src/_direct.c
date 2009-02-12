@@ -20,7 +20,8 @@ DIR *opendir (const char *path)
 		char wstr[MAX_PATH];
 		strcpy(wstr, path);
 		strcat(wstr, "/*");
-		if(SUCCEEDED(ret->__handle = FindFirstFileA(wstr, &dat))) {
+		ret->__handle = FindFirstFileA(wstr, &dat);
+		if(ret->__handle != INVALID_HANDLE_VALUE) {
 			strcpy(ret->__d_dirent.d_name, dat.cFileName);
 			strcpy(ret->__d_dir_name, wstr);
 			ret->__loc = 0;
@@ -60,7 +61,8 @@ void rewinddir (DIR *dir)
 	if(dir && dir->__handle && dir->__loc) {
 		WIN32_FIND_DATAA dat;
 		FindClose(dir->__handle);
-		if(SUCCEEDED(dir->__handle = FindFirstFileA(dir->__d_dir_name, &dat))) {
+		dir->__handle = FindFirstFileA(dir->__d_dir_name, &dat);
+		if(dir->__handle != INVALID_HANDLE_VALUE) {
 			strcpy(dir->__d_dirent.d_name, dat.cFileName);
 			dir->__loc = 0;
 		}
@@ -109,7 +111,8 @@ WDIR *wopendir (const wchar_t *path)
 		wchar_t wstr[MAX_PATH];
 		wcscpy(wstr, path);
 		wcscat(wstr, L"/*");
-		if(SUCCEEDED(ret->__handle = FindFirstFileW(wstr, &dat))) {
+		ret->__handle = FindFirstFileW(wstr, &dat);
+		if(ret->__handle != INVALID_HANDLE_VALUE) {
 			wcscpy(ret->__d_dirent.d_name, dat.cFileName);
 			wcscpy(ret->__d_dir_name, wstr);
 			ret->__loc = 0;
@@ -143,7 +146,8 @@ void wrewinddir (WDIR *dir)
 	if(dir && dir->__handle && dir->__loc) {
 		WIN32_FIND_DATAW dat;
 		FindClose(dir->__handle);
-		if(SUCCEEDED(dir->__handle = FindFirstFileW(dir->__d_dir_name, &dat))) {
+		dir->__handle = FindFirstFileW(dir->__d_dir_name, &dat);
+		if(dir->__handle != INVALID_HANDLE_VALUE) {
 			wcscpy(dir->__d_dirent.d_name, dat.cFileName);
 			dir->__loc = 0;
 		}

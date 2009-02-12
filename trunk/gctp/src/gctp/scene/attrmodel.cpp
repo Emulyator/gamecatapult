@@ -10,6 +10,7 @@
 #include "common.h"
 #include <gctp/scene/attrmodel.hpp>
 #include <gctp/strutumnode.hpp>
+#include <gctp/wcstr.hpp>
 #include <btBulletDynamicsCommon.h>
 
 using namespace std;
@@ -125,6 +126,7 @@ namespace gctp { namespace scene {
 			indices_ = 0;
 		}
 	}
+
 
 	GCTP_IMPLEMENT_TYPEINFO(AttrFlesh, Object);
 

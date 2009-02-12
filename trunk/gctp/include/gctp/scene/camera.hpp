@@ -13,11 +13,12 @@
 #include <gctp/class.hpp>
 #include <gctp/types.hpp>
 #include <gctp/strutumnode.hpp>
-#include <gctp/scene/aspectstrutumnode.hpp>
+#include <gctp/graphic.hpp>
 #include <gctp/frustum.hpp>
 #include <gctp/tuki.hpp>
-#include <gctp/scene/renderer.hpp>
 #include <gctp/color.hpp>
+#include <gctp/scene/renderer.hpp>
+#include <gctp/scene/aspectstrutumnode.hpp>
 
 namespace gctp { namespace scene {
 
@@ -50,20 +51,18 @@ namespace gctp { namespace scene {
 		const float &fov() const { return fov_; }
 		/// 視野角
 		float &fov() { return fov_; }
-		/// サブウィンドウ
-		const Rectf &subwindow() const { return subwindow_; }
-		/// サブウィンドウ
-		Rectf &subwindow() { return subwindow_; }
-		/// 独自にウィンドウサイズを指定
-		void setWindow(float w, float h)
-		{
-			window_.x = w;
-			window_.y = h;
-		}
+		/// アスペクト比明示
+		void setAspectRatio(float aspect_ratio) { aspect_ratio_ = aspect_ratio; }
+		/// アスペクト比
+		float aspectRatio() const;
+		/// 描画領域矩形
+		const Rectf &renderRect() const { return render_rect_; }
+		/// 描画領域矩形
+		Rectf &renderRect() { return render_rect_; }
 		/// 現在のスクリーンからアスペクトを設定(デフォルト)
-		void fitToScreen() { window_.x = 0; }
+		void fitToScreen() { aspect_ratio_ = 0; }
 		/// 投影サイズがレンダーターゲットと一致しているか？
-		bool isFittedToScreen() const { return window_.x == 0 || window_.y == 0; }
+		bool isFittedToScreen() const { return aspect_ratio_ == 0; }
 		/// 投影モードか？
 		bool isPerspective() const { return fov_ > 0; }
 
@@ -71,8 +70,6 @@ namespace gctp { namespace scene {
 		Matrix view() const;
 		/// 投影マトリクスを返す
 		Matrix projection() const;
-		/// 投影スクリーンサイズを返す
-		Size2f screen() const;
 
 		const Matrix &viewprojection() const { return viewprojection_; }
 
@@ -102,17 +99,24 @@ namespace gctp { namespace scene {
 		bool setUp(luapp::Stack &L);
 		void setClip(luapp::Stack &L);
 		int getClip(luapp::Stack &L);
+		void setAspectRatio(luapp::Stack &L);
+		int getAspectRatio(luapp::Stack &L);
+		void setRenderRect(luapp::Stack &L);
+		int getRenderRect(luapp::Stack &L);
 		void setFov(luapp::Stack &L);
 		int getFov(luapp::Stack &L);
 		void setFogColor(luapp::Stack &L);
 		void setFogParam(luapp::Stack &L);
+		void setViewPort(luapp::Stack &L);
 
 	private:
 		float nearclip_;
 		float farclip_;
 		float fov_;
-		Size2f window_;
-		Rectf subwindow_;
+		float aspect_ratio_; // 0はスクリーンサイズから求める
+		graphic::ViewPort view_port_;
+		mutable graphic::ViewPort view_port_bak_;
+		Rectf render_rect_; // これいるのか？
 		Frustum frustum_;
 		mutable Matrix viewprojection_;
 

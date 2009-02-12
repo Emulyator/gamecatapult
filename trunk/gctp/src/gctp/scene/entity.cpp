@@ -318,9 +318,12 @@ namespace gctp { namespace scene {
 	int Entity::getModelAABB(luapp::Stack &L)
 	{
 		AABox aabb = source()->fleshies().front()->model()->getAABB(source()->fleshies().front()->node()->val.wtm());
+		//dbgout << "aabb : " << source()->fleshies().front()->node()->val.wtm() << aabb.upper << aabb.lower << endl;
 		for(PointerList<Flesh>::iterator i = ++source()->fleshies().begin(); i != source()->fleshies().end(); ++i)
 		{
-			aabb |= (*i)->model()->getAABB((*i)->node()->val.wtm());
+			AABox aabb2 = (*i)->model()->getAABB((*i)->node()->val.wtm());
+			//dbgout << "aabb : " << (*i)->node()->val.wtm() << aabb2.upper << aabb2.lower << endl;
+			aabb |= aabb2;
 		}
 		L << aabb.upper.x << aabb.upper.y << aabb.upper.z << aabb.lower.x << aabb.lower.y << aabb.lower.z;
 		return 6;

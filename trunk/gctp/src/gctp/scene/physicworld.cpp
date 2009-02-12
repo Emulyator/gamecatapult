@@ -29,6 +29,50 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
+	class PhysicMotionState : public btMotionState {
+	public:
+		PhysicMotionState(StrutumTree::NodePtr node, const Matrix &offset)
+		{
+			this->node = node;
+			this->offset = offset;
+			if(node) {
+				Matrix m = offset.inverse()*node->val.lcm();
+				//Matrix m = offset.inverse()*body->root()->val.wtm();
+				xform.setFromOpenGLMatrix(&m._11);
+			}
+			else {
+				Matrix m = offset.inverse();
+				xform.setFromOpenGLMatrix(&m._11);
+			}
+		}
+
+		PhysicMotionState(const btTransform &initialpos)
+		{
+			offset.identify();
+			xform = initialpos;
+		}
+
+		virtual void getWorldTransform(btTransform &xform) const
+		{
+			xform = this->xform;
+		}
+
+		virtual void setWorldTransform(const btTransform &xform)
+		{
+			if(node) {
+				StrutumTree::NodePtr _node = node.lock();
+				Matrix mat;
+				xform.getOpenGLMatrix(&mat._11);
+				_node->val.updateWTM(offset*mat);
+			}
+			this->xform = xform;
+		}
+
+		StrutumTree::NodeHndl node;
+		Matrix offset;
+		btTransform xform;
+	};
+
 	struct PhysicWorldImpl {
 		btDynamicsWorld								*world_;
 		btDefaultCollisionConfiguration				*collision_configuration_;
@@ -37,16 +81,9 @@ namespace gctp { namespace scene {
 		btBroadphaseInterface						*overlapping_pair_cache_;
 		btAlignedObjectArray<btCollisionShape *>	collision_shapes_;
 		uint max_bodies_;
+		int max_substeps_;
 		
-		struct SyncPair {
-			StrutumTree::NodeHndl node;
-			btCollisionObject *object;
-			Matrix offset;
-		};
-		typedef std::list<SyncPair> SyncList;
-		SyncList sync_targets_;
-
-		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0)
+		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0), max_substeps_(1)
 		{
 			gContactProcessedCallback = onContactProcessed;
 			gContactAddedCallback = onContactAdded;
@@ -71,8 +108,7 @@ namespace gctp { namespace scene {
 			overlapping_pair_cache_ = new btAxisSweep3(*(btVector3 *)&aabb.lower, *(btVector3 *)&aabb.upper, max_bodies);
 
 			// ソルバー
-			btSequentialImpulseConstraintSolver *solver = new btSequentialImpulseConstraintSolver;
-			solver_ = solver;
+			solver_ = new btSequentialImpulseConstraintSolver;
 
 			// シミュレーションするワールドの生成
 			world_ = new btDiscreteDynamicsWorld(dispatcher_, overlapping_pair_cache_, solver_, collision_configuration_);
@@ -120,62 +156,11 @@ namespace gctp { namespace scene {
 			}
 		}
 
-		void feedback()
-		{
-			if(world_) {
-				// 現在位置を反映
-				for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-				{
-					StrutumTree::NodePtr node = i->node.lock();
-					if(node && node->val.isUpdated()) {
-						i->object->getWorldTransform().setFromOpenGLMatrix(&node->val.wtm()._11);
-					}
-				}
-			}
-		}
-
 		void update(float delta)
 		{
 			if(world_) {
 				// シミュレーションを進める
-				world_->stepSimulation(delta, 10);
-			}
-		}
-
-		void sync()
-		{
-			if(world_) {
-				// 結果を適用
-				for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-				{
-					StrutumTree::NodePtr node = i->node.lock();
-					if(node) {
-						Matrix mat;
-						i->object->getWorldTransform().getOpenGLMatrix(&mat._11);
-						//node->val.getLCM() = i->offset*mat;
-						node->val.updateWTM(i->offset*mat);
-					}
-				}
-			}
-		}
-
-		/// 既存RigidBodyとStrutumNodeを紐付け
-		void bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset = MatrixC(true))
-		{
-			SyncPair pair;
-			pair.node = node;
-			pair.object = body;
-			pair.offset = offset;
-			sync_targets_.push_back(pair);
-		}
-
-		/// 紐付け解除
-		void unbind(const btRigidBody *body)
-		{
-			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end();)
-			{
-				if(body == i->object) i = sync_targets_.erase(i);
-				++i;
+				world_->stepSimulation(delta, max_substeps_);
 			}
 		}
 
@@ -188,26 +173,16 @@ namespace gctp { namespace scene {
 				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/4,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/4));
 				collision_shapes_.push_back(box);
 				
-				btTransform start_transform;
-				start_transform.setIdentity();
-				start_transform.setOrigin(*(btVector3 *)&initial_pos);
-				//start_transform.setFromOpenGLMatrix(&body->root()->val.lcm()._11);
-
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
 
@@ -224,25 +199,16 @@ namespace gctp { namespace scene {
 				btBoxShape *box = new btBoxShape(btVector3((aabb.upper.x-aabb.lower.x)/2,(aabb.upper.y-aabb.lower.y)/2,(aabb.upper.z-aabb.lower.z)/2));
 				collision_shapes_.push_back(box);
 
-				btTransform start_transform;
-				Matrix m = Matrix().trans(aabb.center())*body->root()->val.lcm();
-				start_transform.setFromOpenGLMatrix(&m._11);
-
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
 
@@ -262,22 +228,13 @@ namespace gctp { namespace scene {
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
-				btTransform start_transform;
-				Matrix m = Matrix().trans(aabb.center())*body->root()->val.lcm();
-				start_transform.setFromOpenGLMatrix(&m._11);
-
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()));
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
 
@@ -306,22 +263,13 @@ namespace gctp { namespace scene {
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
 
-				btTransform start_transform;
-				Matrix m = Matrix().trans(aabb.center()+center_of_mass)*body->root()->val.lcm();
-				start_transform.setFromOpenGLMatrix(&m._11);
-
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, compound, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center()-center_of_mass)), compound, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(body->root(), rigid_body, Matrix().trans(-aabb.center()-center_of_mass));
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
 
@@ -345,22 +293,13 @@ namespace gctp { namespace scene {
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
 
-				btTransform start_transform;
-				Matrix m = Matrix().trans(-offset+center_of_mass)*body->root()->val.lcm();
-				start_transform.setFromOpenGLMatrix(&m._11);
-
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, compound, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(offset-center_of_mass)), compound, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(body->root(), rigid_body, Matrix().trans(offset-center_of_mass));
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
 		}
 
@@ -395,81 +334,31 @@ namespace gctp { namespace scene {
 			if(attr && world_->getNumCollisionObjects() < (int)max_bodies_) {
 				const btCollisionShape *col_shape = attr->model()->shape();
 
-				btTransform start_transform;
-				start_transform.setFromOpenGLMatrix(&attr->node()->val.wtm()._11);
-
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
 
 				// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btDefaultMotionState *my_motion_state = new btDefaultMotionState(start_transform);
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, const_cast<btCollisionShape *>(col_shape), local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(attr->node().lock(), MatrixC(true)), const_cast<btCollisionShape *>(col_shape), local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				// add the body to the dynamics world
 				world_->addRigidBody(rigid_body);
 
-				if(mass > 0) {
-					rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
-
-					bind(attr->node(), rigid_body);
-				}
+				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
 			}
-		}
-
-		btRigidBody *getRigidBody(StrutumTree::NodeHndl node)
-		{
-			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-			{
-				if(node == i->node) return btRigidBody::upcast(i->object);
-			}
-			return 0;
-		}
-
-		const btRigidBody *getRigidBody(StrutumTree::NodeHndl node) const
-		{
-			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-			{
-				if(node == i->node) return btRigidBody::upcast(i->object);
-			}
-			return 0;
-		}
-
-		StrutumTree::NodeHndl getStrutumNode(const btRigidBody *body) const
-		{
-			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-			{
-				if(body == i->object) return i->node;
-			}
-			return 0;
-		}
-
-		Matrix *getOffsetMatrix(const btRigidBody *body)
-		{
-			for(SyncList::iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-			{
-				if(body == i->object) return &i->offset;
-			}
-			return 0;
-		}
-
-		const Matrix *getOffsetMatrix(const btRigidBody *body) const
-		{
-			for(SyncList::const_iterator i = sync_targets_.begin(); i != sync_targets_.end(); ++i)
-			{
-				if(body == i->object) return &i->offset;
-			}
-			return 0;
 		}
 
 		static bool onContactAdded(btManifoldPoint &cp, const btCollisionObject *colobj0, int partid0, int index0, const btCollisionObject* colobj1, int partid1, int index1)
 		{
-			for(int i = 0; i < 2; i++) {
-				Object *obj = (Object *)((i == 0 ? colobj0 : colobj1)->getUserPointer());
-				if(obj) {
-					Pointer<PhysicController> pc = obj;
-					if(pc) pc->onContactAdded(cp, colobj0, partid0, index0, colobj1, partid1, index1);
-				}
+			Object *obj = (Object *)colobj0->getUserPointer();
+			if(obj) {
+				Pointer<PhysicController> pc = obj;
+				if(pc) pc->onContactAdded(cp, colobj0, partid0, index0, colobj1, partid1, index1);
+			}
+			obj = (Object *)colobj1->getUserPointer();
+			if(obj) {
+				Pointer<PhysicController> pc = obj;
+				if(pc) pc->onContactAdded(cp, colobj1, partid1, index1, colobj0, partid0, index0);
 			}
 			//dbgout << "onContactAdded " << cp.getDistance() << ", "
 			//	<< colobj0 << ", " << partid0 << ", " << index0 << ", " << colobj1 << ", " << partid1 << ", " << index1 << endl;
@@ -498,6 +387,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(PhysicWorld, addBox)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound2)
+		TUKI_METHOD(PhysicWorld, addMesh)
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
 		TUKI_METHOD(PhysicWorld, numBodies)
@@ -562,19 +452,19 @@ namespace gctp { namespace scene {
 		return impl_->world_->getNumCollisionObjects();
 	}
 
+	int PhysicWorld::getMaxSubSteps()
+	{
+		return impl_->max_substeps_;
+	}
+
+	void PhysicWorld::setMaxSubSteps(int max_substeps)
+	{
+		impl_->max_substeps_ = max_substeps;
+	}
+
 	void PhysicWorld::addPlane(const Vector &normal, const Vector &initial_pos, float mass, const Vector &initial_local_inertia)
 	{
 		impl_->addPlane(normal, initial_pos, mass, initial_local_inertia);
-	}
-
-	void PhysicWorld::bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset)
-	{
-		impl_->bind(node, body, offset);
-	}
-
-	void PhysicWorld::unbind(const btRigidBody *body)
-	{
-		impl_->unbind(body);
 	}
 
 	void PhysicWorld::addBox(Handle<Body> body, float mass, const Vector &initial_local_inertia)
@@ -597,12 +487,51 @@ namespace gctp { namespace scene {
 		impl_->addMesh(attr, mass, initial_local_inertia);
 	}
 	
+	btMotionState *PhysicWorld::createMotionState(StrutumTree::NodeHndl node, const Matrix &offset)
+	{
+		return new PhysicMotionState(node.lock(), offset);
+	}
+	
+	Matrix *PhysicWorld::getOffsetMatrix(btRigidBody *body)
+	{
+		if(body && body->getMotionState()) {
+			PhysicMotionState *ms = dynamic_cast<PhysicMotionState *>(body->getMotionState());
+			if(ms) return &ms->offset;
+		}
+		return 0;
+	}
+
+	const Matrix *PhysicWorld::getOffsetMatrix(const btRigidBody *body)
+	{
+		if(body && body->getMotionState()) {
+			const PhysicMotionState *ms = dynamic_cast<const PhysicMotionState *>(body->getMotionState());
+			if(ms) return &ms->offset;
+		}
+		return 0;
+	}
+
 	btRigidBody *PhysicWorld::getRigidBody(StrutumTree::NodeHndl node)
 	{
-		return impl_->getRigidBody(node);
+		StrutumTree::NodePtr _node = node.lock();
+		for(int i = impl_->world_->getNumCollisionObjects()-1; i >= 0; i--) {
+			btCollisionObject *obj = impl_->world_->getCollisionObjectArray()[i];
+			btRigidBody *body = btRigidBody::upcast(obj);
+			if(body && body->getMotionState()) {
+				PhysicMotionState *ms = dynamic_cast<PhysicMotionState *>(body->getMotionState());
+				if(ms) {
+					if(ms->node.get() == _node.get()) return body;
+				}
+			}
+		}
+		return 0;
 	}
 
 	btDynamicsWorld *PhysicWorld::getDynamicsWorld()
+	{
+		return impl_->world_;
+	}
+
+	const btDynamicsWorld *PhysicWorld::getDynamicsWorld() const
 	{
 		return impl_->world_;
 	}
@@ -627,7 +556,7 @@ namespace gctp { namespace scene {
 		Profiling physics_profile("physics");
 		//impl_->feedback();
 		impl_->update(delta);
-		impl_->sync();
+		//impl_->sync();
 		return true;
 	}
 
@@ -639,24 +568,22 @@ namespace gctp { namespace scene {
 
 	void PhysicWorld::makeup(luapp::Stack &L)
 	{
-		if(L.top() >= 2) {
-			if(L[1].isString()) {
+		if(L.top() >= 7) {
+			AABox aabb;
+			aabb.upper.x = (float)L[1].toNumber();
+			aabb.upper.y = (float)L[2].toNumber();
+			aabb.upper.z = (float)L[3].toNumber();
+			aabb.lower.x = (float)L[4].toNumber();
+			aabb.lower.y = (float)L[5].toNumber();
+			aabb.lower.z = (float)L[6].toNumber();
+			setUp(aabb, L[7].toInteger());
+		}
+		else if(L.top() >= 2) {
 #ifdef UNICODE
-				load(WCStr(L[1].toCStr()).c_str(), L[2].toInteger());
+			load(WCStr(L[1].toCStr()).c_str(), L[2].toInteger());
 #else
-				load(L[1].toCStr(), L[2].toInteger());
+			load(L[1].toCStr(), L[2].toInteger());
 #endif
-			}
-			else if(L.top() >= 7) {
-				AABox aabb;
-				aabb.upper.x = (float)L[1].toNumber();
-				aabb.upper.y = (float)L[2].toNumber();
-				aabb.upper.z = (float)L[3].toNumber();
-				aabb.lower.x = (float)L[4].toNumber();
-				aabb.lower.y = (float)L[5].toNumber();
-				aabb.lower.z = (float)L[6].toNumber();
-				setUp(aabb, L[7].toInteger());
-			}
 		}
 	}
 
@@ -768,6 +695,24 @@ namespace gctp { namespace scene {
 		}
 	}
 
+	void PhysicWorld::addMesh(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<GraphFile> file = tuki_cast<GraphFile>(L[1]);
+			if(file) {
+				Pointer<Body> pbody;
+				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+					pbody = *i;
+					if(pbody) {
+						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
+							addMesh(*i, 0);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	void PhysicWorld::attach(luapp::Stack &L)
 	{
 		//これじゃだめ
@@ -788,6 +733,17 @@ namespace gctp { namespace scene {
 	int PhysicWorld::numBodies(luapp::Stack &L)
 	{
 		L << numBodies();
+		return 1;
+	}
+
+	void PhysicWorld::setMaxSubSteps(luapp::Stack &L)
+	{
+		setMaxSubSteps(L[1].toInteger());
+	}
+
+	int PhysicWorld::getMaxSubSteps(luapp::Stack &L)
+	{
+		L << getMaxSubSteps();
 		return 1;
 	}
 

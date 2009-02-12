@@ -363,7 +363,7 @@ namespace gctp { namespace movie { namespace dx {
 				if(!hr) {
 					//Msg(TEXT("Could not create the D3DX texture!  hr=0x%x"), hr);
 					GCTP_TRACE(_T("Could not create the D3DX texture!:")<<hr);
-					return hr;
+					return hr.i;
 				}
 				if(use_dynamic_textures_) {
 					GCTP_TRACE(_T("Dynamic"));
@@ -378,7 +378,7 @@ namespace gctp { namespace movie { namespace dx {
 				if(!(hr = texture_->get()->GetLevelDesc(0, &ddsd))) {
 					//Msg(TEXT("Could not get level Description of D3DX texture! hr = 0x%x"), hr);
 					GCTP_TRACE(_T("Could not create the D3DX texture!:")<<hr);
-					return hr;
+					return hr.i;
 				}
 
 				{
@@ -555,13 +555,13 @@ namespace gctp { namespace movie { namespace dx {
 				if( use_dynamic_textures_ ) {
 					if(!(hr = texture->LockRect(0, &d3dlr, 0, D3DLOCK_DISCARD))) {
 						GCTP_TRACE(hr);
-						return hr;
+						return hr.i;
 					}
 				}
 				else {
 					if(!(hr = texture->LockRect(0, &d3dlr, 0, 0))) {
 						GCTP_TRACE(hr);
-						return hr;
+						return hr.i;
  					}
 				}
 				// Get the texture buffer & pitch
@@ -583,7 +583,7 @@ namespace gctp { namespace movie { namespace dx {
 				// Unlock the Texture
 				if( !(hr = texture->UnlockRect(0)) ) {
 					GCTP_TRACE(hr);
-					return hr;
+					return hr.i;
 				}
 
 				return S_OK;

@@ -52,13 +52,13 @@ namespace gctp { namespace scene {
 	protected:
 		virtual bool doUpdate(float delta) = 0;
 
-		void activate(luapp::Stack &L)
+		void activateInLua(luapp::Stack &L)
 		{
 			if(L.top() >= 1) {
 				activate(L[1].toBoolean());
 			}
 		}
-		void setPriority(luapp::Stack &L)
+		void setPriorityInLua(luapp::Stack &L)
 		{
 			if(L.top() >= 1) {
 				update_slot.setPriority((uint16_t)L[1].toInteger());
@@ -68,8 +68,8 @@ namespace gctp { namespace scene {
 
 }} // namespace gctp::scene
 
-#define GCTP_SCENE_ASPECTUPDATER_TUKI_METHODS(_Class)	\
-	TUKI_METHOD(_Class, activate)		\
-	TUKI_METHOD(_Class, setPriority)
+#define GCTP_SCENE_ASPECTUPDATER_TUKI_METHODS(_Class)		\
+	TUKI_METHOD_EX(_Class, "activate", activateInLua)		\
+	TUKI_METHOD_EX(_Class, "setPriority", setPriorityInLua)
 
 #endif //_GCTP_SCENE_ASPECTUPDATER_HPP_

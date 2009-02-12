@@ -35,7 +35,7 @@ namespace gctp {
 		static bool compare(const Pointer<Volume> &lhs, const Pointer<Volume> &rhs)
 		{
 			if(lhs && rhs) return lhs->priority_ > rhs->priority_;
-			return lhs > rhs;
+			return lhs.get() > rhs.get();
 		}
 
 		TCStr name_;
@@ -62,10 +62,16 @@ namespace gctp {
 			{
 				std::basic_stringstream<_TCHAR> str;
 				str << name_.c_str() << "/" << fname;
-				gctp::File f(str.str().c_str());
+
+				WIN32_FIND_DATA info;
+				HANDLE hResult = ::FindFirstFile(str.str().c_str(), &info);
+				::FindClose( hResult );
+				if(hResult != INVALID_HANDLE_VALUE) return (int)info.nFileSizeLow;
+
+				/*gctp::File f(str.str().c_str());
 				if(f.is_open()) {
 					return f.length();
-				}
+				}*/
 				return -1;
 			}
 			virtual int read(const _TCHAR *fname, Buffer &buffer)
@@ -432,8 +438,14 @@ namespace gctp {
 
 	bool FileServer::mount(const _TCHAR *path, const char *key, ArchiveType type)
 	{
-		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
-			if(*i && (*i)->name_ == path) return true;
+		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end();) {
+			if(*i) {
+				if((*i)->name_ == path) return true;
+				++i;
+			}
+			else {
+				i = volume_list_.erase(i);
+			}
 		}
 		if(type == AUTO) {
 			if(NativeFS::isExist(path)) {
@@ -467,7 +479,19 @@ namespace gctp {
 			GCTP_TRACE(_T("アーカイブ'")<<path<<_T("'のマウントが要求されましたが、失敗しました。"));
 			return false;
 		}
-		stable_sort(volume_list_.begin(), volume_list_.end(), Volume::compare);
+		/*for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); ++i) {
+			if((*i)) PRNN("Prev "<<(*i)->name_);
+			else PRNN("Prev ???");
+		}*/
+		//stable_sort(volume_list_.begin(), volume_list_.end(), Volume::compare);
+		// 何時からかしらないが、stable_sortにはバグある。要素数が33を超えると前半の要素がヌルポインタになってしまう
+		// list.sortだと、ＯＫ。これは安定でないと聞いていたのだが、どうも安定なソートそして動いている。。。
+		// 何時から安定なソートになったんだ？
+		volume_list_.sort(Volume::compare);
+		/*for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); ++i) {
+			if((*i)) PRNN("Now "<<(*i)->name_);
+			else PRNN("Now ???");
+		}*/
 		return true;
 	}
 	
@@ -493,7 +517,7 @@ namespace gctp {
 				return;
 			}
 		}
-		stable_sort(volume_list_.begin(), volume_list_.end(), Volume::compare);
+		volume_list_.sort(Volume::compare);
 	}
 	
 	int FileServer::getPriority(const _TCHAR *archive_name)
@@ -510,8 +534,10 @@ namespace gctp {
 	{
 		for(PointerList<Volume>::iterator i = volume_list_.begin(); i != volume_list_.end(); i++) {
 			if(*i) {
+				PRNN("Find in "<<(*i)->name_);
 				int s = (*i)->find(name);
 				if(s >= 0) {
+					PRNN("found in "<<(*i)->name_);
 					BufferPtr ret = new Buffer(s);
 					if((*i)->read(name, *ret) >= 0) {
 						return ret;
@@ -574,7 +600,7 @@ namespace gctp {
 						thread_->read_.pop();
 					}
 				}
-				if(read.buffer) read.buffer->ready_signal(read.name.c_str(), read.buffer);
+				if(read.buffer) read.buffer->ready_signal_(read.name.c_str(), read.buffer->realizer_, read.buffer);
 			}
 		}
 		return true;

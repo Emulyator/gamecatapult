@@ -15,6 +15,7 @@
 #include <gctp/signal.hpp>
 #include <gctp/buffer.hpp>
 #include <gctp/tcstr.hpp>
+#include <gctp/extension.hpp>
 
 namespace gctp {
 
@@ -126,20 +127,26 @@ namespace gctp {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	class AsyncBuffer : public Buffer {
+		friend FileServer;
 	public:
 		bool isReady()
 		{
 			if(is_ready_) synchronize(false);
 			return is_ready_;
 		}
-		void connect(const Slot2<const _TCHAR *, BufferPtr> &slot)
+		void connect(const Slot3<const _TCHAR *, RealizeMethod, BufferPtr> &slot)
 		{
-			ready_signal.connect(slot);
+			ready_signal_.connect(slot);
 		}
-		void disconnect(const Slot2<const _TCHAR *, BufferPtr> &slot)
+		void disconnect(const Slot3<const _TCHAR *, RealizeMethod, BufferPtr> &slot)
 		{
-			ready_signal.disconnect(slot);
+			ready_signal_.disconnect(slot);
 		}
+		void setRealizer(RealizeMethod realizer)
+		{
+			realizer_ = realizer;
+		}
+
 	protected:
 		AsyncBuffer() : is_ready_(false)
 		{
@@ -149,8 +156,10 @@ namespace gctp {
 		{
 			synchronize(true);
 		}
-		friend FileServer;
-		MonoSignal2<const _TCHAR *, BufferPtr> ready_signal;
+		MonoSignal3<const _TCHAR *, RealizeMethod, BufferPtr> ready_signal_;
+		RealizeMethod realizer_;
+
+	private:
 		bool is_ready_;
 	};
 

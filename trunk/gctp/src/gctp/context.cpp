@@ -89,6 +89,48 @@ namespace gctp { namespace core {
 		return Hndl();
 	}
 
+	/** 要求されたリソースをロードし、保持する（リアライザ指定版）
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Hndl Context::load(const _TCHAR *name, RealizeMethod realizer)
+	{
+		//GCTP_ASSERT(current_ == this); これ必要か？
+		if(name && realizer) {
+			Hndl h = find(name);
+			if(h) return h;
+			TURI uri(name);
+//#ifdef _WIN32
+//			uri.convertLower();
+//#endif
+			BufferPtr file = fileserver().getFile(uri.raw().c_str());
+			if(file) {
+				Context *backup = current__; // 一時的にカレントを差し替える
+				current__ = this;
+				loading_async_ = false;
+				Ptr p = realizer(0, file);
+				current__ = backup;
+				if(p) {
+					ptrs_.push_back(p);
+					db_.insert(name, p);
+					return p;
+				}
+			}
+			else {
+				dbgout << _T("要求されたりソース\"") << name << _T("\"は見つかりませんでした") << endl;
+			}
+		}
+		return Hndl();
+	}
+
+	/** 要求されたリソースをロードし、保持する(非同期版)
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
 	Hndl Context::loadAsync(const _TCHAR *name)
 	{
 		//GCTP_ASSERT(current_ == this); これ必要か？
@@ -110,6 +152,7 @@ namespace gctp { namespace core {
 				if(file) {
 					Ptr p = f(0, 0);
 					if(p) {
+						file->setRealizer(f);
 						file->connect(on_ready_slot);
 						ptrs_.push_back(p);
 						db_.insert(name, p);
@@ -122,6 +165,44 @@ namespace gctp { namespace core {
 			}
 			else {
 				dbgout << _T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)") << endl;
+			}
+		}
+		return Hndl();
+	}
+
+	/** 要求されたリソースをロードし、保持する(非同期リアライザ指定版)
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/01/29 20:36:59
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	Hndl Context::loadAsync(const _TCHAR *name, RealizeMethod realizer)
+	{
+		//GCTP_ASSERT(current_ == this); これ必要か？
+		if(name && realizer) {
+			synchronize(true);
+			Hndl h = find(name);
+			if(h) return h;
+			TURI uri(name);
+//#ifdef _WIN32
+//			uri.convertLower();
+//#endif
+			while(fileserver().busy()) {
+				fileserver().service(0);
+			}
+			AsyncBufferPtr file = fileserver().getFileAsync(uri.raw().c_str());
+			if(file) {
+				Ptr p = realizer(0, 0);
+				if(p) {
+					file->setRealizer(realizer);
+					file->connect(on_ready_slot);
+					ptrs_.push_back(p);
+					db_.insert(name, p);
+					return p;
+				}
+			}
+			else {
+				dbgout << _T("要求されたりソース\"") << name << _T("\"は見つかりませんでした") << endl;
 			}
 		}
 		return Hndl();
@@ -224,27 +305,21 @@ namespace gctp { namespace core {
 		return Hndl();
 	}
 
-	bool Context::onReady(const _TCHAR *name, BufferPtr buffer)
+	bool Context::onReady(const _TCHAR *name, RealizeMethod realizer, BufferPtr buffer)
 	{
-		TURI uri(name);
-		std::basic_string<_TCHAR> ext = uri.extension();
-		RealizeMethod f = Extension::get(ext.c_str());
-		if(f) {
+		if(realizer) {
 			Context *backup = current__; // 一時的にカレントを差し替える
 			current__ = this;
 			loading_async_ = true;
 			Ptr rsrc = find(name).lock();
 			if(rsrc) {
-				Ptr p = f(rsrc, buffer);
+				Ptr p = realizer(rsrc, buffer);
 				if(!p) {
 					db_.erase(name);
 					ptrs_.remove(rsrc);
 				}
 			}
 			current__ = backup;
-		}
-		else {
-			dbgout << _T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)") << endl;
 		}
 		return false;
 	}
@@ -290,7 +365,20 @@ namespace gctp { namespace core {
 	{
 		/* (const char *fname) */
 		Hndl ret;
-		if(L.top() >= 1) {
+		if(L.top() >= 2) {
+			RealizeMethod f = Extension::get(WCStr(L[2].toCStr()).c_str());
+			if(f) {
+#ifdef UNICODE
+				ret = load(WCStr(L[1].toCStr()).c_str(), f);
+#else
+				ret = load(L[1].toCStr(), f);
+#endif
+			}
+			else {
+				dbgout << _T("Context::load : 拡張子'")<<L[2].toCStr()<<_T("'のリアライザは登録されていない(")<<L[1].toCStr()<<_T("の読み込み時)") << endl;
+			}
+		}
+		else if(L.top() >= 1) {
 #ifdef UNICODE
 			ret = load(WCStr(L[1].toCStr()).c_str());
 #else
@@ -305,7 +393,20 @@ namespace gctp { namespace core {
 	{
 		/* (const char *fname) */
 		Hndl ret;
-		if(L.top() >= 1) {
+		if(L.top() >= 2) {
+			RealizeMethod f = Extension::get(WCStr(L[2].toCStr()).c_str());
+			if(f) {
+#ifdef UNICODE
+				ret = loadAsync(WCStr(L[1].toCStr()).c_str(), f);
+#else
+				ret = loadAsync(L[1].toCStr(), f);
+#endif
+			}
+			else {
+				dbgout << _T("Context::load : 拡張子'")<<L[2].toCStr()<<_T("'のリアライザは登録されていない(")<<L[1].toCStr()<<_T("の読み込み時)") << endl;
+			}
+		}
+		else if(L.top() >= 1) {
 #ifdef UNICODE
 			L << loadAsync(WCStr(L[1].toCStr()).c_str());
 #else

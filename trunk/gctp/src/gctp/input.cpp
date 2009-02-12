@@ -68,7 +68,7 @@ namespace gctp {
 				DEC_STR_TO_DIK(L);
 				DEC_STR_TO_DIK(SEMICOLON);
 				DEC_STR_TO_DIK(APOSTROPHE);
-				DEC_STR_TO_DIK(GRAVE );
+				DEC_STR_TO_DIK(GRAVE);
 				DEC_STR_TO_DIK(LSHIFT);
 				DEC_STR_TO_DIK(BACKSLASH);
 				DEC_STR_TO_DIK(Z);
@@ -646,7 +646,7 @@ namespace gctp {
 		dipdw.diph.dwHow        = DIPH_DEVICE;
 		// データ
 		dipdw.dwData            = BUFFER_SIZE;
-		//次に、ヘッダー (DIPROPDWORD 構造体内の DIPROPHEADER 構造体) のアドレスと、変更したいプロパティの識別子を、次のように IDirectInputDevice8::SetProperty メソッドに渡す。
+		// 次に、ヘッダー (DIPROPDWORD 構造体内の DIPROPHEADER 構造体) のアドレスと、変更したいプロパティの識別子を、次のように IDirectInputDevice8::SetProperty メソッドに渡す。
 		hr = get()->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
 
 		x = y = dx = dy = dz = 0;

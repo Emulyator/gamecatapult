@@ -14,6 +14,7 @@
 #include <gctp/aabox.hpp>
 #include <gctp/class.hpp>
 #include <gctp/cstr.hpp>
+#include <gctp/hrslt.hpp>
 #include <gctp/strutumnode.hpp>
 
 class btTriangleIndexVertexArray;

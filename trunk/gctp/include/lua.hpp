@@ -1360,19 +1360,19 @@ namespace luapp {
 		}
 		explicit State(const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
-			addref(); run(str.c_str(), str.size(), name);
+			addref(); exec(str.c_str(), str.size(), name);
 		}
 		explicit State(const Initializer &ini, const std::string &str, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
-			addref(); ini(lua_); run(str.c_str(), str.size(), name);
+			addref(); ini(lua_); exec(str.c_str(), str.size(), name);
 		}
 		explicit State(const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
-			addref(); run(buff, size, name);
+			addref(); exec(buff, size, name);
 		}
 		explicit State(const Initializer &ini, const char *buff, size_t size, const char *name = 0, lua_Alloc allocf = l_alloc, void *ud = 0) : Stack(lua_newstate(allocf, ud))
 		{
-			addref(); ini(lua_); run(buff, size, name);
+			addref(); ini(lua_); exec(buff, size, name);
 		}
 		~State() { release(); }
 
@@ -1441,13 +1441,18 @@ namespace luapp {
 		{
 			return aux_do(lua_, luaL_loadfile(lua_, filename));
 		}
-		inline bool run(const char *buff, size_t size, const char *name = 0)
+
+		inline bool exec(const char *buff, size_t size, const char *name = 0)
 		{
 			return aux_do(lua_, luaL_loadbuffer(lua_, buff, size, name));
 		}
-		inline bool runstring(const char *string)
+		inline bool exec(const char *string)
 		{
 			return aux_do(lua_, luaL_loadstring(lua_, string));
+		}
+		inline bool exec(const std::string &str)
+		{
+			return exec(str.c_str(), str.size());
 		}
 
 		inline bool main()
