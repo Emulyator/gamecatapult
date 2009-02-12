@@ -369,6 +369,20 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	void MotionMixer::toOpen(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setIsOpen(MotionChannel::OPEN);
+		}
+	}
+
+	void MotionMixer::toClose(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			tracks()[L[1].toInteger()].setIsOpen(MotionChannel::CLOSE);
+		}
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, MotionMixer, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, MotionMixer)
 		TUKI_METHOD(MotionMixer, trackNum)
@@ -383,6 +397,8 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(MotionMixer, getSpeed)
 		TUKI_METHOD(MotionMixer, setLoop)
 		TUKI_METHOD(MotionMixer, getLoop)
+		TUKI_METHOD(MotionMixer, toOpen)
+		TUKI_METHOD(MotionMixer, toClose)
 	TUKI_IMPLEMENT_END(MotionMixer)
 
 }} // namespace gctp

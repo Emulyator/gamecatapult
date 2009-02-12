@@ -122,11 +122,11 @@ public:
 	// à≥èk
     {
 		std::filebuf ofb;
-		ofb.open("bzfiltertest", std::ios::out|std::ios::binary);
-		CPPUNIT_ASSERT(ofb.is_open());
 		basic_zfilter<16, char> ozf(&ofb);
 		obstream ofs(&ozf);
 
+		ofb.open("bzfiltertest", std::ios::out|std::ios::binary);
+		CPPUNIT_ASSERT(ofb.is_open());
 		ofs << test;
     }
 
@@ -141,11 +141,11 @@ public:
     // êLí∑
     {
 		std::filebuf ifb;
-		ifb.open("bzfiltertest", std::ios::in|std::ios::binary);
-		CPPUNIT_ASSERT(ifb.is_open());
         basic_zfilter<16, char> izf(&ifb);
 		ibstream ifs(&izf);
 
+		ifb.open("bzfiltertest", std::ios::in|std::ios::binary);
+		CPPUNIT_ASSERT(ifb.is_open());
 		std::string str;
 		ifs >> str;
 		CPPUNIT_ASSERT(str == test);

@@ -100,6 +100,15 @@ namespace gctp { namespace core {
 		 */
 		Hndl load(const _TCHAR *name);
 
+		/** コンテンツロード
+		 *
+		 * @return 読み込んで構築済みのオブジェクト。失敗した場合はヌルハンドルが返る。
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl load(const _TCHAR *name, RealizeMethod realizer);
+
 		/** ロード要求
 		 *
 		 * @return 未構築のオブジェクト。リクエストに失敗した場合はヌルハンドルが返る。
@@ -108,6 +117,15 @@ namespace gctp { namespace core {
 		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 		 */
 		Hndl loadAsync(const _TCHAR *name);
+
+		/** ロード要求
+		 *
+		 * @return 未構築のオブジェクト。リクエストに失敗した場合はヌルハンドルが返る。
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/02/08 11:18:22
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		Hndl loadAsync(const _TCHAR *name, RealizeMethod realizer);
 
 		/** (作成済みの)オブジェクト登録
 		 *
@@ -270,8 +288,8 @@ namespace gctp { namespace core {
 		static int current(luapp::Stack &L);
 
 		bool loadAsync(const _TCHAR *name, const Slot2<const _TCHAR *, BufferPtr> *callback);
-		bool onReady(const _TCHAR *name, BufferPtr buffer);
-		MemberSlot2<Context, const _TCHAR *, BufferPtr, &Context::onReady> on_ready_slot;
+		bool onReady(const _TCHAR *name, RealizeMethod realizer, BufferPtr buffer);
+		MemberSlot3<Context, const _TCHAR *, RealizeMethod, BufferPtr, &Context::onReady> on_ready_slot;
 
 	private:
 		bool is_pushed_;

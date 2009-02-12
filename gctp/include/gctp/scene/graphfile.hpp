@@ -77,12 +77,23 @@ namespace gctp { namespace scene {
 
 	protected:
 		bool setUp(luapp::Stack &L);
+		int get(luapp::Stack &L);
+		int size(luapp::Stack &L);
+		int ipairs(luapp::Stack &L);
 		static int setCustomSkinnedShaderBrush(luapp::Stack &L);
 		static int getCustomSkinnedShaderBrush(luapp::Stack &L);
 		static int setCustomSolidShaderBrush(luapp::Stack &L);
 		static int getCustomSolidShaderBrush(luapp::Stack &L);
 
 	private:
+		struct LuaIPair {
+			int n;
+			PtrList *list;
+			PtrList::iterator i;
+		};
+		static int _ipair_next(lua_State *l);
+		static int _ipair_gc(lua_State *l);
+
 		static const GCTP_TYPEINFO *custom_skinned_shader_brush_typeinfo__; // とりあえず。。。
 		static const GCTP_TYPEINFO *custom_solid_shader_brush_typeinfo__; // とりあえず。。。
 		GCTP_DECLARE_CLASS;

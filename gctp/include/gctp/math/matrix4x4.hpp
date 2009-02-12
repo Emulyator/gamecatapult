@@ -754,7 +754,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		operator bool() const {
 			return !!(*this);
 		}
-		/// 単位行列か？
+		/// 単位行列でないか？
 		bool operator!() const {
 			return _11 != _Type(1) || _22 != _Type(1) || _33 != _Type(1) || _44 != _Type(1)
 				|| _12 != _Type(0) || _13 != _Type(0) || _14 != _Type(0)

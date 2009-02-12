@@ -64,6 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib ole32.lib"
 				OutputFile="$(OutDir)/graphictest.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -144,6 +145,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib ole32.lib"
 				OutputFile="$(OutDir)/graphictest.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"

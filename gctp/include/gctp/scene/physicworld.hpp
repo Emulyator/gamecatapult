@@ -21,9 +21,9 @@
 #include <gctp/mutex.hpp>
 #endif
 
-class btRigidBody;
-class btCollisionObject;
 class btDynamicsWorld;
+class btMotionState;
+class btRigidBody;
 
 namespace gctp { namespace scene {
 
@@ -58,6 +58,10 @@ namespace gctp { namespace scene {
 		bool canAdd();
 		/// 現在存在する物体の数
 		int numBodies();
+		/// 最大分割ステップ数
+		int getMaxSubSteps();
+		/// 最大分割ステップ数を設定
+		void setMaxSubSteps(int max_substeps);
 
 		/// Bodyを箱として追加
 		void addBox2(Handle<Body> body, const Vector &initial_pos, float mass, const Vector &initial_velocity = VectorC(0,0,0));
@@ -70,24 +74,21 @@ namespace gctp { namespace scene {
 		/// AttrFlesh追加
 		void addMesh(Handle<AttrFlesh> attr, float mass, const Vector &initial_velocity = VectorC(0,0,0));
 
-		/// 既存RigidBodyとStrutumNodeを紐付け
-		void bind(StrutumTree::NodeHndl node, btRigidBody *body, const Matrix &offset = MatrixC(true));
-		/// RigidBodyとStrutumNodeの紐付け解除
-		void unbind(const btRigidBody *body);
+		/// MotionState作成
+		static btMotionState *createMotionState(StrutumTree::NodeHndl node, const Matrix &offset = MatrixC(true));
 
-		/// StrutumNodeに関連付けられたbtRigidBodyを取得
+		/// MotionStateに設定されたオフセットを取得
+		static Matrix *getOffsetMatrix(btRigidBody *body);
+		/// MotionStateに設定されたオフセットを取得
+		static const Matrix *getOffsetMatrix(const btRigidBody *body);
+
+		/// 指定ノードに関連付けられたbtRigidBodyを取得
 		btRigidBody *getRigidBody(StrutumTree::NodeHndl node);
-		/// StrutumNodeに関連付けられたbtRigidBodyを取得
-		const btRigidBody *getRigidBody(StrutumTree::NodeHndl node) const;
-		/// btRigidBodyに関連付けられたをStrutumNode取得
-		StrutumTree::NodeHndl getStrutumNode(const btRigidBody *body) const;
-		/// btRigidBodyに関連付けられたをオフセット行列を取得
-		Matrix *getOffsetMatrix(const btRigidBody *body);
-		/// btRigidBodyに関連付けられたをオフセット行列を取得
-		const Matrix *getOffsetMatrix(const btRigidBody *body) const;
 
 		/// btDynamicsWorldを取得
 		btDynamicsWorld *getDynamicsWorld();
+		/// btDynamicsWorldを取得
+		const btDynamicsWorld *getDynamicsWorld() const;
 
 		bool onUpdate(float delta);
 		/// 更新スロット
@@ -101,9 +102,12 @@ namespace gctp { namespace scene {
 		void addBox(luapp::Stack &L);
 		void addBoxAsCompound(luapp::Stack &L);
 		void addBoxAsCompound2(luapp::Stack &L);
+		void addMesh(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void detach(luapp::Stack &L);
 		int numBodies(luapp::Stack &L);
+		void setMaxSubSteps(luapp::Stack &L);
+		int getMaxSubSteps(luapp::Stack &L);
 
 	private:
 		/// コピー不可

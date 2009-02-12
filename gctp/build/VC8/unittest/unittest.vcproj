@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="unittest"
 	ProjectGUID="{403CE517-E66C-4753-BD14-FC9BBE83F851}"
+	RootNamespace="unittest"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -64,6 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib ole32.lib"
 				OutputFile="$(OutDir)/unittest.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -144,6 +146,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib ole32.lib"
 				OutputFile="$(OutDir)/unittest.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"

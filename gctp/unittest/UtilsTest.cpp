@@ -51,7 +51,7 @@ public:
 
 //CUPPA:decl=+
   void testQuadFunc() {
-	  uint32_t l,li;
+	  unsigned int l,li;
 	  l = quadlevel(UINT_MAX, li);
 	  PRNN(_T("UINT_MAX‚ÌƒŒƒxƒ‹:")<<l<<","<<li);
 	  l = quadlevel(UINT_MAX-1, li);

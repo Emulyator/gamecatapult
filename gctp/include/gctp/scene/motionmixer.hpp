@@ -147,6 +147,8 @@ namespace gctp { namespace scene {
 		int getSpeed(luapp::Stack &L);
 		void setLoop(luapp::Stack &L);
 		int getLoop(luapp::Stack &L);
+		void toOpen(luapp::Stack &L);
+		void toClose(luapp::Stack &L);
 
 	private:
 		float speed_;

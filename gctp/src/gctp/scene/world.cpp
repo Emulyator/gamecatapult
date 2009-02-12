@@ -34,6 +34,8 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(World, activate)
 		TUKI_METHOD(World, setPosition)
 		TUKI_METHOD(World, getPosition)
+		TUKI_METHOD(World, setPosture)
+		TUKI_METHOD(World, getPosture)
 		TUKI_METHOD(World, getStrutumNode)
 		TUKI_METHOD(World, getBoundingSphere)
 		TUKI_METHOD(World, printHierarchy)
@@ -107,7 +109,7 @@ namespace gctp { namespace scene {
 				{
 					Handle<Light> l = lhs;
 					Handle<Light> r = rhs;
-					if(l && r) return l->type < r->type;
+					if(l && r) return (int)l->type < (int)r->type;
 					else if(l) return true;
 					return false;
 				}
@@ -190,7 +192,7 @@ namespace gctp { namespace scene {
 				if(lhs && rhs) {
 					Handle<StrutumNode> l = lhs->node();
 					Handle<StrutumNode> r = rhs->node();
-					if(l && r) return distance(pos, l->val.wtm().position()) < distance(pos, r->val.wtm().position());
+					if(l && r) return gctp::distance(pos, l->val.wtm().position()) < gctp::distance(pos, r->val.wtm().position());
 					else if(l) return true;
 					return false;
 				}
@@ -301,6 +303,33 @@ namespace gctp { namespace scene {
 			Vector v = strutum_tree.root()->val.lcm().position();
 			L << v.x << v.y << v.z;
 			return 3;
+		}
+		return 0;
+	}
+
+	void World::setPosture(luapp::Stack &L)
+	{
+		if(world_body_ && world_body_->root()) {
+			Coord c = world_body_->root()->val.lcm();
+			if(L.top() == 1) {
+				c.posture = QuatC((float)L[1].toNumber(), 0.0f, 0.0f);
+			}
+			else if(L.top() == 3) {
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber());
+			}
+			else if(L.top() >= 4) {
+				c.posture = QuatC((float)L[1].toNumber(), (float)L[2].toNumber(), (float)L[3].toNumber(), (float)L[4].toNumber());
+			}
+			world_body_->root()->val.getLCM() = c.toMatrix();
+		}
+	}
+
+	int World::getPosture(luapp::Stack &L)
+	{
+		if(world_body_ && world_body_->root()) {
+			Coord c = world_body_->root()->val.lcm();
+			L << c.posture.w << c.posture.x << c.posture.y << c.posture.z;
+			return 4;
 		}
 		return 0;
 	}

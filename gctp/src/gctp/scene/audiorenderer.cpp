@@ -28,12 +28,13 @@ namespace gctp { namespace scene {
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 * @date 2005/01/11 2:34:02
-	 */	
+	 */
 	bool AudioRenderer::onReach(float delta) const
 	{
 		AudioRenderer *self = const_cast<AudioRenderer *>(this);
 		audio::device().initListener();
 		const Matrix &wtm = Camera::current().node()->val.wtm();
+		// ƒm[ƒh‚ª‚È‚¢ê‡‚Ç‚¤‚·‚éH—áŠO“f‚­‚×‚«‚©
 		audio::device().setListenerPosition(wtm.position());
 		audio::device().setListenerPosture(wtm.at(), wtm.up());
 		if(delta != 0) audio::device().setListenerVelocity((wtm.position()-Camera::current().node()->val.prevWTM().position())/delta);

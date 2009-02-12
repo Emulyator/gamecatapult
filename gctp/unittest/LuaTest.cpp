@@ -251,7 +251,7 @@ public:
 	CPPUNIT_ASSERT(lua.top()==0);
 
 	lua.global()["a"].declare("average", average);
-	lua.run(string("i = a.average(1, 2, 3, 4, 5)"));
+	lua.exec("i = a.average(1, 2, 3, 4, 5)");
 	CPPUNIT_ASSERT(lua.global()["i"].toNumber() == 3);
 	CPPUNIT_ASSERT(lua.top() == 0);
   }
@@ -312,7 +312,7 @@ public:
   }
   void testTuki() {
 	luapp::State lua(registers);
-	bool lua_run_ok = lua.run(string(
+	bool lua_run_ok = lua.exec(
 		"require('モジュール')\n"
 		"print('こんにちわ！')\n"
 		"a = モジュール.名無し()\n"
@@ -322,7 +322,7 @@ public:
 		"for k, v in pairs(getmetatable(モジュール.名無し)) do\n"
 		" print(k, v)\n"
 		"end"
-	));
+	);
 	if(!lua_run_ok) dbgout << lua[0].toCStr() << endl;
 	CPPUNIT_ASSERT(lua_run_ok);
 
@@ -339,19 +339,19 @@ public:
 	TukiInitializer ini;
 	{
 		luapp::State lua(ini);
-		bool lua_run_ok = lua.run(string(
+		bool lua_run_ok = lua.exec(
 			"require('モジュール')\n"
 			"t = {a = 10, b = true, o = モジュール.名無し(), tt = {ee = 'wwww'}, c = 'abracadabra'}\n"
 			"tuki_dump('tukidumptest', t)\n"
-			));
+		);
 		CPPUNIT_ASSERT(lua_run_ok);
 	}
 	{
 		luapp::State lua(ini);
-		bool lua_run_ok = lua.run(string(
+		bool lua_run_ok = lua.exec(
 			"t = {}\n"
 			"tuki_load('tukidumptest', t)\n"
-			));
+		);
 		CPPUNIT_ASSERT(lua_run_ok);
 		CPPUNIT_ASSERT(lua.global()["t"]["a"].isNumber());
 		CPPUNIT_ASSERT(lua.global()["t"]["a"].toNumber() == 10);

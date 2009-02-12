@@ -153,16 +153,17 @@ namespace gctp { namespace scene {
 		if(shader && *shader) {
 			Matrix proj;
 			Matrix view;
-			Size2f screen = Camera::current().screen();
-			Rectf subwindow = Camera::current().subwindow();
-			proj.setFOV(Camera::current().fov(), screen.x/screen.y, subwindow.left, subwindow.top, subwindow.right, subwindow.bottom, radius/2, radius);
+			float aspect_ratio = Camera::current().aspectRatio();
+			float height = (float)graphic::getViewPort().size().y;
+			Rectf renderrect = Camera::current().renderRect();
+			proj.setFOV(Camera::current().fov(), aspect_ratio, renderrect.left, renderrect.top, renderrect.right, renderrect.bottom, radius/2, radius);
 			view = Camera::current().view();
 			view.position() = VectorC(0,0,0); // •ûŒü‚Ì‚ÝÌ—p
 			// ‚¨‚©‚°‚ÅARadius‚ÉˆÓ–¡‚ª‚È‚­‚È‚Á‚½B‚»‚ê‚æ‚è•ªŠ„”‚ð‰Â•Ï‚É‚µ‚½‚Ù‚¤‚ª‚¢‚¢
 			(*shader)->SetMatrix("InvWorldViewProj", (view * proj).inverse());
 			Vector2 screen_offset;
-			screen_offset.x = -1.0f/screen.x;
-			screen_offset.y = 1.0f/screen.y;
+			screen_offset.x = -1.0f/(height*aspect_ratio);
+			screen_offset.y = 1.0f/height;
 			HRslt hr = (*shader)->SetFloatArray("ScreenOffset", &screen_offset.x, 2);
 			if(!hr) GCTP_ERRORINFO(hr);
 			if(texture_) (*shader)->SetTexture("BgTexture", *texture_);

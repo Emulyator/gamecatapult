@@ -18,7 +18,7 @@ namespace gctp {
 			bool operator()(const Handle<Slot> &lhs, const Handle<Slot> &rhs)
 			{
 				if(lhs && rhs) return lhs->priority() > rhs->priority();
-				return lhs > rhs;
+				return lhs.get() > rhs.get();
 			}
 		};
 

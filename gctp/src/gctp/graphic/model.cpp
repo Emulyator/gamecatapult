@@ -38,6 +38,12 @@ namespace gctp { namespace graphic {
 		skin_ = skin;
 		adjc_ = adjc;
 
+		// マテリアルが無いなら適当なマテリアルを設定する
+		if(mtrls.empty()) {
+			Material mtrl;
+			mtrl.setUp();
+			mtrls.push_back(mtrl);
+		}
 		if(mesh_) {
 			DWORD size;
 			mesh_->GetAttributeTable(NULL, &size);
