@@ -877,7 +877,7 @@ namespace gctp { namespace scene {
 		return hr;
 	}
 
-	bool GraphFile::setUp(luapp::Stack &L)
+	bool GraphFile::LuaCtor(luapp::Stack &L)
 	{
 		/// ’¼Ú§ì•s‰Â
 		return false;

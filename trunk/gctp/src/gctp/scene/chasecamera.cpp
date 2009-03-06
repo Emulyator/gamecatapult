@@ -37,7 +37,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
-	bool ChaseCamera::setUp(luapp::Stack &L)
+	bool ChaseCamera::LuaCtor(luapp::Stack &L)
 	{
 		// Context:create‚Å»ì‚·‚é
 		return false;

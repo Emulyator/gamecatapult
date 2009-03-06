@@ -203,7 +203,7 @@ namespace gctp {
 			lua_remove(L, 1);   // use classname:new(), instead of classname.new()
 			Pointer<T> p = Factory::create(GCTP_TYPEID(T));  // call constructor for T objects
 			luapp::Stack lua(L);
-			if(p && p->setUp(lua)) {
+			if(p && p->LuaCtor(lua)) {
 				UserData *ud = new (lua_newuserdata(L, sizeof(UserData))) UserData;
 				if(ud) {
 					ud->pointer() = p;  // store pointer to object in userdata

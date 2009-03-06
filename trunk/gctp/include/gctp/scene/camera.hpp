@@ -96,7 +96,7 @@ namespace gctp { namespace scene {
 		void update();
 
 	protected:
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void setClip(luapp::Stack &L);
 		int getClip(luapp::Stack &L);
 		void setAspectRatio(luapp::Stack &L);

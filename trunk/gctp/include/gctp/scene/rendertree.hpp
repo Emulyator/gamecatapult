@@ -86,7 +86,7 @@ namespace gctp { namespace scene {
 		}
 
 	protected:
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		int set(luapp::Stack &L);
 		bool set(const luapp::Table &tbl, NodePtr parent_node, int &i);
 		int get(luapp::Stack &L);

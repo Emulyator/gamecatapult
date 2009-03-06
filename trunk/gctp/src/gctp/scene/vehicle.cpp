@@ -139,13 +139,13 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
-	bool Vehicle::setUp(luapp::Stack &L)
+	bool Vehicle::LuaCtor(luapp::Stack &L)
 	{
 		// Context:create‚Å»ì‚·‚é
 		return false;
 	}
 
-	void Vehicle::makeup(luapp::Stack &L)
+	void Vehicle::setUp(luapp::Stack &L)
 	{
 		if(L.top() >= 2) {
 			Pointer<PhysicWorld> physic = tuki_cast<PhysicWorld>(L[1]);
@@ -257,7 +257,7 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Vehicle, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, Vehicle)
-		TUKI_METHOD(Vehicle, makeup)
+		TUKI_METHOD(Vehicle, setUp)
 		TUKI_METHOD(Vehicle, getEngineForce)
 		TUKI_METHOD(Vehicle, setEngineForce)
 		TUKI_METHOD(Vehicle, getBreakingForce)

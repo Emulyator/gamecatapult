@@ -82,7 +82,7 @@ namespace {
 		static bool done_;
 		static bool done2_;
 		lua_Number data_;
-		bool setUp(luapp::Stack &L) { return true; }
+		bool LuaCtor(luapp::Stack &L) { return true; }
 		int deposit (luapp::Stack &L) { data_ += L[1].toNumber(); return 0; }
 		int withdraw(luapp::Stack &L) { data_ -= L[1].toNumber(); return 0; }
 		int test(luapp::Stack &L) {

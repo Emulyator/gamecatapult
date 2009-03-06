@@ -134,7 +134,7 @@ namespace gctp { namespace scene {
 		float setSpeed(float speed) { std::swap(speed_, speed); return speed; }
 
 	protected:
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void setMasterSpeed(luapp::Stack &L);
 		int getMasterSpeed(luapp::Stack &L);
 		int trackNum(luapp::Stack &L);

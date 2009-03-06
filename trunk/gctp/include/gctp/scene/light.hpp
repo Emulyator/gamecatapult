@@ -65,7 +65,7 @@ namespace gctp { namespace scene {
 	protected:
 		Sphere bs_;
 		
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void enter(luapp::Stack &L);
 		void exit(luapp::Stack &L);
 		void setType(luapp::Stack &L);

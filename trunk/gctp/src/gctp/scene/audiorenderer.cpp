@@ -56,7 +56,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool AudioRenderer::setUp(luapp::Stack &L)
+	bool AudioRenderer::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

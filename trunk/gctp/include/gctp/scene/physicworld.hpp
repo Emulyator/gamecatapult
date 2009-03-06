@@ -97,8 +97,8 @@ namespace gctp { namespace scene {
 	protected:
 		virtual bool doOnUpdate(float delta);
 
-		bool setUp(luapp::Stack &L);
-		void makeup(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
+		void setUp(luapp::Stack &L);
 		void addBox(luapp::Stack &L);
 		void addBoxAsCompound(luapp::Stack &L);
 		void addBoxAsCompound2(luapp::Stack &L);

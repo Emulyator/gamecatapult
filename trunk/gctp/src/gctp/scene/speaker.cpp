@@ -121,7 +121,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	bool Speaker::setUp(luapp::Stack &L)
+	bool Speaker::LuaCtor(luapp::Stack &L)
 	{
 		// Context:create‚Å»ì‚·‚é
 		return false;

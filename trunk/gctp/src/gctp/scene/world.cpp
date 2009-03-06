@@ -262,7 +262,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	bool World::setUp(luapp::Stack &L)
+	bool World::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

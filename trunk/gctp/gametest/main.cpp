@@ -126,6 +126,7 @@ extern "C" int main(int argc, char *argv[])
 	spr.setUp();
 	Pointer<graphic::FontTexture> fonttex = new graphic::FontTexture; // どうすっかな。。。
 	fonttex->setUp(512, 512);
+	app().draw_signal.connectOnce(fonttex->draw_slot);
 	Pointer<Font> font = new gctp::Font;
 	font->setUp(_T(",8,BOLD|FIXEDPITCH|OUTLINE"));
 	Pointer<Font> font2 = new gctp::Font;
@@ -139,15 +140,16 @@ extern "C" int main(int argc, char *argv[])
 		app().draw_signal.connectOnce(rtree->draw_slot);
 		Pointer<scene::Camera> camera = context.create("gctp.scene.Camera", _T("camera")).lock();
 		if(camera) {
+			camera->newNode();
+			camera->node()->val.wtm() = Stance(VectorC(0.0f, 0.5f, -2.0f)).toMatrix();
 			rtree->setUp(camera);
-			camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
 			Handle<scene::WorldRenderer> wr = context.create("gctp.scene.WorldRenderer");
 			if(wr) {
 				rtree->root()->push(wr);
 				Handle<scene::World> world = context.create("gctp.scene.World", _T("world"));
 				if(world) {
 					world->update_signal.connectOnce(physics.update_slot);
-					wr->add(world);
+					wr->attach(world);
 					Pointer<scene::QuakeCamera> qcam = context.create("gctp.scene.QuakeCamera", _T("qcam")).lock();
 					if(qcam) qcam->target() = camera;
 					app().update_signal.connectOnce(world->update_slot);
@@ -203,27 +205,29 @@ extern "C" int main(int argc, char *argv[])
 					//entity = newEntity(context, *world, "gctp.Entity", NULL, _T("room1.x")).lock();
 
 					{
-						graphic::setAmbient(Color(0.5f,0.5f,0.5f));
+						graphic::setAmbientColor(Color32(Color(0.5f,0.5f,0.5f)));
 
 						graphic::DirectionalLight light;
 						light.ambient = Color(0.3f, 0.3f, 0.3f);
 						light.diffuse = Color(1.0f, 1.0f, 1.0f);
 						light.specular = Color(0.6f, 0.6f, 0.6f);
 						light.dir = VectorC(0.0f, -1.0f, 1.0f).normal();
-						Pointer<scene::ParallelLight> pl = context.create("gctp.scene.ParallelLight").lock();
+						Pointer<scene::Light> pl = context.create("gctp.scene.Light").lock();
 						if(pl) {
+							pl->newNode();
 							pl->set(light);
-							//pl->enter(*world);
+							pl->enter(*world);
 						}
 
 						light.ambient = Color(0.2f, 0.2f, 0.2f);
 						light.diffuse = Color(0.5f, 0.5f, 0.5f);
 						light.specular = Color(0.0f, 0.0f, 0.0f);
 						light.dir = VectorC(1.0f, -1.0f, 0.0f).normal();
-						pl = context.create("gctp.scene.ParallelLight").lock();
+						pl = context.create("gctp.scene.Light").lock();
 						if(pl) {
+							pl->newNode();
 							pl->set(light);
-							//pl->enter(*world);
+							pl->enter(*world);
 						}
 					}
 				}
@@ -247,7 +251,7 @@ extern "C" int main(int argc, char *argv[])
 				app().holdCursor(qcam_on);
 			}
 			if(input().kbd().press(DIK_HOME)) {
-				camera->setStance(Stance(VectorC(0.0f, 0.5f, -2.0f)));
+				camera->node()->val.wtm() = Stance(VectorC(0.0f, 0.5f, -2.0f)).toMatrix();
 				camera->fov() = g_pi/4;
 			}
 		}
@@ -320,8 +324,7 @@ extern "C" int main(int argc, char *argv[])
 			addBox(physics, *world, context, VectorC(0, 2, 0));
 		}
 		if(input().kbd().push(DIK_PERIOD)) {
-			Matrix m = camera->stance().posture.toMatrix();
-			addBox(physics, *world, context, camera->stance().position, m.at()*10.0f);
+			addBox(physics, *world, context, camera->node()->val.wtm().position(), camera->node()->val.wtm().at()*10.0f);
 		}
 		app().update_signal(app().lap);
 #endif
@@ -378,7 +381,7 @@ extern "C" int main(int argc, char *argv[])
 					<< _T("ピッチ:") << qcam->pitch << endl
 					<< _T("速度  :") << qcam->speed << endl
 					<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
-					<< _T("位置  :") << camera->stance().position << endl << endl
+					<< _T("位置  :") << camera->node()->val.wtm().position() << endl << endl
 					<< _T("モード: ") << mesh_mode << endl << endl
 					<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl;
 				Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();

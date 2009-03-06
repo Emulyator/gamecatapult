@@ -56,7 +56,7 @@ namespace gctp { namespace scene {
 		Handle<graphic::Shader> shader_;
 		Handle<graphic::CubeTexture> texture_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void setRadius(luapp::Stack &L);
 		void load(luapp::Stack &L);
 

@@ -37,7 +37,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
-	bool BindCamera::setUp(luapp::Stack &L)
+	bool BindCamera::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

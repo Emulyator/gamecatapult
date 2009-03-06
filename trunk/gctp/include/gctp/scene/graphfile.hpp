@@ -76,7 +76,7 @@ namespace gctp { namespace scene {
 		}
 
 	protected:
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		int get(luapp::Stack &L);
 		int size(luapp::Stack &L);
 		int ipairs(luapp::Stack &L);

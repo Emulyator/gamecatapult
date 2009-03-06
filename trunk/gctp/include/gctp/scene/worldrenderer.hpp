@@ -54,7 +54,7 @@ namespace gctp { namespace scene {
 	protected:
 		Handle<World> target_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 
 		GCTP_DECLARE_CLASS;
@@ -104,7 +104,7 @@ namespace gctp { namespace scene {
 	protected:
 		Handle<WorldSorter> target_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 	
 	private:
@@ -136,7 +136,7 @@ namespace gctp { namespace scene {
 	protected:
 		Handle<WorldSorter> target_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 	
 	private:
@@ -167,7 +167,7 @@ namespace gctp { namespace scene {
 		HandleList<World> worlds_;
 		mutable const char *backup_tech_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void add(luapp::Stack &L);
 		void remove(luapp::Stack &L);
 
@@ -197,7 +197,7 @@ namespace gctp { namespace scene {
 		Handle<Camera> camera_;
 		HandleList<Flesh> fleshies_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void set(luapp::Stack &L);
 		void add(luapp::Stack &L);
 		void remove(luapp::Stack &L);

@@ -349,7 +349,7 @@ namespace gctp { namespace core {
 
 	Context *Context::current__ = NULL;
 
-	bool Context::setUp(luapp::Stack &L)
+	bool Context::LuaCtor(luapp::Stack &L)
 	{
 		// gctp.core.Context.current().newChild()åoóRÇ≈Ç»ÇØÇÍÇŒçÏÇÍÇ»Ç¢
 		return false;

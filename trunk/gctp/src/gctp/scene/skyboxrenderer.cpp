@@ -182,7 +182,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool SkyBoxRenderer::setUp(luapp::Stack &L)
+	bool SkyBoxRenderer::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
