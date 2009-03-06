@@ -93,7 +93,7 @@ namespace gctp { namespace scene {
 		MemberSlot1<Entity, float /*delta*/, &Entity::onUpdate> update_slot;
 
 	protected:
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void load(luapp::Stack &L);
 		void enter(luapp::Stack &L);
 		void exit(luapp::Stack &L);

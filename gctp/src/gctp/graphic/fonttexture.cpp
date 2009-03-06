@@ -353,7 +353,10 @@ namespace gctp { namespace graphic {
 
 	}
 
-	FontTexture::FontTexture() : detail_(new detail::FontTextureDetail) {}
+	FontTexture::FontTexture() : detail_(new detail::FontTextureDetail)
+	{
+		draw_slot.bind(this);
+	}
 
 	HRslt FontTexture::setUp(const _TCHAR *name)
 	{

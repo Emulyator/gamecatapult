@@ -68,7 +68,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool WorldSorter::setUp(luapp::Stack &L)
+	bool WorldSorter::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
@@ -186,7 +186,7 @@ namespace gctp { namespace scene {
 		sb_->setUp();
 	}
 
-	bool OpequeWorldRenderer::setUp(luapp::Stack &L)
+	bool OpequeWorldRenderer::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
@@ -240,7 +240,7 @@ namespace gctp { namespace scene {
 		sb_->setUp();
 	}
 
-	bool TranslucentWorldRenderer::setUp(luapp::Stack &L)
+	bool TranslucentWorldRenderer::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
@@ -316,7 +316,7 @@ namespace gctp { namespace scene {
 		return false;
 	}
 
-	bool IsVisibleOperator::setUp(luapp::Stack &L)
+	bool IsVisibleOperator::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

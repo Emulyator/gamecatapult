@@ -164,7 +164,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	bool Light::setUp(luapp::Stack &L)
+	bool Light::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

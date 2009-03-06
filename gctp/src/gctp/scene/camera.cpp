@@ -21,8 +21,8 @@ namespace gctp { namespace scene {
 	Camera::Camera() : nearclip_(1.0f), farclip_(100.0f), fov_(g_pi/4), aspect_ratio_(0), fog_enable_(false)
 	{
 		render_rect_.set(0,0,1,1);
-		view_port_.max_z = 0;
-		view_port_.min_z = -1;
+		view_port_.max_z = -1;
+		view_port_.min_z = 0;
 	}
 
 	Camera* Camera::current_ = NULL;	///< カレントカメラ（そのシーンのupdate、draw…などの間だけ有効）
@@ -111,7 +111,7 @@ namespace gctp { namespace scene {
 		frustum_.set(view()*projection());
 	}
 	
-	bool Camera::setUp(luapp::Stack &L)
+	bool Camera::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createで製作する
 		return false;

@@ -95,7 +95,7 @@ namespace gctp { namespace scene {
 
 		virtual bool doOnUpdate(float delta);
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void load(luapp::Stack &L);
 		void activate(luapp::Stack &L);
 		void setPosition(luapp::Stack &L);

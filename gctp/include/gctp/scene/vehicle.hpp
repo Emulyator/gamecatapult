@@ -48,8 +48,8 @@ namespace gctp { namespace scene {
 		float	steering;
 
 	protected:
-		bool setUp(luapp::Stack &L);
-		void makeup(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
+		void setUp(luapp::Stack &L);
 		int getEngineForce(luapp::Stack &L);
 		void setEngineForce(luapp::Stack &L);
 		int getBreakingForce(luapp::Stack &L);

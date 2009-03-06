@@ -101,7 +101,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool Entity::setUp(luapp::Stack &L)
+	bool Entity::LuaCtor(luapp::Stack &L)
 	{
 		// World:newNodeÇ≈êªçÏÇ∑ÇÈ
 		return false;

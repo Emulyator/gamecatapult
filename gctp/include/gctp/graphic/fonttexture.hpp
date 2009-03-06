@@ -11,6 +11,7 @@
 #include <gctp/color.hpp>
 #include <gctp/types.hpp>
 #include <gctp/vector.hpp>
+#include <gctp/signal.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace gctp {
@@ -125,7 +126,14 @@ namespace gctp { namespace graphic {
 		/// 領域の使用カウンタを減算
 		void aging();
 
-	GCTP_DECLARE_CLASS
+		bool onDraw(float) const
+		{
+			const_cast<FontTexture *>(this)->aging();
+			return true;
+		}
+		gctp::ConstMemberSlot1<FontTexture, float, &FontTexture::onDraw> draw_slot;
+
+	GCTP_DECLARE_CLASS;
 
 	private:
 		uint32_t alloc(uint32_t level);

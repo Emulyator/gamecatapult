@@ -60,7 +60,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	bool RenderTree::setUp(luapp::Stack &L)
+	bool RenderTree::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;

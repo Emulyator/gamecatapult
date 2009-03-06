@@ -75,7 +75,7 @@ namespace gctp { namespace scene {
 		Pointer<StrutumNode> own_node_;
 		Sphere bs_;
 		
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void newNode(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void enter(luapp::Stack &L);

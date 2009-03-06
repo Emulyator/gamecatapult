@@ -274,7 +274,7 @@ namespace gctp { namespace core {
 
 	protected:
 		// luapp
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		int newChild(luapp::Stack &L);
 		int load(luapp::Stack &L);
 		int loadAsync(luapp::Stack &L);

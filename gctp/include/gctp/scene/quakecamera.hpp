@@ -38,7 +38,7 @@ namespace gctp { namespace scene {
 
 		Handle<Camera> target_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 
 		GCTP_DECLARE_CLASS;

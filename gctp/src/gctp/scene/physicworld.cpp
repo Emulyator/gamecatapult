@@ -383,7 +383,7 @@ namespace gctp { namespace scene {
 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, PhysicWorld, Object);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, PhysicWorld)
-		TUKI_METHOD(PhysicWorld, makeup)
+		TUKI_METHOD(PhysicWorld, setUp)
 		TUKI_METHOD(PhysicWorld, addBox)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound2)
@@ -560,13 +560,13 @@ namespace gctp { namespace scene {
 		return true;
 	}
 
-	bool PhysicWorld::setUp(luapp::Stack &L)
+	bool PhysicWorld::LuaCtor(luapp::Stack &L)
 	{
 		// Context:create‚Å»ì‚·‚é
 		return false;
 	}
 
-	void PhysicWorld::makeup(luapp::Stack &L)
+	void PhysicWorld::setUp(luapp::Stack &L)
 	{
 		if(L.top() >= 7) {
 			AABox aabb;

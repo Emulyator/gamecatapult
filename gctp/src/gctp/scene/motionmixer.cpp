@@ -259,7 +259,7 @@ namespace gctp { namespace scene {
 		}
 	}
 
-	bool MotionMixer::setUp(luapp::Stack &L)
+	bool MotionMixer::LuaCtor(luapp::Stack &L)
 	{
 		// Entity‚©‚ç‚ÌŽæ“¾‚Ì‚Ý
 		return false;

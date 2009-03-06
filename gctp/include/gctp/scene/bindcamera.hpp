@@ -41,7 +41,7 @@ namespace gctp { namespace scene {
 		Handle<Camera> target_;
 		StrutumTree::NodeHndl chasee_;
 
-		bool setUp(luapp::Stack &L);
+		bool LuaCtor(luapp::Stack &L);
 		void setPositionOffset(luapp::Stack &L);
 		void setPostureOffset(luapp::Stack &L);
 		void attach(luapp::Stack &L);

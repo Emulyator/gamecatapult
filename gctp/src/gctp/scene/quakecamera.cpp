@@ -83,7 +83,7 @@ namespace gctp { namespace scene {
 		return true;
 	}
 	
-	bool QuakeCamera::setUp(luapp::Stack &L)
+	bool QuakeCamera::LuaCtor(luapp::Stack &L)
 	{
 		// Context:createÇ≈êªçÏÇ∑ÇÈ
 		return false;
