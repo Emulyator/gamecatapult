@@ -137,7 +137,7 @@ namespace gctp { namespace scene {
 		backup_current_ = const_cast<World *>(current_);
 		current_ = const_cast<World *>(this);
 #ifndef __ee__
-		graphic::clearLight();
+		graphic::device().clearLight();
 #endif
 	}
 
@@ -176,7 +176,7 @@ namespace gctp { namespace scene {
 		point_lights.resize(max_point_num);
 		spot_lights.resize(max_spot_num);
 		selectLights(bs, area_lights, point_lights, spot_lights);
-		graphic::clearLight();
+		graphic::device().clearLight();
 		for(HandleVector<Light>::iterator i = area_lights.begin(); i != area_lights.end() && *i; ++i) (*i)->apply();
 		for(HandleVector<Light>::iterator i = point_lights.begin(); i != point_lights.end() && *i; ++i) (*i)->apply();
 		for(HandleVector<Light>::iterator i = spot_lights.begin(); i != spot_lights.end() && *i; ++i) (*i)->apply();

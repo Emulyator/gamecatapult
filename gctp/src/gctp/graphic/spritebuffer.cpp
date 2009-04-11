@@ -485,8 +485,8 @@ namespace gctp { namespace graphic {
 	{
 		assert(type_!=VT_L);
 		begin(do_filter);
-		graphic::setView(Matrix().setView(VectorC(1, 0, 0), VectorC(0, 0, -1), VectorC(0, -1, 0), VectorC(static_cast<float>(screen.x)/2.f, static_cast<float>(screen.y)/2.f, 0.f)));
-		graphic::setProjection(Matrix().setOrtho(static_cast<float>(screen.x), static_cast<float>(screen.y), 0, 1));
+		graphic::device().setView(Matrix().setView(VectorC(1, 0, 0), VectorC(0, 0, -1), VectorC(0, -1, 0), VectorC(static_cast<float>(screen.x)/2.f, static_cast<float>(screen.y)/2.f, 0.f)));
+		graphic::device().setProjection(Matrix().setOrtho(static_cast<float>(screen.x), static_cast<float>(screen.y), 0, 1));
 		return *this;
 	}
 

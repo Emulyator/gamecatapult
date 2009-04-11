@@ -154,7 +154,7 @@ namespace gctp { namespace scene {
 			Matrix proj;
 			Matrix view;
 			float aspect_ratio = Camera::current().aspectRatio();
-			float height = (float)graphic::getViewPort().size().y;
+			float height = (float)graphic::device().getViewPort().size().y;
 			Rectf renderrect = Camera::current().renderRect();
 			proj.setFOV(Camera::current().fov(), aspect_ratio, renderrect.left, renderrect.top, renderrect.right, renderrect.bottom, radius/2, radius);
 			view = Camera::current().view();

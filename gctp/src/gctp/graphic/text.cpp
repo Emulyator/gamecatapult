@@ -278,8 +278,8 @@ namespace gctp { namespace graphic {
 		if(bounds.width() > 0 || bounds.height() > 0) {
 			setvp = true;
 			if(spr) {
-				Point2 screen = getScreenSize();
-				vp_bu = getViewPort();
+				Point2 screen = device().getScreenSize();
+				vp_bu = device().getViewPort();
 				ViewPort vp;
 				vp.min_z = 0;
 				vp.max_z = 1;
@@ -299,10 +299,10 @@ namespace gctp { namespace graphic {
 					vp.y = 0;
 					vp.height = screen.y;
 				}
-				setViewPort(vp);
+				device().setViewPort(vp);
 			}
 		}
-		Rectf clip = RectfC(getViewPort().getRect());
+		Rectf clip = RectfC(device().getViewPort().getRect());
 		if(spr)	spr->begin(fonttex, false);
 		int prev_c = 0, now_disp_count = 0;
 		Point2 base_position = Point2C(bounds.left+offset.x, bounds.top+offset.y);
@@ -442,7 +442,7 @@ namespace gctp { namespace graphic {
 		if(spr) {
 			spr->end();
 			if(setvp) {
-				setViewPort(vp_bu);
+				device().setViewPort(vp_bu);
 			}
 		}
 		return S_OK;

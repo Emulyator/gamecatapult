@@ -105,7 +105,7 @@ namespace gctp { namespace scene {
 			light.diffuse = diffuse;
 			light.specular = specular;
 			light.dir = node()->val.wtm().at();
-			graphic::pushLight(light);
+			graphic::device().pushLight(light);
 					}
 			break;
 		case POINT:	{
@@ -118,7 +118,7 @@ namespace gctp { namespace scene {
 			light.attenuation[0] = attenuation[0];
 			light.attenuation[1] = attenuation[1];
 			light.attenuation[2] = attenuation[2];
-			graphic::pushLight(light);
+			graphic::device().pushLight(light);
 					}
 			break;
 		case SPOT:	{
@@ -135,7 +135,7 @@ namespace gctp { namespace scene {
 			light.falloff = falloff;
 			light.theta = theta;
 			light.phi = phi;
-			graphic::pushLight(light);
+			graphic::device().pushLight(light);
 					}
 			break;
 		}

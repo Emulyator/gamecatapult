@@ -103,6 +103,7 @@ namespace gctp { namespace scene {
 		void addBoxAsCompound(luapp::Stack &L);
 		void addBoxAsCompound2(luapp::Stack &L);
 		void addMesh(luapp::Stack &L);
+		void addEventMesh(luapp::Stack &L);
 		void attach(luapp::Stack &L);
 		void detach(luapp::Stack &L);
 		int numBodies(luapp::Stack &L);

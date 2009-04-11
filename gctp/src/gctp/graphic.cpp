@@ -293,6 +293,26 @@ namespace gctp { namespace graphic {
 		impl_->setBlendState(mtrl);
 	}
 
+	void Device::setCullingCCW(bool yes)
+	{
+		impl_->setCullingCCW(yes);
+	}
+
+	bool Device::isCullingCCW()
+	{
+		return impl_->isCullingCCW();
+	}
+
+	void Device::setMtrlMinStateChange(bool yes)
+	{
+		impl_->setMtrlMinStateChange(yes);
+	}
+
+	bool Device::isMtrlMinStateChange()
+	{
+		return impl_->isMtrlMinStateChange();
+	}
+
 	/// デバイス消失時のリソース解放
 	void Device::cleanUp()
 	{

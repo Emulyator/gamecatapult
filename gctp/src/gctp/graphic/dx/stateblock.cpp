@@ -52,12 +52,12 @@ namespace gctp { namespace graphic { namespace dx {
 	//
 	HRslt StateBlockRsrc::setUp()
 	{
-		beginRecord();
+		device().beginRecord();
 		record();
-		sb_ = endRecord();
-		beginRecord();
+		sb_ = device().endRecord();
+		device().beginRecord();
 		record();
-		sbb_ = endRecord();
+		sbb_ = device().endRecord();
 		return S_OK;
 	}
 

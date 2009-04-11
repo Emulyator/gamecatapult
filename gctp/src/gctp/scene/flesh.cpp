@@ -16,6 +16,18 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
+	bool VisibilityTester::isVisible(const Sphere &bs) const
+	{
+		if(enable_frustum_test) return Camera::current().isVisible(bs);
+		return true;
+	}
+
+	VisibilityTester &VisibilityTester::current()
+	{
+		static VisibilityTester instance;
+		return instance;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, Flesh, Object);
 
 	HRslt Flesh::setUp(Handle<graphic::Model> model, Handle<StrutumNode> node)
@@ -50,7 +62,7 @@ namespace gctp { namespace scene {
 
 	bool Flesh::draw() const
 	{
-		if(Camera::current().isVisible(bs_)) {
+		if(VisibilityTester::current().isVisible(bs_)) {
 			if(model_ && dissolve_rate_ > 0.0f) {
 				Pointer<graphic::Model> model = model_.lock();
 				if(model->isSkin()) {
@@ -72,7 +84,7 @@ namespace gctp { namespace scene {
 
 	void Flesh::pushPackets(DrawPacketVector &packets) const
 	{
-		if(Camera::current().isVisible(bs_)) {
+		if(VisibilityTester::current().isVisible(bs_)) {
 			if(model_ && dissolve_rate_ > 0.0f) {
 				DrawPacket packet;
 				packet.model = model_;

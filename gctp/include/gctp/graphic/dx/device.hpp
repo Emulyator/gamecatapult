@@ -369,6 +369,14 @@ namespace gctp { namespace graphic { namespace dx {
 		void setMaterial(const Material &mtrl);
 		/// マテリアル情報のうちブレンド設定のみ適用
 		void setBlendState(const Material &mtrl);
+		/// カリングモードがCCWかCWかを指定（setBlendState内で設定するため）
+		void setCullingCCW(bool yes);
+		/// カリングモードがCCWかCWか？
+		bool isCullingCCW();
+		/// setBlendStateでZWRITABLEとALPHAENABLEを変更しないようにするか？
+		void setMtrlMinStateChange(bool yes);
+		/// setBlendStateでZWRITABLEとALPHAENABLEを変更しないか？
+		bool isMtrlMinStateChange();
 
 		/// ステートブロック記録開始
 		HRslt beginRecord();
@@ -391,6 +399,8 @@ namespace gctp { namespace graphic { namespace dx {
 		HCURSOR cursor_backup_; // マウスカーソルのバックアップ
 		Color ambient_light_;
 		uint light_num_;
+		bool is_ccw_; // カリングモードが反時計回りか？（setBlendStateで設定されるため）
+		bool is_mtrl_min_statechange_; // setBlendStateでZWRITABLEとALPHAENABLEを変更しない
 		typedef HandleList<Rsrc> RsrcList;
 		RsrcList rsrcs_;
 #if 0

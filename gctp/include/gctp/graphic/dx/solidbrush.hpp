@@ -36,9 +36,9 @@ namespace gctp { namespace graphic { namespace dx {
 								
 				// Set Light for vertex shader
 				// ライトスタック上の、最初のディレクショナルライトを採用
-				for(uint i = 0; i < lightNum(); i++) {
+				for(uint i = 0; i < device().lightNum(); i++) {
 					DirectionalLight light;
-					if(getLight(i, light)) {
+					if(device().getLight(i, light)) {
 						hr = (*shader)->SetVector("lhtDir", Vector4C(-light.dir, 0));
 						if(!hr) GCTP_TRACE(hr);
 						hr = (*shader)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
@@ -72,7 +72,7 @@ namespace gctp { namespace graphic { namespace dx {
 				if(!hr) return hr;
 				
 				// Sum of all ambient and emissive contribution
-				Color amb_emm = target()->mtrls[subsets()[subset_no].material_no].ambient*Color(getAmbientColor())+target()->mtrls[subsets()[subset_no].material_no].emissive;
+				Color amb_emm = target()->mtrls[subsets()[subset_no].material_no].ambient*Color(device().getAmbientColor())+target()->mtrls[subsets()[subset_no].material_no].emissive;
 				hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
 				if(!hr) GCTP_TRACE(hr);
 				// set material color properties 

@@ -312,12 +312,12 @@ namespace gctp {
 			update_signal(lap);
 
 			if(canDraw()) {
-				graphic::clear();
-				graphic::begin();
+				graphic::device().clear();
+				graphic::device().begin();
 
 				draw_signal(lap);
 
-				graphic::end();
+				graphic::device().end();
 				present();
 			}
 		}

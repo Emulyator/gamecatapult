@@ -13,8 +13,10 @@
 #include <gctp/class.hpp>
 #include <gctp/tuki.hpp>
 #include <gctp/handlelist.hpp>
+#include <gctp/graphic.hpp>
 #include <gctp/scene/renderer.hpp>
 #include <gctp/scene/drawpacket.hpp>
+#include <gctp/matrix.hpp>
 
 namespace gctp {
 	namespace graphic {
@@ -52,7 +54,7 @@ namespace gctp { namespace scene {
 		mutable DrawPacketVector packets;
 	
 	protected:
-		Handle<World> target_;
+		mutable Handle<World> target_;
 
 		bool LuaCtor(luapp::Stack &L);
 		void attach(luapp::Stack &L);
@@ -61,7 +63,7 @@ namespace gctp { namespace scene {
 		TUKI_DECLARE(WorldSorter);
 	};
 
-	/** 簡易効果ノードクラス
+	/** 簡易ワールド描画ノードクラス
 	 *
 	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
 	 * @date 2004/02/16 1:05:32
@@ -80,6 +82,28 @@ namespace gctp { namespace scene {
 
 		GCTP_DECLARE_CLASS;
 		TUKI_DECLARE(WorldRenderer);
+	};
+
+	/** 簡易鏡像ワールド描画ノードクラス
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/02/16 1:05:32
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class MirrorWorldRenderer : public WorldSorter
+	{
+	public:
+		MirrorWorldRenderer();
+
+		virtual bool onReach(float delta) const;
+		virtual bool onLeave(float delta) const;
+	
+	private:
+		Pointer<graphic::dx::StateBlockRsrc> sb_;
+		mutable Matrix vmat_bak_;
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(MirrorWorldRenderer);
 	};
 
 	/** 不透明体描画効果ノードクラス
@@ -204,6 +228,43 @@ namespace gctp { namespace scene {
 
 		GCTP_DECLARE_CLASS;
 		TUKI_DECLARE(IsVisibleOperator);
+	};
+
+	/** 遠景ワールド描画ノードクラス
+	 *
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * @date 2004/02/16 1:05:32
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 */
+	class DistantViewRenderer : public Renderer
+	{
+	public:
+		DistantViewRenderer();
+
+		/// 描画対象設定
+		void attach(Handle<World> target) { target_ = target; }
+		/// ワールド取得
+		Handle<World> target() const { return target_; }
+
+		virtual bool onReach(float delta) const;
+		virtual bool onLeave(float delta) const;
+	
+		float nearclip_;
+		float farclip_;
+
+	private:
+		Pointer<graphic::dx::StateBlockRsrc> sb_;
+		Handle<World> target_;
+		mutable Matrix vmat_bak_;
+		mutable Matrix pmat_bak_;
+		mutable graphic::ViewPort view_port_bak_;
+
+		bool LuaCtor(luapp::Stack &L);
+		void attach(luapp::Stack &L);
+		void setClip(luapp::Stack &L);
+
+		GCTP_DECLARE_CLASS;
+		TUKI_DECLARE(DistantViewRenderer);
 	};
 
 }} // namespace gctp::scene

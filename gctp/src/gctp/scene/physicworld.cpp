@@ -18,6 +18,7 @@
 #include <gctp/context.hpp>
 #include <gctp/app.hpp>
 #include <btBulletDynamicsCommon.h> // for Bullet
+#include <BulletCollision/CollisionDispatch/btGhostObject.h> // for btGhostObject
 
 extern ContactProcessedCallback	gContactProcessedCallback;
 extern ContactAddedCallback		gContactAddedCallback;
@@ -78,12 +79,12 @@ namespace gctp { namespace scene {
 		btDefaultCollisionConfiguration				*collision_configuration_;
 		btCollisionDispatcher						*dispatcher_;
 		btConstraintSolver							*solver_;
-		btBroadphaseInterface						*overlapping_pair_cache_;
+		btBroadphaseInterface						*sweep_bp_;
 		btAlignedObjectArray<btCollisionShape *>	collision_shapes_;
 		uint max_bodies_;
 		int max_substeps_;
 		
-		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), overlapping_pair_cache_(0), max_substeps_(1)
+		PhysicWorldImpl() : world_(0), collision_configuration_(0), dispatcher_(0), solver_(0), sweep_bp_(0), max_substeps_(1)
 		{
 			gContactProcessedCallback = onContactProcessed;
 			gContactAddedCallback = onContactAdded;
@@ -105,19 +106,21 @@ namespace gctp { namespace scene {
 			dispatcher_ = new btCollisionDispatcher(collision_configuration_);
 			
 			// シミュレーションするShapeの限度
-			overlapping_pair_cache_ = new btAxisSweep3(*(btVector3 *)&aabb.lower, *(btVector3 *)&aabb.upper, max_bodies);
+			sweep_bp_ = new btAxisSweep3(*(btVector3 *)&aabb.lower, *(btVector3 *)&aabb.upper, max_bodies);
 
 			// ソルバー
 			solver_ = new btSequentialImpulseConstraintSolver;
 
 			// シミュレーションするワールドの生成
-			world_ = new btDiscreteDynamicsWorld(dispatcher_, overlapping_pair_cache_, solver_, collision_configuration_);
+			world_ = new btDiscreteDynamicsWorld(dispatcher_, sweep_bp_, solver_, collision_configuration_);
 
 			world_->setGravity(btVector3(0, -9.80665f, 0));
 
 			// GIMPACT登録
 			//btCollisionDispatcher *dispatcher = static_cast<btCollisionDispatcher *>(world_->getDispatcher());
 			//btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
+
+			sweep_bp_->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 		}
 
 		void tearDown()
@@ -146,7 +149,7 @@ namespace gctp { namespace scene {
 				}
 				collision_shapes_.clear();
 
-				delete overlapping_pair_cache_;
+				delete sweep_bp_;
 				delete dispatcher_;
 				delete solver_;
 				delete world_;
@@ -388,6 +391,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound)
 		TUKI_METHOD(PhysicWorld, addBoxAsCompound2)
 		TUKI_METHOD(PhysicWorld, addMesh)
+		TUKI_METHOD(PhysicWorld, addEventMesh)
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
 		TUKI_METHOD(PhysicWorld, numBodies)
@@ -706,6 +710,26 @@ namespace gctp { namespace scene {
 					if(pbody) {
 						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
 							addMesh(*i, 0);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void PhysicWorld::addEventMesh(luapp::Stack &L)
+	{
+		if(L.top() >= 1) {
+			Pointer<GraphFile> file = tuki_cast<GraphFile>(L[1]);
+			if(file) {
+				Pointer<Body> pbody;
+				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+					pbody = *i;
+					if(pbody) {
+						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
+							addMesh(*i, 0);
+							btRigidBody *body = getRigidBody((*i)->node());
+							body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 						}
 					}
 				}

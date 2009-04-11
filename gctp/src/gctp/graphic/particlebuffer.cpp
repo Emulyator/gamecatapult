@@ -332,7 +332,7 @@ namespace gctp { namespace graphic {
 			device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
 			device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
 		}
-		Matrix view = getView().inverse();
+		Matrix view = device().getView().inverse();
 		right_ = view.right();
 		up_    = view.up();
 		vpos_  = view.position();
