@@ -45,17 +45,16 @@ namespace gctp { namespace scene {
 	 */
 	bool WorldSorter::onReach(float delta) const
 	{
-		WorldSorter *self = const_cast<WorldSorter *>(this);
 		packets.clear();
 		if(target_) {
 			target_->begin();
-			for(HandleList<Body>::iterator i = self->target_->body_list.begin(); i != self->target_->body_list.end();) {
+			for(HandleList<Body>::iterator i = target_->body_list.begin(); i != target_->body_list.end();) {
 				if(*i) {
 					//(*i)->draw(); // パスに関する情報をここで送るべき？
 					(*i)->pushPackets(packets);
 					++i;
 				}
-				else i = self->target_->body_list.erase(i);
+				else i = target_->body_list.erase(i);
 			}
 			packets.sort();
 		}
@@ -99,6 +98,7 @@ namespace gctp { namespace scene {
 				graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
 				graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESS );
+				graphic::device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
@@ -113,6 +113,166 @@ namespace gctp { namespace scene {
 				graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x80 );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_POINT );
+
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+			}
+		};
+
+		/* 遠景描画用ステート
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/07/14 22:53:32
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		class DistantViewSB : public graphic::dx::StateBlockRsrc
+		{
+		public:
+			void record()
+			{
+				HRslt hr;
+				graphic::device().impl()->SetRenderState( D3DRS_CLIPPING, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
+				graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESSEQUAL );
+				graphic::device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_LIGHTING, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_FOGENABLE, FALSE );
+				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, TRUE );
+#ifdef GCTP_COORD_RH
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#endif
+				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x80 );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_POINT );
+
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+			}
+		};
+
+		/* 不透明体描画用ステート
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/07/14 22:53:32
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		class OpequeSB : public graphic::dx::StateBlockRsrc
+		{
+		public:
+			void record()
+			{
+				HRslt hr;
+				graphic::device().impl()->SetRenderState( D3DRS_CLIPPING, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
+				graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESSEQUAL );
+				graphic::device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
+#ifdef GCTP_COORD_RH
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#endif
+				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x80 );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR );
+				if(!hr) graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MIPFILTER, D3DTEXF_POINT );
+
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+				graphic::device().impl()->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+				graphic::device().impl()->SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+			}
+		};
+
+		/* 透明体描画用ステート
+		 *
+		 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+		 * @date 2004/07/14 22:53:32
+		 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+		 */
+		class TranslucentSB : public graphic::dx::StateBlockRsrc
+		{
+		public:
+			void record()
+			{
+				HRslt hr;
+				graphic::device().impl()->SetRenderState( D3DRS_CLIPPING, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_DITHERENABLE, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ZENABLE, D3DZB_USEW/* D3DZB_TRUE */ );
+				graphic::device().impl()->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESSEQUAL );
+				graphic::device().impl()->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_LIGHTING, TRUE );
+				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
+#ifdef GCTP_COORD_RH
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#endif
+				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
+				graphic::device().impl()->SetRenderState( D3DRS_ALPHAREF,         0x00 );
 				graphic::device().impl()->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 
 				hr = graphic::device().impl()->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC );
@@ -173,6 +333,57 @@ namespace gctp { namespace scene {
 	}
 
 	////////////////////////
+	// MirrorWorldRenderer
+	// 
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, MirrorWorldRenderer, WorldSorter);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, MirrorWorldRenderer)
+		TUKI_METHOD(MirrorWorldRenderer, attach)
+	TUKI_IMPLEMENT_END(MirrorWorldRenderer)
+
+	MirrorWorldRenderer::MirrorWorldRenderer()
+	{
+		sb_ = new DefaultSB();
+		sb_->setUp();
+	}
+
+	/** 鏡像ワールド描画
+	 *
+	 * レンダリングツリーに描画メッセージを送る
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 * @date 2005/01/11 2:34:02
+	 */	
+	bool MirrorWorldRenderer::onReach(float delta) const
+	{
+		WorldSorter::onReach(delta);
+		sb_->begin();
+#ifdef GCTP_COORD_RH
+		graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CWW );
+		graphic::device().setCullingCCW(true);
+#else
+		graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+		graphic::device().setCullingCCW(false);
+#endif
+		vmat_bak_ = graphic::device().getView();
+		graphic::device().setView(vmat_bak_*MatrixC(true).scale(-1,1,1));
+		packets.draw();
+		return false;
+	}
+
+	bool MirrorWorldRenderer::onLeave(float delta) const
+	{
+#ifdef GCTP_COORD_RH
+		graphic::device().setCullingCCW(false);
+#else
+		graphic::device().setCullingCCW(true);
+#endif
+		graphic::device().setView(vmat_bak_);
+		sb_->end();
+		WorldSorter::onLeave(delta);
+		return true;
+	}
+
+	////////////////////////
 	// OpequeWorldRenderer
 	// 
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, OpequeWorldRenderer, Renderer);
@@ -182,7 +393,7 @@ namespace gctp { namespace scene {
 
 	OpequeWorldRenderer::OpequeWorldRenderer()
 	{
-		sb_ = new DefaultSB();
+		sb_ = new OpequeSB();
 		sb_->setUp();
 	}
 
@@ -236,7 +447,7 @@ namespace gctp { namespace scene {
 
 	TranslucentWorldRenderer::TranslucentWorldRenderer()
 	{
-		sb_ = new DefaultSB();
+		sb_ = new TranslucentSB();
 		sb_->setUp();
 	}
 
@@ -248,7 +459,7 @@ namespace gctp { namespace scene {
 
 	void TranslucentWorldRenderer::attach(luapp::Stack &L)
 	{
-		if(L.top() >=1) {
+		if(L.top() >= 1) {
 			Pointer<WorldSorter> target = tuki_cast<WorldSorter>(L[1]);
 			if(target) target_ = target;
 		}
@@ -350,5 +561,87 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(IsVisibleOperator, remove)
 	TUKI_IMPLEMENT_END(IsVisibleOperator)
 
+
+	////////////////////////
+	// DistantViewRenderer
+	// 
+	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, DistantViewRenderer, Renderer);
+	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, DistantViewRenderer)
+		TUKI_METHOD(DistantViewRenderer, attach)
+		TUKI_METHOD(DistantViewRenderer, setClip)
+	TUKI_IMPLEMENT_END(DistantViewRenderer)
+
+	DistantViewRenderer::DistantViewRenderer()
+	{
+		sb_ = new DistantViewSB();
+		sb_->setUp();
+	}
+
+	/** ワールド描画
+	 *
+	 * レンダリングツリーに描画メッセージを送る
+	 * @author SAM (T&GG, Org.)<sowwa_NO_SPAM_THANKS@water.sannet.ne.jp>
+	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
+	 * @date 2005/01/11 2:34:02
+	 */
+	bool DistantViewRenderer::onReach(float delta) const
+	{
+		if(target_) {
+			vmat_bak_ = graphic::device().getView();
+			pmat_bak_ = graphic::device().getProjection();
+			view_port_bak_ = graphic::device().getViewPort();
+			Matrix m;
+			if(Camera::current().node()) m = Camera::current().node()->val.wtm().orthoNormal();
+			graphic::device().setView(Matrix().setView(m.right(), m.up(), m.at(), VectorC(0,0,0)));
+			graphic::device().setProjection(Matrix().setFOV(Camera::current().fov(), Camera::current().aspectRatio(), Camera::current().renderRect().left, Camera::current().renderRect().top, Camera::current().renderRect().right, Camera::current().renderRect().bottom, nearclip_, farclip_));
+			{
+				graphic::ViewPort vp = view_port_bak_;
+				vp.min_z = vp.max_z = 1.0f;
+				graphic::device().setViewPort(vp);
+			}
+			graphic::device().setMtrlMinStateChange(true);
+			target_->begin();
+			sb_->begin();
+			VisibilityTester::current().enable_frustum_test = false;
+			target_->draw();
+		}
+		return false;
+	}
+
+	bool DistantViewRenderer::onLeave(float delta) const
+	{
+		if(target_) {
+			VisibilityTester::current().enable_frustum_test = true;
+			target_->end();
+			sb_->end();
+			graphic::device().setMtrlMinStateChange(false);
+			graphic::device().setView(vmat_bak_);
+			graphic::device().setProjection(pmat_bak_);
+			graphic::device().setViewPort(view_port_bak_);
+		}
+		return true;
+	}
+
+	bool DistantViewRenderer::LuaCtor(luapp::Stack &L)
+	{
+		// Context:createで製作する
+		return false;
+	}
+
+	void DistantViewRenderer::attach(luapp::Stack &L)
+	{
+		if(L.top() >=1) {
+			Pointer<World> world = tuki_cast<World>(L[1]);
+			attach(world);
+		}
+	}
+
+	void DistantViewRenderer::setClip(luapp::Stack &L)
+	{
+		if(L.top() >=2) {
+			nearclip_ = (float)L[1].toNumber();
+			farclip_ = (float)L[2].toNumber();
+		}
+	}
 
 }} // namespace gctp::scene

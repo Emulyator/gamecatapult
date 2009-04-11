@@ -103,7 +103,7 @@ namespace gctp { namespace graphic { namespace dx {
 					if(node) D3DXMatrixMultiply(const_cast<D3DXMATRIXA16 *>(&bone_matricies_[i]), *target()->bone(i), node->val.wtm());
 				}
 
-				setWorld(MatrixC(true));
+				device().setWorld(MatrixC(true));
 
 				VertexBuffer::ScopedLock src_vbl(target()->vertexbuffer());
 				dx::IDirect3DVertexBufferPtr pdst_vb;
@@ -604,9 +604,9 @@ namespace gctp { namespace graphic { namespace dx {
 
 				// Set Light for vertex shader
 				// ライトスタック上の、最初のディレクショナルライトを採用
-				for(uint i = 0; i < lightNum(); i++) {
+				for(uint i = 0; i < device().lightNum(); i++) {
 					DirectionalLight light;
-					if(getLight(i, light)) {
+					if(device().getLight(i, light)) {
 						device().impl()->SetVertexShaderConstantF(1, Vector4C(-light.dir, 0), 1);
 						break;
 					}
@@ -668,7 +668,7 @@ namespace gctp { namespace graphic { namespace dx {
 				}
 
 				// Sum of all ambient and emissive contribution
-				Color amb_emm = target()->mtrls[bonecb[subset_no].AttribId].ambient*Color(getAmbientColor())+target()->mtrls[bonecb[subset_no].AttribId].emissive;
+				Color amb_emm = target()->mtrls[bonecb[subset_no].AttribId].ambient*Color(device().getAmbientColor())+target()->mtrls[bonecb[subset_no].AttribId].emissive;
 				dev->SetVertexShaderConstantF(7, amb_emm, 1);
 				dev->SetVertexShaderConstantF(8, target()->mtrls[bonecb[subset_no].AttribId].diffuse, 1);
 				_const.y = target()->mtrls[bonecb[subset_no].AttribId].power;
@@ -850,9 +850,9 @@ namespace gctp { namespace graphic { namespace dx {
 
 				// Set Light for vertex shader
 				// ライトスタック上の、最初のディレクショナルライトを採用
-				for(uint i = 0; i < lightNum(); i++) {
+				for(uint i = 0; i < device().lightNum(); i++) {
 					DirectionalLight light;
-					if(getLight(i, light)) {
+					if(device().getLight(i, light)) {
 						hr = (*shader)->SetVector("lhtDir", Vector4C(-light.dir, 0));
 						if(!hr) GCTP_TRACE(hr);
 						hr = (*shader)->SetVector("lightDiffuse", (D3DXVECTOR4*)&light.diffuse);
@@ -917,7 +917,7 @@ namespace gctp { namespace graphic { namespace dx {
 				}
 
 				// Sum of all ambient and emissive contribution
-				Color amb_emm = target()->mtrls[bonecb[subset_no].AttribId].ambient*Color(getAmbientColor())+target()->mtrls[bonecb[subset_no].AttribId].emissive;
+				Color amb_emm = target()->mtrls[bonecb[subset_no].AttribId].ambient*Color(device().getAmbientColor())+target()->mtrls[bonecb[subset_no].AttribId].emissive;
 				hr = (*shader)->SetVector("MaterialAmbient", (D3DXVECTOR4*)&amb_emm);
 				if(!hr) GCTP_TRACE(hr);
 				// set material color properties 

@@ -205,7 +205,7 @@ extern "C" int main(int argc, char *argv[])
 					//entity = newEntity(context, *world, "gctp.Entity", NULL, _T("room1.x")).lock();
 
 					{
-						graphic::setAmbientColor(Color32(Color(0.5f,0.5f,0.5f)));
+						graphic::device().setAmbientColor(Color32(Color(0.5f,0.5f,0.5f)));
 
 						graphic::DirectionalLight light;
 						light.ambient = Color(0.3f, 0.3f, 0.3f);
@@ -334,8 +334,8 @@ extern "C" int main(int argc, char *argv[])
 		if(app().canDraw()) {
 			Profiling draw_profile("draw");
 
-			graphic::clear();
-			graphic::begin();
+			graphic::device().clear();
+			graphic::device().begin();
 
 			app().draw_signal(app().lap);
 
@@ -349,7 +349,7 @@ extern "C" int main(int argc, char *argv[])
 			pdesc.setUV(RectfC(0.0f, 0.0f, 1.0f, 1.0f));
 			pdesc.setColor(Color32(255, 255, 255));
 			pdesc.setHilight(Color32(0, 0, 0));
-			graphic::setWorld(MatrixC(true));
+			graphic::device().setWorld(MatrixC(true));
 
 #ifdef MOVIETEST
 			pbuf.begin(*movie.getTexture());
@@ -365,7 +365,7 @@ extern "C" int main(int argc, char *argv[])
 			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
 				<< "FPS:" << app().fps.latestave << endl;
 			if(hud_on) {
-				text.out() << "(" << graphic::getScreenSize().x << "," << graphic::getScreenSize().y << ")" << endl << endl;
+				text.out() << "(" << graphic::device().getScreenSize().x << "," << graphic::device().getScreenSize().y << ")" << endl << endl;
 				if(chr) text.out()
 					<< "track 0 " << chr->mixer().tracks()[0].weight() << endl
 					<< "	" << chr->mixer().tracks()[0].keytime() << endl
@@ -412,7 +412,7 @@ extern "C" int main(int argc, char *argv[])
 
 			text.draw(spr, *fonttex);
 
-			graphic::end();
+			graphic::device().end();
 			{
 				Profiling present_profile("present");
 				app().present();

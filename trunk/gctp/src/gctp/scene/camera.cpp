@@ -29,20 +29,20 @@ namespace gctp { namespace scene {
 
 	void Camera::setToSystem() const
 	{
-		graphic::setView(view());
-		graphic::setProjection(projection());
+		graphic::device().setView(view());
+		graphic::device().setProjection(projection());
 		viewprojection_ = view()*projection();
 	}
 
 	void Camera::begin() const
 	{
-		view_port_bak_ = graphic::getViewPort();
+		view_port_bak_ = graphic::device().getViewPort();
 		backup_current_ = current_;
 		current_ = const_cast<Camera *>(this);
 		current_->update();
-		if(view_port_.max_z >= view_port_.min_z) graphic::setViewPort(view_port_);
+		if(view_port_.max_z >= view_port_.min_z) graphic::device().setViewPort(view_port_);
 		setToSystem();
-		graphic::clear(false, true);
+		graphic::device().clear(false, true);
 		if(fog_enable_) {
 			// Enable fog blending.
 			graphic::device().impl()->SetRenderState(D3DRS_FOGENABLE, TRUE);
@@ -63,7 +63,7 @@ namespace gctp { namespace scene {
 		}
 		current_ = backup_current_;
 		if(current_) current_->setToSystem();
-		graphic::setViewPort(view_port_bak_);
+		graphic::device().setViewPort(view_port_bak_);
 	}
 
 	bool Camera::onReach(float delta) const
@@ -90,7 +90,7 @@ namespace gctp { namespace scene {
 		Matrix ret;
 		if(isPerspective()) ret.setFOV(fov_, aspectRatio(), render_rect_.left, render_rect_.top, render_rect_.right, render_rect_.bottom, nearclip_, farclip_);
 		else {
-			float height = (float)graphic::getViewPort().size().y;
+			float height = (float)graphic::device().getViewPort().size().y;
 			float aspect_ratio = aspectRatio();
 			ret.setOrtho(-(height*aspect_ratio)/2*(2*render_rect_.left-1), -height/2*(2*render_rect_.top-1), (height*aspect_ratio)/2*(2*render_rect_.right-1), height/2*(2*render_rect_.bottom-1), nearclip_, farclip_);
 		}
@@ -100,7 +100,7 @@ namespace gctp { namespace scene {
 	float Camera::aspectRatio() const
 	{
 		if(aspect_ratio_ == 0) {
-			Vector2 sz = Vector2C(graphic::getViewPort().size());
+			Vector2 sz = Vector2C(graphic::device().getViewPort().size());
 			return sz.x/sz.y;
 		}
 		return aspect_ratio_;

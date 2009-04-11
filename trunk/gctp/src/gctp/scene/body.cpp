@@ -72,7 +72,7 @@ namespace gctp { namespace scene {
 
 	bool Body::draw() const
 	{
-		if(Camera::current().isVisible(bs_)) {
+		if(VisibilityTester::current().isVisible(bs_)) {
 			for(PointerList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
 				(*i)->draw();
 			}
@@ -83,7 +83,7 @@ namespace gctp { namespace scene {
 
 	void Body::pushPackets(DrawPacketVector &packets) const
 	{
-		if(Camera::current().isVisible(bs_)) {
+		if(VisibilityTester::current().isVisible(bs_)) {
 			for(PointerList<Flesh>::const_iterator i = fleshies_.begin(); i != fleshies_.end(); ++i) {
 				(*i)->pushPackets(packets);
 			}

@@ -25,6 +25,16 @@ namespace gctp {
 namespace gctp { namespace scene {
 
 	class ModelMixer;
+
+	// 暫定。速やかに独立したファイルに移すこと
+	class VisibilityTester {
+	public:
+		VisibilityTester() : enable_frustum_test(true) {}
+		bool enable_frustum_test;
+		bool isVisible(const Sphere &bs) const;
+		static VisibilityTester &current();
+	};
+
 	/** モデルインスタンス
 	 *
 	 * Modelを描画可能にしたもの

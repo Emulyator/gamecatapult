@@ -150,8 +150,13 @@ namespace gctp { namespace graphic { namespace dx {
 		ptr_->SetCursorPosition(pos.x, pos.y, 0);
 	}
 
-	Device::Device() : clear_color_(89/255.0f,135/255.0f,179/255.0f), cursor_backup_(NULL)
+	Device::Device() : clear_color_(89/255.0f,135/255.0f,179/255.0f), cursor_backup_(NULL), is_mtrl_min_statechange_(false)
 	{
+#ifdef GCTP_COORD_RH
+		is_ccw_  = false;
+#else
+		is_ccw_  = true;
+#endif
 	}
 
 	Device::~Device()
@@ -686,54 +691,80 @@ namespace gctp { namespace graphic { namespace dx {
 	{
 		switch(mtrl.blend) {
 		case Material::OPEQUE:
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+			if(!is_mtrl_min_statechange_) {
+				ptr_->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
+				ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+			}
 			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x80 );
 			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::TRANSLUCENT:
+			if(!is_mtrl_min_statechange_) {
+				ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			}
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
-			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::ADD:
+			if(!is_mtrl_min_statechange_) {
+				ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			}
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			ptr_->SetRenderState( D3DRS_SRCBLEND,	 D3DBLEND_SRCCOLOR );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,	 D3DBLEND_ONE );
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
-			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::SUB:
+			if(!is_mtrl_min_statechange_) {
+				ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			}
+			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
+			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_INVDESTCOLOR );
 			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_ZERO );
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
-			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
-			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
 			break;
 		case Material::MUL:
-			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_ZERO );
-			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_SRCCOLOR );
-			ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
-			ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			if(!is_mtrl_min_statechange_) {
+				ptr_->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+				ptr_->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+			}
 			ptr_->SetRenderState( D3DRS_ALPHAREF,   0x00 );
 			ptr_->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATER );
+			ptr_->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_ZERO );
+			ptr_->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_SRCCOLOR );
 			break;
 		}
 		if(mtrl.double_side) {
 			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
 		}
 		else {
-#ifdef GCTP_COORD_RH
-			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
-			ptr_->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
-#endif
+			ptr_->SetRenderState( D3DRS_CULLMODE, is_ccw_ ? D3DCULL_CCW : D3DCULL_CW);
 		}
+	}
+
+	void Device::setCullingCCW(bool yes)
+	{
+		is_ccw_ = yes;
+	}
+
+	bool Device::isCullingCCW()
+	{
+		return is_ccw_;
+	}
+
+	void Device::setMtrlMinStateChange(bool yes)
+	{
+		is_mtrl_min_statechange_ = yes;
+	}
+
+	bool Device::isMtrlMinStateChange()
+	{
+		return is_mtrl_min_statechange_;
 	}
 
 	HRslt Device::beginRecord()

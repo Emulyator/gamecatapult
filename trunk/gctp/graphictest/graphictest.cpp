@@ -193,11 +193,11 @@ public:
 
 			Matrix mat_world;
 			mat_world.rotY(count_/360.0f);
-			setWorld(mat_world);
+			device().setWorld(mat_world);
 			count_++;
 
-			clear();
-			begin();
+			device().clear();
+			device().begin();
 			text_.reset();
 			text_.setFont(font_);
 
@@ -207,13 +207,13 @@ public:
 #else
 			if(tex_) desc.setUp(*tex_);
 #endif
-			if(tex_) spr_->begin(getViewPort().size(), *tex_).draw(desc).end();
+			if(tex_) spr_->begin(device().getViewPort().size(), *tex_).draw(desc).end();
 
 			text_.out() << desc.pos[0] << "," << desc.pos[1] << "," << desc.pos[2] << "," << desc.pos[3] << endl;
 #ifndef GCTP_LITE
 			if(mesh_) {
-				setView(Matrix().setLookAt(VectorC(0,3,5), VectorC(0,0,0), VectorC(0,1,0)));
-				setProjection(Matrix().setFOV(g_pi/4, getViewPort().aspectRatio(), 1.0f, 100.0f));
+				device().setView(Matrix().setLookAt(VectorC(0,3,5), VectorC(0,0,0), VectorC(0,1,0)));
+				device().setProjection(Matrix().setFOV(g_pi/4, device().getViewPort().aspectRatio(), 1.0f, 100.0f));
 				mesh_->DrawSubset(0);
 			}
 #endif
@@ -267,9 +267,9 @@ public:
 			if(ime_.isOpen()) text_.setPos(10, 6).setColor(Color32(255, 127, 255)).out() << _T("•ÏŠ·");
 			text_.draw(*spr_, *fonttex_);
 
-			HRslt hr = end();
+			HRslt hr = device().end();
 			if(!hr) GCTP_TRACE(hr);
-			hr = present();
+			hr = device().present();
 			if(!hr) GCTP_TRACE(hr);
 		}
 #endif

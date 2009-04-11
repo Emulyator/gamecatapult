@@ -144,6 +144,14 @@ namespace gctp { namespace graphic {
 		void setMaterial(const Material &mtrl);
 		/// マテリアル情報のうちテクスチャとブレンド設定のみ適用
 		void setBlendState(const Material &mtrl);
+		/// カリングモードがCCWかCWかを指定（setBlendState内で設定するため）
+		void setCullingCCW(bool yes);
+		/// カリングモードがCCWかCWか？
+		bool isCullingCCW();
+		/// setBlendStateでZWRITABLEとALPHAENABLEを変更しないようにするか？
+		void setMtrlMinStateChange(bool yes);
+		/// setBlendStateでZWRITABLEとALPHAENABLEを変更しないか？
+		bool isMtrlMinStateChange();
 
 		/// 深度テスト比較方法
 		enum ZFunc {
@@ -249,183 +257,6 @@ namespace gctp { namespace graphic {
 	 * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
 	 */
 	void initialize(bool is_no_WHQL = false);
-
-	/** @defgroup CurrentGraphicDeviceOperation カレントに対する操作 */
-	/* @{ */
-	/// 描画開始
-	inline HRslt begin()
-	{
-		return device().begin();
-	}
-	/// 描画終了
-	inline HRslt end()
-	{
-		return device().end();
-	}
-	/// 描画反映
-	inline HRslt present()
-	{
-		return device().present();
-	}
-	/// 画面のクリア
-	inline HRslt clear(bool target = true, bool zbuffer = true)
-	{
-		return device().clear(target, zbuffer);
-	}
-	/// 画面の消去に使う色を設定
-	inline void setClearColor(const Color &cc)
-	{
-		device().setClearColor(cc);
-	}
-	/// ワールドマトリクス設定
-	inline void setWorld(const Matrix &mat)
-	{
-		device().setWorld(mat);
-	}
-	/// ワールドマトリクス取得
-	inline Matrix getWorld()
-	{
-		return device().getWorld();
-	}
-	/// 投影マトリクス設定
-	inline void setProjection(const Matrix &mat)
-	{
-		device().setProjection(mat);
-	}
-	/// 投影マトリクス取得
-	inline Matrix getProjection()
-	{
-		return device().getProjection();
-	}
-	/// ビューマトリクス設定
-	inline void setView(const Matrix &mat)
-	{
-		device().setView(mat);
-	}
-	/// ビューマトリクス取得
-	inline Matrix getView()
-	{
-		return device().getView();
-	}
-	/// スクリーンサイズを返す
-	inline Point2 getScreenSize()
-	{
-		return device().getScreenSize();
-	}
-	
-	/// ビューポートを設定
-	inline HRslt setViewPort(const ViewPort &src)
-	{
-		return device().setViewPort(src);
-	}
-
-	/// ビューポートを取得
-	inline ViewPort getViewPort()
-	{
-		return device().getViewPort();
-	}
-
-	/// マウスカーソルの表示・非表示を設定
-	inline void setCursorVisible(bool yes)
-	{
-		device().setCursorVisible(yes);
-	}
-
-	/// 環境光を設定
-	inline HRslt setAmbientColor(Color32 col)
-	{
-		return device().setAmbientColor(col);
-	}
-
-	/// 環境光色を取得
-	inline Color32 getAmbientColor()
-	{
-		return device().getAmbientColor();
-	}
-
-	/// 平行光源を追加
-	inline HRslt pushLight(const DirectionalLight &lgt)
-	{
-		return device().pushLight(lgt);
-	}
-
-	/// 点光源を追加
-	inline HRslt pushLight(const PointLight &lgt)
-	{
-		return device().pushLight(lgt);
-	}
-
-	/// スポットライトを追加
-	inline HRslt pushLight(const SpotLight &lgt)
-	{
-		return device().pushLight(lgt);
-	}
-
-	/// 一番最近追加したライトを削除
-	inline HRslt popLight()
-	{
-		return device().popLight();
-	}
-
-	/// すべてのライトを削除
-	inline void clearLight()
-	{
-		device().clearLight();
-	}
-
-	/// 平行光源を追加
-	inline HRslt getLight(uint no, DirectionalLight &lgt)
-	{
-		return device().getLight(no, lgt);
-	}
-
-	/// 点光源を追加
-	inline HRslt getLight(uint no, PointLight &lgt)
-	{
-		return device().getLight(no, lgt);
-	}
-
-	/// スポットライトを追加
-	inline HRslt getLight(uint no, SpotLight &lgt)
-	{
-		return device().getLight(no, lgt);
-	}
-
-	/// 現在アクティブなライト数
-	inline uint lightNum()
-	{
-		return device().lightNum();
-	}
-
-	/// マテリアル適用
-	inline void setMaterial(const Material &mtrl)
-	{
-		device().setMaterial(mtrl);
-	}
-	
-	/// マテリアル情報のうちテクスチャとブレンド設定のみ適用
-	inline void setBlendState(const Material &mtrl)
-	{
-		device().setBlendState(mtrl);
-	}
-
-	/// ステートブロック記録開始
-	inline HRslt beginRecord()
-	{
-		return device().beginRecord();
-	}
-
-	/// ステートブロック記録終了
-	inline Pointer<dx::StateBlock> endRecord()
-	{
-		return device().endRecord();
-	}
-
-	/// ステートブロック作成
-	inline Pointer<dx::StateBlock> createState(D3DSTATEBLOCKTYPE type)
-	{
-		return device().createState(type);
-	}
 
 	/** @defgroup GraphicSystemSetting システム設定に対するコントロール */
 	/* @{ */
