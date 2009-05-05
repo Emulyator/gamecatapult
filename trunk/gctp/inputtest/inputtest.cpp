@@ -8,6 +8,7 @@
 #include "resource.h"
 #include <gctp/dbgout.hpp>
 #include <gctp/input.hpp>
+#include <gctp/types.hpp>
 #include <sstream>  
 #include "SmartWin.h"
 
@@ -50,6 +51,7 @@ public:
 	}
 
 private:
+	Point2 mouse_pos;
 	void doOnMouseMove(const sw::MouseEventResult &mouse)
 	{
 		/*
@@ -59,7 +61,8 @@ private:
 		MK_RBUTTON   マウスの右ボタンが押されている場合にセットします。
 		MK_SHIFT     Shift キーが押されている場合にセットします。
 		*/
-		i_.mouse().setPoint(mouse.pos.x, mouse.pos.y);
+		mouse_pos.x = mouse.pos.x;
+		mouse_pos.y = mouse.pos.y;
 	}
 
 	void doOnClicked( WidgetButtonPtr btn )
@@ -76,27 +79,26 @@ private:
 
 	void onTimer(const sw::CommandPtr &p)
 	{
-		HRslt hr = i_.update();
+		i_.update(1.0f/60.0f);
 		std::basic_stringstream<_TCHAR> str;
-		str << "input status " << input().mouse().x << " "<< input().mouse().y << endl;
+		str << "input status " << mouse_pos.x << " "<< mouse_pos.y << endl;
 		str << input().mouse().dx << " "<< input().mouse().dy << " " << input().mouse().dz << endl;
 		str << " " << input().mouse().press[0] << " "<< input().mouse().press[1] << " " << input().mouse().press[2] << endl;
 		str << " A=" << input().kbd().press(DIK_A) << " S=" << input().kbd().press(DIK_S) << endl;
 		if(pad_) {
 			str << " pad 0=" << pad_->press(0) << " pad 1=" << pad_->press(1) << " pad 2=" << pad_->press(2) << " pad 3=" << pad_->press(3) << endl;
-			str << " pad x=" << pad_->buffer_.lX << " pad y=" << pad_->buffer_.lY << " pad z=" << pad_->buffer_.lZ << endl;
-			str << " pad rx=" << pad_->buffer_.lRx << " pad ry=" << pad_->buffer_.lRy << " pad rz=" << pad_->buffer_.lRz << endl;
-			/*str << " pad ax=" << pad_->buffer_.lAX << " pad ay=" << pad_->buffer_.lAY << " pad az=" << pad_->buffer_.lAZ << endl;
-			str << " pad arx=" << pad_->buffer_.lARx << " pad ary=" << pad_->buffer_.lARy << " pad arz=" << pad_->buffer_.lARz << endl;*/
+			str << " pad x=" << pad_->state_.lX << " pad y=" << pad_->state_.lY << " pad z=" << pad_->state_.lZ << endl;
+			str << " pad rx=" << pad_->state_.lRx << " pad ry=" << pad_->state_.lRy << " pad rz=" << pad_->state_.lRz << endl;
+			/*str << " pad ax=" << pad_->state_.lAX << " pad ay=" << pad_->state_.lAY << " pad az=" << pad_->state_.lAZ << endl;
+			str << " pad arx=" << pad_->state_.lARx << " pad ary=" << pad_->state_.lARy << " pad arz=" << pad_->state_.lARz << endl;*/
 		}
-		str << hr << ends;
 		text_->setText(str.str());
 		text_->updateWidget();
 
 		sw::Command com( _T("Update") );
 		createTimer(&Self::onTimer, 16, com);
 	}
-
+	
 	Input i_;
 	Handle<PadDevice> pad_;
 	WidgetStaticPtr text_;

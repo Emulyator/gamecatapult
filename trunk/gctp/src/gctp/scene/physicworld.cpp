@@ -37,8 +37,7 @@ namespace gctp { namespace scene {
 			this->node = node;
 			this->offset = offset;
 			if(node) {
-				Matrix m = offset.inverse()*node->val.lcm();
-				//Matrix m = offset.inverse()*body->root()->val.wtm();
+				Matrix m = node->val.isValidWTM() ? offset.inverse()*node->val.wtm() : offset.inverse()*node->val.lcm();
 				xform.setFromOpenGLMatrix(&m._11);
 			}
 			else {
@@ -81,6 +80,7 @@ namespace gctp { namespace scene {
 		btConstraintSolver							*solver_;
 		btBroadphaseInterface						*sweep_bp_;
 		btAlignedObjectArray<btCollisionShape *>	collision_shapes_;
+		btGhostPairCallback							ghost_cb_;
 		uint max_bodies_;
 		int max_substeps_;
 		
@@ -120,7 +120,7 @@ namespace gctp { namespace scene {
 			//btCollisionDispatcher *dispatcher = static_cast<btCollisionDispatcher *>(world_->getDispatcher());
 			//btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
 
-			sweep_bp_->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+			sweep_bp_->getOverlappingPairCache()->setInternalGhostPairCallback(&ghost_cb_);
 		}
 
 		void tearDown()
@@ -340,8 +340,19 @@ namespace gctp { namespace scene {
 				btVector3 local_inertia(0, 0, 0);
 				if(mass > 0) col_shape->calculateLocalInertia(mass, local_inertia);
 
+				btMotionState *my_motion_state = 0;
+				if(mass > 0) {
+					my_motion_state = new PhysicMotionState(attr->node().lock(), MatrixC(true));
+				}
+				else {
+					Matrix m = attr->node()->val.isValidWTM() ? attr->node()->val.wtm().orthoNormal() : attr->node()->val.lcm().orthoNormal();
+					//Matrix m = attr->node()->val.isValidWTM() ? attr->node()->val.wtm() : attr->node()->val.lcm();
+					btTransform ground_transform;
+					ground_transform.setFromOpenGLMatrix(&m._11);
+					my_motion_state = new btDefaultMotionState(ground_transform);
+				}
 				// using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(attr->node().lock(), MatrixC(true)), const_cast<btCollisionShape *>(col_shape), local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, my_motion_state, const_cast<btCollisionShape *>(col_shape), local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				// add the body to the dynamics world
@@ -395,6 +406,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(PhysicWorld, attach)
 		TUKI_METHOD(PhysicWorld, detach)
 		TUKI_METHOD(PhysicWorld, numBodies)
+		TUKI_METHOD(PhysicWorld, setMaxSubSteps)
 	TUKI_IMPLEMENT_END(PhysicWorld)
 
 	PhysicWorld::PhysicWorld() : update_slot(SLOT_PRI)
@@ -703,11 +715,18 @@ namespace gctp { namespace scene {
 	{
 		if(L.top() >= 1) {
 			Pointer<GraphFile> file = tuki_cast<GraphFile>(L[1]);
+			Pointer<StrutumNode> node = tuki_cast<StrutumNode>(L[2]);
 			if(file) {
 				Pointer<Body> pbody;
 				for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
 					pbody = *i;
 					if(pbody) {
+						if(node) {
+							Strutum n = node->val;
+							pbody->root()->val = node->val;
+							pbody->setTransform();
+							pbody->update();
+						}
 						for(PointerList<AttrFlesh>::iterator i = pbody->attributes().begin(); i != pbody->attributes().end(); ++i) {
 							addMesh(*i, 0);
 						}

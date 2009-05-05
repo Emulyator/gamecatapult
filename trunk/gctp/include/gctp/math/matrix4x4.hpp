@@ -338,6 +338,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			right().normalize();
 			up().normalize();
 			at().normalize();
+			_41 = _42 = _43 = 0;
 			return *this;
 		}
 		/// ê≥ãKâªÇµÇΩçsóÒ

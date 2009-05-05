@@ -58,15 +58,16 @@ namespace gctp { namespace core {
 		if(name) {
 			Hndl h = find(name);
 			if(h) return h;
-			TURI uri(name);
-//#ifdef _WIN32
-//			uri.convertLower();
-//#endif
-			std::basic_string<_TCHAR> ext = uri.extension();
+#ifdef _WIN32
+			std::basic_string<_TCHAR> ext = TURI(name).convertLower().extension();
+#else
+			std::basic_string<_TCHAR> ext = TURI(name).convertLower().extension();
+#endif
 			RealizeMethod f = Extension::get(ext.c_str());
 			if(f) {
-				BufferPtr file = fileserver().getFile(uri.raw().c_str());
+				BufferPtr file = fileserver().getFile(name);
 				if(file) {
+					GCTP_ASSERT(current__ == this);
 					Context *backup = current__; // 一時的にカレントを差し替える
 					current__ = this;
 					loading_async_ = false;
@@ -83,7 +84,7 @@ namespace gctp { namespace core {
 				}
 			}
 			else {
-				dbgout << _T("Context::load : 拡張子'")<<uri.extension()<<_T("'のリアライザは登録されていない(")<<uri.raw()<<_T("の読み込み時)") << endl;
+				dbgout << _T("Context::load : 拡張子'")<<ext<<_T("'のリアライザは登録されていない(")<<name<<_T("の読み込み時)") << endl;
 			}
 		}
 		return Hndl();
@@ -107,6 +108,7 @@ namespace gctp { namespace core {
 //#endif
 			BufferPtr file = fileserver().getFile(uri.raw().c_str());
 			if(file) {
+				GCTP_ASSERT(current__ == this);
 				Context *backup = current__; // 一時的にカレントを差し替える
 				current__ = this;
 				loading_async_ = false;
@@ -243,6 +245,7 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const GCTP_TYPEINFO &typeinfo)
 	{
+			GCTP_ASSERT(current__ == this);
 		Context *backup = current__; // 一時的にカレントを差し替える
 		current__ = this;
 		Ptr ret = Factory::create(typeinfo);
@@ -259,6 +262,7 @@ namespace gctp { namespace core {
 	 */
 	Hndl Context::create(const char *classname)
 	{
+			GCTP_ASSERT(current__ == this);
 		Context *backup = current__; // 一時的にカレントを差し替える
 		current__ = this;
 		Ptr ret = Factory::create(classname);
@@ -308,6 +312,7 @@ namespace gctp { namespace core {
 	bool Context::onReady(const _TCHAR *name, RealizeMethod realizer, BufferPtr buffer)
 	{
 		if(realizer) {
+			GCTP_ASSERT(current__ == this);
 			Context *backup = current__; // 一時的にカレントを差し替える
 			current__ = this;
 			loading_async_ = true;
@@ -326,6 +331,7 @@ namespace gctp { namespace core {
 
 	void Context::serialize(Serializer &serializer)
 	{
+			GCTP_ASSERT(current__ == this);
 		Context *backup = current__; // 一時的にカレントを差し替える
 		current__ = this;
 		if(serializer.isLoading()) {

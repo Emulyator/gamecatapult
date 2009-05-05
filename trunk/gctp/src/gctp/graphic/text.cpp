@@ -172,7 +172,7 @@ namespace gctp { namespace graphic {
 	
 	using namespace detail;
 
-	Text::Text() : impl_(new TextImpl), size(Point2C(0, 0)), offset(Point2C(0, 0)), bounds(RectC(0,0,LONG_MAX,LONG_MAX))
+	Text::Text() : impl_(new TextImpl), size(Point2C(0, 0)), offset(Point2C(0, 0)), bounds(RectC(0,0,-1,-1))
 	{
 	}
 
@@ -283,7 +283,7 @@ namespace gctp { namespace graphic {
 				ViewPort vp;
 				vp.min_z = 0;
 				vp.max_z = 1;
-				if(bounds.width() > 0) {
+				if(bounds.width() != -1) {
 					vp.x = bounds.left;
 					vp.width = bounds.width();
 				}
@@ -291,7 +291,7 @@ namespace gctp { namespace graphic {
 					vp.x = 0;
 					vp.width = screen.x;
 				}
-				if(bounds.height() > 0) {
+				if(bounds.height() != -1) {
 					vp.y = bounds.top;
 					vp.height = bounds.height();
 				}

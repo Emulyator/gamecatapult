@@ -80,6 +80,7 @@ namespace gctp { namespace scene {
 		int get(luapp::Stack &L);
 		int size(luapp::Stack &L);
 		int ipairs(luapp::Stack &L);
+		void printHierarchy(luapp::Stack &L);
 		static int setCustomSkinnedShaderBrush(luapp::Stack &L);
 		static int getCustomSkinnedShaderBrush(luapp::Stack &L);
 		static int setCustomSolidShaderBrush(luapp::Stack &L);

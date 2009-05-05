@@ -155,12 +155,13 @@ namespace gctp {
 		}
 
 		/// ‚·‚×‚Ä‚ğ¬•¶š‚É•ÏŠ·
-		inline void convertLower()
+		inline URI &convertLower()
 		{
 			for(std::string::size_type i = 0; i < rn_.size(); i++) {
 				if(isleadbyte(rn_[i])) i++;
 				else rn_[i] = tolower(rn_[i]);
 			}
+			return *this;
 		}
 
 	private:

@@ -650,6 +650,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\include\gctp\staticqueue.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\include\gctp\staticringbuffer.hpp"
 				>
 			</File>

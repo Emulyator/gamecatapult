@@ -17,7 +17,14 @@ namespace gctp {
 		enum Const {
 			MAX_SIZE = _MAX_SIZE
 		};
+		typedef _T ValueType;
 		StaticRingBuffer() : front_(0), size_(0) {}
+		void clear()
+		{
+			front_ = 0;
+			size_ = 0;
+			for(int i = 0; i < MAX_SIZE; i++) values_[i] = ValueType();
+		}
 		void push(const _T &v)
 		{
 			push();

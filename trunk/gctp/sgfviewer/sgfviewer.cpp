@@ -16,83 +16,77 @@
 #include <gctp/audio.hpp>
 #include <gctp/input.hpp>
 #include <gctp/app.hpp>
+#include <gctp/context.hpp>
+#include <gctp/scene/camera.hpp>
+#include <gctp/scene/quakecamera.hpp>
+#include <gctp/scene/world.hpp>
+#include <gctp/scene/entity.hpp>
+#include <gctp/scene/motion.hpp>
+#include <gctp/scene/motionmixer.hpp>
 
 #include <mbstring.h>
 
+#include <assert.h>
+
 extern "C" int main(int argc, char *argv[]);
 
-class GameWindow
-	: public gctp::GameApp
-	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, GameWindow>
+class ToolWindow
+	: public gctp::Object
+	, public gctp::GameApp
+	, public SmartWin::WidgetFactory<SmartWin::WidgetWindow, ToolWindow>
 {
-	typedef GameWindow Self;
-
-	sw::BitmapPtr bitmap_;
-	WidgetStaticPtr banner_;
+	typedef ToolWindow Self;
 
 public:
-	GameWindow()
+	ToolWindow()
 		: is_fs_(false), mode_(0), is_closing_(false), device_ok_(true)
 		, cursor_(::LoadCursor(NULL, IDC_ARROW)), is_cursor_visible_(true), do_hold_cursor_(false), do_close_(false), can_change_mode_(true)
 		, is_suspending_(false), req_suspend_(false)
-	{}
-
-	void splash(const _TCHAR *title, DWORD bitmap_rc)
 	{
-		sw::BitmapPtr bitmap_ = sw::BitmapPtr(new sw::Bitmap(bitmap_rc));
-		sw::Point screen = getDesktopSize();
-		sw::Point sz = bitmap_->getBitmapSize();
-		{
-			Seed cs;
-			cs.style = WS_POPUP|WS_BORDER;
-			cs.exStyle = 0;
-			cs.location = sw::Rectangle((screen.x-sz.x)/2, (screen.y-sz.y)/2, sz.x, sz.y);
-			createWindow(cs);
-			setText(title);
-		}
-		{
-			WidgetStatic::Seed cs;
-			cs.style = SS_BITMAP | WS_VISIBLE;
-			cs.location = sw::Rectangle(0, 0, sz.x, sz.y);
-			banner_ = createStatic(cs);
-			banner_->setBitmap(bitmap_);
-		}
-		animateBlend( true, 500 );
-		animateBlend( true, 500 ); // 何で二度やらないと上手くいかない場合があるんだ？
+		deleteGuard();
+		filereq_slot.bind(this);
 	}
 
-	void setUp(bool is_fs, gctp::uint mode_no)
+	WidgetMenuPtr mainmenu;
+
+	void setUp()
 	{
-		banner_->setVisible(false);
+		Seed cs;
+		cs.style = WS_THICKFRAME|WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_MAXIMIZEBOX;
+		//cs.menuName = _T("IDR_MAINMENU"); // 面度印でソースに書く。よりによってメニューにだけサブクラス化を怠ってやがった
+		createWindow(cs);
+		setText(_T("SceneGraphFileViewer"));
+
+		// Creating main menu
+		mainmenu = createMenu();
+		WidgetMenuPtr file = mainmenu->appendPopup( _T( "ファイル(&F)" ) );
+		file->appendItem( 1, _T( "開く…(&O)" ), & Self::menuEventHandler );
+		//compile tests(?これなんだ？)
+		file->isSystemMenu();
+		file->getCount();
+		mainmenu->attach( this );
+
+		// handlers
+		onClosing( &Self::doOnClosing );
+		onSized( &Self::doOnResized );
+		onLeftMouseUp( &Self::doOnLeftMouseUp );
+		onLeftMouseDown( &Self::doOnLeftMouseDown );
+		onMiddleMouseUp( &Self::doOnMiddleMouseUp );
+		onMiddleMouseDown( &Self::doOnMiddleMouseDown );
+		onRightMouseUp( &Self::doOnRightMouseUp );
+		onRightMouseDown( &Self::doOnRightMouseDown );
+		onLeftMouseDblClick( &Self::doOnLeftMouseDblClick );
+		onRightMouseDblClick( &Self::doOnRightMouseDblClick );
+		onMouseMove( &Self::doOnMouseMove );
+		onKeyPressed( &Self::doOnKeyPressed );
+		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
+		//onRaw( &Self::doOnSysChar, sw::Message(WM_SYSCHAR) );
+
+		//sw::Application::instance().setHeartBeatFunction(this);
+
 		gctp::HRslt hr;
-		const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[0].modes[mode_no];
-		{
-			style_backup_ = WS_OVERLAPPED|WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
-			exstyle_backup_ = 0;
-			sw::Point screen = getDesktopSize();
-			RECT rc = {0, 0, mode.Width, mode.Height};
-			::AdjustWindowRectEx(&rc, style_backup_, FALSE, exstyle_backup_);
-			DWORD width = rc.right-rc.left;
-			DWORD height = rc.bottom-rc.top;
-			location_backup_ = sw::Rectangle((screen.x-width)/2, (screen.y-height)/2, width, height);
-		}
-		if(is_fs) {
-			::SetWindowLong(handle(), GWL_STYLE, 0);
-			::SetWindowLong(handle(), GWL_EXSTYLE, 0);
-			setBounds(0, 0, mode.Width, mode.Height);
-			if(getParent()) hr = g_.open(handle(), getParent()->handle(), 0, mode_no);
-			else hr = g_.open(handle(), 0, mode_no);
-			maximize();
-		}
-		else {
-			::SetWindowLong(handle(), GWL_STYLE, style_backup_);
-			::SetWindowLong(handle(), GWL_EXSTYLE, exstyle_backup_);
-			setBounds(location_backup_);
-			if(getParent()) hr = g_.open(handle(), getParent()->handle());
-			else hr = g_.open(handle());
-		}
-		is_fs_ = is_fs;
-		mode_ = mode_no;
+		if(getParent()) hr = g_.open(handle(), getParent()->handle());
+		else hr = g_.open(handle());
 		if(!hr) {
 			GCTP_TRACE(hr);
 			close();
@@ -116,25 +110,40 @@ public:
 		i_.setCurrent();
 		setCurrent();
 
-		// handlers
-		onClosing( &Self::doOnClosing );
-		onSized( &Self::doOnResized );
-		onLeftMouseUp( &Self::doOnLeftMouseUp );
-		onLeftMouseDown( &Self::doOnLeftMouseDown );
-		onMiddleMouseUp( &Self::doOnMiddleMouseUp );
-		onMiddleMouseDown( &Self::doOnMiddleMouseDown );
-		onRightMouseUp( &Self::doOnRightMouseUp );
-		onRightMouseDown( &Self::doOnRightMouseDown );
-		onLeftMouseDblClick( &Self::doOnLeftMouseDblClick );
-		onRightMouseDblClick( &Self::doOnRightMouseDblClick );
-		onMouseMove( &Self::doOnMouseMove );
-		onKeyPressed( &Self::doOnKeyPressed );
-		onRaw( &Self::doOnSetCursor, sw::Message(WM_SETCURSOR) );
-		onRaw( &Self::doOnSysChar, sw::Message(WM_SYSCHAR) );
-
-		//sw::Application::instance().setHeartBeatFunction(this);
 		game_thread_ = fork( SmartUtil::tstring(_T("GameThread")), &Self::runInThread );
 	}
+
+	SmartUtil::tstring filepath;
+	void menuEventHandler( WidgetMenuPtr menu, unsigned item )
+	{
+		WidgetLoadFile dlg = createLoadFile();
+		dlg.addFilter( _T( "X Files" ), _T( "*.x" ) );
+		dlg.addFilter( _T( "Collada Files" ), _T( "*.collada" ) );
+		dlg.addFilter( _T( "FBX Files" ), _T( "*.fbx" ) );
+		dlg.addFilter( _T( "All Files" ), _T( "*.*" ) );
+		dlg.activeFilter( 0 );
+		filepath = dlg.showDialog();
+		update_signal.connectOnce(filereq_slot);
+	}
+
+	/// 更新
+	bool onFileRequest(float delta)
+	{
+		gctp::core::Context &context = gctp::core::Context::current();
+		gctp::Pointer<gctp::scene::World> world = context[_T("world")].lock();
+		gctp::Pointer<gctp::scene::Entity> entity;
+		entity = newEntity(context, *world, "gctp.scene.Entity", _T("chara"), filepath.c_str()).lock();
+		if(entity) {
+			for(std::size_t i = 0; i < entity->mixer().tracks().size(); i++) {
+				entity->mixer().tracks()[i].setWeight(i == 0 ? 1.0f : 0.0f);
+				entity->mixer().tracks()[i].setSpeed(i == 0 ? 1.0f : 0.0f);
+				entity->mixer().tracks()[i].setLoop(true);
+			}
+		}
+		return false;
+	}
+	/// 更新スロット
+	gctp::MemberSlot1<Self, float /*delta*/, &Self::onFileRequest> filereq_slot;
 
 	bool reset()
 	{
@@ -192,6 +201,7 @@ public:
 				DWORD sleeptime = (DWORD)(((mode.Height-status.ScanLine)*1000)/(mode.Height * (mode.RefreshRate/2)));
 				//PRNN("sleeptime "<<sleeptime<<","<<mode.Height<<","<<status.ScanLine<<","<<mode.RefreshRate);
 				if(sleeptime) ::Sleep(sleeptime);
+				// これムービー用の処理？もう忘れた
 			}
 		}
 		return false;
@@ -228,6 +238,29 @@ protected:
 	void doOnResized(const sw::WidgetSizedEventResult & sz)
 	{
 		GCTP_TRACE("onResized "<<sz.newSize.x<<","<<sz.newSize.y);
+		if(!is_closing_) {
+			PRNN("###########resize");
+			req_suspend_ = true;
+			is_suspending_ = false;
+			for(int i = 0; i < 50; i++) {
+				if(is_suspending_) break;
+				::Sleep(100);
+			}
+			if(!is_suspending_) {
+				req_suspend_ = false;
+				is_suspending_ = false;
+				PRNN("Game Thread do not response.");
+				return;
+			}
+			//game_thread_.suspend();
+			g_.cleanUp();
+			if(reset()) {
+				g_.restore();
+				PRNN("resize done! "<<((is_fs_)?"true":"false"));
+				is_suspending_ = false;
+				//game_thread_.resume();
+			}
+		}
 	}
 
 	HRESULT doOnSetCursor(LPARAM lParam, WPARAM wParam)
@@ -251,7 +284,7 @@ protected:
 
 	HRESULT doOnSysChar(LPARAM lparam, WPARAM vkey)
 	{
-		if(vkey == VK_RETURN && can_change_mode_) toggleFullscreen();
+		//if(vkey == VK_RETURN && can_change_mode_) toggleFullscreen();
 		return S_OK;
 	}
 
@@ -369,7 +402,7 @@ protected:
 
 	void doOnMouseMove(const sw::MouseEventResult &mouse)
 	{
-		//i_.mouse().setPoint(mouse.pos.x, mouse.pos.y);
+		//input().mouse().setPoint(mouse.pos.x, mouse.pos.y);
 		if(do_hold_cursor_ /*&& ::GetFocus() == m_hWnd*/) {
 			if(mouse.pos.x < getSize().x/3
 			|| mouse.pos.x > getSize().x*2/3
@@ -494,91 +527,6 @@ private:
 	DWORD exstyle_backup_;
 };
 
-class StartupDialog
-	: public SmartWin::WidgetFactory<SmartWin::WidgetModalDialog, StartupDialog, SmartWin::MessageMapPolicyModalDialogWidget>
-{
-	typedef StartupDialog Self;
-
-public:
-	std::vector<DWORD> modes;
-	bool is_fs;
-	int mode;
-
-	StartupDialog(bool is_fs, Widget *parent = 0)
-		: Widget( parent ), is_fs(is_fs), mode(0)
-	{
-		onInitDialog(&StartupDialog::setUp);
-	}
-
-	bool setUp()
-	{
-		screens_ = subclassComboBox( IDC_SCREENLIST );
-
-		//fullscreen_ = subclassRadioButton( IDC_RADIO_FSMODE );
-		::CheckRadioButton(handle(), IDC_RADIO_FSMODE, IDC_RADIO_WNDMODE, (is_fs)?IDC_RADIO_FSMODE:IDC_RADIO_WNDMODE);
-		
-		for(DWORD i = 0; i < modes.size(); i++) {
-			const D3DDISPLAYMODE &mode = gctp::graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes[modes[i]];
-			addToComboBox(modes[i], mode.Width, mode.Height, mode.Format, mode.RefreshRate);
-		}
-		if(screens_->getCount()>0) screens_->setSelectedIndex(0);
-		else screens_->setEnabled(false);
-
-		WidgetButtonPtr btn;
-		btn = subclassButton( IDOK );
-		if(screens_->getCount()==0) btn->setEnabled(false);
-		else {
-			btn->onClicked( &Self::doOnOk );
-			btn->setFocus();
-		}
-		btn = subclassButton( IDCANCEL );
-		btn->onClicked( &Self::doOnCancel );
-		if(screens_->getCount()==0) btn->setFocus();
-
-		setVisible(true);
-		return true;
-	}
-
-private:
-	void addToComboBox(DWORD data, DWORD width, DWORD height, DWORD format, DWORD refresh_rate)
-	{
-		_TCHAR *str;
-		switch(format) {
-		case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-			str = _T("フルカラー");
-			break;
-		case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
-		case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-			str = _T("ハイカラー");
-			break;
-		default:
-			return;
-		};
-		_TCHAR screenstr[256];
-		if(refresh_rate==D3DPRESENT_RATE_DEFAULT) _stprintf(screenstr, _T("%d×%d:%s:規定値"), width, height, str);
-		else _stprintf(screenstr, _T("%d×%d:%s:%dHz"), width, height, str, refresh_rate);
-		int idx = screens_->addValue(screenstr);
-		screen_map_[idx] = data;
-	}
-
-	void doOnOk( WidgetButtonPtr btn )
-	{
-		//is_fs = fullscreen_->getChecked();
-		is_fs = (IsDlgButtonChecked(handle(), IDC_RADIO_FSMODE)==BST_CHECKED);
-		mode = screen_map_[screens_->getSelectedIndex()];
-		endDialog( IDOK );
-	}
-
-	void doOnCancel( WidgetButtonPtr btn )
-	{
-		endDialog( IDCANCEL );
-	}
-
-	std::map<int, DWORD> screen_map_;
-	WidgetComboBoxPtr screens_;
-	//WidgetRadioButtonPtr fullscreen_; // 直接WinAPI呼んだほうが便利
-};
-
 using namespace std;
 using namespace gctp;
 using namespace SmartWin;
@@ -604,47 +552,15 @@ namespace {
 		}
 	}
 
-	bool startupdialog(Widget *parent, bool &is_fs, uint &mode)
-	{
-		StartupDialog dlg(false, parent);
-
-		int mode_num = (int)graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes.size();
-		for(int i = 0; i < mode_num; i++) {
-			const D3DDISPLAYMODE &mode = graphic::dx::adapters()[D3DADAPTER_DEFAULT].modes[i];
-//			if(mode.Width==640 && mode.Height==480) {
-			if(mode.Width>=800 && mode.Height>=600 && mode.RefreshRate==D3DPRESENT_RATE_DEFAULT) {
-				switch(mode.Format) {
-				case D3DFMT_R8G8B8: case D3DFMT_A8R8G8B8: case D3DFMT_X8R8G8B8:
-					dlg.modes.push_back(i);
-					break;
-				case D3DFMT_R5G6B5: case D3DFMT_X1R5G5B5: case D3DFMT_A1R5G5B5: case D3DFMT_A4R4G4B4:
-				case D3DFMT_R3G3B2: case D3DFMT_A8R3G3B2: case D3DFMT_X4R4G4B4:
-					dlg.modes.push_back(i);
-					break;
-				}
-			}
-		}
-
-		int ret = dlg.createDialog( IDD_STARTUPDLG_DIALOG );
-		is_fs = dlg.is_fs;
-		mode = dlg.mode;
-		return (ret == IDOK)? true : false;
-	}
-
 }
 
 int SmartWinMain(Application & app)
 {
 	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
 	initialize(app.getAppHandle());
-	GameWindow *window = new GameWindow;
-	window->splash(_T("GameCatapult DEMO"), IDB_BITMAP1);
-	bool is_fs = false; uint mode = 0;
-	if(startupdialog(window, is_fs, mode)) {
-		window->setUp(is_fs, mode);
-		return app.run();
-	}
-	return 1; // CANCEL
+	ToolWindow *window = new ToolWindow;
+	window->setUp();
+	return app.run();
 }
 
 #ifdef _UNICODE
@@ -682,7 +598,11 @@ int SmartWinMain(Application & app)
 #ifdef _DEBUG
 # pragma comment(lib, "luad.lib")
 # pragma comment(lib, "d3dx9d.lib")
+# pragma comment(lib, "libbulletcollision_d.lib")
+# pragma comment(lib, "libbulletmath_d.lib")
 #else
 # pragma comment(lib, "lua.lib")
 # pragma comment(lib, "d3dx9.lib")
+# pragma comment(lib, "libbulletcollision.lib")
+# pragma comment(lib, "libbulletmath.lib")
 #endif
