@@ -94,6 +94,7 @@ namespace gctp { namespace scene {
 
 	bool World::doOnUpdate(float delta)
 	{
+		Profiling prof("scene.World.onUpdate");
 		begin();
 			update_signal(delta);
 			strutum_tree.setTransform();

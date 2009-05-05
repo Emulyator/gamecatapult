@@ -442,8 +442,9 @@ namespace {
 		std::map<std::string, SkelegonInfo> skelegons_;
 		bool mergeSkelegon(std::vector<std::string> &adee, std::map<std::string, SkelegonInfo>::iterator dst, std::map<std::string, SkelegonInfo>::const_iterator src)
 		{
-			if(src->first.substr(src->first.length()-2) == "_I") {}
-			else if(src->first.substr(src->first.length()-2) == "_F") dst->second.mergeAttr(src->first, src->second);
+			// フラグを除いた名前が一致する連続した浮きボーンはすべて自身に結合
+			if(src->first.substr(src->first.length()-2) == "_I" && src->first.substr(0, src->first.length()-2) == dst->first) {}
+			else if(src->first.substr(src->first.length()-2) == "_F" && src->first.substr(0, src->first.length()-2) == dst->first) dst->second.mergeAttr(src->first, src->second);
 			else return false;
 			adee.push_back(src->first);
 			for(std::vector<std::string>::const_iterator i = src->second.children.begin(); i != src->second.children.end(); ++i) {
@@ -481,13 +482,21 @@ namespace {
 				}
 				if(flag == 0) {
 					std::vector<std::string> adee;
-					for(std::vector<std::string>::iterator j = i->second.children.begin(); j != i->second.children.end();) {
-						if(use_calsium_) {
+					if(use_calsium_) {
+						for(std::vector<std::string>::iterator j = i->second.children.begin(); j != i->second.children.end();) {
 							std::map<std::string, SkelegonInfo>::const_iterator _src = skelegons_.find(*j);
 							if(_src != skelegons_.end() && mergeSkelegon(adee, i, _src)) j = i->second.children.erase(j);
 							else ++j;
 						}
-						else {
+						for(std::vector<std::string>::iterator j = i->second.parents.begin(); j != i->second.parents.end();) {
+							std::map<std::string, SkelegonInfo>::const_iterator _src = skelegons_.find(*j);
+							if(_src != skelegons_.end() && mergeSkelegon(adee, i, _src)) j = i->second.parents.erase(j);
+							else ++j;
+							// 大丈夫か？これ
+						}
+					}
+					else {
+						for(std::vector<std::string>::iterator j = i->second.children.begin(); j != i->second.children.end();) {
 							std::map<std::string, SkelegonInfo>::const_iterator _child = skelegons_.find(*j);
 							if(_child != skelegons_.end()) {
 								// 子の浮遊ボーンまでの線分も自身の線分として追加

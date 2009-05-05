@@ -37,6 +37,7 @@ namespace gctp { namespace graphic {
 		HRslt setUp(const _TCHAR *fname);
 		HRslt setUp(const void *memory, std::size_t size);
 		HRslt setUp(Type type, int width, int height, int format, int miplevel = 1);
+		void setUp(dx::IDirect3DTexturePtr tex);
 
 		HRslt restore();
 		void cleanUp();
@@ -53,6 +54,7 @@ namespace gctp { namespace graphic {
 		static HRslt unset(uint index);
 
 		int format() const;
+		int maxlevel() const;
 		Point2 size() const;
 		Point2 originalSize() const { return Point2C(org_width_, org_height_); }
 		bool isDynamic() const { return type_ == WORK; }

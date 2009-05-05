@@ -102,7 +102,7 @@ extern "C" int main(int argc, char *argv[])
 
 #ifdef PHYSICSTEST
 	scene::PhysicWorld physics;
-	physics.setUp(AABox(VectorC(-1000,-1000,-1000),VectorC(1000,1000,1000)), 100);
+	physics.setUp(AABox(VectorC(1000,1000,1000),VectorC(-1000,-1000,-1000)), 100);
 	Handle<scene::GraphFile> colfile = context.load(_T("cell.col.x"));
 	if(colfile) {
 		for(scene::GraphFile::iterator i = colfile->begin(); i != colfile->end(); ++i) {
@@ -148,7 +148,9 @@ extern "C" int main(int argc, char *argv[])
 				rtree->root()->push(wr);
 				Handle<scene::World> world = context.create("gctp.scene.World", _T("world"));
 				if(world) {
+#ifdef PHYSICSTEST
 					world->update_signal.connectOnce(physics.update_slot);
+#endif
 					wr->attach(world);
 					Pointer<scene::QuakeCamera> qcam = context.create("gctp.scene.QuakeCamera", _T("qcam")).lock();
 					if(qcam) qcam->target() = camera;
@@ -239,6 +241,7 @@ extern "C" int main(int argc, char *argv[])
 
 	while(app().canContinue()) {
 		gctp::Profiler &update_profile = app().profiler().begin("update");
+		input().update(app().lap);
 
 		Pointer<scene::World> world = context[_T("world")].lock();
 		Pointer<scene::Camera> camera = context[_T("camera")].lock();
@@ -326,8 +329,8 @@ extern "C" int main(int argc, char *argv[])
 		if(input().kbd().push(DIK_PERIOD)) {
 			addBox(physics, *world, context, camera->node()->val.wtm().position(), camera->node()->val.wtm().at()*10.0f);
 		}
-		app().update_signal(app().lap);
 #endif
+		app().update_signal(app().lap);
 
 		update_profile.end();
 
@@ -383,7 +386,8 @@ extern "C" int main(int argc, char *argv[])
 					<< _T("視野角:") << toDeg(camera->fov()) << _T("°") << endl
 					<< _T("位置  :") << camera->node()->val.wtm().position() << endl << endl
 					<< _T("モード: ") << mesh_mode << endl << endl
-					<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl;
+					//<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl
+					;
 				Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();
 				if(chr2) {
 					static int c = 2;
@@ -432,10 +436,10 @@ extern "C" int main(int argc, char *argv[])
 # endif
 # ifdef PHYSICSTEST
 #  pragma comment(lib, "libbulletdynamics_d.lib")
-#  pragma comment(lib, "libbulletcollision_d.lib")
-#  pragma comment(lib, "libbulletmath_d.lib")
 #  pragma comment(lib, "libconvexdecomposition_d.lib")
 # endif
+#pragma comment(lib, "libbulletmath_d.lib")
+#pragma comment(lib, "libbulletcollision_d.lib")
 #else
 # pragma comment(lib, "zlib.lib")
 # ifdef MOVIETEST
@@ -444,8 +448,8 @@ extern "C" int main(int argc, char *argv[])
 # endif
 # ifdef PHYSICSTEST
 #  pragma comment(lib, "libbulletdynamics.lib")
-#  pragma comment(lib, "libbulletcollision.lib")
-#  pragma comment(lib, "libbulletmath.lib")
 #  pragma comment(lib, "libconvexdecomposition.lib")
 # endif
+#pragma comment(lib, "libbulletmath.lib")
+#pragma comment(lib, "libbulletcollision.lib")
 #endif

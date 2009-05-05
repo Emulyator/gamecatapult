@@ -284,6 +284,15 @@ namespace gctp { namespace graphic {
 		return hr;
 	}
 
+	void Texture::setUp(dx::IDirect3DTexturePtr tex)
+	{
+		ptr_ = tex;
+		org_width_ = size().x;
+		org_height_ = size().y;
+		org_format_ = format();
+		org_miplevel_ = maxlevel();
+	}
+
 	int Texture::format() const
 	{
 		if(ptr_) {
@@ -291,6 +300,12 @@ namespace gctp { namespace graphic {
 			ptr_->GetLevelDesc(0, &desc);
 			return desc.Format;
 		}
+		return -1;
+	}
+
+	int Texture::maxlevel() const
+	{
+		if(ptr_) return (int)ptr_->GetLevelCount();
 		return -1;
 	}
 

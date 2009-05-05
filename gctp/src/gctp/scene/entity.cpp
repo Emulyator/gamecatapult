@@ -331,7 +331,10 @@ namespace gctp { namespace scene {
 	
 	int Entity::printHierarchy(luapp::Stack &L)
 	{
-		if(source_) source_->printLCM(gctp::dbgout);
+		if(L[1].toBoolean()) {
+			if(target_) target_->print(gctp::dbgout);
+		}
+		else if(source_) source_->printLCM(gctp::dbgout);
 		return 0;
 	}
 

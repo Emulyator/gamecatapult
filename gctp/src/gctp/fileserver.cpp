@@ -49,9 +49,16 @@ namespace gctp {
 		public:
 			static bool isExist(const _TCHAR *volume_name)
 			{
-				DWORD attr = ::GetFileAttributes(volume_name);
-				if(attr != -1 && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
-					return true;
+				if(volume_name) {
+					if(*volume_name == '\0') {
+						return true;
+					}
+					else {
+						DWORD attr = ::GetFileAttributes(volume_name);
+						if(attr != -1 && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+							return true;
+						}
+					}
 				}
 				return false;
 			}
@@ -61,8 +68,8 @@ namespace gctp {
 			virtual int find(const _TCHAR *fname)
 			{
 				std::basic_stringstream<_TCHAR> str;
-				str << name_.c_str() << "/" << fname;
-
+				if(!name_.empty()) str << name_.c_str() << "/" << fname;
+				else str << fname;
 				WIN32_FIND_DATA info;
 				HANDLE hResult = ::FindFirstFile(str.str().c_str(), &info);
 				::FindClose( hResult );
@@ -77,7 +84,8 @@ namespace gctp {
 			virtual int read(const _TCHAR *fname, Buffer &buffer)
 			{
 				std::basic_stringstream<_TCHAR> str;
-				str << name_.c_str() << "/" << fname;
+				if(!name_.empty()) str << name_.c_str() << "/" << fname;
+				else str << fname;
 				gctp::File f(str.str().c_str());
 				if(f.is_open()) {
 					f.read(buffer.buf(), f.length());
@@ -369,11 +377,13 @@ namespace gctp {
 		};
 		std::queue<Request> requests_;
 		std::queue<Read> read_;
+		bool reading_;
 
 		Mutex monitor_;
 		Mutex read_list_monitor_;
+		Mutex reading_monitor_;
 
-		Thread(FileServer *fs) : thread_(0), id_(0), fs_(fs)
+		Thread(FileServer *fs) : thread_(0), id_(0), fs_(fs), reading_(false)
 		{
 			fs->synchronize(true);
 		}
@@ -619,6 +629,10 @@ namespace gctp {
 		if(req.volume) {
 			Pointer<Volume> volume = req.volume.lock();
 			if(volume) {
+				{
+					ScopedLock sl(thread_->reading_monitor_);
+					thread_->reading_ = true;
+				}
 				if(volume->read(req.name.c_str(), *req.buffer) >= 0) {
 					req.buffer->is_ready_ = true;
 					{
@@ -628,6 +642,10 @@ namespace gctp {
 						read.buffer = req.buffer;
 						thread_->read_.push(read);
 					}
+				}
+				{
+					ScopedLock sl(thread_->reading_monitor_);
+					thread_->reading_ = false;
 				}
 			}
 		}
@@ -663,7 +681,8 @@ namespace gctp {
 		if(thread_) {
 			ScopedLock sl(thread_->monitor_);
 			ScopedLock sl2(thread_->read_list_monitor_);
-			return thread_->requests_.empty() && thread_->read_.empty();
+			ScopedLock sl3(thread_->reading_monitor_);
+			return thread_->requests_.empty() && thread_->read_.empty() && !thread_->reading_ ;
 		}
 		return true;
 	}

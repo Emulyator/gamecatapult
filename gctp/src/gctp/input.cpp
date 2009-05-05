@@ -488,6 +488,7 @@ namespace gctp {
 	{
 		HRslt ret(S_OK), hr;
 		hwnd_ = hWnd;
+		cur_frame_time_ = prev_frame_time_ = frame_time_ = ::GetTickCount();
 		hr = mouse_.setUp(api_, hWnd);
 		if(!hr) {
 			ret = hr;
@@ -507,22 +508,27 @@ namespace gctp {
 		kbd_.tearDown();
 	}
 
-	HRslt Input::update()
+	void Input::update(float delta)
 	{
-		HRslt ret(S_OK), hr;
-		if(mouse_) {
-			hr = mouse_.update();
-			if(!hr) ret = hr;
-		}
-		if(kbd_) {
-			hr = kbd_.update();
-			if(!hr) ret = hr;
-		}
+		cur_frame_time_ = prev_frame_time_ = frame_time_;
+		frame_time_ = ::GetTickCount();
+		step(delta);
+	}
+
+	void Input::step(float delta)
+	{
+		cur_frame_time_ += (DWORD)(delta*1000);
+		if(mouse_) mouse_.update();
+		if(kbd_) kbd_.update();
 		for(PointerList<PadDevice>::iterator i = pads_.begin(); i != pads_.end(); ++i) {
-			hr = (*i)->update();
-			if(!hr) ret = hr;
+			(*i)->update();
 		}
-		return ret;
+	}
+
+	bool Input::isInFrame(DWORD timestamp)
+	{
+//		return (prev_frame_time_ <= cur_frame_time_ ? (prev_frame_time_ <= timestamp && timestamp < cur_frame_time_) : (timestamp < cur_frame_time_|| prev_frame_time_ <= timestamp));
+		return ((int)(timestamp - cur_frame_time_) <= 0);
 	}
 
 	Handle<PadDevice> Input::newPad(const Device &device)
@@ -616,13 +622,38 @@ namespace gctp {
 	HRslt InputDevice::getData(DIDEVICEOBJECTDATA *obd, DWORD &elemnum)
 	{
 		if(!is_acquire_) return DIERR_INPUTLOST;
+		ptr_->Poll();
 		HRslt hr = ptr_->GetDeviceData(sizeof(DIDEVICEOBJECTDATA), obd, &elemnum, 0);
 		if(hr == DIERR_INPUTLOST) is_acquire_ = false;
 		return hr;
 	}
+	
+	bool InputDevice::getData(HRslt &hr, DIDEVICEOBJECTDATA &data)
+	{
+		if(!is_acquire_) hr = acquire();
+		if(is_acquire_) {
+			ptr_->Poll();
+			DWORD elemnum = 1;
+			HRslt hr = ptr_->GetDeviceData(sizeof(DIDEVICEOBJECTDATA), &data, &elemnum, DIGDD_PEEK);
+			if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
+				is_acquire_ = false;
+				hr = acquire();
+			}
+			else if(hr && elemnum > 0 && input().isInFrame(data.dwTimeStamp)) {
+				elemnum = 1;
+				hr = ptr_->GetDeviceData(sizeof(DIDEVICEOBJECTDATA), 0, &elemnum, 0);
+				if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
+					is_acquire_ = false;
+					hr = acquire();
+				}
+				return hr;
+			}
+		}
+		return false;
+	}
 
 	/////////////////////
-	// MoudeDevice
+	// MouseDevice
 	//
 	HRslt MouseDevice::setUp(IDirectInput8Ptr input, HWND hwnd)
 	{
@@ -649,30 +680,22 @@ namespace gctp {
 		// 次に、ヘッダー (DIPROPDWORD 構造体内の DIPROPHEADER 構造体) のアドレスと、変更したいプロパティの識別子を、次のように IDirectInputDevice8::SetProperty メソッドに渡す。
 		hr = get()->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
 
-		x = y = dx = dy = dz = 0;
+		dx = dy = dz = 0;
 		memset(push, 0, sizeof(push));
 		memset(press, 0, sizeof(press));
 		memset(release, 0, sizeof(release));
+
 		return hr;
 	}
 
-	HRslt MouseDevice::update()
+	void MouseDevice::update()
 	{
-		HRslt hr;
 		dx = dy = dz = 0;
 		memset(push, 0, sizeof(push));
 		memset(release, 0, sizeof(release));
-		for(;;) {
-			DIDEVICEOBJECTDATA od;
-			DWORD dwElements = 1;   // 取得すべき項目数
-			hr = getData(&od, dwElements);
-			if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-				acquire();
-				break;
-			}
-			/* データが読めない、または利用可能データがない。*/
-			if(!hr || dwElements == 0) break;
-
+		HRslt hr;
+		DIDEVICEOBJECTDATA od;
+		while(getData(hr, od)) {
 			/* 要素を調べて何が発生したかを確認する。*/
 			switch (od.dwOfs) {
             case DIMOFS_BUTTON0:
@@ -715,18 +738,57 @@ namespace gctp {
 					press[3] = false;
 				}
                 break;
+            case DIMOFS_BUTTON4:
+				if(od.dwData&0x80) {
+					push[4] = true;
+					press[4] = true;
+				}
+				else {
+					release[4] = true;
+					press[4] = false;
+				}
+                break;
+            case DIMOFS_BUTTON5:
+				if(od.dwData&0x80) {
+					push[5] = true;
+					press[5] = true;
+				}
+				else {
+					release[5] = true;
+					press[5] = false;
+				}
+                break;
+            case DIMOFS_BUTTON6:
+				if(od.dwData&0x80) {
+					push[6] = true;
+					press[6] = true;
+				}
+				else {
+					release[6] = true;
+					press[6] = false;
+				}
+                break;
+            case DIMOFS_BUTTON7:
+				if(od.dwData&0x80) {
+					push[7] = true;
+					press[7] = true;
+				}
+				else {
+					release[7] = true;
+					press[7] = false;
+				}
+                break;
             case DIMOFS_X:
-				dx = od.dwData;
+				dx += (int)od.dwData;
                 break;
             case DIMOFS_Y:
-				dy = od.dwData;
+				dy += (int)od.dwData;
                 break;
             case DIMOFS_Z:
-				dz = od.dwData;
+				dz += (int)od.dwData;
                 break;
 			}
 		}
-		return hr;
 	}
 
 	/////////////////////
@@ -738,31 +800,28 @@ namespace gctp {
 		hr = InputDevice::setUp(input, GUID_SysKeyboard, hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 		if(!hr) return hr;
 		hr = get()->SetDataFormat(&c_dfDIKeyboard);
-		memset(buffer_, 0, sizeof(buffer_));
+		DIPROPDWORD dipdw = { sizeof(DIPROPDWORD), sizeof(DIPROPHEADER), 0, DIPH_DEVICE };
+		// データ
+		dipdw.dwData  = BUFFER_SIZE;
+		// 次に、ヘッダー (DIPROPDWORD 構造体内の DIPROPHEADER 構造体) のアドレスと、変更したいプロパティの識別子を、次のように IDirectInputDevice8::SetProperty メソッドに渡す。
+		hr = get()->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
+
+		memset(state_, 0, sizeof(state_));
 		return hr;
 	}
 
-	HRslt KbdDevice::update()
+	void KbdDevice::update()
 	{
+		for(int i = 0; i < STATE_SIZE; i++) state_[i] = state_[i]&PRESS;
 		HRslt hr;
-		char buffer[BUFFER_SIZE];
-		hr = getState(sizeof(buffer), buffer);
-		if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-			// 失敗の場合、デバイスは失われている。
-			// (hr == DIERR_INPUTLOST) をチェックし、
-			// 再取得を試みる必要がある。
-			hr = acquire();
-			if(hr) hr = getState(sizeof(buffer), buffer);
+		DIDEVICEOBJECTDATA od;
+		while(getData(hr, od)) {
+			/* 要素を調べて何が発生したかを確認する。*/
+			if(od.dwData&0x80) state_[od.dwOfs] = PRESS|(state_[od.dwOfs]&PRESS ? 0 : PUSH)|(state_[od.dwOfs]&RELEASE);
+			else state_[od.dwOfs] = (state_[od.dwOfs]&PRESS ? RELEASE : 0)|(state_[od.dwOfs]&PUSH);
 		}
-		if(!hr) memset(buffer, 0, sizeof(buffer));
-		for(int i = 0; i < BUFFER_SIZE; i++) {
-			char prev = buffer_[i];
-			if(buffer[i]&0x80) buffer_[i] = PRESS|(prev&PRESS ? 0 : PUSH);
-			else buffer_[i] = (prev&PRESS ? RELEASE : 0);
-		}
-		return hr;
 	}
-		
+	
 	int KbdDevice::stringToKey(const char *name)
 	{
 		return DIKMap::getInstance().get(name);
@@ -781,31 +840,45 @@ namespace gctp {
 		}
 		hr = get()->SetDataFormat(&c_dfDIJoystick2);
 		if(!hr) GCTP_ERRORINFO(hr);
-		memset(&buffer_, 0, sizeof(buffer_));
+
+		DIPROPDWORD dipdw = { sizeof(DIPROPDWORD), sizeof(DIPROPHEADER), 0, DIPH_DEVICE };
+		// データ
+		dipdw.dwData  = BUFFER_SIZE;
+		// 次に、ヘッダー (DIPROPDWORD 構造体内の DIPROPHEADER 構造体) のアドレスと、変更したいプロパティの識別子を、次のように IDirectInputDevice8::SetProperty メソッドに渡す。
+		hr = get()->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
+		if(!hr) GCTP_ERRORINFO(hr);
+
+		memset(&state_, 0, sizeof(state_));
 		memset(&buttons_, 0, sizeof(buttons_));
 		return hr;
 	}
 
-	HRslt PadDevice::update()
+	void PadDevice::update()
 	{
+		for(int i = 0; i < MAX_BUTTON; i++) buttons_[i] = buttons_[i]&PRESS;
 		HRslt hr;
-		hr = getState(sizeof(buffer_), &buffer_);
+		/*hr = getState(sizeof(DIJOYSTATE2), &state_);
 		if(hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-			// 失敗の場合、デバイスは失われている。
-			// (hr == DIERR_INPUTLOST) をチェックし、
-			// 再取得を試みる必要がある。
 			hr = acquire();
-			if(hr) hr = getState(sizeof(buffer_), &buffer_);
+			return;
+		}*/
+		DIDEVICEOBJECTDATA od;
+		while(getData(hr, od)) {
+			if(DIJOFS_POV(0) <= od.dwOfs && od.dwOfs <= DIJOFS_POV(3)) {
+				*(DWORD *)(((BYTE *)&state_)+od.dwOfs) = od.dwData;
+			}
+			else if(DIJOFS_BUTTON0 <= od.dwOfs && od.dwOfs <= DIJOFS_BUTTON31) {
+				BYTE &rgbbtn = *(BYTE *)(((BYTE *)&state_)+od.dwOfs);
+				int i = (od.dwOfs-DIJOFS_BUTTON0)/(DIJOFS_BUTTON1-DIJOFS_BUTTON0);
+				if(od.dwData&0x80) buttons_[i] = PRESS|(rgbbtn&PRESS ? 0 : PUSH)|(buttons_[i]&RELEASE);
+				else buttons_[i] = (rgbbtn&PRESS ? RELEASE : 0)|(buttons_[i]&PUSH);
+				rgbbtn = (BYTE)od.dwData;
+			}
+			else {
+				*(LONG *)(((BYTE *)&state_)+od.dwOfs) = (LONG)od.dwData;
+			}
 		}
-		if(!hr) {
-			memset(&buffer_, 0, sizeof(buffer_));
-		}
-		for(int i = 0; i < MAX_BUTTON; i++) {
-			char prev = buttons_[i];
-			if(buffer_.rgbButtons[i]&0x80) buttons_[i] = PRESS|(prev&PRESS ? 0 : PUSH);
-			else buttons_[i] = (prev&PRESS ? RELEASE : 0);
-		}
-		return hr;
+		//if(!hr) GCTP_ERRORINFO(hr);
 	}
 
 } // !gctp

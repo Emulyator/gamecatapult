@@ -47,13 +47,13 @@ namespace gctp {
 	std::basic_ostream<char, T> & operator<< (std::basic_ostream<char, T> & os, Profile const & p)
 	{
 	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
-		return os << boost::basic_format<char, T>("%1$#04.1f%% %2$#06.4fs %3$#06.4fs %4$#06.4fs %5$#06.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+		return os << boost::basic_format<char, T>("%1$#5.1f%% %2$#06.4fs %3$#06.4fs %4$#06.4fs %5$#06.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
 	}
 	template<class T>
 	std::basic_ostream<wchar_t, T> & operator<< (std::basic_ostream<wchar_t, T> & os, Profile const & p)
 	{
 	//	return os<<p.rate*100.0f<<"% "<<p.total<<"s ave:"<<p.ave<<"s min:"<<p.min<<"s max:"<<p.max<<"s  "<<p.count<<"times";
-		return os << boost::basic_format<wchar_t, T>(L"%1$#04.1f%% %2$#06.4fs %3$#06.4fs %4$#06.4fs %5$#06.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
+		return os << boost::basic_format<wchar_t, T>(L"%1$#5.1f%% %2$#06.4fs %3$#06.4fs %4$#06.4fs %5$#06.4fs %6$dtimes") % (p.rate*100.0f) % p.total % p.ave % p.min % p.max % p.count;
 	}
 
 	/** プロファイル計測クラス

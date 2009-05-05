@@ -945,6 +945,14 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	void GraphFile::printHierarchy(luapp::Stack &L)
+	{
+		for(iterator i = begin(); i != end(); ++i) {
+			Pointer<Body> pbody = *i;
+			if(pbody) pbody->printLCM(gctp::dbgout);
+		}
+	}
+
 	int GraphFile::setCustomSkinnedShaderBrush(luapp::Stack &L)
 	{
 		if(L.top()>=1) setCustomSkinnedShaderBrush(L[1].toCStr());
@@ -990,6 +998,7 @@ namespace gctp { namespace scene {
 		TUKI_METHOD(GraphFile, get)
 		TUKI_METHOD(GraphFile, size)
 		TUKI_METHOD(GraphFile, ipairs)
+		TUKI_METHOD(GraphFile, printHierarchy)
 		TUKI_METHOD(GraphFile, setCustomSkinnedShaderBrush)
 		TUKI_METHOD(GraphFile, getCustomSkinnedShaderBrush)
 		TUKI_METHOD(GraphFile, setCustomSolidShaderBrush)

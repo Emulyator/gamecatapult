@@ -29,6 +29,7 @@ namespace gctp {
 			UPDATED			=  1<<1,
 			INDEPENDENT		=  1<<2,
 			CONTINUITY		=  1<<3,
+			VALID_WTM		=  1<<4,
 			FORCE_UINT_SIZE	= sizeof(uint)*8-1,
 		};
 	public:
@@ -87,7 +88,7 @@ namespace gctp {
 				wtm_ = lcm_ * parent;
 				if(!isContinuos()) prev_wtm_ = wtm_;
 			}
-			flags_ = UPDATED|CONTINUITY;
+			flags_ = UPDATED|CONTINUITY|VALID_WTM;
 		}
 		/// wtmを強制セット
 		void updateWTM(const Matrix &wtm)
@@ -95,8 +96,11 @@ namespace gctp {
 			if(isContinuos()) prev_wtm_ = wtm_;
 			lcm_ = wtm_ = wtm;
 			if(!isContinuos()) prev_wtm_ = wtm_;
-			flags_ = DIRTY|UPDATED|CONTINUITY|INDEPENDENT;
+			flags_ = DIRTY|UPDATED|CONTINUITY|INDEPENDENT|VALID_WTM;
 		}
+
+		/// ワールド変換トランスフォームに有効な値が入っているか？
+		bool isValidWTM() const { return (flags_ & VALID_WTM) > 0; }
 
 		/// 前回ワールド変換行列
 		const Matrix &prevWTM() const { return isContinuos() ? prev_wtm_ : wtm_; }

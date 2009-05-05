@@ -14,6 +14,7 @@
 #include <gctp/com_ptr.hpp>
 #include <gctp/hrslt.hpp>
 #include <gctp/pointerlist.hpp>
+#include <gctp/staticringbuffer.hpp>
 
 namespace gctp {
 
@@ -48,7 +49,10 @@ namespace gctp {
 		bool isAcquire() {return is_acquire_; }
 		HRslt getState(DWORD size, void *buf);
 		HRslt getData(DIDEVICEOBJECTDATA *obd, DWORD &elemnum);
-		virtual HRslt update() = 0;
+
+		bool getData(HRslt &hr, DIDEVICEOBJECTDATA &data);
+
+		virtual void update() = 0;
 
 		InputDevice();
 		virtual ~InputDevice();
@@ -62,11 +66,13 @@ namespace gctp {
 	/** マウス入力デバイスクラス
 	 *
 	 * マウス入力デバイスをあらわすクラス。
+	 *
+	 * 状態は60hzで保持。step一回で1/60秒進む。
 	 */
 	class MouseDevice : public InputDevice {
 	public:
 		enum {
-			BUFFER_SIZE = 16,
+			BUFFER_SIZE = 256,
 
 			ST_MOVING = 0,
 			ST_STOPING = 1,
@@ -74,14 +80,12 @@ namespace gctp {
 			ST_DRAGING = 3,
 		};
 		HRslt setUp(IDirectInput8Ptr input, HWND hwnd);
-		virtual HRslt update();
-		void setPoint(int _x, int _y) { if(isAcquire()) {x = _x; y = _y;} }
+		/// 状態更新
+		virtual void update();
 
-		bool push[4];
-		bool press[4];
-		bool release[4];
-		int x;
-		int y;
+		bool push[8];
+		bool press[8];
+		bool release[8];
 		int dx;
 		int dy;
 		int dz;
@@ -95,16 +99,26 @@ namespace gctp {
 	 * キーボード入力デバイスをあらわすクラス。
 	 */
 	class KbdDevice : public InputDevice {
-		enum { PRESS = 1, PUSH = 1<<1, RELEASE = 1<<2, BUFFER_SIZE = 256 };
+		enum Const {
+			BUFFER_SIZE = 256,
+			STATE_SIZE = 256,
+
+			PRESS = 1,
+			PUSH = 1<<1,
+			RELEASE = 1<<2
+		};
 	public:
 		HRslt setUp(IDirectInput8Ptr input, HWND hwnd);
-		virtual HRslt update();
-		inline bool press(int key) { return (buffer_[key]&PRESS)?true:false; }
-		inline bool push(int key) { return (buffer_[key]&PUSH)?true:false; }
-		inline bool release(int key) { return (buffer_[key]&RELEASE)?true:false; }
+
+		virtual void update();
+
+		inline bool press(int key) { return (state_[key]&PRESS)?true:false; }
+		inline bool push(int key) { return (state_[key]&PUSH)?true:false; }
+		inline bool release(int key) { return (state_[key]&RELEASE)?true:false; }
 		static int stringToKey(const char *name);
+
 	private:
-		char buffer_[BUFFER_SIZE];
+		char state_[STATE_SIZE];
 	};
 
 	/** パッドデバイス基底クラス
@@ -112,16 +126,26 @@ namespace gctp {
 	 * パッド入力デバイスをあらわすクラス。
 	 */
 	class PadDevice : public InputDevice {
-		enum { PRESS = 1, PUSH = 1<<1, RELEASE = 1<<2, MAX_BUTTON = 128 };
+		enum {
+			BUFFER_SIZE = 256,
+
+			PRESS = 1,
+			PUSH = 1<<1,
+			RELEASE = 1<<2,
+			
+			MAX_BUTTON = 128
+		};
 	public:
 		HRslt setUp(IDirectInput8Ptr input, REFGUID rguid, HWND hwnd);
-		virtual HRslt update();
+
+		virtual void update();
+
 		inline bool press(int key) { return (buttons_[key]&PRESS)?true:false; }
 		inline bool push(int key) { return (buttons_[key]&PUSH)?true:false; }
 		inline bool release(int key) { return (buttons_[key]&RELEASE)?true:false; }
-		inline int getHat(int index) { return LOWORD(buffer_.rgdwPOV[index]) == 0xFFFF ? 0 : buffer_.rgdwPOV[index]/4500+1; }
+		inline int getHat(int index) { return LOWORD(state_.rgdwPOV[index]) == 0xFFFF ? 0 : state_.rgdwPOV[index]/4500+1; }
 
-		DIJOYSTATE2 buffer_;
+		DIJOYSTATE2 state_;
 
 	private:
 		char buttons_[MAX_BUTTON];
@@ -187,7 +211,10 @@ namespace gctp {
 		/// キーボードデバイスを返す
 		KbdDevice &kbd() { return kbd_; }
 
-		HRslt update();
+		bool isInFrame(DWORD timestamp);
+
+		void update(float delta);
+		void step(float delta);
 
 		Handle<PadDevice> newPad(const Device &device);
 		Handle<PadDevice> getPad(int i) const;
@@ -197,6 +224,9 @@ namespace gctp {
 		MouseDevice mouse_;
 		KbdDevice kbd_;
 		PointerList<PadDevice> pads_;
+		DWORD frame_time_;
+		DWORD cur_frame_time_;
+		DWORD prev_frame_time_;
 	};
 
 	inline Input &input() { return *Input::input_; }
