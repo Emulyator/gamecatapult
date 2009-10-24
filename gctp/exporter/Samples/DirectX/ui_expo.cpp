@@ -119,12 +119,8 @@ void dxUI::ExportScene()
 
 	dirInfo = (LWDirInfoFunc  *) (*_global)(LWDIRINFOFUNC_GLOBAL, GFUSE_TRANSIENT);
 
-	tmpnam( filename );
-#ifdef _WIN32
-	if (filename[0] == '\\') {
-		strcpy( filename, filename+1 );
-	}
-#endif
+	sprintf( filename, "gctp_xexp_work%03d.lws", ::GetTickCount()&0xF );
+
 	param.directory = (char *) (*dirInfo)("Install");
 	param.name      = filename;
 	param.path_out  = tmpFile;
@@ -134,7 +130,7 @@ void dxUI::ExportScene()
 	sprintf( command, "SaveSceneCopy %s", tmpFile );
 	(*local->evaluate)( local->data, (const char *) command );
 
-	scn  = SCN3_open( tmpFile, SCN_FLAG_MOT2CHAN, (OBJ2_option *) NULL );
+	scn  = SCN3_open( _global, tmpFile, SCN_FLAG_MOT2CHAN, (OBJ2_option *) NULL );
 	if (scn == NULL) return;
 	remove( tmpFile );
 
@@ -228,7 +224,7 @@ void dxUI::ExportScene()
 bool dxUI::RunViewer()
 {
 #ifdef _WIN32
-	static STARTUPINFO         siStartInfo;
+	static STARTUPINFOA        siStartInfo;
 	static PROCESS_INFORMATION piProcInfo;
 	DX_STRING                  commandLine;
 	DX_FNAM                    path, drive, dir, filename, ext;
@@ -236,14 +232,14 @@ bool dxUI::RunViewer()
 	_splitpath( _options->outputFile, drive, dir, filename, ext );
 	_makepath ( path, drive, dir, 0, 0 );
 
-    GetStartupInfo( &siStartInfo );
+    GetStartupInfoA( &siStartInfo );
 
     siStartInfo.dwFlags     = STARTF_USESHOWWINDOW;
     siStartInfo.wShowWindow = SW_SHOWDEFAULT;
 
-    wsprintf( commandLine, "%s %s", _options->viewerName, _options->outputFile ) ;
+    wsprintfA( commandLine, "%s %s", _options->viewerName, _options->outputFile ) ;
 
-    if(!CreateProcess(0, commandLine, 0, 0, FALSE, 0, 0, path, &siStartInfo, &piProcInfo)) {
+    if(!CreateProcessA(0, commandLine, 0, 0, FALSE, 0, 0, path, &siStartInfo, &piProcInfo)) {
 		return false;
     }
     else {

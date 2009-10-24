@@ -18,6 +18,7 @@ namespace gctp { namespace graphic {
 
 	class Texture;
 	class RenderTarget;
+	class DepthStencil;
 
 }}
 
@@ -48,9 +49,11 @@ namespace gctp { namespace scene {
 		void setUp(luapp::Stack &L);
 		int texture(luapp::Stack &L);
 		static int setUpRT(luapp::Stack &L);
+		static int setUpDS(luapp::Stack &L);
 
 	private:
 		mutable Handle<graphic::RenderTarget> rt_;
+		mutable Handle<graphic::DepthStencil> ds_;
 
 		GCTP_DECLARE_CLASS;
 		TUKI_DECLARE(RenderTarget);

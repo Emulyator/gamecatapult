@@ -53,13 +53,13 @@ namespace gctp { namespace scene {
 		void exit(World &world);
 
 		/// スケルトンがあるか？
-		bool hasSkeleton() { return target_; }
+		bool hasSkeleton() { return target_ ? true : false; }
 		/// スケルトン
 		Skeleton &skeleton() { return *target_; }
 		/// スケルトン
 		const Skeleton &skeleton() const { return *target_; }
 		/// モーションミキサーがあるか？
-		bool hasMotionMixer() { return mixer_; }
+		bool hasMotionMixer() { return mixer_ ? true : false; }
 		/// モーションミキサー
 		MotionMixer &mixer() { return *mixer_; }
 		/// モーションミキサー

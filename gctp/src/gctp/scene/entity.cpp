@@ -59,6 +59,24 @@ namespace gctp { namespace scene {
 						if(pbody) setUp(pbody);
 					}
 				}
+				if(!target_) { // ƒƒbƒVƒ…‚Ì‚Ý‚Ìê‡
+					for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+						Pointer<graphic::Model> pmodel;
+						pmodel = *i;
+						if(pmodel) {
+							if(!target_) {
+								target_ = new Body;
+								target_->setUp(0);
+								source_ = target_;
+							}
+							Pointer<Flesh> flesh = new Flesh;
+							if(flesh) {
+								flesh->setUp(pmodel, target_, target_->root());
+								target_->fleshies().push_back(flesh);
+							}
+						}
+					}
+				}
 			}
 		}
 	}

@@ -17,10 +17,23 @@
 #include "dxopt.h"
 #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
 //#define _WIN32_IE	0x0550
-#include <atlbase.h>
+//#include <atlbase.h>
 //#include <windows.h>
+
+#ifdef _MBCS
+# define UNICODE 1
+# ifdef _TCHAR
+#  undef _TCHAR
+# endif
+# define _TCHAR wchar_t
+#endif
 #include <gctp/pointer.hpp>
 #include <gctp/xfile.hpp>
+#ifdef _MBCS
+# undef _TCHAR
+# define _TCHAR char
+# undef UNICODE
+#endif
 
 
 #define DX_TERM(n,size)			((n == size-1) ? ';' : ',' )

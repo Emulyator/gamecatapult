@@ -9,6 +9,7 @@
 #include <gctp/scene/rendertarget.hpp>
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/rendertarget.hpp>
+#include <gctp/graphic/depthstencil.hpp>
 #include <gctp/graphic/texture.hpp>
 #include <gctp/aabox.hpp>
 #include <gctp/app.hpp>
@@ -27,12 +28,21 @@ namespace gctp { namespace scene {
 	{
 		gctp::HRslt hr = rt_->begin();
 		if(!hr) GCTP_TRACE(hr);
+		if(ds_) {
+			hr = ds_->begin();
+			if(!hr) GCTP_TRACE(hr);
+		}
 		gctp::graphic::device().clear();
 	}
 
 	void RenderTarget::end() const
 	{
-		gctp::HRslt hr = rt_->resolve();
+		gctp::HRslt hr;
+		if(ds_) {
+			hr = ds_->end();
+			if(!hr) GCTP_TRACE(hr);
+		}
+		hr = rt_->resolve();
 		if(!hr) GCTP_TRACE(hr);
 		hr = rt_->end();
 		if(!hr) GCTP_TRACE(hr);
@@ -63,6 +73,12 @@ namespace gctp { namespace scene {
 			if(rt) {
 				rt_ = rt;
 			}
+			if(L.top() >= 2) {
+				Pointer<graphic::DepthStencil> ds = tuki_cast<graphic::DepthStencil>(L[2]);
+				if(ds) {
+					ds_ = ds;
+				}
+			}
 		}
 	}
 
@@ -87,11 +103,27 @@ namespace gctp { namespace scene {
 		return 0;
 	}
 
+	int RenderTarget::setUpDS(luapp::Stack &L)
+	{
+		if(L.top() >= 3) {
+			Pointer<graphic::DepthStencil> ds = tuki_cast<graphic::DepthStencil>(L[1]);
+			if(ds) {
+				HRslt hr = ds->setUp(L[2].toInteger(), L[3].toInteger());
+				if(hr) {
+					L << true;
+					return 1;
+				}
+			}
+		}
+		return 0;
+	}
+
 	GCTP_IMPLEMENT_CLASS_NS2(gctp, scene, RenderTarget, Renderer);
 	TUKI_IMPLEMENT_BEGIN_NS2(gctp, scene, RenderTarget)
 		TUKI_METHOD(RenderTarget, setUp)
 		TUKI_METHOD(RenderTarget, texture)
 		TUKI_METHOD(RenderTarget, setUpRT)
+		TUKI_METHOD(RenderTarget, setUpDS)
 	TUKI_IMPLEMENT_END(RenderTarget)
 
 }} // namespace gctp::scene

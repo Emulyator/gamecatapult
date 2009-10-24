@@ -34,7 +34,10 @@ namespace gctp { namespace graphic {
 
 		RenderTarget();
 
+		/// レンダーターゲットを用意
 		HRslt setUp(Type type, int width, int height, int format, int miplevel=1);
+		/// デプスステンシルバッファを個別に用意
+		HRslt setUpDS(Type type, int width, int height, int format);
 
 		HRslt restore();
 		void cleanUp();
@@ -76,7 +79,7 @@ namespace gctp { namespace graphic {
 	protected:
 		dx::IDirect3DSurfacePtr ptr_;
 		dx::IDirect3DSurfacePtr backup_;
-		gctp::Pointer<Texture> tex_;
+		Pointer<Texture> tex_;
 
 	private:
 		int org_width_;

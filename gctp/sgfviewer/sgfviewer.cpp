@@ -30,6 +30,8 @@
 
 extern "C" int main(int argc, char *argv[]);
 
+extern gctp::Pointer<gctp::core::Context> main_context;
+
 class ToolWindow
 	: public gctp::Object
 	, public gctp::GameApp
@@ -129,11 +131,18 @@ public:
 	/// çXêV
 	bool onFileRequest(float delta)
 	{
-		gctp::core::Context &context = gctp::core::Context::current();
+		main_context = 0;
+		main_context = gctp::core::Context::current().newChild();
+		gctp::core::Context &context = *main_context;
 		gctp::Pointer<gctp::scene::World> world = context[_T("world")].lock();
 		gctp::Pointer<gctp::scene::Entity> entity;
 		entity = newEntity(context, *world, "gctp.scene.Entity", _T("chara"), filepath.c_str()).lock();
 		if(entity) {
+			entity->target()->update();
+			entity->target()->print(gctp::dbgout);
+			PRNN(entity->target()->bs().c.x << ", " << entity->target()->bs().c.y << ", " << entity->target()->bs().c.z << ", " << entity->target()->bs().r);
+		}
+		if(entity && entity->hasMotionMixer()) {
 			for(std::size_t i = 0; i < entity->mixer().tracks().size(); i++) {
 				entity->mixer().tracks()[i].setWeight(i == 0 ? 1.0f : 0.0f);
 				entity->mixer().tracks()[i].setSpeed(i == 0 ? 1.0f : 0.0f);
@@ -192,7 +201,7 @@ public:
 			if(hr) return true;
 			else device_ok_ = false;
 		}
-		if(!device_ok_) ::SendMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatusÇÇ≥ÇπÇÈÇΩÇﬂÇ…
+		if(!device_ok_) ::PostMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatusÇÇ≥ÇπÇÈÇΩÇﬂÇ…
 		D3DRASTER_STATUS status;
 		D3DDISPLAYMODE mode;
 		if(gctp::HRslt(g_.impl()->GetRasterStatus(0, &status))&&gctp::HRslt(g_.impl()->GetDisplayMode(0, &mode))) {
@@ -219,7 +228,11 @@ public:
 		}
 	}
 
-	virtual void showCursor(bool yes) { is_cursor_visible_ = yes; }
+	virtual void showCursor(bool yes)
+	{
+		is_cursor_visible_ = yes;
+		::PostMessage(handle(), WM_SETCURSOR, 0, HTCLIENT); // ë¶îΩâfÇ≥ÇπÇÈÇΩÇﬂ
+	}
 	virtual void holdCursor(bool yes) { do_hold_cursor_ = yes; }
 
 protected:
@@ -269,12 +282,14 @@ protected:
 		if(LOWORD(lParam) == HTCLIENT) {
 			if(is_cursor_visible_) {
 				if(cursor_) ::SetCursor(cursor_);
+				else return returnFromUnhandledWindowProc(handle(), WM_SETCURSOR, wParam, lParam);
 			}
 			else {
 				::SetCursor(NULL);
 			}
+			return S_OK;
 		}
-		return S_OK;
+		return returnFromUnhandledWindowProc(handle(), WM_SETCURSOR, wParam, lParam);
 	}
 
 	bool doOnKeyPressed(int key)
@@ -499,7 +514,11 @@ protected:
 		g_.setCurrent();
 		a_.setCurrent();
 		i_.setCurrent();
-		gctp::CmdLine arg(sw::Application::instance().getCommandLine().getParamsRaw());
+		//gctp::CmdLine arg(sw::Application::instance().getCommandLine().getParamsRaw());
+		gctp::CmdLine arg;
+		for(size_t i = 0; i < sw::Application::instance().getCommandLine().getParams().size(); i++) {
+			arg.push(sw::Application::instance().getCommandLine().getParams()[i].c_str());
+		}
 		unsigned long ret = (unsigned long)main(arg.argc(), arg.argv());
 		if(!is_closing_) do_close_ = true;
 		return ret;

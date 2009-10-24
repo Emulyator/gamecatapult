@@ -181,13 +181,21 @@ namespace gctp {
 
 #else 
 
-		typedef Object * Ptr::*SafeBoolType;
+		/*typedef Object * Ptr::*SafeBoolType;
 
 		operator SafeBoolType() const // never throws
 		{
-			return p_ == 0? 0: &Ptr::p_;
+			return p_ == 0 ? 0 : &Ptr::p_;
+		}*/
+	private:
+		static void safebooltrue( Ptr *** ) {}
+	    typedef void (*SafeBoolType)( Ptr *** );
+	public:
+		operator SafeBoolType() const
+		{
+			return p_ == 0 ? 0 
+				: safebooltrue;
 		}
-
 #endif
 
 		// operator! is redundant, but some compilers need it
@@ -530,13 +538,22 @@ namespace gctp {
 
 #else 
 
-		typedef detail::Stub * Hndl::*SafeBoolType;
+		/*typedef detail::Stub * Hndl::*SafeBoolType;
 
 		operator SafeBoolType() const // never throws
 		{
 			return get() == 0? 0: &Hndl::stub_;
-		}
+		}*/
 
+	private:
+		static void safebooltrue( Hndl *** ) {}
+	    typedef void (*SafeBoolType)( Hndl *** );
+	public:
+		operator SafeBoolType() const
+		{
+			return get() == 0 ? 0 
+				: safebooltrue;
+		}
 #endif
 		// operator! is redundant, but some compilers need it
 

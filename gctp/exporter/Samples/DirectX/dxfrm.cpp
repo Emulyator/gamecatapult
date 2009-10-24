@@ -287,7 +287,6 @@ void dxExporter::CalcFrameMatrix( DX_Frame *dx_frm )
 		break;
 	case DX_FRAME_NULL:
 	case DX_FRAME_MESH:
-	case DX_FRAME_BONE:
 		if (_options->useMatrixKey) {
 			(*_scn->param)( _scn, dx_frm->item, SCNP_PIVOT, 0.0, pvt );
 			DX_MatrixTranslation( ftm->frameMatrix.matrix, (DX_FLOAT) -pvt[0],
@@ -310,6 +309,29 @@ void dxExporter::CalcFrameMatrix( DX_Frame *dx_frm )
 		DX_MatrixTranslation( ftm->frameMatrix.matrix, (DX_FLOAT) pos[0],
 													   (DX_FLOAT) pos[1],
 													   (DX_FLOAT) pos[2] );
+		break;
+	case DX_FRAME_BONE:
+		{
+			SCNBoneID              bone_id;
+			double                 pivotPosition[3], pivotRotation[3];
+
+			bone_id = (*_scn->getBone)( _scn, dx_frm->item );
+			(*_scn->param)( _scn, dx_frm->item, SCNP_PIVOT    , 0.0, pivotPosition );
+			(*_scn->param)( _scn, dx_frm->item, SCNP_PIVOT_ROT, 0.0, pivotRotation );
+			DX_MatrixIdentity   ( ftm->frameMatrix.matrix );
+			DX_MatrixTranslation( ftm->frameMatrix.matrix,	(DX_FLOAT)-pivotPosition[0],
+															(DX_FLOAT)-pivotPosition[1],
+															(DX_FLOAT)-pivotPosition[2] );
+			DX_MatrixRoationZ   ( ftm->frameMatrix.matrix,  (DX_FLOAT)bone_id->boneRestDirection[2] );
+			DX_MatrixRoationX   ( ftm->frameMatrix.matrix,  (DX_FLOAT)bone_id->boneRestDirection[1] );
+			DX_MatrixRoationY   ( ftm->frameMatrix.matrix,  (DX_FLOAT)bone_id->boneRestDirection[0] );
+			DX_MatrixRoationZ   ( ftm->frameMatrix.matrix,  (DX_FLOAT)pivotRotation[2] );
+			DX_MatrixRoationX   ( ftm->frameMatrix.matrix,  (DX_FLOAT)pivotRotation[1] );
+			DX_MatrixRoationY   ( ftm->frameMatrix.matrix,  (DX_FLOAT)pivotRotation[0] );
+			DX_MatrixTranslation( ftm->frameMatrix.matrix,  (DX_FLOAT)bone_id->boneRestPosition[0], 
+					   										(DX_FLOAT)bone_id->boneRestPosition[1], 
+					   										(DX_FLOAT)bone_id->boneRestPosition[2] );
+		}
 		break;
 	case DX_FRAME_LIGHT:
 	case DX_FRAME_CAMERA:

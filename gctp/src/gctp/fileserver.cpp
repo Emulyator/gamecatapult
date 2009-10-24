@@ -377,13 +377,13 @@ namespace gctp {
 		};
 		std::queue<Request> requests_;
 		std::queue<Read> read_;
-		bool reading_;
+		bool processing_;
 
 		Mutex monitor_;
 		Mutex read_list_monitor_;
-		Mutex reading_monitor_;
+		Mutex processing_monitor_;
 
-		Thread(FileServer *fs) : thread_(0), id_(0), fs_(fs), reading_(false)
+		Thread(FileServer *fs) : thread_(0), id_(0), fs_(fs), processing_(false)
 		{
 			fs->synchronize(true);
 		}
@@ -402,7 +402,7 @@ namespace gctp {
 		void end()
 		{
 			if(thread_) {
-				::PostThreadMessage( id_, WM_QUIT, 0, 0 );
+				while(!::PostThreadMessage( id_, WM_QUIT, 0, 0 )) ::Sleep(0);
 				::WaitForSingleObject( thread_, INFINITE );
 				::CloseHandle( thread_ );
 				thread_ = 0;
@@ -412,8 +412,8 @@ namespace gctp {
 	private:
 		static unsigned int __stdcall threadfunc( void* arg )
 		{
-			MSG msg;
 			Thread *self = (Thread *)arg;
+			MSG msg;
 			while(!(::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0 && msg.message == WM_QUIT)) {
 				Pointer<FileServer> fs = self->fs_.lock();
 				if(fs) {
@@ -608,9 +608,17 @@ namespace gctp {
 					else {
 						read = thread_->read_.front();
 						thread_->read_.pop();
+						{
+							ScopedLock sl(thread_->processing_monitor_);
+							thread_->processing_ = true;
+						}
 					}
 				}
 				if(read.buffer) read.buffer->ready_signal_(read.name.c_str(), read.buffer->realizer_, read.buffer);
+				{
+					ScopedLock sl(thread_->processing_monitor_);
+					thread_->processing_ = false;
+				}
 			}
 		}
 		return true;
@@ -624,15 +632,15 @@ namespace gctp {
 			if(!thread_->requests_.empty()) {
 				req = thread_->requests_.front();
 				thread_->requests_.pop();
+				{
+					ScopedLock sl(thread_->processing_monitor_);
+					thread_->processing_ = true;
+				}
 			}
 		}
 		if(req.volume) {
 			Pointer<Volume> volume = req.volume.lock();
 			if(volume) {
-				{
-					ScopedLock sl(thread_->reading_monitor_);
-					thread_->reading_ = true;
-				}
 				if(volume->read(req.name.c_str(), *req.buffer) >= 0) {
 					req.buffer->is_ready_ = true;
 					{
@@ -643,14 +651,14 @@ namespace gctp {
 						thread_->read_.push(read);
 					}
 				}
-				{
-					ScopedLock sl(thread_->reading_monitor_);
-					thread_->reading_ = false;
-				}
 			}
 		}
 		else {
 			::Sleep(0);
+		}
+		{
+			ScopedLock sl(thread_->processing_monitor_);
+			thread_->processing_ = false;
 		}
 	}
 	
@@ -681,8 +689,8 @@ namespace gctp {
 		if(thread_) {
 			ScopedLock sl(thread_->monitor_);
 			ScopedLock sl2(thread_->read_list_monitor_);
-			ScopedLock sl3(thread_->reading_monitor_);
-			return thread_->requests_.empty() && thread_->read_.empty() && !thread_->reading_ ;
+			ScopedLock sl3(thread_->processing_monitor_);
+			return thread_->requests_.empty() && thread_->read_.empty() && !thread_->processing_;
 		}
 		return true;
 	}

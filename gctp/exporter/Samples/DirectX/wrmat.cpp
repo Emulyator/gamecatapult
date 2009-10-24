@@ -35,7 +35,7 @@ void dxExporter::WriteMaterial( DX_Material* dx_mat, gctp::XSaver &cur )
 	gctp::XSaveData _mtrl;
 	switch (_options->materialType) {
 	case DX_MATTYPE_INLINE:
-		_mtrl = cur.newData(TID_D3DRMMaterial, sizeof(DX_MaterialData), &dx_mat->mtrl);
+		_mtrl = cur.newData(TID_D3DRMMaterial, sizeof(DX_MaterialData), &dx_mat->mtrl, dx_mat->nodeName);
 		break;
 	case DX_MATTYPE_EXTERN:
 		_mtrl = cur.newData(TID_D3DRMMaterial, sizeof(DX_MaterialData), &dx_mat->mtrl, dx_mat->nodeName);
