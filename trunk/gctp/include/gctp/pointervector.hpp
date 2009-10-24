@@ -25,8 +25,8 @@ namespace gctp {
 	 */
 	typedef std::vector<Ptr> PtrVector;
 
-#if defined _MSC_VER && _MSC_VER == 1400
-
+//#if defined _MSC_VER && _MSC_VER == 1400
+#if 1
 	/** Pointer配列クラス
 	 *
 	 * よく使われるので、std::vector<Ptr>を共通の実装にするようにしてみる
@@ -91,14 +91,14 @@ namespace gctp {
 		iterator erase(iterator it) { return ((VectorType *)this)->erase(it); }
 		iterator erase(iterator first, iterator last) { return ((VectorType *)this)->erase(first, last); }
 #else
-		iterator begin() { return (iterator)&*Super::begin(); }
-		const_iterator begin() const { return (const_iterator)&*Super::begin(); }
-		iterator end() { return (iterator)&*Super::end(); }
-		const_iterator end() const { return (const_iterator)&*Super::end(); }
-		reverse_iterator rbegin() { return (reverse_iterator)&*Super::rbegin(); }
-		const_reverse_iterator rbegin() const { return (const_reverse_iterator)&*Super::rbegin(); }
-		reverse_iterator rend() { return (reverse_iterator)&*Super::rend(); }
-		const_reverse_iterator rend() const { return (const_reverse_iterator)&*Super::rend(); }
+		iterator begin() { return (iterator)Super::begin(); }
+		const_iterator begin() const { return (const_iterator)Super::begin(); }
+		iterator end() { return (iterator)Super::end(); }
+		const_iterator end() const { return (const_iterator)Super::end(); }
+		reverse_iterator rbegin() { return (reverse_iterator)Super::rbegin(); }
+		const_reverse_iterator rbegin() const { return (const_reverse_iterator)Super::rbegin(); }
+		reverse_iterator rend() { return (reverse_iterator)Super::rend(); }
+		const_reverse_iterator rend() const { return (const_reverse_iterator)Super::rend(); }
 # ifdef __MWERKS__
 		iterator erase(iterator it) { return (iterator)&*Super::erase((Super::iterator)&*it); }
 		iterator erase(iterator first, iterator last) { return (iterator)&*Super::erase((Super::iterator)&*first, (Super::iterator)&*last); }

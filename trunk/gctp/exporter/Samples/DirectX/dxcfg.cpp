@@ -167,104 +167,104 @@ void dxOptions::LoadConfig( GlobalFunc *global )
 		  LWLOAD_STR( lstate, textureDirectory, sizeof(DX_FNAM) );
 		  break;
 		case DX3_VERS:
-		  LWLOAD_I4 ( lstate, (long *) &version, 1 );
+		  LWLOAD_I4 ( lstate, &version, 1 );
 		  break;
 		case DX3_FORM:
-		  LWLOAD_I4 ( lstate, (long *) &format, 1 );
+		  LWLOAD_I4 ( lstate, &format, 1 );
 		  break;
 		case DX3_MATE:
-		  LWLOAD_I4 ( lstate, (long *) &outputMaterials, 1 );
+		  LWLOAD_I4 ( lstate, &outputMaterials, 1 );
 		  break;
 #ifndef GCTP_USE_XFILEAPI
 		case DX3_TEMP:
-		  LWLOAD_I4 ( lstate, (long *) &outputTemplates, 1 );
+		  LWLOAD_I4 ( lstate, &outputTemplates, 1 );
 		  break;
 #endif
 		case DX3_ANIM:
-		  LWLOAD_I4 ( lstate, (long *) &outputAnimations, 1 );
+		  LWLOAD_I4 ( lstate, &outputAnimations, 1 );
 		  break;
 		case DX3_FRAM:
-		  LWLOAD_I4 ( lstate, (long *) &outputFrames, 1 );
+		  LWLOAD_I4 ( lstate, &outputFrames, 1 );
 		  break;
 		case DX3_PREF:
 		  LWLOAD_STR( lstate, framePrefix, sizeof(DX_STRING) );
 		  break;
 		case DX3_NORM:
-		  LWLOAD_I4 ( lstate, (long *) &outputMeshNormals, 1 );
+		  LWLOAD_I4 ( lstate, &outputMeshNormals, 1 );
 		  break;
 		case DX3_TXUV:
-		  LWLOAD_I4 ( lstate, (long *) &outputTextureCoords, 1 );
+		  LWLOAD_I4 ( lstate, &outputTextureCoords, 1 );
 		  break;
 		case DX3_REVV:
-		  LWLOAD_I4 ( lstate, (long *) &reverseUVCoords, 1 );
+		  LWLOAD_I4 ( lstate, &reverseUVCoords, 1 );
 		  break;
 		case DX3_VCOL:
-		  LWLOAD_I4 ( lstate, (long *) &outputVertexColors, 1 );
+		  LWLOAD_I4 ( lstate, &outputVertexColors, 1 );
 		  break;
 		case DX3_SKWF:
-		  LWLOAD_I4 ( lstate, (long *) &useSkinWeightsPerVertex, 1 );
+		  LWLOAD_I4 ( lstate, &useSkinWeightsPerVertex, 1 );
 		  break;
 		case DX3_MXWV:
-		  LWLOAD_I4 ( lstate, (long *) &nMaxSkinWeightsPerVertex, 1 );
+		  LWLOAD_I4 ( lstate, &nMaxSkinWeightsPerVertex, 1 );
 		  break;
 		case DX3_MXWF:
-		  LWLOAD_I4 ( lstate, (long *) &nMaxSkinWeightsPerFace, 1 );
+		  LWLOAD_I4 ( lstate, &nMaxSkinWeightsPerFace, 1 );
 		  break;
 		case DX3_TRPL:
-		  LWLOAD_I4 ( lstate, (long *) &tripleAll, 1 );
+		  LWLOAD_I4 ( lstate, &tripleAll, 1 );
 		  break;
 		case DX3_MATF:
-		  LWLOAD_I4 ( lstate, (long *) &materialType, 1 );
+		  LWLOAD_I4 ( lstate, &materialType, 1 );
 		  break;
 		case DX3_DECL:
-		  LWLOAD_I4 ( lstate, (long *) &enbaleDecalTexture, 1 );
+		  LWLOAD_I4 ( lstate, &enbaleDecalTexture, 1 );
 		  break;
 		case DX3_IMGO:
-		  LWLOAD_I4 ( lstate, (long *) &outputTextureImages, 1 );
+		  LWLOAD_I4 ( lstate, &outputTextureImages, 1 );
 		  break;
 		case DX3_IMGF:
-		  LWLOAD_I4 ( lstate, (long *) &imageSaver, 1 );
+		  LWLOAD_I4 ( lstate, &imageSaver, 1 );
 		  break;
 		case DX3_IMGR:
-		  LWLOAD_I4 ( lstate, (long *) &resizeTextures, 1 );
+		  LWLOAD_I4 ( lstate, &resizeTextures, 1 );
 		  break;
 		case DX3_RESX:
-		  LWLOAD_I4 ( lstate, (long *) &textureMaxResX, 1 );
+		  LWLOAD_I4 ( lstate, &textureMaxResX, 1 );
 		  break;
 		case DX3_RESY:
-		  LWLOAD_I4 ( lstate, (long *) &textureMaxResY, 1 );
+		  LWLOAD_I4 ( lstate, &textureMaxResY, 1 );
 		  break;
 #ifdef _WIN32
 		case DX3_TXNM:
-		  LWLOAD_I4 ( lstate, (long *) &textureFilename, 1 );
+		  LWLOAD_I4 ( lstate, &textureFilename, 1 );
 		  break;
 #endif
 		case DX3_FREX:
-		  LWLOAD_I4 ( lstate, (long *) &frameToExport, 1 );
+		  LWLOAD_I4 ( lstate, &frameToExport, 1 );
 		  break;
 		case DX3_STEP:
-		  LWLOAD_I4 ( lstate, (long *) &frameSteps, 1 );
+		  LWLOAD_I4 ( lstate, &frameSteps, 1 );
 		  break;
 		case DX3_FSCL:
-		  LWLOAD_I4 ( lstate, (long *) &frameTimeScale, 1 );
+		  LWLOAD_I4 ( lstate, &frameTimeScale, 1 );
 		  break;
 		case DX3_MXKY:
-		  LWLOAD_I4 ( lstate, (long *) &useMatrixKey, 1 );
+		  LWLOAD_I4 ( lstate, &useMatrixKey, 1 );
 		  break;
 		case DX3_RMUK:
-		  LWLOAD_I4 ( lstate, (long *) &removeUnusableKeyframes, 1 );
+		  LWLOAD_I4 ( lstate, &removeUnusableKeyframes, 1 );
 		  break;
 		case DX3_CAMO:
-		  LWLOAD_I4 ( lstate, (long *) &outputCameraFrames, 1 );
+		  LWLOAD_I4 ( lstate, &outputCameraFrames, 1 );
 		  break;
 		case DX3_LGTO:
-		  LWLOAD_I4 ( lstate, (long *) &outputLightFrames, 1 );
+		  LWLOAD_I4 ( lstate, &outputLightFrames, 1 );
 		  break;
 		case DX3_BKIK:
-		  LWLOAD_I4 ( lstate, (long *) &bakeIKMotions, 1 );
+		  LWLOAD_I4 ( lstate, &bakeIKMotions, 1 );
 		  break;
 		case DX3_VIEW:
-		  LWLOAD_I4 ( lstate, (long *) &enableViewer, 1 );
+		  LWLOAD_I4 ( lstate, &enableViewer, 1 );
 		  break;
 		case DX3_VWNM:
 		  LWLOAD_STR( lstate, viewerName, sizeof(DX_STRING) );
@@ -320,29 +320,29 @@ void dxOptions::SaveConfig( GlobalFunc *global )
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_VERS], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &version, 1 );
+	LWSAVE_I4   ( sstate, &version, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_FORM], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &format, 1 );
+	LWSAVE_I4   ( sstate, &format, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_MATE], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputMaterials, 1 );
+	LWSAVE_I4   ( sstate, &outputMaterials, 1 );
 	LWSAVE_END  ( sstate );
 
 #ifndef GCTP_USE_XFILEAPI
 	LWSAVE_BEGIN( sstate, &blockID[TOK_TEMP], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputTemplates, 1 );
+	LWSAVE_I4   ( sstate, &outputTemplates, 1 );
 	LWSAVE_END  ( sstate );
 #endif
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_ANIM], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputAnimations, 1 );
+	LWSAVE_I4   ( sstate, &outputAnimations, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_FRAM], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputFrames, 1 );
+	LWSAVE_I4   ( sstate, &outputFrames, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_PREF], 0 );
@@ -350,103 +350,103 @@ void dxOptions::SaveConfig( GlobalFunc *global )
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_NORM], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputMeshNormals, 1 );
+	LWSAVE_I4   ( sstate, &outputMeshNormals, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_TXUV], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputTextureCoords, 1 );
+	LWSAVE_I4   ( sstate, &outputTextureCoords, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_REVV], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &reverseUVCoords, 1 );
+	LWSAVE_I4   ( sstate, &reverseUVCoords, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_VCOL], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputVertexColors, 1 );
+	LWSAVE_I4   ( sstate, &outputVertexColors, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_SKWF], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &useSkinWeightsPerVertex, 1 );
+	LWSAVE_I4   ( sstate, &useSkinWeightsPerVertex, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_MXWV], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &nMaxSkinWeightsPerVertex, 1 );
+	LWSAVE_I4   ( sstate, &nMaxSkinWeightsPerVertex, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_MXWF], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &nMaxSkinWeightsPerFace, 1 );
+	LWSAVE_I4   ( sstate, &nMaxSkinWeightsPerFace, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_TRPL], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &tripleAll, 1 );
+	LWSAVE_I4   ( sstate, &tripleAll, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_MATF], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &materialType, 1 );
+	LWSAVE_I4   ( sstate, &materialType, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_DECL], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &enbaleDecalTexture, 1 );
+	LWSAVE_I4   ( sstate, &enbaleDecalTexture, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_IMGO], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputTextureImages, 1 );
+	LWSAVE_I4   ( sstate, &outputTextureImages, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_IMGF], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &imageSaver, 1 );
+	LWSAVE_I4   ( sstate, &imageSaver, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_IMGR], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &resizeTextures, 1 );
+	LWSAVE_I4   ( sstate, &resizeTextures, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_RESX], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &textureMaxResX, 1 );
+	LWSAVE_I4   ( sstate, &textureMaxResX, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_RESY], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &textureMaxResY, 1 );
+	LWSAVE_I4   ( sstate, &textureMaxResY, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_TXNM], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &textureFilename, 1 );
+	LWSAVE_I4   ( sstate, &textureFilename, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_FREX], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &frameToExport, 1 );
+	LWSAVE_I4   ( sstate, &frameToExport, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_STEP], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &frameSteps, 1 );
+	LWSAVE_I4   ( sstate, &frameSteps, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_FSCL], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &frameTimeScale, 1 );
+	LWSAVE_I4   ( sstate, &frameTimeScale, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_RMUK], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &removeUnusableKeyframes, 1 );
+	LWSAVE_I4   ( sstate, &removeUnusableKeyframes, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_MXKY], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &useMatrixKey, 1 );
+	LWSAVE_I4   ( sstate, &useMatrixKey, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_CAMO], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputCameraFrames, 1 );
+	LWSAVE_I4   ( sstate, &outputCameraFrames, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_LGTO], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &outputLightFrames, 1 );
+	LWSAVE_I4   ( sstate, &outputLightFrames, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_BKIK], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &bakeIKMotions, 1 );
+	LWSAVE_I4   ( sstate, &bakeIKMotions, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_VIEW], 0 );
-	LWSAVE_I4   ( sstate, (const long *) &enableViewer, 1 );
+	LWSAVE_I4   ( sstate, &enableViewer, 1 );
 	LWSAVE_END  ( sstate );
 
 	LWSAVE_BEGIN( sstate, &blockID[TOK_VWNM], 0 );

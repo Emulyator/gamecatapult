@@ -12,6 +12,7 @@
 /*********************************************************************/
 #ifdef GCTP_USE_XFILEAPI
 #include <gctp/vector.hpp>
+#include <gctp/wcstr.hpp>
 #endif
 
 #include "dxexp.h"
@@ -238,16 +239,16 @@ DX_ErrorCode dxExporter::OpenScene()
 	_xenv.registerExTemplate();
 	if (strlen(_options->outputFile) > 0) {
 		if (_options->format == DX_FORMAT_RTEXT) {
-			_xfile.open(_xenv, _options->outputFile, gctp::XFileWriter::TEXT);
+			_xfile.open(_xenv, gctp::WCStr(_options->outputFile).c_str(), gctp::XFileWriter::TEXT);
 		}
 		else if (_options->format == DX_FORMAT_CTEXT) {
-			_xfile.open(_xenv, _options->outputFile, gctp::XFileWriter::COMPRESSEDTEXT);
+			_xfile.open(_xenv, gctp::WCStr(_options->outputFile).c_str(), gctp::XFileWriter::COMPRESSEDTEXT);
 		}
 		else if (_options->format == DX_FORMAT_RBINARY) {
-			_xfile.open(_xenv, _options->outputFile, gctp::XFileWriter::BINARY);
+			_xfile.open(_xenv, gctp::WCStr(_options->outputFile).c_str(), gctp::XFileWriter::BINARY);
 		}
 		else if (_options->format == DX_FORMAT_CBINARY) {
-			_xfile.open(_xenv, _options->outputFile, gctp::XFileWriter::COMPRESSEDBINARY);
+			_xfile.open(_xenv, gctp::WCStr(_options->outputFile).c_str(), gctp::XFileWriter::COMPRESSEDBINARY);
 		}
 	}
 #else

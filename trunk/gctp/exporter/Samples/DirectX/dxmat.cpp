@@ -60,10 +60,10 @@ DX_Material* dxExporter::MakeMaterials( DX_Material* dx_mats, OBJ2_ID obj, bool 
 		DX_MakeNodeName( dx_mat->nodeName, matname );
 		DX_MakeNodeName( dx_mat->surfName, surf->name );
 
-		dx_mat->mtrl.faceColor.red       = mat->colr[0];
-		dx_mat->mtrl.faceColor.green     = mat->colr[1];
-		dx_mat->mtrl.faceColor.blue      = mat->colr[2];
-		dx_mat->mtrl.faceColor.alpha     = mat->colr[3];
+		dx_mat->mtrl.faceColor.red       = mat->diff[0];
+		dx_mat->mtrl.faceColor.green     = mat->diff[1];
+		dx_mat->mtrl.faceColor.blue      = mat->diff[2];
+		dx_mat->mtrl.faceColor.alpha     = mat->diff[3];
 
 		dx_mat->mtrl.power               = mat->shin[0];
 

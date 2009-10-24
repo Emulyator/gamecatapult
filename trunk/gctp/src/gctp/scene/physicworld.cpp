@@ -35,9 +35,9 @@ namespace gctp { namespace scene {
 		PhysicMotionState(StrutumTree::NodePtr node, const Matrix &offset)
 		{
 			this->node = node;
-			this->offset = offset;
+			this->offset = offset.orthoNormal();
 			if(node) {
-				Matrix m = node->val.isValidWTM() ? offset.inverse()*node->val.wtm() : offset.inverse()*node->val.lcm();
+				Matrix m = node->val.isValidWTM() ? this->offset.inverse()*node->val.wtm().orthoNormal() : this->offset.inverse()*node->val.lcm().orthoNormal();
 				xform.setFromOpenGLMatrix(&m._11);
 			}
 			else {
@@ -359,6 +359,7 @@ namespace gctp { namespace scene {
 				world_->addRigidBody(rigid_body);
 
 				if(mass > 0) rigid_body->setLinearVelocity(*(btVector3 *)&initial_velocity);
+				else rigid_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 			}
 		}
 

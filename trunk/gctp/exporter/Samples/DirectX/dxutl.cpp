@@ -118,5 +118,5 @@ void dbgprintf( const char* format, ... )
 	va_start( arg, format );
 	vsprintf(buf, format, arg);
 	va_end( arg );
-	OutputDebugString(buf);
+	OutputDebugStringA(buf);
 }

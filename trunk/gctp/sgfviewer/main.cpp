@@ -33,6 +33,10 @@
 using namespace gctp;
 using namespace std;
 
+
+Pointer<core::Context> main_context;
+
+
 extern "C" int main(int argc, char *argv[])
 {
 	GCTP_USE_CLASS(graphic::Texture);
@@ -104,6 +108,19 @@ extern "C" int main(int argc, char *argv[])
 						pl->set(light);
 						pl->enter(*world);
 					}
+
+					if(argc > 0) {
+						main_context = context.newChild();
+						gctp::Pointer<gctp::scene::Entity> entity;
+						entity = gctp::scene::newEntity(*main_context, *world, "gctp.scene.Entity", _T("chara"), WCStr(argv[0]).c_str()).lock();
+						if(entity && entity->hasMotionMixer()) {
+							for(std::size_t i = 0; i < entity->mixer().tracks().size(); i++) {
+								entity->mixer().tracks()[i].setWeight(i == 0 ? 1.0f : 0.0f);
+								entity->mixer().tracks()[i].setSpeed(i == 0 ? 1.0f : 0.0f);
+								entity->mixer().tracks()[i].setLoop(true);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -112,6 +129,7 @@ extern "C" int main(int argc, char *argv[])
 	bool hud_on = true;
 
 	while(app().canContinue()) {
+		gctp::core::Context &context = gctp::core::Context::current();
 		gctp::Profiler &update_profile = app().profiler().begin("update");
 		input().update(app().lap);
 
@@ -140,7 +158,7 @@ extern "C" int main(int argc, char *argv[])
 //			if(input().kbd().push(DIK_NUMPAD1)||input().kbd().push(DIK_U)) chr->skeleton().setPosType(MotionChannel::NONE);
 //			if(input().kbd().push(DIK_NUMPAD2)||input().kbd().push(DIK_I)) chr->skeleton().setPosType(MotionChannel::LINEAR);
 //			if(input().kbd().push(DIK_NUMPAD3)||input().kbd().push(DIK_O)) chr->skeleton().setPosType(MotionChannel::SPLINE);
-			if(chr->mixer().tracks().size() > 0) {
+			if(chr->hasMotionMixer() && chr->mixer().tracks().size() > 0) {
 				if(input().kbd().push(DIK_DOWN)) {
 					for(std::size_t i = 0; i < chr->mixer().tracks().size(); i++) {
 						if(chr->mixer().tracks()[i].weight() > 0) {
@@ -217,24 +235,12 @@ extern "C" int main(int argc, char *argv[])
 
 			app().draw_signal(app().lap);
 
-			graphic::LineParticleDesc pdesc;
-			Vector pos[2];
-			pos[0] = VectorC(0.5f, 0.5f, 1.0f);
-			pos[1] = VectorC(1.5f, 1.5f, 1.0f);
-			pdesc.num = 2;
-			pdesc.pos = pos;
-			pdesc.size = Vector2C(0.5f, 0.5f);
-			pdesc.setUV(RectfC(0.0f, 0.0f, 1.0f, 1.0f));
-			pdesc.setColor(Color32(255, 255, 255));
-			pdesc.setHilight(Color32(0, 0, 0));
-			graphic::device().setWorld(MatrixC(true));
-
 			text.reset();
 			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
 				<< "FPS:" << app().fps.latestave << endl;
 			if(hud_on) {
 				text.out() << "(" << graphic::device().getScreenSize().x << "," << graphic::device().getScreenSize().y << ")" << endl << endl;
-				if(chr) {
+				if(chr && chr->hasMotionMixer()) {
 					for(std::size_t i = 0; i < chr->mixer().tracks().size(); i++) {
 						text.out() << "track "<< i << " " << chr->mixer().tracks()[i].keytime() << endl;
 					}
@@ -264,6 +270,8 @@ extern "C" int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	main_context = 0;
 
 	CoUninitialize();
 	return 0;

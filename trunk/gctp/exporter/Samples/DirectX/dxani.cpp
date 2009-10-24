@@ -18,9 +18,9 @@
 #include "dxvec.h"
 #include "mathlib.h"
 
+#include <gctp/dbgout.hpp>
+
 #define FP_EQUAL(a,b)	(fabs((a)-(b)) < EPSILON)
-
-
 
 /*
  *
@@ -126,7 +126,6 @@ DX_AnimationKey* dxExporter::MakeAnimationKey( DX_Animation* dx_ani )
 	return dx_ani->animationKey;
 }
 
-
 /*
  *
  *  GetRotateValue     - get the rotate value
@@ -161,6 +160,7 @@ int dxExporter::GetRotateValue( SCNItemID item, DX_DWORD frame, DX_FLOAT* vals )
 	vals[2] = (DX_FLOAT) quat.y;
 	vals[3] = (DX_FLOAT) quat.z;
 
+	PRNN("rot key " << vals[0] << ", " << vals[1] << ", " << vals[2] << ", " << vals[3]);
 	return 4;
 }
 

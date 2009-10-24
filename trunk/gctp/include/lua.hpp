@@ -295,6 +295,13 @@ namespace luapp {
 			return lua_strlen(lua_, _eval_.index());
 		}
 		
+		/// オブジェクト長を取得
+		size_t objlen() const
+		{
+			EvalAndPop _eval_(*this);
+			return lua_objlen(lua_, _eval_.index());
+		}
+
 		/// 有効なインスタンスか？
 		bool isOk() const {
 			return lua_ ? true : false;

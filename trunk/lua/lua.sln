@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "lua\lua.vcproj", "{5F314A22-62A4-4B4A-9527-899FFAC41966}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C3C997E9-BFBF-4E5E-8C9D-029101B79DF0} = {C3C997E9-BFBF-4E5E-8C9D-029101B79DF0}

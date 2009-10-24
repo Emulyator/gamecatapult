@@ -166,7 +166,7 @@ namespace gctp { namespace scene {
 						if(effect[i].pEffectFilename) {
 #ifdef UNICODE
 							WCStr fname = effect[i].pEffectFilename;
-							PRNN("Effect "<<fname.c_str());
+							//PRNN("Effect "<<fname.c_str());
 							Handle<graphic::dx::HLSLShader> shader = context()[fname.c_str()];
 							if(!shader) {
 								if(context().loadingAsync()) {
@@ -196,7 +196,7 @@ namespace gctp { namespace scene {
 							}
 						}
 						else {
-							for(DWORD j = 0; j < effect[i].NumDefaults; j++) {
+/*							for(DWORD j = 0; j < effect[i].NumDefaults; j++) {
 								switch(effect[i].pDefaults[j].Type) {
 								case D3DXEDT_STRING:
 									PRNN(i<<")STRING "<<effect[i].pDefaults[j].pParamName<<" "<<(const char *)effect[i].pDefaults[j].pValue);
@@ -218,7 +218,7 @@ namespace gctp { namespace scene {
 									PRN(endl);
 									break;
 								}
-							}
+							}*/
 						}
 					}
 				}

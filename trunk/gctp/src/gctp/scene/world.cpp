@@ -13,11 +13,13 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/stateblock.hpp>
 #include <gctp/graphic/dx/device.hpp>
+#include <gctp/graphic/model.hpp>
 #include <gctp/context.hpp>
 #include <gctp/scene/motion.hpp>
 #include <gctp/scene/graphfile.hpp>
 #include <gctp/scene/camera.hpp>
 #include <gctp/scene/body.hpp>
+#include <gctp/scene/flesh.hpp>
 #include <gctp/scene/light.hpp>
 #include <gctp/scene/speaker.hpp>
 #include <gctp/app.hpp>
@@ -71,6 +73,25 @@ namespace gctp { namespace scene {
 					}
 					plight = *i;
 					if(plight) {
+					}
+				}
+				if(!world_body_) { // ƒƒbƒVƒ…‚Ì‚Ý‚Ìê‡
+					for(GraphFile::iterator i = file->begin(); i != file->end(); ++i) {
+						Pointer<graphic::Model> pmodel;
+						pmodel = *i;
+						if(pmodel) {
+							if(!world_body_) {
+								world_body_ = new Body;
+								world_body_->setUp(0);
+								body_list.push_back(world_body_);
+								strutum_tree.root()->push(world_body_->root());
+							}
+							Pointer<Flesh> flesh = new Flesh;
+							if(flesh) {
+								flesh->setUp(pmodel, world_body_, world_body_->root());
+								world_body_->fleshies().push_back(flesh);
+							}
+						}
 					}
 				}
 			}

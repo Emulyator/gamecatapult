@@ -1285,14 +1285,14 @@ static void UI_IMGF_Event( LWControl* control, dxUI* ui )
 	dxOptions*          opts    = ui->_options;
 	LWImageUtil*        imgutil = ui->_imgutil;
 	const char*         saver;
-	char*               p;
+	const char*         p;
 
 	GET_INT( control, opts->imageSaver );
 	saver = (*imgutil->saverName)( opts->imageSaver );
 	if ((p = strrchr( saver, '.' ))) {
 		strcpy( opts->imageExtension, p );
-		if ((p = strrchr( opts->imageExtension, '.'))) *p = '.';
-		if ((p = strrchr( opts->imageExtension, ')'))) *p = '\0';
+		if ((p = strrchr( opts->imageExtension, '.'))) *(char *)p = '.';
+		if ((p = strrchr( opts->imageExtension, ')'))) *(char *)p = '\0';
 	}
 }
 

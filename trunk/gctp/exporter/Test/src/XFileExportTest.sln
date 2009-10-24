@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XFileExportTest", "XFileExportTest.vcproj", "{1A36BDB0-BE55-43C2-AA83-907DEBC2FB73}"
+	ProjectSection(ProjectDependencies) = postProject
+		{63AE1D32-4453-472B-9304-0DBD3E558847} = {63AE1D32-4453-472B-9304-0DBD3E558847}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "..\..\..\build\VC8\core\core.vcproj", "{63AE1D32-4453-472B-9304-0DBD3E558847}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A36BDB0-BE55-43C2-AA83-907DEBC2FB73}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1A36BDB0-BE55-43C2-AA83-907DEBC2FB73}.Debug|Win32.Build.0 = Debug|Win32
+		{1A36BDB0-BE55-43C2-AA83-907DEBC2FB73}.Release|Win32.ActiveCfg = Release|Win32
+		{1A36BDB0-BE55-43C2-AA83-907DEBC2FB73}.Release|Win32.Build.0 = Release|Win32
+		{63AE1D32-4453-472B-9304-0DBD3E558847}.Debug|Win32.ActiveCfg = Debug|Win32
+		{63AE1D32-4453-472B-9304-0DBD3E558847}.Debug|Win32.Build.0 = Debug|Win32
+		{63AE1D32-4453-472B-9304-0DBD3E558847}.Release|Win32.ActiveCfg = Release|Win32
+		{63AE1D32-4453-472B-9304-0DBD3E558847}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

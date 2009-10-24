@@ -183,7 +183,7 @@ public:
 			if(hr) return true;
 			else device_ok_ = false;
 		}
-		if(!device_ok_) ::SendMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatus‚ð‚³‚¹‚é‚½‚ß‚É
+		if(!device_ok_) ::PostMessage(handle(), WM_SETCURSOR, 0, 0); // checkDeviceStatus‚ð‚³‚¹‚é‚½‚ß‚É
 		D3DRASTER_STATUS status;
 		D3DDISPLAYMODE mode;
 		if(gctp::HRslt(g_.impl()->GetRasterStatus(0, &status))&&gctp::HRslt(g_.impl()->GetDisplayMode(0, &mode))) {
@@ -209,7 +209,11 @@ public:
 		}
 	}
 
-	virtual void showCursor(bool yes) { is_cursor_visible_ = yes; }
+	virtual void showCursor(bool yes)
+	{
+		is_cursor_visible_ = yes;
+		::PostMessage(handle(), WM_SETCURSOR, 0, HTCLIENT); // ‘¦”½‰f‚³‚¹‚é‚½‚ß
+	}
 	virtual void holdCursor(bool yes) { do_hold_cursor_ = yes; }
 
 protected:
@@ -236,12 +240,14 @@ protected:
 		if(LOWORD(lParam) == HTCLIENT) {
 			if(is_cursor_visible_) {
 				if(cursor_) ::SetCursor(cursor_);
+				else return returnFromUnhandledWindowProc(handle(), WM_SETCURSOR, wParam, lParam);
 			}
 			else {
 				::SetCursor(NULL);
 			}
+			return S_OK;
 		}
-		return S_OK;
+		return returnFromUnhandledWindowProc(handle(), WM_SETCURSOR, wParam, lParam);
 	}
 
 	bool doOnKeyPressed(int key)
@@ -251,8 +257,11 @@ protected:
 
 	HRESULT doOnSysChar(LPARAM lparam, WPARAM vkey)
 	{
-		if(vkey == VK_RETURN && can_change_mode_) toggleFullscreen();
-		return S_OK;
+		if(vkey == VK_RETURN && can_change_mode_) {
+			toggleFullscreen();
+			return S_OK;
+		}
+		return returnFromUnhandledWindowProc(handle(), WM_SYSCHAR, vkey, lparam);
 	}
 
 	void doOnLeftMouseDown(const sw::MouseEventResult &mouse)
@@ -635,7 +644,7 @@ namespace {
 
 int SmartWinMain(Application & app)
 {
-	locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
+	//locale::global(locale(locale::classic(), locale(""), LC_CTYPE));
 	initialize(app.getAppHandle());
 	GameWindow *window = new GameWindow;
 	window->splash(_T("GameCatapult DEMO"), IDB_BITMAP1);

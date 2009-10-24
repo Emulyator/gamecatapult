@@ -52,7 +52,7 @@ namespace gctp {
 
 		operator bool () const
 		{
-			return SUCCEEDED(i);
+			return FAILED(i) ? true : false;
 		}
 
 #elif \
@@ -68,13 +68,22 @@ namespace gctp {
 
 #else 
 
-		typedef HRESULT HRslt::*SafeBoolType;
+		/*typedef HRESULT HRslt::*SafeBoolType;
 
 		operator SafeBoolType() const // never throws
 		{
-			return SUCCEEDED(i) ? &HRslt::i : 0;
-		}
+			return FAILED(i) ? 0 : &HRslt::i;
+		}*/
 
+	private:
+		static void safebooltrue( HRslt *** ) {}
+	    typedef void (*SafeBoolType)( HRslt *** );
+	public:
+		operator SafeBoolType() const
+		{
+			return FAILED(i) ? 0 
+				: safebooltrue;
+		}
 #endif
 		// operator! is a Borland-specific workaround
 		bool operator! () const

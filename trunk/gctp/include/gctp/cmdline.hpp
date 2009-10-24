@@ -49,7 +49,7 @@ namespace gctp {
 	template<typename _CHAR>
 	class CmdLineBase {
 	public:
-		CmdLineBase() : argv_(0) {}
+		CmdLineBase() {}
 		CmdLineBase(const _CHAR *cmdline) {
 			parse(cmdline);
 		}

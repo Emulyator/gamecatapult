@@ -42,15 +42,21 @@ namespace gctp { namespace graphic { namespace dx {
 	{
 #define __ADDMODE(fmt)	{\
 	uint num = api_->GetAdapterModeCount(adpt, fmt);\
-	for(uint i = 0, width = 0, height = 0; i < num; i++) {\
+	for(uint i = 0; i < num; i++) {\
 		D3DDISPLAYMODE mode;\
 		api_->EnumAdapterModes(adpt, fmt, i, &mode);\
-		if(width != mode.Width || height != mode.Height) {\
+		bool new_mode = true;\
+		for(std::vector<D3DDISPLAYMODE>::iterator j = modes.begin(); j != modes.end(); ++j) {\
+			if(mode.Width == j->Width && mode.Height == j->Height && mode.Format == j->Format) {\
+				new_mode = false;\
+				break;\
+			}\
+		}\
+		if(new_mode) {\
 			D3DDISPLAYMODE default_mode = mode;\
 			default_mode.RefreshRate = D3DPRESENT_RATE_DEFAULT;\
 			modes.push_back(default_mode);\
 		}\
-		width = mode.Width; height = mode.Height;\
 		modes.push_back(mode);\
 	}\
 }

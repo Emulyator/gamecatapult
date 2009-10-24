@@ -99,18 +99,18 @@ LayoutActivate( long version, GlobalFunc* global, LWLayoutGeneric* local, void* 
 
 extern "C" {
 ServerTagInfo ModelerTagInfo[] = {
-	{ "Export X File",                    SRVTAG_USERNAME|LANGID_USENGLISH },
-	{ "Export X File",                    SRVTAG_USERNAME|LANGID_JAPANESE  },
-	{ "Export X File",                    SRVTAG_BUTTONNAME },
-	{ "X File Exporter for LightWave 3D", SRVTAG_DESCRIPTION },
+	{ "gctp Export X File",                    SRVTAG_USERNAME|LANGID_USENGLISH },
+	{ "gctp Export X File",                    SRVTAG_USERNAME|LANGID_JAPANESE  },
+	{ "gctp Export X File",                    SRVTAG_BUTTONNAME },
+	{ "gctp X File Exporter for LightWave 3D", SRVTAG_DESCRIPTION },
 	{ "file",                             SRVTAG_CMDGROUP   },
     { (const char *) NULL },
 };
 ServerTagInfo LayoutTagInfo[] = {
-	{ "Export X File (.x)",               SRVTAG_USERNAME|LANGID_USENGLISH },
-	{ "Export X File (.x)",               SRVTAG_USERNAME|LANGID_JAPANESE  },
-	{ "Export X File (.x)",               SRVTAG_BUTTONNAME },
-	{ "X File Exporter for LightWave 3D", SRVTAG_DESCRIPTION },
+	{ "gctp Export X File (.x)",               SRVTAG_USERNAME|LANGID_USENGLISH },
+	{ "gctp Export X File (.x)",               SRVTAG_USERNAME|LANGID_JAPANESE  },
+	{ "gctp Export X File (.x)",               SRVTAG_BUTTONNAME },
+	{ "gctp X File Exporter for LightWave 3D", SRVTAG_DESCRIPTION },
 	{ "file",                             SRVTAG_CMDGROUP   },
     { (const char *) NULL },
 };
