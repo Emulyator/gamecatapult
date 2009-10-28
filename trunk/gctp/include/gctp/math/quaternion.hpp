@@ -157,10 +157,20 @@ namespace gctp { namespace math {
 		/// ヨー・ピッチ・ロールで回転を設定
 		Quaternion &set(_Type yaw, _Type pitch, _Type roll)
 		{
-			Quaternion qy = { 0, sin(yaw/_Type(2)), 0,   cos(yaw/_Type(2)) };
-			Quaternion qx = { sin(pitch/_Type(2)), 0, 0, cos(pitch/_Type(2)) };
-			Quaternion qz = { 0, 0, sin(roll/_Type(2)),  cos(roll/_Type(2)) };
-			return *this = qx * qy * qz;
+			_Type half_yaw = _Type(yaw) * _Type(0.5);  
+			_Type half_pitch = _Type(pitch) * _Type(0.5);  
+			_Type half_roll = _Type(roll) * _Type(0.5);  
+			_Type cos_yaw = cos(half_yaw);
+			_Type sin_yaw = sin(half_yaw);
+			_Type cos_pitch = cos(half_pitch);
+			_Type sin_pitch = sin(half_pitch);
+			_Type cos_roll = cos(half_roll);
+			_Type sin_roll = sin(half_roll);
+			x = cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw;
+			y = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
+			z = sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw;
+			w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
+			return *this;
 		}
 
 		/// ヨー・ピッチ・ロールで回転を設定
@@ -172,19 +182,19 @@ namespace gctp { namespace math {
 		/// X軸回転を設定
 		Quaternion &rotX(_Type theta)
 		{
-			return set(cos(theta/_Type(2)), sin(theta/_Type(2)), 0, 0);
+			return set(cos(theta*_Type(0.5)), sin(theta*_Type(0.5)), 0, 0);
 		}
 
 		/// Y軸回転を設定
 		Quaternion &rotY(_Type theta)
 		{
-			return set(cos(theta/_Type(2)), 0, sin(theta/_Type(2)), 0);
+			return set(cos(theta*_Type(0.5)), 0, sin(theta*_Type(0.5)), 0);
 		}
 
 		/// Z軸回転を設定
 		Quaternion &rotZ(_Type theta)
 		{
-			return set(cos(theta/_Type(2)), 0, 0, sin(theta/_Type(2)));
+			return set(cos(theta*_Type(0.5)), 0, 0, sin(theta*_Type(0.5)));
 		}
 
 		/// 姿勢を定義する互いに直交するベクトルから四元数を設定
@@ -276,59 +286,50 @@ namespace gctp { namespace math {
 		/// 行列を返す(正規化されてること)
 		Matrix4x4<_Type> toMatrix4x4() const
 		{
-			_Type w2 = w*w;
-			_Type x2 = x*x;
-			_Type y2 = y*y;
-			_Type z2 = z*z;
-			_Type _2xy = _Type(2)*x*y;
-			_Type _2wz = _Type(2)*w*z;
-			_Type _2xz = _Type(2)*x*z;
-			_Type _2wy = _Type(2)*w*y;
-			_Type _2yz = _Type(2)*y*z;
-			_Type _2wx = _Type(2)*w*x;
+			_Type d = norm2();
+			assert(d != _Type(0));
+			_Type s = _Type(2) / d;
+			_Type xs = x * s,   ys = y * s,   zs = z * s;
+			_Type wx = w * xs,  wy = w * ys,  wz = w * zs;
+			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
+			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
 			return Matrix4x4C<_Type>(
-				w2 + x2 - y2 - z2, _2xy - _2wz,       _2xz + _2wy,       _Type(0),
-				_2xy + _2wz,       w2 - x2 + y2 - z2, _2yz - _2wx,       _Type(0),
-				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2, _Type(0),
-				_Type(0),          _Type(0),          _Type(0),          _Type(1)
+				_Type(1) - (yy + zz), xy - wz,                xz + wy,              _Type(0),
+				xy + wz,              _Type(1) - (xx + zz),   yz - wx,              _Type(0),
+				xz - wy,              yz + wx,                _Type(1) - (xx + yy), _Type(0),
+				_Type(0),             _Type(0),               _Type(0),             _Type(1)
 			);
 		}
 		/// 行列を返す(正規化されてること)
 		Matrix3x4<_Type> toMatrix3x4() const
 		{
-			_Type w2 = w*w;
-			_Type x2 = x*x;
-			_Type y2 = y*y;
-			_Type z2 = z*z;
-			_Type _2xy = _Type(2)*x*y;
-			_Type _2wz = _Type(2)*w*z;
-			_Type _2xz = _Type(2)*x*z;
-			_Type _2wy = _Type(2)*w*y;
-			_Type _2yz = _Type(2)*y*z;
-			_Type _2wx = _Type(2)*w*x;
+			_Type d = norm2();
+			assert(d != _Type(0));
+			_Type s = _Type(2) / d;
+			_Type xs = x * s,   ys = y * s,   zs = z * s;
+			_Type wx = w * xs,  wy = w * ys,  wz = w * zs;
+			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
+			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
 			return Matrix3x4C<_Type>(
-				w2 + x2 - y2 - z2, _2xy - _2wz,       _2xz + _2wy,       _Type(0),
-				_2xy + _2wz,       w2 - x2 + y2 - z2, _2yz - _2wx,       _Type(0),
-				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2, _Type(0)
+				_Type(1) - (yy + zz), xy - wz,                xz + wy,              _Type(0),
+				xy + wz,              _Type(1) - (xx + zz),   yz - wx,              _Type(0),
+				xz - wy,              yz + wx,                _Type(1) - (xx + yy), _Type(0)
 			);
 		}
 		/// 行列を返す(正規化されてること)
 		Matrix3x3<_Type> toMatrix3x3() const
 		{
-			_Type w2 = w*w;
-			_Type x2 = x*x;
-			_Type y2 = y*y;
-			_Type z2 = z*z;
-			_Type _2xy = _Type(2)*x*y;
-			_Type _2wz = _Type(2)*w*z;
-			_Type _2xz = _Type(2)*x*z;
-			_Type _2wy = _Type(2)*w*y;
-			_Type _2yz = _Type(2)*y*z;
-			_Type _2wx = _Type(2)*w*x;
+			_Type d = norm2();
+			assert(d != _Type(0));
+			_Type s = _Type(2) / d;
+			_Type xs = x * s,   ys = y * s,   zs = z * s;
+			_Type wx = w * xs,  wy = w * ys,  wz = w * zs;
+			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
+			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
 			return Matrix3x3C<_Type>(
-				w2 + x2 - y2 - z2, _2xy - _2wz,       _2xz + _2wy,
-				_2xy + _2wz,       w2 - x2 + y2 - z2, _2yz - _2wx,
-				_2xz - _2wy,       _2yz + _2wx,       w2 - x2 - y2 + z2
+				_Type(1) - (yy + zz), xy - wz,              xz + wy,
+				xy + wz,              _Type(1) - (xx + zz), yz - wx,
+				xz - wy,              yz + wx,              _Type(1) - (xx + yy)
 			);
 		}
 		/// 行列を返す(正規化されてること)
@@ -424,27 +425,20 @@ namespace gctp { namespace math {
 		/// 球状線形補間した値をセット
 		Quaternion &setSlerp(const Quaternion &lhs, const Quaternion &rhs, _Type t) {
 			_Type qr = dot(lhs, rhs);
+			if(qr > _Type(1)) qr = _Type(1);
+			else if(qr < _Type(-1)) qr = _Type(-1);
 			_Type ss = _Type(1) - qr * qr;
-
-			if(ss == _Type(0)) {
-				w = lhs.w;
-				x = lhs.x;
-				y = lhs.y;
-				z = lhs.z;
-			}
-			else {
-				_Type sp = sqrt(ss);
+			if(abs(ss) > _Type(g_epsilon)) {
 				_Type ph = acos(qr);
-				_Type pt = ph * t;
-				_Type t1 = sin(pt) / sp;
-				_Type t0 = sin(ph - pt) / sp;
-
-				w = lhs.w * t0 + rhs.w * t1;
-				x = lhs.x * t0 + rhs.x * t1;
-				y = lhs.y * t0 + rhs.y * t1;
-				z = lhs.z * t0 + rhs.z * t1;
+				if(abs(ph) > _Type(g_epsilon)) {
+					_Type sp = sqrt(ss);
+					_Type pt = ph * t;
+					_Type t1 = sin(pt) / sp;
+					_Type t0 = sin(ph - pt) / sp;
+					return *this = lhs * t0 + rhs * t1;
+				}
 			}
-			return *this;
+			return *this = lhs;
 		}
 		/// 球状平方補間した値をセット
 		Quaternion &setSquad(const Quaternion &q, const Quaternion &a, const Quaternion &b, const Quaternion &c, _Type t) {

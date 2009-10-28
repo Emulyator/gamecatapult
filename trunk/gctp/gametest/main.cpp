@@ -388,7 +388,7 @@ extern "C" int main(int argc, char *argv[])
 					<< _T("モード: ") << mesh_mode << endl << endl
 					//<< _T("マウス: ") << input().mouse().x << "," << input().mouse().y << " : " << input().mouse().dx << "," << input().mouse().dy << endl
 					;
-				Pointer<scene::Entity> chr2 = context[_T("gctp_base")].lock();
+				Pointer<scene::Entity> chr2 = context[_T("chara")].lock();
 				if(chr2) {
 					static int c = 2;
 					int _c = 0;

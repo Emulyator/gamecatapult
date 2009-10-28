@@ -21,9 +21,6 @@
 #include <boost/detail/workaround.hpp>
 #include <tchar.h>
 
-// とりあえず。。。
-#pragma warning(disable : 4996)
-
 namespace gctp {
 
 	/** DirectXのエラーコード
@@ -47,12 +44,11 @@ namespace gctp {
 			return buf;
 		}
 
-#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530) || \
-	( defined(_MSC_VER) && (_MSC_VER<=1400) )
+#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530)
 
 		operator bool () const
 		{
-			return FAILED(i) ? true : false;
+			return SUCCEEDED(i) ? true : false;
 		}
 
 #elif \
@@ -63,7 +59,7 @@ namespace gctp {
 
 		operator SafeBoolType() const // never throws
 		{
-			return FAILED(i)? 0: &HRslt::message;
+			return SUCCEEDED(i) ? &HRslt::message : 0;
 		}
 
 #else 
@@ -72,7 +68,7 @@ namespace gctp {
 
 		operator SafeBoolType() const // never throws
 		{
-			return FAILED(i) ? 0 : &HRslt::i;
+			return SUCCEEDED(i) ? &HRslt::i : 0;
 		}*/
 
 	private:
@@ -81,14 +77,16 @@ namespace gctp {
 	public:
 		operator SafeBoolType() const
 		{
-			return FAILED(i) ? 0 
-				: safebooltrue;
+			return SUCCEEDED(i) ?
+				safebooltrue 
+				: 0;
 		}
+
 #endif
 		// operator! is a Borland-specific workaround
 		bool operator! () const
 		{
-			return !SUCCEEDED(i);
+			return FAILED(i);
 		}
 
 		bool operator==(const HRESULT &rhs) const {

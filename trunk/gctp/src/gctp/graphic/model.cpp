@@ -90,9 +90,9 @@ namespace gctp { namespace graphic {
 			ulong start, end;
 		};
 
-#if _MSC_VER <= 1400
-#pragma warning(push)
-#pragma warning(disable:4200)
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4200)
 #endif
 		struct Vertices {
 			ulong num;
@@ -109,8 +109,8 @@ namespace gctp { namespace graphic {
 			DWORD mtrlnonum;
 			DWORD mtrlno[];
 		};
-#if _MSC_VER <= 1400
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
 #endif
 	}
 

@@ -59,7 +59,7 @@ namespace gctp {
 		};
 
 		template<int _leftQ, int _rightQ>
-		_Var convert(_Var v) const {
+		static _Var convert(_Var v) {
 			return
 				boost::mpl::if_c <
    					(_rightQ == _leftQ),

@@ -69,7 +69,7 @@ namespace gctp { namespace movie {
 	 */
 	bool Player::play(int loop)
 	{
-		return ptr_->play(loop);
+		return ptr_->play(loop) ? true : false;
 	}
 
 	/** ƒŠƒZƒbƒg
