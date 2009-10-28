@@ -560,7 +560,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 透視投影行列をセットアップ
 		Matrix4x4 &setFOVLH(_Type fov, _Type aspect_ratio, _Type zn, _Type zf) {
-			_22 = cot(fov/_Type(2));
+			_22 = _Type(1)/tan(fov/_Type(2));
 			_11 = aspect_ratio/_22; _12 = _Type(0); _13 = _Type(0);   _14 = _Type(0);
 			_21 = _Type(0);                         _23 = _Type(0);   _24 = _Type(0);
 			_31 = _Type(0);         _32 = _Type(0); _33 = zf/(zf-zn); _34 = -zn*zf/(zf-zn);
@@ -569,7 +569,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 透視投影行列をセットアップ
 		Matrix4x4 &setFOVRH(_Type fov, _Type aspect, _Type zn, _Type zf) {
-			_22 = cot(fov/_Type(2));
+			_22 = _Type(1)/tan(fov/_Type(2));
 			_11 = aspect_ratio/_22; _12 = _Type(0); _13 = _Type(0);   _14 = _Type(0);
 			_21 = _Type(0);                         _23 = _Type(0);   _24 = _Type(0);
 			_31 = _Type(0);         _32 = _Type(0); _33 = zf/(zn-zf); _34 = zn*zf/(zn-zf);

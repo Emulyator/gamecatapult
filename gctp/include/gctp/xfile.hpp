@@ -27,6 +27,12 @@ namespace gctp {
 }
 
 namespace gctp {
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4200)
+#endif
+
 	/// Xファイル環境
 	class XFileEnv : public ID3DXFilePtr {
 	public:
@@ -49,10 +55,6 @@ namespace gctp {
 		}
 	};
 
-#if _MSC_VER <= 1400
-#pragma warning(push)
-#pragma warning(disable:4200)
-#endif
 	/** @name アニメーションデータ構造体
 	 * Xファイルからの読み取り用型定義
 	 */
@@ -143,10 +145,6 @@ namespace gctp {
 		float emissive_g;
 		float emissive_b;
 	};
-
-#if _MSC_VER <= 1400
-#pragma warning(pop)
-#endif
 
 	/// D3DXファイルデータハンドル
 	class XData : public ID3DXFileDataPtr {
@@ -570,10 +568,6 @@ namespace gctp {
 			ulong start, end;
 		};
 
-#if _MSC_VER <= 1400
-#pragma warning(push)
-#pragma warning(disable:4200)
-#endif
 		struct Verticies {
 			ulong num;
 			Vector verticies[];
@@ -583,9 +577,6 @@ namespace gctp {
 			ulong num;
 			LineIndex indicies[];
 		};
-#if _MSC_VER <= 1400
-#pragma warning(pop)
-#endif
 
 		class Wire {
 		public:
@@ -624,6 +615,11 @@ namespace gctp {
 		extern const GUID TID_Line;
 
 	}
+
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 } //namespace gctp
 

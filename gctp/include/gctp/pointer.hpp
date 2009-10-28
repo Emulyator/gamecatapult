@@ -160,8 +160,7 @@ namespace gctp {
 			return p_;
 		}
 
-#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530) || \
-	( defined(_MSC_VER) && (_MSC_VER<=1400) )
+#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530)
 
 		operator bool () const
 		{
@@ -196,6 +195,7 @@ namespace gctp {
 			return p_ == 0 ? 0 
 				: safebooltrue;
 		}
+
 #endif
 
 		// operator! is redundant, but some compilers need it
@@ -517,8 +517,7 @@ namespace gctp {
 
 		// implicit conversion to "bool"
 
-#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530) || \
-	( defined(_MSC_VER) && (_MSC_VER<=1400) )
+#if defined(__SUNPRO_CC) && BOOST_WORKAROUND(__SUNPRO_CC, <= 0x530)
 
 		operator bool () const
 		{
@@ -554,6 +553,7 @@ namespace gctp {
 			return get() == 0 ? 0 
 				: safebooltrue;
 		}
+
 #endif
 		// operator! is redundant, but some compilers need it
 

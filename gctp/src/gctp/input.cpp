@@ -646,7 +646,7 @@ namespace gctp {
 					is_acquire_ = false;
 					hr = acquire();
 				}
-				return hr;
+				return hr ? true : false;
 			}
 		}
 		return false;

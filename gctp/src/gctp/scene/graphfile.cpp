@@ -786,7 +786,7 @@ namespace gctp { namespace scene {
 			if(!hr) GCTP_ERRORINFO(_T("Xfile ")<<fn<<_T(" : ")<<hr);
 		}
 		else GCTP_ERRORINFO(_T("Xfile ")<<fn<<_T(" : ")<<hr);
-		return hr;
+		return hr ? true : false;
 	}
 
 	/** メモリ上のXファイルからシーンファイルリソースを生成する。
@@ -830,7 +830,7 @@ namespace gctp { namespace scene {
 				pbody->update();
 			}
 		}
-		return hr;
+		return hr ? true : false;
 	}
 
 	/** メモリ上のXファイルからシーンファイルリソースを生成する。
@@ -874,7 +874,7 @@ namespace gctp { namespace scene {
 				pbody->update();
 			}
 		}
-		return hr;
+		return hr ? true : false;
 	}
 
 	bool GraphFile::LuaCtor(luapp::Stack &L)

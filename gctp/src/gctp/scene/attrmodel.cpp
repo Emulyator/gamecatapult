@@ -30,7 +30,7 @@ namespace gctp { namespace scene {
 
 	namespace {
 
-#if _MSC_VER <= 1400
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4200)
 #endif
@@ -57,9 +57,10 @@ namespace gctp { namespace scene {
 			DWORD mtrlnonum;
 			DWORD mtrlno[];
 		};
-#if _MSC_VER <= 1400
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 	}
 
 	HRslt AttrModel::setUp(CStr name, const void *data)

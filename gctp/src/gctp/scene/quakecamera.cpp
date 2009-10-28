@@ -76,7 +76,8 @@ namespace gctp { namespace scene {
 			if(input().kbd().press(DIK_SPACE)) dir.y += 1.0f;
 			if(input().kbd().press(DIK_LCONTROL)) dir.y -= 1.0f;
 			dir = Quat().rotY(yaw).transform(dir);
-			newstance.position += dir.normalize()*speed*delta;
+			float l = dir.length();
+			if(l > 0) newstance.position += (dir/l)*speed*delta;
 
 			target->node()->val.updateWTM(newstance.toMatrix());
 		}

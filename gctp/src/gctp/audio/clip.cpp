@@ -37,18 +37,18 @@ namespace gctp { namespace audio {
 				if(filei) {
 					if(filei->size() < on_memory_streaming_threshold__) {
 						on_memory_ = fileserver().getFile(path);
-						return wav->open(on_memory_->buf(), on_memory_->size());
+						return wav->open(on_memory_->buf(), on_memory_->size()) ? true : false;
 					}
-					else return wav->open(filei);
+					else return wav->open(filei) ? true : false;
 				}
 				else {
 					File f(path);
 					if(f.is_open()) {
 						if(f.length() < on_memory_streaming_threshold__) {
 							on_memory_ = f.load();
-							return wav->open(on_memory_->buf(), on_memory_->size());
+							return wav->open(on_memory_->buf(), on_memory_->size()) ? true : false;
 						}
-						else return wav->open(path);
+						else return wav->open(path) ? true : false;
 					}
 				}
 			}
@@ -61,18 +61,18 @@ namespace gctp { namespace audio {
 				if(filei) {
 					if(filei->size() < on_memory_streaming_threshold__) {
 						on_memory_ = fileserver().getFile(path);
-						return ogg->open(on_memory_->buf(), on_memory_->size());
+						return ogg->open(on_memory_->buf(), on_memory_->size()) ? true : false;
 					}
-					else return ogg->open(filei);
+					else return ogg->open(filei) ? true : false;
 				}
 				else {
 					File f(path);
 					if(f.is_open()) {
 						if(f.length() < on_memory_streaming_threshold__) {
 							on_memory_ = f.load();
-							return ogg->open(on_memory_->buf(), on_memory_->size());
+							return ogg->open(on_memory_->buf(), on_memory_->size()) ? true : false;
 						}
-						else return ogg->open(path);
+						else return ogg->open(path) ? true : false;
 					}
 				}
 			}

@@ -46,6 +46,7 @@ namespace gctp {
 	typedef float Real;
 	const Real g_pi = 3.141592654f;
 	const Real g_root2 = 1.41421356f;
+	const Real g_epsilon = FLT_EPSILON;
 	inline Real toDeg(Real rad) { return rad/g_pi*180.0f; }
 	inline Real toRad(Real deg) { return deg/180.0f*g_pi; }
 

@@ -26,7 +26,7 @@
 
 // D3DX数学ライブラリを使う
 #ifndef GCTP_LITE
-# define GCTP_USE_D3DXMATH
+//# define GCTP_USE_D3DXMATH
 #endif
 
 // 暗黙の座標系が右手系
