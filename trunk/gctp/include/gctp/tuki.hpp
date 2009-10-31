@@ -65,7 +65,7 @@ namespace gctp {
 		static void registerFuncs(lua_State *L, const char *name, const Func *funcs);
 		static void registerObject(lua_State *L, const char *name, const lua_CFunction f_new, const lua_CFunction f_tostring, const MemberRegisterer reg_mem);
 		// garbage collection metamethod
-		static int deleteThis(lua_State *L);
+		static int dispose(lua_State *L);
 		// Tukiオブジェクトかどうか検査
 		static Object *check(lua_State *L, int narg);
 	private:
