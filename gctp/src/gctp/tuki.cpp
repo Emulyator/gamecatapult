@@ -371,11 +371,11 @@ namespace gctp {
 		lua_settable(L, metatable);
 
 		lua_pushliteral(L, "__gc");
-		lua_pushcfunction(L, &TukiRegister::deleteThis);
+		lua_pushcfunction(L, &TukiRegister::dispose);
 		lua_settable(L, metatable);
 		// add same method to method table as "delete"
-		lua_pushliteral(L, "delete");
-		lua_pushcfunction(L, &TukiRegister::deleteThis);
+		lua_pushliteral(L, "dispose");
+		lua_pushcfunction(L, &TukiRegister::dispose);
 		lua_settable(L, methods);
 		
 		lua_newtable(L);                // mt for method table
@@ -397,7 +397,7 @@ namespace gctp {
 	}
 
 	// garbage collection metamethod
-	int TukiRegister::deleteThis(lua_State *L)
+	int TukiRegister::dispose(lua_State *L)
 	{
 		UserData *ud = static_cast<UserData *>(lua_touserdata(L, 1));
 		if(ud) {
@@ -429,7 +429,7 @@ namespace gctp {
 		if(!lua_getmetatable(L, iud)) return 0;  /* no metatable? */
 		lua_pushliteral(L, "__gc");
 		lua_gettable(L, -2);
-		if(lua_iscfunction(L, -1) && lua_tocfunction(L, -1) == &TukiRegister::deleteThis) {
+		if(lua_iscfunction(L, -1) && lua_tocfunction(L, -1) == &TukiRegister::dispose) {
 			lua_pop(L, 2);
 			// tukiオブジェクトの証
 			UserData *ud = static_cast<UserData *>(lua_touserdata(L, iud));
