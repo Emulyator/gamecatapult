@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <time.h>
 #include <gctp/dbgout.hpp>
-#include <_direct.h>
+#include <_dirent.h>
 #include "zlib.h"
 #ifdef __ee__
 #include <sys/types.h>

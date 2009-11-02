@@ -157,19 +157,19 @@ namespace gctp { namespace math {
 		/// ヨー・ピッチ・ロールで回転を設定
 		Quaternion &set(_Type yaw, _Type pitch, _Type roll)
 		{
-			_Type half_yaw = _Type(yaw) * _Type(0.5);  
-			_Type half_pitch = _Type(pitch) * _Type(0.5);  
-			_Type half_roll = _Type(roll) * _Type(0.5);  
-			_Type cos_yaw = cos(half_yaw);
-			_Type sin_yaw = sin(half_yaw);
-			_Type cos_pitch = cos(half_pitch);
-			_Type sin_pitch = sin(half_pitch);
-			_Type cos_roll = cos(half_roll);
-			_Type sin_roll = sin(half_roll);
+			yaw *= _Type(0.5);
+			pitch *= _Type(0.5);
+			roll *= _Type(0.5);
+			_Type cos_yaw = cos(yaw);
+			_Type sin_yaw = sin(yaw);
+			_Type cos_pitch = cos(pitch);
+			_Type sin_pitch = sin(pitch);
+			_Type cos_roll = cos(roll);
+			_Type sin_roll = sin(roll);
+			w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
 			x = cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw;
 			y = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
 			z = sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw;
-			w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
 			return *this;
 		}
 
@@ -182,25 +182,28 @@ namespace gctp { namespace math {
 		/// X軸回転を設定
 		Quaternion &rotX(_Type theta)
 		{
-			return set(cos(theta*_Type(0.5)), sin(theta*_Type(0.5)), 0, 0);
+			theta *= _Type(0.5);
+			return set(cos(theta), sin(theta), 0, 0);
 		}
 
 		/// Y軸回転を設定
 		Quaternion &rotY(_Type theta)
 		{
-			return set(cos(theta*_Type(0.5)), 0, sin(theta*_Type(0.5)), 0);
+			theta *= _Type(0.5);
+			return set(cos(theta), 0, sin(theta), 0);
 		}
 
 		/// Z軸回転を設定
 		Quaternion &rotZ(_Type theta)
 		{
-			return set(cos(theta*_Type(0.5)), 0, 0, sin(theta*_Type(0.5)));
+			theta *= _Type(0.5);
+			return set(cos(theta), 0, 0, sin(theta));
 		}
 
 		/// 姿勢を定義する互いに直交するベクトルから四元数を設定
-		Quaternion &set(const Vector3d<_Type> &left, const Vector3d<_Type> &up, const Vector3d<_Type> &at)
+		Quaternion &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &back)
 		{
-			return set(Matrix3x3C<_Type>(left, up, at));
+			return set(Matrix3x3C<_Type>(right, up, back));
 		}
 
 		// 代入演算子を外部にさらす
@@ -233,11 +236,11 @@ namespace gctp { namespace math {
 		}
 		
 		Quaternion operator + () const { return *this; }
-		Quaternion operator - () const { return Quaternion().set(-w, -x, -y, -z); }
+		Quaternion operator - () const { return QuaternionC<_Type>(-w, -x, -y, -z); }
 		Quaternion operator+(const Quaternion &rhs) const { return Quaternion(*this)+=rhs; }
 		Quaternion operator-(const Quaternion &rhs) const { return Quaternion(*this)-=rhs; }
 		Quaternion operator*(const Quaternion &rhs) const {
-			return Quaternion().set(
+			return QuaternionC<_Type>(
 				w*rhs.w - x*rhs.x - y*rhs.y - z*rhs.z,
 				w*rhs.x + x*rhs.w + y*rhs.z - z*rhs.y,
 				w*rhs.y + y*rhs.w + z*rhs.x - x*rhs.z,
@@ -294,10 +297,10 @@ namespace gctp { namespace math {
 			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
 			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
 			return Matrix4x4C<_Type>(
-				_Type(1) - (yy + zz), xy - wz,                xz + wy,              _Type(0),
-				xy + wz,              _Type(1) - (xx + zz),   yz - wx,              _Type(0),
-				xz - wy,              yz + wx,                _Type(1) - (xx + yy), _Type(0),
-				_Type(0),             _Type(0),               _Type(0),             _Type(1)
+				_Type(1) - (yy + zz),             xy - wz,              xz + wy,  _Type(0),
+				            xy + wz,  _Type(1) - (xx + zz),             yz - wx,  _Type(0),
+				            xz - wy,              yz + wx,  _Type(1) - (xx + yy), _Type(0),
+				_Type(0),             _Type(0),             _Type(0),             _Type(1)
 			);
 		}
 		/// 行列を返す(正規化されてること)
@@ -311,9 +314,9 @@ namespace gctp { namespace math {
 			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
 			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
 			return Matrix3x4C<_Type>(
-				_Type(1) - (yy + zz), xy - wz,                xz + wy,              _Type(0),
-				xy + wz,              _Type(1) - (xx + zz),   yz - wx,              _Type(0),
-				xz - wy,              yz + wx,                _Type(1) - (xx + yy), _Type(0)
+				_Type(1) - (yy + zz),             xy - wz,              xz + wy,  _Type(0),
+				            xy + wz,  _Type(1) - (xx + zz),             yz - wx,  _Type(0),
+				            xz - wy,              yz + wx,  _Type(1) - (xx + yy), _Type(0)
 			);
 		}
 		/// 行列を返す(正規化されてること)
@@ -326,10 +329,10 @@ namespace gctp { namespace math {
 			_Type wx = w * xs,  wy = w * ys,  wz = w * zs;
 			_Type xx = x * xs,  xy = x * ys,  xz = x * zs;
 			_Type yy = y * ys,  yz = y * zs,  zz = z * zs;
-			return Matrix3x3C<_Type>(
-				_Type(1) - (yy + zz), xy - wz,              xz + wy,
-				xy + wz,              _Type(1) - (xx + zz), yz - wx,
-				xz - wy,              yz + wx,              _Type(1) - (xx + yy)
+			return Matrix3x4C<_Type>(
+				_Type(1) - (yy + zz),             xy - wz,              xz + wy,
+				            xy + wz,  _Type(1) - (xx + zz),             yz - wx,
+				            xz - wy,              yz + wx,  _Type(1) - (xx + yy)
 			);
 		}
 		/// 行列を返す(正規化されてること)
@@ -411,12 +414,12 @@ namespace gctp { namespace math {
 
 		/// ベクトル変換
 		Vector3d<_Type> transform(const Vector3d<_Type> &src) const {
-			return ((*this)*Quaternion().set(src)*~(*this)).vector();
+			return ((*this)*QuaternionC<_Type>(src)*~(*this)).vector();
 		}
 
 		/// ベクトル変換
-		const Quaternion &transform(Vector3d<_Type> &dst, const Vector3d<_Type> &v) const {
-			dst = ((*this)*Quaternion().set(v)*~(*this)).vector();
+		const Quaternion &transform(Vector3d<_Type> &dst, const Vector3d<_Type> &src) const {
+			dst = ((*this)*QuaternionC<_Type>(src)*~(*this)).vector();
 			return *this;
 		}
 
@@ -470,7 +473,7 @@ namespace gctp { namespace math {
 		/** @} */
 		
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		operator const D3DXQUATERNION &() const
 		{
 			BOOST_STATIC_ASSERT((boost::is_same<_Type, float>::value));
@@ -497,14 +500,14 @@ namespace gctp { namespace math {
 	/// 自然対数を返す
 	template<class _Type>
 	inline Quaternion<_Type> log(const Quaternion<_Type> &rhs) {
-		return Quaternion<_Type>().set(_Type(0), rhs.vector()*(_Type(2)*acos(rhs.w)));
+		return QuaternionC<_Type>(_Type(0), rhs.vector()*(_Type(2)*acos(rhs.w)));
 	}
 
 	/// 指数を返す
 	template<class _Type>
 	inline Quaternion<_Type> exp(const Quaternion<_Type> &rhs) {
 		_Type theta = _Type(2)*acos(rhs.w);
-		return Quaternion<_Type>().set(cos(theta), rhs.vector()*sin(theta));
+		return QuaternionC<_Type>(cos(theta), rhs.vector()*sin(theta));
 	}
 
 	template<class E, class T, class _Type> std::basic_ostream<E, T> & operator<< (std::basic_ostream<E, T> & os, Quaternion<_Type> const & q)
@@ -516,9 +519,9 @@ namespace gctp { namespace math {
 	/// コンストラクタ付版
 	template<typename _Type>
 	struct QuaternionC : Quaternion<_Type> {
-		QuaternionC() {};
-		explicit QuaternionC(bool ident) { if(ident) identify(); else { x = y = z = w = _Type(0); } };
-		explicit QuaternionC(const Vector3d<_Type> &src) { set( src.x, src.y, src.z, _Type(0) ); }
+		QuaternionC() {}
+		explicit QuaternionC(bool ident) { if(ident) identify(); else { x = y = z = w = _Type(0); } }
+		explicit QuaternionC(const Vector3d<_Type> &src) { set(src); }
 		explicit QuaternionC(const Matrix4x4<_Type> &mat) { set(mat); }
 		explicit QuaternionC(const Matrix3x3<_Type> &mat) { set(mat); }
 		QuaternionC(_Type w, const Vector3d<_Type> &v) { set(w, v); }
@@ -528,7 +531,7 @@ namespace gctp { namespace math {
 		QuaternionC(const Vector3d<_Type> &axis, _Type rad) { set(axis, rad); }
 
 // D3DXライブラリサポート
-#ifdef GCTP_USE_D3DXMATH
+#ifdef __D3DX9MATH_H__
 		QuaternionC(const D3DXQUATERNION &src)
 		{
 			set(src.w, src.x, src.y, src.z);
@@ -558,7 +561,7 @@ namespace gctp { namespace math {
 
 }} // namespace gctp::math
 
-// D3DXライブラリサポート
+// D3DXライブラリを使用する
 #ifdef GCTP_USE_D3DXMATH
 #include <gctp/math/d3d/quaternion.inl>
 #endif

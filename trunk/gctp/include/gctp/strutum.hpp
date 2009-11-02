@@ -80,12 +80,12 @@ namespace gctp {
 		{
 			if(isIndependent()) {
 				if(isContinuos()) prev_wtm_ = wtm_;
-				lcm_ = wtm_ * parent.inverse();
+				lcm_ = parent.inverse() * wtm_;
 				if(!isContinuos()) prev_wtm_ = wtm_;
 			}
 			else {
 				if(isContinuos()) prev_wtm_ = wtm_;
-				wtm_ = lcm_ * parent;
+				wtm_ = parent * lcm_;
 				if(!isContinuos()) prev_wtm_ = wtm_;
 			}
 			flags_ = UPDATED|CONTINUITY|VALID_WTM;

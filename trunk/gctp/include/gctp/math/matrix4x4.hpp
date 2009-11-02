@@ -34,6 +34,12 @@ namespace gctp { namespace math {
 	template<typename _Type>
 	struct Matrix4x4 {
 		union {
+			/*
+				E11, E12, E13, E14
+				E21, E22, E23, E24
+				E31, E32, E33, E34
+				E41, E42, E43, E44
+			*/
 			struct {
 				_Type _11, _21, _31, _41;
 				_Type _12, _22, _32, _42;
@@ -43,21 +49,19 @@ namespace gctp { namespace math {
 			_Type m[4][4];
 		};
 		/// 値セット
-		Matrix4x4 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at) {
+		Matrix4x4 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &zaxis) {
 			this->right() = right;
 			this->up() = up;
-			this->at() = at;
-			_14 = _24 = _34 = _41 = _42 = _43 = _Type(0);
-			_44 = _Type(1);
+			this->zaxis() = zaxis;
+			_14 = _24 = _34 = _41 = _42 = _43 = _Type(0); _44 = _Type(1);
 		}
 		/// 値セット
-		Matrix4x4 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at, const Vector3d<_Type> &pos) {
+		Matrix4x4 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &zaxis, const Vector3d<_Type> &position) {
 			this->right() = right;
 			this->up() = up;
-			this->at() = at;
-			position() = pos;
-			_41 = _42 = _43 = _Type(0);
-			_44 = _Type(1);
+			this->zaxis() = zaxis;
+			this->position() = position;
+			_41 = _42 = _43 = _Type(0); _44 = _Type(1);
 			return *this;
 		}
 		/// 値セット
@@ -79,7 +83,7 @@ namespace gctp { namespace math {
 		Matrix4x4 &operator+=(const Matrix4x4 &src) {
 			right4d()+=src.right4d();
 			up4d()+=src.up4d();
-			at4d()+=src.at4d();
+			zaxis4d()+=src.zaxis4d();
 			position4d()+=src.position4d();
 			return *this;
 		}
@@ -87,40 +91,22 @@ namespace gctp { namespace math {
 		Matrix4x4 &operator-=(const Matrix4x4 &src) {
 			right4d()-=src.right4d();
 			up4d()-=src.up4d();
-			at4d()-=src.at4d();
+			zaxis4d()-=src.zaxis4d();
 			position4d()-=src.position4d();
 			return *this;
 		}
 		/// 演算子
 		Matrix4x4 &operator*=(const Matrix4x4 &src) {
-			/* // Strassenのアルゴリズム
-			Matrix2x2<_Type> A11;*/
-/*			return *this = (Matrix4x4){
-_11*rhs._11+_12*rhs._21+_13*rhs._31+_14*rhs._41, _21*rhs._11+_22*rhs._21+_23*rhs._31+_24*rhs._41, _21*rhs._11+_22*rhs._21+_23*rhs._31+_24*rhs._41, _21*rhs._11+_22*rhs._21+_23*rhs._31+_24*rhs._41,
-
-_11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
-			};*/
-			Matrix4x4 tmp = src;
-			for (int row = 0; row < 4; row++) {
-				for (int col = 0; col < 4; col++) {
-					tmp.m[row][col] = _Type(0);
-					for(int mid = 0; mid < 4; mid++) {
-						tmp.m[row][col] += m[row][mid]*src.m[mid][col];
-					}
-				}
-			}
-			*this = tmp;
-			return *this;
+			return *this = *this * src;
 		}
 		/// 演算子
 		Matrix4x4 &operator*=(_Type src) {
-			right4d()*=src; up4d()*=src; at4d()*=src; position4d()*=src;
+			right4d()*=src; up4d()*=src; zaxis4d()*=src; position4d()*=src;
 			return *this;
 		}
 		/// 演算子
 		Matrix4x4 &operator/=(_Type src) {
-			right4d()/=src; up4d()/=src; at4d()/=src; position4d()/=src;
-			return *this;
+			return (*this) *= _Type(1)/src;
 		}
 
 		/// 演算子
@@ -136,10 +122,6 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return Matrix4x4(*this)*=rhs;
 		}
 		/// 演算子
-		Matrix4x4 operator*(const Matrix4x4 &rhs) const {
-			return Matrix4x4(*this)*=rhs;
-		}
-		/// 演算子
 		Matrix4x4 operator/(_Type rhs) const {
 			return Matrix4x4(*this)/=rhs;
 		}
@@ -147,7 +129,30 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		Matrix4x4 operator/(const Matrix4x4 &rhs) const {
 			return Matrix4x4(*this)/=rhs;
 		}
+		/// 演算子
+		Matrix4x4 operator*(const Matrix4x4 &rhs) const {
+			return Matrix4x4C<_Type>(
+				_11*rhs._11 + _12*rhs._21 + _13*rhs._31 + _14*rhs._41,
+				_11*rhs._12 + _12*rhs._22 + _13*rhs._32 + _14*rhs._42,
+				_11*rhs._13 + _12*rhs._23 + _13*rhs._33 + _14*rhs._43,
+				_11*rhs._14 + _12*rhs._24 + _13*rhs._34 + _14*rhs._44,
 
+				_21*rhs._11 + _22*rhs._21 + _23*rhs._31 + _24*rhs._41,
+				_21*rhs._12 + _22*rhs._22 + _23*rhs._32 + _24*rhs._42,
+				_21*rhs._13 + _22*rhs._23 + _23*rhs._33 + _24*rhs._43,
+				_21*rhs._14 + _22*rhs._24 + _23*rhs._34 + _24*rhs._44,
+
+				_31*rhs._11 + _32*rhs._21 + _33*rhs._31 + _34*rhs._41,
+				_31*rhs._12 + _32*rhs._22 + _33*rhs._32 + _34*rhs._42,
+				_31*rhs._13 + _32*rhs._23 + _33*rhs._33 + _34*rhs._43,
+				_31*rhs._14 + _32*rhs._24 + _33*rhs._34 + _34*rhs._44,
+
+				_41*rhs._11 + _42*rhs._21 + _43*rhs._31 + _44*rhs._41,
+				_41*rhs._12 + _42*rhs._22 + _43*rhs._32 + _44*rhs._42,
+				_41*rhs._13 + _42*rhs._23 + _43*rhs._33 + _44*rhs._43,
+				_41*rhs._14 + _42*rhs._24 + _43*rhs._34 + _44*rhs._44
+			);
+		}
 		/// 演算子
 		Vector4d<_Type> operator*(const Vector4d<_Type> &rhs) const {
 			return Vector4dC<_Type>(
@@ -196,9 +201,27 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		/// Ｙ軸
 		const Vector3d<_Type> &up() const { return *reinterpret_cast<const Vector3d<_Type> *>(m[1]); }
 		/// Ｚ軸
-		Vector3d<_Type> &at() { return *reinterpret_cast<Vector3d<_Type> *>(m[2]); }
+		Vector3d<_Type> &zaxis() { return *reinterpret_cast<Vector3d<_Type> *>(m[2]); }
 		/// Ｚ軸
-		const Vector3d<_Type> &at() const { return *reinterpret_cast<const Vector3d<_Type> *>(m[2]); }
+		const Vector3d<_Type> &zaxis() const { return *reinterpret_cast<const Vector3d<_Type> *>(m[2]); }
+		/// Ｚ軸
+		const Vector3d<_Type> backward() const
+		{
+#ifdef GCTP_COORD_DX
+			return -*reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#else
+			return *reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#endif
+		}
+		/// Ｚ軸
+		const Vector3d<_Type> forward() const
+		{
+#ifdef GCTP_COORD_DX
+			return *reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#else
+			return -*reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#endif
+		}
 		/// 平行移動成分
 		Vector3d<_Type> &position() { return *reinterpret_cast<Vector3d<_Type> *>(m[3]); }
 		/// 平行移動成分
@@ -213,9 +236,27 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		/// Ｙ軸
 		const Vector4d<_Type> &up4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[1]); }
 		/// Ｚ軸
-		Vector4d<_Type> &at4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[2]); }
+		Vector4d<_Type> &zaxis4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[2]); }
 		/// Ｚ軸
-		const Vector4d<_Type> &at4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[2]); }
+		const Vector4d<_Type> &zaxis4d() const { return *reinterpret_cast<const Vector4d<_Type> *>(m[2]); }
+		/// Ｚ軸
+		const Vector4d<_Type> backward4d() const
+		{
+#ifdef GCTP_COORD_DX
+			return -*reinterpret_cast<const Vector4d<_Type> *>(m[2]);
+#else
+			return *reinterpret_cast<const Vector4d<_Type> *>(m[2]);
+#endif
+		}
+		/// Ｚ軸
+		const Vector4d<_Type> forward4d() const
+		{
+#ifdef GCTP_COORD_DX
+			return *reinterpret_cast<const Vector4d<_Type> *>(m[2]);
+#else
+			return -*reinterpret_cast<const Vector4d<_Type> *>(m[2]);
+#endif
+		}
 		/// 平行移動成分
 		Vector4d<_Type> &position4d() { return *reinterpret_cast<Vector4d<_Type> *>(m[3]); }
 		/// 平行移動成分
@@ -223,7 +264,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 
 		/// スケールを抽出
 		Vector3d<_Type> getScale() const {
-			return Vector3d<_Type>().set(right().length(),up().length(),at().length());
+			return Vector3d<_Type>().set(right().length(),up().length(),zaxis().length());
 		}
 
 		/// 単位行列に
@@ -322,11 +363,9 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 転置行列化
 		Matrix4x4 &transpose() {
-			for(int i = 0; i < 3; i++) {
-				for(int j = i + 1; j < 4; j++) {
-					swap(m[i][j], m[j][i]);
-				}
-			}
+			std::swap(_12, _21); std::swap(_13, _31); std::swap(_14, _41);
+			                     std::swap(_23, _32); std::swap(_24, _42);
+			                                          std::swap(_34, _43);
 			return *this;
 		}
 		/// 転置行列
@@ -337,8 +376,8 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		Matrix4x4 &normalize() {
 			right().normalize();
 			up().normalize();
-			at().normalize();
-			_41 = _42 = _43 = 0;
+			zaxis().normalize();
+			_41 = _42 = _43 = _Type(0);
 			return *this;
 		}
 		/// 正規化した行列
@@ -352,11 +391,11 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			orthoNormalize();
 			return *this;
 		}
-		/// 正規直交化(atvを基準にする)
+		/// 正規直交化(zaxisを基準にする)
 		Matrix4x4 &orthoNormalize() {
 			normalize();
-			right() = at()%up();
-			up() = right()%at();
+			right() = zaxis()%up();
+			up() = right()%zaxis();
 			right() *= -1;
 			return *this;
 		}
@@ -479,11 +518,11 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 
 		/// 固有ベクトルから行列設定
-		Matrix4x4 &setAxis(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at, const Vector3d<_Type> &pos) {
+		Matrix4x4 &setAxis(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &zaxis, const Vector3d<_Type> &position) {
 			this->right() = right;
 			this->up() = up;
-			this->at() = at;
-			position() = pos;
+			this->zaxis() = zaxis;
+			this->position() = position;
 			_41 = _42 = _43 = _Type(0); _44 = _Type(1);
 			return *this;
 		}
@@ -500,30 +539,12 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 
 		/// ビュー行列をセットアップ
-		Matrix4x4 &setViewLH(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at, const Vector3d<_Type> &pos) {
-			_11 = right.x; _12 = right.y; _13 = right.z; _14 = -(right*pos);
-			_21 = up.x;    _22 = up.y;    _23 = up.z;    _24 = -(up*pos);
-			_31 = at.x;    _32 = at.y;    _33 = at.z;    _34 = -(at*pos);
-			_41 = _42 = _43 = _Type(0); _44 = _Type(1);
+		Matrix4x4 &setView(const Vector3d<_Type> &xaxis, const Vector3d<_Type> &yaxis, const Vector3d<_Type> &zaxis, const Vector3d<_Type> &vpos) {
+			_11 = xaxis.x; _12 = xaxis.y; _13 = xaxis.z;  _14 = -(xaxis*vpos);
+			_21 = yaxis.x; _22 = yaxis.y; _23 = yaxis.z;  _24 = -(yaxis*vpos);
+			_31 = zaxis.x; _32 = zaxis.y; _33 = zaxis.z;  _34 = -(zaxis*vpos);
+			_41 =          _42 =          _43 = _Type(0); _44 = _Type(1);
 			return *this;
-		}
-
-		/// ビュー行列をセットアップ
-		Matrix4x4 &setViewRH(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at, const Vector3d<_Type> &pos) {
-			_11 = right.x; _12 = right.y; _13 = right.z; _14 = right*pos;
-			_21 = up.x;    _22 = up.y;    _23 = up.z;    _24 = up*pos;
-			_31 = at.x;    _32 = at.y;    _33 = at.z;    _34 = at*pos;
-			_14 = _24 = _34 = _Type(0); _44 = _Type(1);
-			return *this;
-		}
-
-		/// ビュー行列をセットアップ
-		Matrix4x4 &setView(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at, const Vector3d<_Type> &pos) {
-#ifdef GCTP_COORD_RH
-			return setViewRH(right, up, at, pos);
-#else
-			return setViewLH(right, up, at, pos);
-#endif
 		}
 
 		/// ビュー行列をセットアップ
@@ -531,31 +552,21 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			Vector3d<_Type> zaxis = (vat-vpos).normal();
 			Vector3d<_Type> xaxis = (vup%zaxis).normal();
 			Vector3d<_Type> yaxis = zaxis%xaxis;
-
-			_11 = xaxis.x; _12 = xaxis.y; _13 = xaxis.z; _14 = -(xaxis*vpos);
-			_21 = yaxis.x; _22 = yaxis.y; _23 = yaxis.z; _24 = -(yaxis*vpos);
-			_31 = zaxis.x; _32 = zaxis.y; _33 = zaxis.z; _34 = -(zaxis*vpos);
-			_41 = xaxis.x; _42 = xaxis.y; _43 = xaxis.z; _44 = _Type(1);
-			return *this;
+			return setView(xaxis, yaxis, zaxis, vpos);
 		}
 		/// ビュー行列をセットアップ
 		Matrix4x4 &setLookAtRH(const Vector3d<_Type> &vpos, const Vector3d<_Type> &vat, const Vector3d<_Type> &vup) {
 			Vector3d<_Type> zaxis = (vpos-vat).normal();
 			Vector3d<_Type> xaxis = (vup%zaxis).normal();
 			Vector3d<_Type> yaxis = zaxis%xaxis;
-
-			_11 = xaxis.x; _12 = xaxis.y; _13 = xaxis.z; _14 = -(xaxis*vpos);
-			_21 = yaxis.x; _22 = yaxis.y; _23 = yaxis.z; _24 = -(yaxis*vpos);
-			_31 = zaxis.x; _32 = zaxis.y; _33 = zaxis.z; _34 = -(zaxis*vpos);
-			_41 = xaxis.x; _42 = xaxis.y; _43 = xaxis.z; _44 = _Type(1);
-			return *this;
+			return setView(xaxis, yaxis, zaxis, vpos);
 		}
 		/// ビュー行列をセットアップ
 		Matrix4x4 &setLookAt(const Vector3d<_Type> &vpos, const Vector3d<_Type> &vat, const Vector3d<_Type> &vup) {
-#ifdef GCTP_COORD_RH
-			return setLookAtRH(vpos, vat, vup);
-#else
+#ifdef GCTP_COORD_DX
 			return setLookAtLH(vpos, vat, vup);
+#else
+			return setLookAtRH(vpos, vat, vup);
 #endif
 		}
 		/// 透視投影行列をセットアップ
@@ -568,7 +579,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return *this;
 		}
 		/// 透視投影行列をセットアップ
-		Matrix4x4 &setFOVRH(_Type fov, _Type aspect, _Type zn, _Type zf) {
+		Matrix4x4 &setFOVRH(_Type fov, _Type aspect_ratio, _Type zn, _Type zf) {
 			_22 = _Type(1)/tan(fov/_Type(2));
 			_11 = aspect_ratio/_22; _12 = _Type(0); _13 = _Type(0);   _14 = _Type(0);
 			_21 = _Type(0);                         _23 = _Type(0);   _24 = _Type(0);
@@ -577,11 +588,11 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return *this;
 		}
 		/// 透視投影行列をセットアップ
-		Matrix4x4 &setFOV(_Type fov, _Type aspect, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setFOVRH(fov, aspect, zn, zf);
+		Matrix4x4 &setFOV(_Type fov, _Type aspect_ratio, _Type zn, _Type zf) {
+#ifdef GCTP_COORD_DX
+			return setFOVLH(fov, aspect_ratio, zn, zf);
 #else
-			return setFOVLH(fov, aspect, zn, zf);
+			return setFOVRH(fov, aspect_ratio, zn, zf);
 #endif
 		}
 		/// 透視投影行列をセットアップ
@@ -602,10 +613,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 透視投影行列をセットアップ
 		Matrix4x4 &setPars(_Type w, _Type h, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setParsRH(w, h, zn, zf);
-#else
+#ifdef GCTP_COORD_DX
 			return setParsLH(w, h, zn, zf);
+#else
+			return setParsRH(w, h, zn, zf);
 #endif
 		}
 		/** 透視投影行列をセットアップ
@@ -641,10 +652,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		 * と見立てたときのサブウィンドウのレクト
 		 */
 		Matrix4x4 &setFOV(_Type fov, _Type aspect, _Type l, _Type t, _Type r, _Type b, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setFOVRH(fov, aspect, l, t, r, b, zn, zf);
-#else
+#ifdef GCTP_COORD_DX
 			return setFOVLH(fov, aspect, l, t, r, b, zn, zf);
+#else
+			return setFOVRH(fov, aspect, l, t, r, b, zn, zf);
 #endif
 		}
 		/// 透視投影行列をセットアップ
@@ -656,7 +667,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 			return *this;
 		}
 		/// 透視投影行列をセットアップ
-		Matrix4x4 &setParsRH(_Type minx, _Type maxx, _Type miny, _Type maxy, _Type zn, _Type zf) {
+		Matrix4x4 &setParsRH(_Type l, _Type r, _Type b, _Type t, _Type zn, _Type zf) {
 			_11 = _Type(2)*zn/(r-l); _12 = _Type(0);          _13 = (l+r)/(r-l); _14 = _Type(0);
 			_21 = _Type(0);          _22 = _Type(2)*zn/(t-b); _23 = (t+b)/(t-b); _24 = _Type(0);
 			_31 = _Type(0);          _32 = _Type(0);          _33 = zf/(zn-zf);  _34 = zn*zf/(zn-zf);
@@ -665,10 +676,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 透視投影行列をセットアップ
 		Matrix4x4 &setPars(_Type minx, _Type maxx, _Type miny, _Type maxy, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setParsRH(minx, maxx, miny, maxy, zn, zf);
-#else
+#ifdef GCTP_COORD_DX
 			return setParsLH(minx, maxx, miny, maxy, zn, zf);
+#else
+			return setParsRH(minx, maxx, miny, maxy, zn, zf);
 #endif
 		}
 		/// 平行投影行列をセットアップ
@@ -689,10 +700,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 平行投影行列をセットアップ
 		Matrix4x4 &setOrtho(_Type w, _Type h, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setOrthoRH(w, h, zn, zf);
-#else
+#ifdef GCTP_COORD_DX
 			return setOrthoLH(w, h, zn, zf);
+#else
+			return setOrthoRH(w, h, zn, zf);
 #endif
 		}
 		/// 平行投影行列をセットアップ
@@ -713,10 +724,10 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 		}
 		/// 平行投影行列をセットアップ
 		Matrix4x4 &setOrtho(_Type minx, _Type maxx, _Type miny, _Type maxy, _Type zn, _Type zf) {
-#ifdef GCTP_COORD_RH
-			return setOrthoRH(minx, maxx, miny, maxy, zn, zf);
-#else
+#ifdef GCTP_COORD_DX
 			return setOrthoLH(minx, maxx, miny, maxy, zn, zf);
+#else
+			return setOrthoRH(minx, maxx, miny, maxy, zn, zf);
 #endif
 		}
 		/// 線形補間した値をセット
@@ -880,7 +891,7 @@ _11*rhs._12+_12*rhs._22, _21*rhs._12+_22*rhs._22
 
 }} // namespace gctp
 
-// D3DXライブラリサポート
+// D3DXライブラリを使用する
 #ifdef GCTP_USE_D3DXMATH
 #include <gctp/math/d3d/matrix4x4.inl>
 #endif

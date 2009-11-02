@@ -37,12 +37,11 @@ namespace gctp { namespace scene {
 			this->node = node;
 			this->offset = offset.orthoNormal();
 			if(node) {
-				Matrix m = node->val.isValidWTM() ? this->offset.inverse()*node->val.wtm().orthoNormal() : this->offset.inverse()*node->val.lcm().orthoNormal();
+				Matrix m = node->val.isValidWTM() ? node->val.wtm().orthoNormal()*this->offset : node->val.lcm().orthoNormal()*this->offset;
 				xform.setFromOpenGLMatrix(&m._11);
 			}
 			else {
-				Matrix m = offset.inverse();
-				xform.setFromOpenGLMatrix(&m._11);
+				xform.setFromOpenGLMatrix(&this->offset._11);
 			}
 		}
 
@@ -63,7 +62,7 @@ namespace gctp { namespace scene {
 				StrutumTree::NodePtr _node = node.lock();
 				Matrix mat;
 				xform.getOpenGLMatrix(&mat._11);
-				_node->val.updateWTM(offset*mat);
+				_node->val.updateWTM(mat*offset.inverse());
 			}
 			this->xform = xform;
 		}
@@ -180,7 +179,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -206,7 +205,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -232,7 +231,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) box->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center())), box, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(aabb.center())), box, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -267,7 +266,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(-aabb.center()-center_of_mass)), compound, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(aabb.center()+center_of_mass)), compound, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);
@@ -297,7 +296,7 @@ namespace gctp { namespace scene {
 				if(mass > 0) compound->calculateLocalInertia(mass, local_inertia);
 
 				//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(offset-center_of_mass)), compound, local_inertia);
+				btRigidBody::btRigidBodyConstructionInfo rbinfo(mass, new PhysicMotionState(body->root(), Matrix().trans(center_of_mass-offset)), compound, local_inertia);
 				btRigidBody *rigid_body = new btRigidBody(rbinfo);
 
 				world_->addRigidBody(rigid_body);

@@ -13,7 +13,7 @@
 #include <time.h>
 #include <gctp/dbgout.hpp>
 #include <gctp/cstr.hpp>
-#include <_direct.h>
+#include <_dirent.h>
 #include <iostream>
 #ifdef __ee__
 #include <sys/types.h>

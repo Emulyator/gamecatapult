@@ -134,8 +134,8 @@ namespace gctp { namespace scene {
 
 		int getDirection(luapp::Stack &L)
 		{
-			Vector at = node_->val.wtm().at();
-			L << at.x << at.y << at.z;
+			Vector dir = node_->val.wtm().forward();
+			L << dir.x << dir.y << dir.z;
 			return 3;
 		}
 

@@ -103,10 +103,10 @@ namespace gctp { namespace scene {
 				graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
-#ifdef GCTP_COORD_RH
-				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
+#ifdef GCTP_COORD_DX
 				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #endif
 				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
@@ -157,10 +157,10 @@ namespace gctp { namespace scene {
 				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, TRUE );
-#ifdef GCTP_COORD_RH
-				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
+#ifdef GCTP_COORD_DX
 				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #endif
 				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
@@ -210,10 +210,10 @@ namespace gctp { namespace scene {
 				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
-#ifdef GCTP_COORD_RH
-				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
+#ifdef GCTP_COORD_DX
 				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #endif
 				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
@@ -263,10 +263,10 @@ namespace gctp { namespace scene {
 				//graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
-#ifdef GCTP_COORD_RH
-				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
+#ifdef GCTP_COORD_DX
 				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #endif
 				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
@@ -357,12 +357,12 @@ namespace gctp { namespace scene {
 	{
 		WorldSorter::onReach(delta);
 		sb_->begin();
-#ifdef GCTP_COORD_RH
-		graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CWW );
-		graphic::device().setCullingCCW(true);
-#else
+#ifdef GCTP_COORD_DX
 		graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 		graphic::device().setCullingCCW(false);
+#else
+		graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+		graphic::device().setCullingCCW(true);
 #endif
 		vmat_bak_ = graphic::device().getView();
 		graphic::device().setView(vmat_bak_*MatrixC(true).scale(-1,1,1));
@@ -372,10 +372,10 @@ namespace gctp { namespace scene {
 
 	bool MirrorWorldRenderer::onLeave(float delta) const
 	{
-#ifdef GCTP_COORD_RH
-		graphic::device().setCullingCCW(false);
-#else
+#ifdef GCTP_COORD_DX
 		graphic::device().setCullingCCW(true);
+#else
+		graphic::device().setCullingCCW(false);
 #endif
 		graphic::device().setView(vmat_bak_);
 		sb_->end();
@@ -592,7 +592,7 @@ namespace gctp { namespace scene {
 			view_port_bak_ = graphic::device().getViewPort();
 			Matrix m;
 			if(Camera::current().node()) m = Camera::current().node()->val.wtm().orthoNormal();
-			graphic::device().setView(Matrix().setView(m.right(), m.up(), m.at(), VectorC(0,0,0)));
+			graphic::device().setView(Matrix().setView(m.right(), m.up(), m.zaxis(), VectorC(0,0,0)));
 			graphic::device().setProjection(Matrix().setFOV(Camera::current().fov(), Camera::current().aspectRatio(), Camera::current().renderRect().left, Camera::current().renderRect().top, Camera::current().renderRect().right, Camera::current().renderRect().bottom, nearclip_, farclip_));
 			{
 				graphic::ViewPort vp = view_port_bak_;

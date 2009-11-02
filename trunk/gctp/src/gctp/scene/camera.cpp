@@ -31,7 +31,6 @@ namespace gctp { namespace scene {
 	{
 		graphic::device().setView(view());
 		graphic::device().setProjection(projection());
-		viewprojection_ = view()*projection();
 	}
 
 	void Camera::begin() const
@@ -81,8 +80,9 @@ namespace gctp { namespace scene {
 	Matrix Camera::view() const
 	{
 		Matrix m;
+		m.identify();
 		if(node()) m = node()->val.wtm().orthoNormal();
-		return Matrix().setView(m.right(), m.up(), m.at(), m.position());
+		return Matrix().setView(m.right(), m.up(), m.zaxis(), m.position());
 	}
 
 	Matrix Camera::projection() const
@@ -108,7 +108,8 @@ namespace gctp { namespace scene {
 
 	void Camera::update()
 	{
-		frustum_.set(view()*projection());
+		viewprojection_ = projection()*view();
+		frustum_.set(viewprojection_);
 	}
 	
 	bool Camera::LuaCtor(luapp::Stack &L)

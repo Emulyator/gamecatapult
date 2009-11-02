@@ -71,6 +71,7 @@ namespace gctp { namespace graphic {
 		HRslt setCurrent() const;
 		uint size() const;
 
+		Bits bits() { return bits_; }
 		uint indexNum() const { return num_; }
 
 		uint primitiveNum(D3DPRIMITIVETYPE prim_type) const

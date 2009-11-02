@@ -29,8 +29,9 @@
 //# define GCTP_USE_D3DXMATH
 #endif
 
-// 暗黙の座標系が右手系
-//#define GCTP_COORD_RH
+// DirectX方式の座標系（左手座標系・左ねじ回転・時計回り）を使用する（標準はOpenGL方式）
+// このフラグを立てても、ちゃんとならないと思う。もう右手・右ねじ系前提
+//#define GCTP_COORD_DX
 
 // 組み込みシステム向けのセッティング
 //#define GCTP_FOR_EMBEDDED	1

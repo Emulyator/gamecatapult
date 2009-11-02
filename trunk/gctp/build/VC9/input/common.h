@@ -21,6 +21,10 @@
 #define _WCTYPE_INLINE_DEFINED
 #endif
 
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_DEPRECATE 
+#endif
+
 #include <iosfwd>
 #include <cstddef>
 #include <algorithm>

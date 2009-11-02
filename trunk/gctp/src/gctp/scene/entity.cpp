@@ -250,8 +250,8 @@ namespace gctp { namespace scene {
 	int Entity::getDirection(luapp::Stack &L)
 	{
 		if(target_ && target_->root()) {
-			Vector at = target_->root()->val.wtm().at();
-			L << at.x << at.y << at.z;
+			Vector dir = target_->root()->val.wtm().forward();
+			L << dir.x << dir.y << dir.z;
 			return 3;
 		}
 		return 0;

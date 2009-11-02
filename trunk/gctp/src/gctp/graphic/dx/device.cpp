@@ -158,10 +158,10 @@ namespace gctp { namespace graphic { namespace dx {
 
 	Device::Device() : clear_color_(89/255.0f,135/255.0f,179/255.0f), cursor_backup_(NULL), is_mtrl_min_statechange_(false)
 	{
-#ifdef GCTP_COORD_RH
-		is_ccw_  = false;
-#else
+#ifdef GCTP_COORD_DX
 		is_ccw_  = true;
+#else
+		is_ccw_  = false;
 #endif
 	}
 

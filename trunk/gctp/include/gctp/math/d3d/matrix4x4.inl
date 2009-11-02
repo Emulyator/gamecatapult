@@ -4,29 +4,36 @@
 namespace gctp { namespace math {
 
 	template<>
-	Matrix4x4<float> &Matrix4x4<float>::operator*=(const Matrix4x4<float> &src) {
-		D3DXMatrixMultiply(*this, *this, src);
+	Matrix4x4<float> &Matrix4x4<float>::operator*=(const Matrix4x4<float> &rhs) {
+		D3DXMatrixMultiply(*this, rhs, *this);
 		return *this;
 	}
 
 	template<>
-	Vector4d<float> Matrix4x4<float>::operator*(const Vector4d<float> &src) const {
-		Vector4d<float> ret;
-		D3DXVec4Transform(ret, src, *this);
-		return ret;
-	}
-	
-	template<>
-	Vector3d<float> Matrix4x4<float>::operator*(const Vector3d<float> &src) const {
-		Vector3d<float> ret;
-		D3DXVec3TransformCoord(ret, src, *this);
+	Matrix4x4<float> Matrix4x4<float>::operator*(const Matrix4x4<float> &rhs) const {
+		Matrix4x4<float> ret;
+		D3DXMatrixMultiply(ret, rhs, *this);
 		return ret;
 	}
 
 	template<>
-	Plane3d<float> Matrix4x4<float>::operator*(const Plane3d<float> &src) const {
+	Vector4d<float> Matrix4x4<float>::operator*(const Vector4d<float> &rhs) const {
+		Vector4d<float> ret;
+		D3DXVec4Transform(ret, rhs, *this);
+		return ret;
+	}
+	
+	template<>
+	Vector3d<float> Matrix4x4<float>::operator*(const Vector3d<float> &rhs) const {
+		Vector3d<float> ret;
+		D3DXVec3TransformCoord(ret, rhs, *this);
+		return ret;
+	}
+
+	template<>
+	Plane3d<float> Matrix4x4<float>::operator*(const Plane3d<float> &rhs) const {
 		Plane3d<float> ret;
-		D3DXPlaneTransform(ret, src, *this);
+		D3DXPlaneTransform(ret, rhs, *this);
 		return ret;
 	}
 

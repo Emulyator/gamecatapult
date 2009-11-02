@@ -14,6 +14,7 @@
 #include <gctp/graphic/fonttexture.hpp>
 #include <gctp/graphic/spritebuffer.hpp>
 #include <gctp/graphic/particlebuffer.hpp>
+#include <gctp/graphic/wirebuffer.hpp>
 #include <gctp/graphic/text.hpp>
 #include <gctp/graphic/model.hpp>
 #include <gctp/graphic/dx/device.hpp>
@@ -133,6 +134,8 @@ extern "C" int main(int argc, char *argv[])
 	font2->setUp(_T(",12,NORMAL"));
 	graphic::ParticleBuffer pbuf;
 	pbuf.setUp();
+	graphic::WireBuffer wirebuf;
+	wirebuf.setUp();
 	context.load(_T("BitmapSet4.bmp")/*_T("particle.bmp")*/);
 	context.load(_T("Reflect.tga"));
 	Pointer<scene::RenderTree> rtree = context.create("gctp.scene.RenderTree", _T("rt")).lock();
@@ -141,7 +144,7 @@ extern "C" int main(int argc, char *argv[])
 		Pointer<scene::Camera> camera = context.create("gctp.scene.Camera", _T("camera")).lock();
 		if(camera) {
 			camera->newNode();
-			camera->node()->val.wtm() = Stance(VectorC(0.0f, 0.5f, -2.0f)).toMatrix();
+			camera->node()->val.wtm() = Stance(VectorC(0.0f, 0.5f, 2.0f)).toMatrix();
 			rtree->setUp(camera);
 			Handle<scene::WorldRenderer> wr = context.create("gctp.scene.WorldRenderer");
 			if(wr) {
@@ -175,7 +178,7 @@ extern "C" int main(int argc, char *argv[])
 							if(entity->mixer().isExist(0)) {
 								entity->mixer().tracks()[0].setWeight(1.0f);
 								entity->mixer().tracks()[0].setLoop(true);
-								entity->getLCM() = Matrix().scale(0.01f, 0.01f, 0.01f).setPos(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
+								entity->getLCM() = Matrix().scale(0.01f, 0.01f, 0.01f).setPos(((float)rand()/(float)RAND_MAX)*30.0f, 0, -((float)rand()/(float)RAND_MAX)*30.0f);
 								//entity->getLpos() = VectorC(((float)rand()/(float)RAND_MAX)*30.0f, 0, ((float)rand()/(float)RAND_MAX)*30.0f);
 							}
 						}
@@ -327,7 +330,7 @@ extern "C" int main(int argc, char *argv[])
 			addBox(physics, *world, context, VectorC(0, 2, 0));
 		}
 		if(input().kbd().push(DIK_PERIOD)) {
-			addBox(physics, *world, context, camera->node()->val.wtm().position(), camera->node()->val.wtm().at()*10.0f);
+			addBox(physics, *world, context, camera->node()->val.wtm().position(), camera->node()->val.wtm().forward()*10.0f);
 		}
 #endif
 		app().update_signal(app().lap);
@@ -364,6 +367,34 @@ extern "C" int main(int argc, char *argv[])
 			pbuf.draw(pdesc);
 			pbuf.end();
 #endif
+			{
+				graphic::WireDesc wire_right;
+				wire_right.setColor(Color32("Blue"));
+				wire_right.setHilight(Color32("Black"));
+				graphic::WireDesc wire_up;
+				wire_up.setColor(Color32("Red"));
+				wire_up.setHilight(Color32("Black"));
+				graphic::WireDesc wire_backward;
+				wire_backward.setColor(Color32("Green"));
+				wire_backward.setHilight(Color32("Black"));
+				Pointer<scene::Entity> chr = context[_T("gctp_base")].lock();
+				if(chr) {
+					// ƒ‚ƒfƒ‹À•W‚ð•\Ž¦
+					wirebuf.begin().set(graphic::WireBuffer::OPEQUE);
+					for(StrutumTree::TraverseItr i = chr->skeleton().beginTraverse(); i != chr->skeleton().endTraverse(); ++i) {
+						wire_right.s = (*i).val.wtm().position();
+						wire_right.e = (*i).val.wtm().position() + (*i).val.wtm().right()*0.2f;
+						wire_up.s = (*i).val.wtm().position();
+						wire_up.e = (*i).val.wtm().position() + (*i).val.wtm().up()*0.2f;
+						wire_backward.s = (*i).val.wtm().position();
+						wire_backward.e = (*i).val.wtm().position() + (*i).val.wtm().backward()*0.2f;
+						wirebuf.draw(wire_right);
+						wirebuf.draw(wire_up);
+						wirebuf.draw(wire_backward);
+					}
+					wirebuf.end();
+				}
+			}
 			text.reset();
 			text.setFont(font).setPos(10, 10).setColor(Color32(200, 200, 127)).out()
 				<< "FPS:" << app().fps.latestave << endl;

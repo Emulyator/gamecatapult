@@ -82,16 +82,26 @@ namespace gctp { namespace scene {
 		
 		vertices_ = new Vector[vert->num];
 		memcpy(vertices_, vert->vertices, sizeof(Vector)*vert->num);
-
+#ifndef GCTP_COORD_DX
+		for(ulong i = 0; i < vert->num; i++) {
+			vertices_[i].z *= -1;
+		}
+#endif
 		indices_ = new int[tri_num*3];
 		int tri_idx = 0;
 		cur_pface = reinterpret_cast<const char *>(&faces->first_face);
 		for(ulong i = 0; i < faces->num; i++) {
 			const Face *face = reinterpret_cast<const Face *>(cur_pface);
 			for(ulong j = 0; j < face->num-2; j++) {
+#ifdef GCTP_COORD_DX
 				indices_[tri_idx++] = face->indices[0];
 				indices_[tri_idx++] = face->indices[j+1];
 				indices_[tri_idx++] = face->indices[j+2];
+#else
+				indices_[tri_idx++] = face->indices[0];
+				indices_[tri_idx++] = face->indices[j+2];
+				indices_[tri_idx++] = face->indices[j+1];
+#endif
 				// トライアングルファンと解釈。凹面の場合、うまくいかない場合がある
 				// 凹面かどうかチェックすべきか？
 			}
