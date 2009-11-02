@@ -104,7 +104,7 @@ namespace gctp { namespace scene {
 			light.ambient = ambient;
 			light.diffuse = diffuse;
 			light.specular = specular;
-			light.dir = node()->val.wtm().at();
+			light.dir = node()->val.wtm().forward();
 			graphic::device().pushLight(light);
 					}
 			break;
@@ -131,7 +131,7 @@ namespace gctp { namespace scene {
 			light.attenuation[0] = attenuation[0];
 			light.attenuation[1] = attenuation[1];
 			light.attenuation[2] = attenuation[2];
-			light.dir = node()->val.wtm().at();
+			light.dir = node()->val.wtm().forward();
 			light.falloff = falloff;
 			light.theta = theta;
 			light.phi = phi;
@@ -155,10 +155,10 @@ namespace gctp { namespace scene {
 			if(bs_.r < range) {
 				float cos_phi_half = cosf(0.5f*phi);
 				bs_.r = range/(cos_phi_half*cos_phi_half*2);
-				bs_.c = node()->val.wtm().position()+node()->val.wtm().at().normal()*bs_.r;
+				bs_.c = node()->val.wtm().position()+node()->val.wtm().forward().normal()*bs_.r;
 			}
 			else {
-				bs_.c = node()->val.wtm().position()+node()->val.wtm().at().normal()*range;
+				bs_.c = node()->val.wtm().position()+node()->val.wtm().forward().normal()*range;
 			}
 			break;
 		}

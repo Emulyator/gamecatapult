@@ -16,13 +16,13 @@
 #pragma warning(disable:4786 4503)
 #endif // _MSC_VER > 1000
 
-#ifdef _MSC_VER
-# define _CRT_SECURE_NO_DEPRECATE 
-#endif
-
 #ifdef _DEBUG
 // ‚±‚¤‚µ‚È‚¢‚Æisleadbyte‚ª“ñd’è‹`‚É‚È‚é
 #define _WCTYPE_INLINE_DEFINED
+#endif
+
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_DEPRECATE 
 #endif
 
 #include <iosfwd>

@@ -44,35 +44,37 @@ namespace gctp {
 			planes[LEFT].b = wvp_mat._42 + wvp_mat._12;
 			planes[LEFT].c = wvp_mat._43 + wvp_mat._13;
 			planes[LEFT].d = wvp_mat._44 + wvp_mat._14;
+			planes[LEFT].normalize();
 			// Right clipping plane
 			planes[RIGHT].a = wvp_mat._41 - wvp_mat._11;
 			planes[RIGHT].b = wvp_mat._42 - wvp_mat._12;
 			planes[RIGHT].c = wvp_mat._43 - wvp_mat._13;
 			planes[RIGHT].d = wvp_mat._44 - wvp_mat._14;
+			planes[RIGHT].normalize();
 			// Top clipping plane
 			planes[TOP].a = wvp_mat._41 - wvp_mat._21;
 			planes[TOP].b = wvp_mat._42 - wvp_mat._22;
 			planes[TOP].c = wvp_mat._43 - wvp_mat._23;
 			planes[TOP].d = wvp_mat._44 - wvp_mat._24;
+			planes[TOP].normalize();
 			// Bottom clipping plane
 			planes[BOTTOM].a = wvp_mat._41 + wvp_mat._21;
 			planes[BOTTOM].b = wvp_mat._42 + wvp_mat._22;
 			planes[BOTTOM].c = wvp_mat._43 + wvp_mat._23;
 			planes[BOTTOM].d = wvp_mat._44 + wvp_mat._24;
+			planes[BOTTOM].normalize();
 			// Near clipping plane
 			planes[NEARCLIP].a = wvp_mat._41 + wvp_mat._31;
 			planes[NEARCLIP].b = wvp_mat._42 + wvp_mat._32;
 			planes[NEARCLIP].c = wvp_mat._43 + wvp_mat._33;
 			planes[NEARCLIP].d = wvp_mat._44 + wvp_mat._34;
+			planes[NEARCLIP].normalize();
 			// Far clipping plane
 			planes[FARCLIP].a = wvp_mat._41 - wvp_mat._31;
 			planes[FARCLIP].b = wvp_mat._42 - wvp_mat._32;
 			planes[FARCLIP].c = wvp_mat._43 - wvp_mat._33;
 			planes[FARCLIP].d = wvp_mat._44 - wvp_mat._34;
-
-			for(int i = 0; i < PLANE_NUM; i++) {
-				planes[i].normalize();
-			}
+			planes[FARCLIP].normalize();
 		}
 
 		void setLH(const Matrix &wvp_mat)
@@ -82,43 +84,45 @@ namespace gctp {
 			planes[LEFT].b = wvp_mat._42 + wvp_mat._12;
 			planes[LEFT].c = wvp_mat._43 + wvp_mat._13;
 			planes[LEFT].d = wvp_mat._44 + wvp_mat._14;
+			planes[LEFT].normalize();
 			// Right clipping plane
 			planes[RIGHT].a = wvp_mat._41 - wvp_mat._11;
 			planes[RIGHT].b = wvp_mat._42 - wvp_mat._12;
 			planes[RIGHT].c = wvp_mat._43 - wvp_mat._13;
 			planes[RIGHT].d = wvp_mat._44 - wvp_mat._14;
+			planes[RIGHT].normalize();
 			// Top clipping plane
 			planes[TOP].a = wvp_mat._41 - wvp_mat._21;
 			planes[TOP].b = wvp_mat._42 - wvp_mat._22;
 			planes[TOP].c = wvp_mat._43 - wvp_mat._23;
 			planes[TOP].d = wvp_mat._44 - wvp_mat._24;
+			planes[TOP].normalize();
 			// Bottom clipping plane
 			planes[BOTTOM].a = wvp_mat._41 + wvp_mat._21;
 			planes[BOTTOM].b = wvp_mat._42 + wvp_mat._22;
 			planes[BOTTOM].c = wvp_mat._43 + wvp_mat._23;
 			planes[BOTTOM].d = wvp_mat._44 + wvp_mat._24;
+			planes[BOTTOM].normalize();
 			// Near clipping plane
-			planes[NEARCLIP].a = wvp_mat._31;
-			planes[NEARCLIP].b = wvp_mat._32;
-			planes[NEARCLIP].c = wvp_mat._33;
-			planes[NEARCLIP].d = wvp_mat._34;
+			planes[NEARCLIP].a = wvp_mat._41;
+			planes[NEARCLIP].b = wvp_mat._42;
+			planes[NEARCLIP].c = wvp_mat._43;
+			planes[NEARCLIP].d = wvp_mat._44;
+			planes[NEARCLIP].normalize();
 			// Far clipping plane
 			planes[FARCLIP].a = wvp_mat._41 - wvp_mat._31;
 			planes[FARCLIP].b = wvp_mat._42 - wvp_mat._32;
 			planes[FARCLIP].c = wvp_mat._43 - wvp_mat._33;
 			planes[FARCLIP].d = wvp_mat._44 - wvp_mat._34;
-
-			for(int i = 0; i < PLANE_NUM; i++) {
-				planes[i].normalize();
-			}
+			planes[FARCLIP].normalize();
 		}
 
 		void set(const Matrix &wvp_mat)
 		{
-#ifdef GCTP_COORD_RH
-			setRH(wvp_mat);
-#else
+#ifdef GCTP_COORD_DX
 			setLH(wvp_mat);
+#else
+			setRH(wvp_mat);
 #endif
 		}
 

@@ -25,14 +25,10 @@ namespace gctp { namespace scene {
 	{
 		Pointer<Camera> target = target_.lock();
 		if(target) {
-			Stance chasee_stance = chasee_->val.wtm().orthoNormal();
-			chasee_stance.position += chasee_stance.posture.transform(position_offset);
-			chasee_stance.posture *= QuatC(posture_offset.y, posture_offset.x, posture_offset.z);
-
-			Stance oldstance = target->node()->val.wtm();
-			Stance newstance;
-			newstance.set2PInterpolation(oldstance, chasee_stance, dumping_factor);
-			target->node()->val.updateWTM(newstance.toMatrix());
+			Matrix trgmtx = chasee_->val.wtm()*QuatC(posture_offset.y, posture_offset.x, posture_offset.z).toMatrix().setPos(position_offset);
+			Matrix newmtx;
+			newmtx.set2PInterpolation(target->node()->val.wtm(), trgmtx, dumping_factor);
+			target->node()->val.updateWTM(newmtx);
 		}
 		return true;
 	}

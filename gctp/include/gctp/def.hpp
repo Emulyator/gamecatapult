@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2001 SAM (T&GG, Org.) <sowwa@water.sannet.ne.jp>. All rights reserved.
  */
+#include <float.h>
 
 /// GameCatapult‚ğ\¬‚·‚é‚Ù‚Æ‚ñ‚Ç‚Ì—v‘f‚ÍA‚±‚Ìgctp‚É‘®‚·‚é
 namespace gctp {

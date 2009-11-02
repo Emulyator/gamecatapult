@@ -45,10 +45,10 @@ namespace gctp { namespace scene {
 				graphic::device().impl()->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
 				graphic::device().impl()->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
 				graphic::device().impl()->SetRenderState( D3DRS_COLORVERTEX, FALSE );
-#ifdef GCTP_COORD_RH
-				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
-#else
+#ifdef GCTP_COORD_DX
 				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+#else
+				graphic::device().impl()->SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
 #endif
 				graphic::device().impl()->SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
 				graphic::device().impl()->SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );

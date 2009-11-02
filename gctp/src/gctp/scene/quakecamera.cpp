@@ -27,10 +27,10 @@ namespace gctp { namespace scene {
 			Pointer<Camera> target = target_.lock();
 			if(target) {
 				Matrix mtx = target->node()->val.wtm();
-				yaw = atan2f(mtx.at().x, mtx.at().z);
+				yaw = atan2f(mtx.zaxis().x, mtx.zaxis().z);
 				Matrix m;
 				m.rotY(-yaw);
-				Vector v = m.transformVector(mtx.at());
+				Vector v = m.transformVector(mtx.zaxis());
 				pitch = atan2f(-v.y, v.z);
 			}
 		}
@@ -42,14 +42,10 @@ namespace gctp { namespace scene {
 		if(target) {
 			Stance newstance = target->node()->val.wtm();
 			float neck_speed = 0.01f;
-#ifdef GCTP_COORD_RH
-			yaw += -neck_speed*input().mouse().dx;
-#else
-			yaw += neck_speed*input().mouse().dx;
-#endif
+			yaw -= neck_speed*input().mouse().dx;
 			if(yaw > g_pi) yaw -= (((int)yaw/g_pi)+1)*g_pi;
 			else if(yaw < -g_pi) yaw -= (((int)yaw/g_pi)-1)*g_pi;
-			pitch += neck_speed*input().mouse().dy;
+			pitch -= neck_speed*input().mouse().dy;
 			if(pitch > g_pi/2) pitch = g_pi/2;
 			else if(pitch < -g_pi/2) pitch = -g_pi/2;
 			target->fov() += 0.0005f*input().mouse().dz;
@@ -58,27 +54,27 @@ namespace gctp { namespace scene {
 			float roll = 0;
 			if(input().kbd().press(DIK_Q)) roll += 1.0f;
 			if(input().kbd().press(DIK_E)) roll -= 1.0f;
+#ifdef GCTP_COORD_DX
+			yaw*= -1; pitch *= -1; roll *= -1;
+#endif
 			newstance.posture = QuatC(yaw, pitch, roll);
 
 			if(input().kbd().push(DIK_PGUP)) speed += 1.0f;
 			if(input().kbd().push(DIK_PGDN)) speed -= 1.0f;
 
 			Vector dir = {0, 0, 0};
-			if(input().kbd().press(DIK_W)) dir.z += 1.0f;
-			if(input().kbd().press(DIK_S)) dir.z -= 1.0f;
-#ifdef GCTP_COORD_RH
-			if(input().kbd().press(DIK_D)) dir.x += -1.0f;
-			if(input().kbd().press(DIK_A)) dir.x -= -1.0f;
-#else
+			if(input().kbd().press(DIK_W)) dir.z -= 1.0f;
+			if(input().kbd().press(DIK_S)) dir.z += 1.0f;
 			if(input().kbd().press(DIK_D)) dir.x += 1.0f;
 			if(input().kbd().press(DIK_A)) dir.x -= 1.0f;
-#endif
 			if(input().kbd().press(DIK_SPACE)) dir.y += 1.0f;
 			if(input().kbd().press(DIK_LCONTROL)) dir.y -= 1.0f;
-			dir = Quat().rotY(yaw).transform(dir);
+			dir = QuatC(yaw, 0, 0).transform(dir);
+#ifdef GCTP_COORD_DX
+			dir.z *= -1;
+#endif
 			float l = dir.length();
 			if(l > 0) newstance.position += (dir/l)*speed*delta;
-
 			target->node()->val.updateWTM(newstance.toMatrix());
 		}
 		return true;

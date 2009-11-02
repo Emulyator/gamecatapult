@@ -64,6 +64,38 @@ namespace gctp { namespace graphic {
 			dx::IDirect3DIndexBufferPtr ib;
 			mesh_->GetIndexBuffer(&ib);
 			ib_.setUp(ib);
+#ifndef GCTP_COORD_DX
+			{
+				VertexBuffer::ScopedLock vbl(vb_);
+				if(vbl.buf) {
+					uint vnum = vb_.numVerticies();
+					for(uint i = 0; i < vnum; i++, vbl.step()) {
+						((Vector *)vbl.buf)->z *= -1;
+					}
+				}
+			}
+			{
+				IndexBuffer::ScopedLock ibl(ib_);
+				if(ib_.bits() == IndexBuffer::LONG) {
+					for(uint i = 0; i < ib_.indexNum(); i+=3) {
+						std::swap(ibl.get<ulong>(i+1), ibl.get<ulong>(i+2));
+					}
+				}
+				else {
+					for(uint i = 0; i < ib_.indexNum(); i+=3) {
+						std::swap(ibl.get<ushort>(i+1), ibl.get<ushort>(i+2));
+					}
+				}
+			}
+			for(uint i = 0; i < boneNum(); i++)
+			{
+				bone(i)->_13 *= -1;
+				bone(i)->_23 *= -1;
+				bone(i)->_31 *= -1;
+				bone(i)->_32 *= -1;
+				bone(i)->_34 *= -1;
+			}
+#endif
 			updateBS();
 		}
 		else {
@@ -134,6 +166,9 @@ namespace gctp { namespace graphic {
 			D3DXMATERIAL *_mtrls = reinterpret_cast<D3DXMATERIAL*>(mtrls->GetBufferPointer());
 			for(uint i = 0; i < vert->num; i++) {
 				vtx[i].p = vert->vertices[i];
+#ifndef GCTP_COORD_DX
+				vtx[i].p.z *= -1;
+#endif
 				if(_mtrls) vtx[i].color = Color32(_mtrls[mtrllist->mtrlno[i]].MatD3D.Diffuse);
 				else vtx[i].color = Color32(128, 128, 128);
 			}
@@ -242,7 +277,7 @@ namespace gctp { namespace graphic {
 
 	Vector Model::calcCenter() const
 	{
-		// aabb‚Í“Ê•ï‚Ì‚©‚í‚èc
+		// ˆê”ÔŠÈ’P‚É‹‚Ü‚é“Ê•ï‚Æ‚µ‚Äaabb‚ğg‚¤
 		AABox aabb = getAABB();
 		return aabb.center();
 	}
@@ -256,11 +291,11 @@ namespace gctp { namespace graphic {
 			uint vnum = vb_.numVerticies();
 			for(uint i = 0; i < vnum; i++, vbl.step()) {
 				Vector *pv = (Vector *)vbl.buf;
-				d = distance(*pv, center);
+				d = distance2(*pv, center);
 				if(d > ret) ret = d;
 			}
 		}
-		return ret;
+		return sqrt(ret);
 	}
 
 	AABox Model::getAABB() const

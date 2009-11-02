@@ -134,7 +134,7 @@ namespace gctp { namespace scene {
 			float scale = node->val.wtm().right().length();
 			float scale2 = node->val.wtm().up().length();
 			if(scale2 > scale) scale = scale2;
-			scale2 = node->val.wtm().at().length();
+			scale2 = node->val.wtm().zaxis().length();
 			if(scale2 > scale) scale = scale2;
 			bs_.r = model->bs().r * scale;
 		}

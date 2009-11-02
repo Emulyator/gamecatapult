@@ -29,6 +29,11 @@ namespace gctp { namespace math {
 	template<typename _Type>
 	struct Matrix3x3 {
 		union {
+			/*
+				E11, E12, E13
+				E21, E22, E23
+				E31, E32, E33
+			*/
 			struct {
 				_Type _11, _21, _31;
 				_Type _12, _22, _32;
@@ -63,15 +68,15 @@ namespace gctp { namespace math {
 			return *this;
 		}
 		/// 値セット
-		Matrix3x3 &set(const Vector2d<_Type> &right, const Vector2d<_Type> &up, const Vector2d<_Type> &pos)
+		Matrix3x3 &set(const Vector2d<_Type> &right, const Vector2d<_Type> &up, const Vector2d<_Type> &position)
 		{
-			this->right() = right; this->up() = up; position() = pos;
+			this->right() = right; this->up() = up; this->position() = position;
 			return *this;
 		}
 		/// 値セット
-		Matrix3x3 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at)
+		Matrix3x3 &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &zaxis)
 		{
-			this->right3d() = right; this->up3d() = up; this->at3d() = at;
+			this->right3d() = right; this->up3d() = up; this->zaxis() = zaxis;
 			return *this;
 		}
 
@@ -85,43 +90,61 @@ namespace gctp { namespace math {
 		}
 		/// X軸
 		Vector2d<_Type> &right() {
-			return *(Vector2d<_Type> *)(&m[0][0]);
+			return *(Vector2d<_Type> *)(m[0]);
 		}
 		/// X軸
 		const Vector2d<_Type> &right() const {
-			return *(Vector2d<_Type> *)(&m[0][0]);
+			return *(Vector2d<_Type> *)(m[0]);
 		}
 		/// X軸
 		Vector3d<_Type> &right3d() {
-			return *(Vector3d<_Type> *)(&m[0][0]);
+			return *(Vector3d<_Type> *)(m[0]);
 		}
 		/// X軸
 		const Vector3d<_Type> &right3d() const {
-			return *(Vector3d<_Type> *)(&m[0][0]);
+			return *(Vector3d<_Type> *)(m[0]);
 		}
 		/// Y軸
 		Vector2d<_Type> &up() {
-			return *(Vector2 *)(&m[1][0]);
+			return *(Vector2 *)(m[1]);
 		}
 		/// Y軸
 		const Vector2d<_Type> &up() const {
-			return *(Vector2 *)(&m[1][0]);
+			return *(Vector2 *)(m[1]);
 		}
 		/// Y軸
 		Vector3d<_Type> &up3d() {
-			return *(Vector3d<_Type> *)(&m[1][0]);
+			return *(Vector3d<_Type> *)(m[1]);
 		}
 		/// Y軸
 		const Vector3d<_Type> &up3d() const {
-			return *(Vector3d<_Type> *)(&m[1][0]);
+			return *(Vector3d<_Type> *)(m[1]);
 		}
 		/// Z軸
-		Vector3d<_Type> &at() {
-			return *(Vector3d<_Type> *)(&m[2][0]);
+		Vector3d<_Type> &zaxis() {
+			return *(Vector3d<_Type> *)(m[2]);
 		}
 		/// Z軸
-		const Vector3d<_Type> &at() const {
-			return *(Vector3d<_Type> *)(&m[2][0]);
+		const Vector3d<_Type> &zaxis() const {
+			return *(Vector3d<_Type> *)(m[2]);
+		}
+		/// Ｚ軸
+		const Vector3d<_Type> backward() const
+		{
+#ifdef GCTP_COORD_DX
+			return -*reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#else
+			return *reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#endif
+		}
+		/// Ｚ軸
+		const Vector3d<_Type> forward() const
+		{
+#ifdef GCTP_COORD_DX
+			return *reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#else
+			return -*reinterpret_cast<const Vector3d<_Type> *>(m[2]);
+#endif
 		}
 		/// 平行移動量
 		Vector2d<_Type> &position() {
@@ -142,17 +165,7 @@ namespace gctp { namespace math {
 
 		/// 代入
 		Matrix3x3& operator *= ( const Matrix3x3 &rhs ) {
-			Matrix3x3 w(*this);
-			_11 = w._11*rhs._11 + w._12*rhs._21 + w._13*rhs._31;
-			_12 = w._11*rhs._12 + w._12*rhs._22 + w._13*rhs._32;
-			_13 = w._11*rhs._13 + w._12*rhs._23 + w._13*rhs._33;
-			_21 = w._21*rhs._11 + w._22*rhs._21 + w._23*rhs._31;
-			_22 = w._21*rhs._12 + w._22*rhs._22 + w._23*rhs._32;
-			_23 = w._21*rhs._13 + w._22*rhs._23 + w._23*rhs._33;
-			_31 = w._31*rhs._11 + w._32*rhs._21 + w._33*rhs._31;
-			_32 = w._31*rhs._12 + w._32*rhs._22 + w._33*rhs._32;
-			_33 = w._31*rhs._13 + w._32*rhs._23 + w._33*rhs._33;
-			return *this;
+			return *this = *this * rhs;
 		}
 		/// 代入
 		Matrix3x3& operator += ( const Matrix3x3 &rhs ) {
@@ -185,7 +198,22 @@ namespace gctp { namespace math {
 		Matrix3x3 operator - () const { return (Matrix3x3){{-_11, -_21, -_31}, {-_12, -_22, -_32}, {-_13, -_23, -_33}}; }
 
 		/// ２項演算
-		Matrix3x3 operator * ( const Matrix3x3 &rhs ) const { return Matrix3x3(*this)*=rhs; }
+		Matrix3x3 operator * ( const Matrix3x3 &rhs ) const
+		{
+			return Matrix3x3C<_Type>(
+				_11*rhs._11 + _12*rhs._21 + _13*rhs._31,
+				_11*rhs._12 + _12*rhs._22 + _13*rhs._32,
+				_11*rhs._13 + _12*rhs._23 + _13*rhs._33,
+
+				_21*rhs._11 + _22*rhs._21 + _23*rhs._31,
+				_21*rhs._12 + _22*rhs._22 + _23*rhs._32,
+				_21*rhs._13 + _22*rhs._23 + _23*rhs._33,
+
+				_31*rhs._11 + _32*rhs._21 + _33*rhs._31,
+				_31*rhs._12 + _32*rhs._22 + _33*rhs._32,
+				_31*rhs._13 + _32*rhs._23 + _33*rhs._33
+			);
+		}
 		/// ２項演算
 		Matrix3x3 operator + ( const Matrix3x3 &rhs ) const { return Matrix3x3(*this)+=rhs; }
 		/// ２項演算
@@ -278,7 +306,7 @@ namespace gctp { namespace math {
 		explicit Matrix3x3C(bool ident)
 		{
 			if(ident) identify();
-			else _11 = _22 = _33 = _21 = _31 = _12 = _32 = _13 = _23 = _Type(0);
+			else _11 = _12 = _13 = _21 = _22 = _23 = _31 = _32 = _33 = _Type(0);
 		}
 		/// コンストラクタ
 		Matrix3x3C(
@@ -296,16 +324,16 @@ namespace gctp { namespace math {
 		/// コンストラクタ
 		Matrix3x3C(const _Type *_m) { memcpy(m, _m, sizeof(_Type)*9); }
 		/// コンストラクタ
-		Matrix3x3C(const Vector2d<_Type> &right, const Vector2d<_Type> &up, const Vector2d<_Type> &pos)
+		Matrix3x3C(const Vector2d<_Type> &right, const Vector2d<_Type> &up, const Vector2d<_Type> &position)
 		{
-			this->right() = right; this->up() = up; position() = pos;
-			m[0][2]=m[1][2]=0;m[2][2]=1;
+			this->right() = right; this->up() = up; this->position() = position;
+			_31 = _32 = _Type(0); _33 = _Type(1);
 		}
 		/// コンストラクタ
-		Matrix3x3C(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &at)
+		Matrix3x3C(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &zaxis)
 		{
-			right3d() = right; up3d() = up; this->at() = at;
-			m[0][2]=m[1][2]=0;m[2][2]=1;
+			right3d() = right; up3d() = up; this->zaxis() = zaxis;
+			_31 = _32 = _Type(0); _33 = _Type(1);
 		}
 	};
 

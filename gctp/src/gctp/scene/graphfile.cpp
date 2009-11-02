@@ -416,9 +416,19 @@ namespace gctp { namespace scene {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val.w = anim_keys->keys[i].val.w;
 						// なぜ反転が必要なんだ？
+						// >>おそらく、v' = q*v*~qというやり方は右ねじ、DirectXの左ねじの流儀にあわせるならv' = ~q*v*qであるべきなんじゃ
+						// OpenGL準拠の扱い方だと、クォータニオンはひっくり返す必要があったのだろう
+						// 実際D3DXRotationMatrixQuaternionは使っていなかった
+						// D3DXRotationMatrixQuaternionを使っていれば、反転は不要なはず
+#ifdef GCTP_COORD_DX
 						(*w)[i].val.x = -anim_keys->keys[i].val.x;
 						(*w)[i].val.y = -anim_keys->keys[i].val.y;
 						(*w)[i].val.z = -anim_keys->keys[i].val.z;
+#else
+						(*w)[i].val.x =  anim_keys->keys[i].val.x;
+						(*w)[i].val.y =  anim_keys->keys[i].val.y;
+						(*w)[i].val.z = -anim_keys->keys[i].val.z;
+#endif
 					}
 					self.setKeys(w);
 					//PRNN("PostureKey read");
@@ -430,6 +440,10 @@ namespace gctp { namespace scene {
 					for(uint i = 0; i < anim_keys->num; i++) {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val = VectorC(anim_keys->keys[i].val);
+#ifndef GCTP_COORD_DX
+						(*w)[i].val.x *= -1;
+						(*w)[i].val.y *= -1;
+#endif
 					}
 					self.setKeys(w);
 					//PRNN("YPRKey read");
@@ -441,6 +455,9 @@ namespace gctp { namespace scene {
 					for(uint i = 0; i < anim_keys->num; i++) {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val = VectorC(anim_keys->keys[i].val);
+#ifndef GCTP_COORD_DX
+						(*w)[i].val.z *= -1;
+#endif
 					}
 					self.setKeys(w);
 					//PRNN("PositionKey read");
@@ -452,6 +469,13 @@ namespace gctp { namespace scene {
 					for(uint i = 0; i < anim_keys->num; i++) {
 						(*w)[i].time = anim_keys->keys[i].time;
 						(*w)[i].val = MatrixC(anim_keys->keys[i].val);
+#ifndef GCTP_COORD_DX
+						(*w)[i].val._13 *= -1;
+						(*w)[i].val._23 *= -1;
+						(*w)[i].val._31 *= -1;
+						(*w)[i].val._32 *= -1;
+						(*w)[i].val._34 *= -1;
+#endif
 					}
 					self.setKeys(w);
 					//PRNN("MatrixKey read");
@@ -618,7 +642,16 @@ namespace gctp { namespace scene {
 			}
 			else if(TID_D3DRMFrameTransformMatrix == cur.type()) {
 				//PRNN("TID_D3DRMFrameTransformMatrix found");
-				if(cnode) cnode->val.getLCM() = MatrixC(*(D3DXMATRIX *)cur.data());
+				if(cnode) {
+					cnode->val.getLCM() = MatrixC(*(D3DXMATRIX *)cur.data());
+#ifndef GCTP_COORD_DX
+					cnode->val.getLCM()._13 *= -1;
+					cnode->val.getLCM()._23 *= -1;
+					cnode->val.getLCM()._31 *= -1;
+					cnode->val.getLCM()._32 *= -1;
+					cnode->val.getLCM()._34 *= -1;
+#endif
+				}
 				else PRN("cnode is NULL!"<<endl);
 			}
 			else if(DXFILEOBJ_AnimTicksPerSecond == cur.type()) {

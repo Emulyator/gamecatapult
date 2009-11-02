@@ -25,7 +25,7 @@
 #include <sstream>
 #include <fstream>
 #include <ios>
-#include <_direct.h>
+#include <_dirent.h>
 #include <direct.h>
 #include <sys/stat.h>
 #include <locale.h>

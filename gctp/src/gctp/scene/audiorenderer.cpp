@@ -36,7 +36,7 @@ namespace gctp { namespace scene {
 		const Matrix &wtm = Camera::current().node()->val.wtm();
 		// ƒm[ƒh‚ª‚È‚¢ê‡‚Ç‚¤‚·‚éH—áŠO“f‚­‚×‚«‚©
 		audio::device().setListenerPosition(wtm.position());
-		audio::device().setListenerPosture(wtm.at(), wtm.up());
+		audio::device().setListenerPosture(wtm.forward(), wtm.up());
 		if(delta != 0) audio::device().setListenerVelocity((wtm.position()-Camera::current().node()->val.prevWTM().position())/delta);
 		if(target_) {
 			for(HandleList<Speaker>::iterator i = self->target_->speaker_list.begin(); i != self->target_->speaker_list.end();) {
