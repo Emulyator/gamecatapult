@@ -39,10 +39,10 @@ namespace gctp {
 			return posture.toMatrix().setPos(position);
 		}
 
-		/// épê®
-		Quat	posture;
 		/// à íu
 		Vector	position;
+		/// épê®
+		Quat	posture;
 
 		// ë„ì¸ââéZéqÇäOïîÇ…Ç≥ÇÁÇ∑
 		Stance &operator+=(const Stance &src) {
@@ -56,9 +56,7 @@ namespace gctp {
 			return *this;
 		}
 		Stance &operator*=(const Stance &src) {
-			position *= src.position;
-			posture *= src.posture;
-			return *this;
+			return *this = (*this) * src;
 		}
 		Stance &operator*=(float src) {
 			position *= src;
@@ -73,7 +71,10 @@ namespace gctp {
 		
 		Stance operator+(const Stance &rhs) const { return Stance(*this)+=rhs; }
 		Stance operator-(const Stance &rhs) const { return Stance(*this)-=rhs; }
-		Stance operator*(const Stance &rhs) const { return Stance(*this)*=rhs; }
+		Stance operator*(const Stance &rhs) const
+		{
+			return Stance(position+posture.transform(rhs.position), posture*rhs.posture);
+		}
 		Stance operator*(float rhs) const { return Stance(*this)*=rhs; }
 		Stance operator/(float rhs) const { return Stance(*this)/=rhs; }
 		friend Stance operator*(float lhs, const Stance &rhs) { return rhs*lhs; }

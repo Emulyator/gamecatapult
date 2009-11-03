@@ -168,7 +168,7 @@ public:
 		else {
 			hr = g_.open(handle());
 		}
-		return hr;
+		return hr ? true : false;
 	}
 
 	virtual HWND getHandle() const

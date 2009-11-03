@@ -134,12 +134,22 @@ namespace gctp { namespace graphic {
 		Vector right = right_*(desc.size.x/2.0f);
 		Vector up = up_*(desc.size.y/2.0f);
 		vtx->set(desc.pos + up - right, desc.color[0], desc.hilight[0], desc.uv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 		vtx->set(desc.pos + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
 		vtx->set(desc.pos - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+#else
+		vtx->set(desc.pos - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+		vtx->set(desc.pos + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
+#endif
 		cur_++;
 		vtx->set(desc.pos + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
+#ifdef GCTP_COORD_DX
 		vtx->set(desc.pos - up + right, desc.color[3], desc.hilight[3], desc.uv[3]); vtx++;
 		vtx->set(desc.pos - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+#else
+		vtx->set(desc.pos - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+		vtx->set(desc.pos - up + right, desc.color[3], desc.hilight[3], desc.uv[3]); vtx++;
+#endif
 		cur_++;
 		locked_ = vtx;
 		if(isFull()) { draw(); rewind(); }
@@ -192,12 +202,22 @@ namespace gctp { namespace graphic {
 					hilight[0].setLerp(desc.hilight[0], desc.hilight[1], l/len);
 					hilight[1].setLerp(desc.hilight[2], desc.hilight[3], l/len);
 					vtx->set(desc.pos[i] + up - right, desc.color[0], desc.hilight[0], desc.uv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i] + up        , color[0], hilight[0], wuv[0]); vtx++;
 					vtx->set(desc.pos[i] - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+#else
+					vtx->set(desc.pos[i] - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+					vtx->set(desc.pos[i] + up        , color[0], hilight[0], wuv[0]); vtx++;
+#endif
 					cur_++;
 					vtx->set(desc.pos[i] + up        , color[0], hilight[0], wuv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i] - up        , color[1], hilight[1], wuv[1]); vtx++;
 					vtx->set(desc.pos[i] - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+#else
+					vtx->set(desc.pos[i] - up - right, desc.color[2], desc.hilight[2], desc.uv[2]); vtx++;
+					vtx->set(desc.pos[i] - up        , color[1], hilight[1], wuv[1]); vtx++;
+#endif
 					cur_++;
 					locked_ = vtx;
 					if(isFull()) { draw(); rewind(); }
@@ -219,12 +239,22 @@ namespace gctp { namespace graphic {
 					nhilight[0].setLerp(desc.hilight[0], desc.hilight[1], l/len);
 					nhilight[1].setLerp(desc.hilight[2], desc.hilight[3], l/len);
 					vtx->set(desc.pos[i-1] +  up,  color[0],  hilight[0],  wuv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i  ] + nup, ncolor[0], nhilight[0], nwuv[0]); vtx++;
 					vtx->set(desc.pos[i-1] -  up,  color[1],  hilight[1],  wuv[1]); vtx++;
+#else
+					vtx->set(desc.pos[i-1] -  up,  color[1],  hilight[1],  wuv[1]); vtx++;
+					vtx->set(desc.pos[i  ] + nup, ncolor[0], nhilight[0], nwuv[0]); vtx++;
+#endif
 					cur_++;
 					vtx->set(desc.pos[i  ] + nup, ncolor[0], nhilight[0], nwuv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i  ] - nup, ncolor[1], nhilight[1], nwuv[1]); vtx++;
 					vtx->set(desc.pos[i-1] -  up,  color[1],  hilight[1],  wuv[1]); vtx++;
+#else
+					vtx->set(desc.pos[i-1] -  up,  color[1],  hilight[1],  wuv[1]); vtx++;
+					vtx->set(desc.pos[i  ] - nup, ncolor[1], nhilight[1], nwuv[1]); vtx++;
+#endif
 					cur_++;
 					locked_ = vtx;
 					if(isFull()) { draw(); rewind(); }
@@ -243,12 +273,22 @@ namespace gctp { namespace graphic {
 //				if(fabsf(dir*at_)<FLT_EPSILON*2) {
 					Vector right = dir*(desc.size.x/2.0f);
 					vtx->set(desc.pos[i] + up        , color[0], hilight[0], wuv[0]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i] + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
 					vtx->set(desc.pos[i] - up        , color[0], hilight[0], wuv[1]); vtx++;
+#else
+					vtx->set(desc.pos[i] - up        , color[0], hilight[0], wuv[1]); vtx++;
+					vtx->set(desc.pos[i] + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
+#endif
 					cur_++;
 					vtx->set(desc.pos[i] + up + right, desc.color[1], desc.hilight[1], desc.uv[1]); vtx++;
+#ifdef GCTP_COORD_DX
 					vtx->set(desc.pos[i] - up + right, desc.color[3], desc.hilight[3], desc.uv[3]); vtx++;
 					vtx->set(desc.pos[i] - up        , color[1], hilight[1], wuv[1]); vtx++;
+#else
+					vtx->set(desc.pos[i] - up        , color[1], hilight[1], wuv[1]); vtx++;
+					vtx->set(desc.pos[i] - up + right, desc.color[3], desc.hilight[3], desc.uv[3]); vtx++;
+#endif
 					cur_++;
 					locked_ = vtx;
 					if(isFull()) { draw(); rewind(); }
