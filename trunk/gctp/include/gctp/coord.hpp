@@ -26,6 +26,7 @@ namespace gctp {
 		Coord() {}
 		Coord(const Vector &position, const Quat &posture = QuatC(true), const Vector &scale = VectorC(1.0f, 1.0f, 1.0f))
 			: Stance(position, posture), scale(scale) {}
+		Coord(const Stance &stance, const Vector &scale = VectorC(1.0f, 1.0f, 1.0f)) : Stance(stance), scale(scale) {}
 		Coord(const Matrix &src) : Stance(src*Matrix().scale(VectorC(1,1,1)/src.getScale())), scale(src.getScale()) {}
 
 		void setDefault() {
@@ -53,9 +54,7 @@ namespace gctp {
 			return *this;
 		}
 		Coord &operator*=(const Coord &src) {
-			Stance::operator*=(src);
-			scale *= src.scale;
-			return *this;
+			return *this = *this * src;
 		}
 		Coord &operator*=(float src) {
 			Stance::operator*=(src);
@@ -70,7 +69,11 @@ namespace gctp {
 		
 		Coord operator+(const Coord &rhs) const { return Coord(*this)+=rhs; }
 		Coord operator-(const Coord &rhs) const { return Coord(*this)-=rhs; }
-		Coord operator*(const Coord &rhs) const { return Coord(*this)*=rhs; }
+		Coord operator*(const Coord &rhs) const
+		{
+			Vector _s = posture.transform(rhs.scale);
+			return Coord((*(Stance *)this)*rhs, VectorC(scale.x*_s.x,scale.y*_s.y,scale.z*_s.z)); // ‚±‚ê‚Ù‚ñ‚Æ‚©‚È‚Ÿ
+		}
 		Coord operator*(float rhs) const { return Coord(*this)*=rhs; }
 		Coord operator/(float rhs) const { return Coord(*this)/=rhs; }
 		friend Coord operator*(float lhs, const Coord &rhs) { return rhs*lhs; }

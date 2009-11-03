@@ -200,10 +200,15 @@ namespace gctp { namespace math {
 			return set(cos(theta), 0, 0, sin(theta));
 		}
 
-		/// 姿勢を定義する互いに直交するベクトルから四元数を設定
-		Quaternion &set(const Vector3d<_Type> &right, const Vector3d<_Type> &up, const Vector3d<_Type> &back)
+		/// 姿勢を定義する二つのベクトルから四元数を設定
+		Quaternion &set(const Vector3d<_Type> &forward, const Vector3d<_Type> &up)
 		{
-			return set(Matrix3x3C<_Type>(right, up, back));
+			Vector3d<_Type> right = forward % up;
+#ifdef GCTP_COORD_DX
+			return set(Matrix3x3C<_Type>(right, right%forward, forward));
+#else
+			return set(Matrix3x3C<_Type>(right, right%forward, -forward));
+#endif
 		}
 
 		// 代入演算子を外部にさらす
