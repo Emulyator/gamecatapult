@@ -299,7 +299,7 @@ namespace gctp {
 	void ArchiveEditable::setUpList()
 	{
 		for(IndexItr i = index_.begin(); i != index_.end(); ++i) {
-			list_.push_back(EntryAttr(*i));
+			list_.push_back(EntryAttr(*const_cast<ArchiveEntry *>(&(*i))));
 		}
 		list_.sort();
 	}

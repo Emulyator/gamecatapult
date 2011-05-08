@@ -463,10 +463,6 @@ extern "C" int main(int argc, char *argv[])
 
 #ifdef _DEBUG
 # pragma comment(lib, "zlibd.lib")
-# ifdef MOVIETEST
-#  pragma comment(lib, "strmbasd.lib")
-#  pragma comment(lib, "asynbasd.lib")
-# endif
 # ifdef PHYSICSTEST
 #  pragma comment(lib, "libbulletdynamics_d.lib")
 #  pragma comment(lib, "libconvexdecomposition_d.lib")
@@ -475,10 +471,6 @@ extern "C" int main(int argc, char *argv[])
 #pragma comment(lib, "libbulletcollision_d.lib")
 #else
 # pragma comment(lib, "zlib.lib")
-# ifdef MOVIETEST
-#  pragma comment(lib, "strmbase.lib")
-#  pragma comment(lib, "asynbase.lib")
-# endif
 # ifdef PHYSICSTEST
 #  pragma comment(lib, "libbulletdynamics.lib")
 #  pragma comment(lib, "libconvexdecomposition.lib")

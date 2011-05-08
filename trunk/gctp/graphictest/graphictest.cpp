@@ -345,10 +345,10 @@ int SmartWinMain( Application & app )
 # pragma comment(lib, "ddraw.lib")
 # pragma comment(lib, "dxguid.lib")
 #else
-# pragma comment(lib, "DxErr9.lib")
+# pragma comment(lib, "DxErr.lib")
 # pragma comment(lib, "d3d9.lib")
 # pragma comment(lib, "d3dxof.lib")
-# pragma comment(lib, "ddraw.lib")
+# pragma comment(lib, "d2d1.lib")
 # pragma comment(lib, "dxguid.lib")
 # pragma comment(lib, "winmm.lib")
 # ifdef _DEBUG

@@ -12,7 +12,7 @@
 
 
 #ifdef LUA_MBCS
-#define FIRST_RESERVED	65537
+#define FIRST_RESERVED	(((unsigned int)-1)-63)
 #else
 #define FIRST_RESERVED	257
 #endif

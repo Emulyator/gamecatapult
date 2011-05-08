@@ -178,7 +178,7 @@ namespace gctp {
 				lua_settable(L, LUA_REGISTRYINDEX);
 				lua_remove(L, 1);
 				// get member function from upvalue
-				auto Method *l = static_cast<Method *>(lua_touserdata(L, lua_upvalueindex(1)));
+				Method *l = static_cast<Method *>(lua_touserdata(L, lua_upvalueindex(1)));
 				luapp::Stack ls(L);
 				(obj->*(l->selffunc_))(ls);  // call member function
 				// push self to stack top

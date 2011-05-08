@@ -12,11 +12,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <winerror.h>
-#ifdef GCTP_LITE
-# include <Dxerr8.h>
-#else
-# include <Dxerr9.h>
-#endif
+#include <Dxerr.h>
 #include <iosfwd>
 #include <boost/detail/workaround.hpp>
 #include <tchar.h>
@@ -32,15 +28,9 @@ namespace gctp {
 		HRslt() : i(S_OK) {}
 		HRslt(const HRESULT &src) : i(src) {}
 		_TCHAR *message(_TCHAR *buf, std::size_t buflen) const {
-#ifdef GCTP_LITE
-			_tcsncpy(buf, DXGetErrorString8(i), buflen);
+			_tcsncpy(buf, DXGetErrorString(i), buflen);
 			_tcsncpy(buf, _T(" : "), buflen);
-			_tcsncpy(buf, DXGetErrorDescription8(i), buflen);
-#else
-			_tcsncpy(buf, DXGetErrorString9(i), buflen);
-			_tcsncpy(buf, _T(" : "), buflen);
-			_tcsncpy(buf, DXGetErrorDescription9(i), buflen);
-#endif
+			_tcsncpy(buf, DXGetErrorDescription(i), buflen);
 			return buf;
 		}
 

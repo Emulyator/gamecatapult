@@ -13,7 +13,8 @@
  */
 #include <functional>           // for std::less
 #include <algorithm>            // for std::swap
-#include <iosfwd>               // for std::basic_ostream
+//#include <iosfwd>               // for std::basic_ostream
+#include <ostream>               // for std::basic_ostream
 #include <gctp/object.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/detail/workaround.hpp>
