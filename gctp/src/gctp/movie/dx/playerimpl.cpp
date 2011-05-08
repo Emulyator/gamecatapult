@@ -13,9 +13,9 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/texture.hpp>
-#include <streams.h>
-#include <asyncio.h>
-#include <asyncrdr.h>
+#include "streams.h"
+#include "asyncio.h"
+#include "asyncrdr.h"
 
 //#define REGISTER_FILTERGRAPH
 
@@ -710,8 +710,9 @@ namespace gctp { namespace movie { namespace dx {
 		WCHAR wFileName[MAX_PATH];
 		wFileName[MAX_PATH-1] = 0;    // NULL-terminate
 
-		USES_CONVERSION;
-		(void)StringCchCopyW(wFileName, NUMELMS(wFileName), T2W((_TCHAR *)path));
+		//USES_CONVERSION;
+		//(void)StringCchCopyW(wFileName, NUMELMS(wFileName), T2W((_TCHAR *)path));
+		StringCchCopy(wFileName, NUMELMS(wFileName), path);
 
 		IPinPtr pFSrcPinOut;    // Source Filter Output Pin
 		if(ArchiveMediaFile::needThis(path)) {
@@ -821,14 +822,15 @@ namespace gctp { namespace movie { namespace dx {
 	 */
 	HRslt Player::open(HWND hwnd, int notify_msgid, const _TCHAR *path, bool audio_on)
 	{
-		USES_CONVERSION;
+		//USES_CONVERSION;
 		WCHAR wFile[MAX_PATH];
 		HRslt hr;
 
 		if(!path) return E_POINTER;
 		
 		// Convert filename to wide character string
-		wcsncpy(wFile, T2W((LPTSTR)path), NUMELMS(wFile)-1);
+		//wcsncpy(wFile, T2W((LPTSTR)path), NUMELMS(wFile)-1);
+		wcsncpy(wFile, path, NUMELMS(wFile)-1);
 		wFile[MAX_PATH-1] = 0;
 
 		IFilterGraphPtr filter_graph;

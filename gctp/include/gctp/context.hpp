@@ -16,6 +16,7 @@
 #include <gctp/db.hpp>
 #include <gctp/class.hpp>
 #include <gctp/tuki.hpp>
+#include <gctp/buffer.hpp>
 #include <gctp/signal.hpp>
 #include <tchar.h>
 

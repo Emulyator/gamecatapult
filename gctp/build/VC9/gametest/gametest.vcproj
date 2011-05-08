@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="gametest"
 	ProjectGUID="{0E47D21B-DF3C-4986-9502-FBE3576B5775}"
+	RootNamespace="gametest"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>

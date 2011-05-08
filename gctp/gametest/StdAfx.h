@@ -34,7 +34,6 @@ extern CAppModule _Module;
 #include <d3d9types.h>
 #include <d3dx9.h>
 #include <dxfile.h>
-#include <dmusici.h>
 #define DIRECTINPUT_VERSION (0x0800)
 #include <dinput.h>
 

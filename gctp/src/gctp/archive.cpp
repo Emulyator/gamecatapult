@@ -191,7 +191,7 @@ namespace gctp {
 	ArchiveEntry *Archive::get(const _TCHAR *fn)
 	{
 		IndexItr i = index_.find(ArchiveEntry(fn));
-		if(index_.end() != i) return &(*i);
+		if(index_.end() != i) return const_cast<ArchiveEntry *>(&(*i));
 		return NULL;
 	}
 

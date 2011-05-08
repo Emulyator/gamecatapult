@@ -18,7 +18,6 @@
 #include <d3d9types.h>
 #include <d3dx9.h>
 #include <dxfile.h>
-#include <dmusici.h>
 #include <dinput.h>
 #include <gctp/def.hpp>
 

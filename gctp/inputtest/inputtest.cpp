@@ -130,7 +130,6 @@ int SmartWinMain( SmartWin::Application & app )
 # endif
 #endif
 
-#pragma comment(lib, "DxErr9.lib")
+#pragma comment(lib, "DxErr.lib")
 #pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dinput.lib")
 #pragma comment(lib, "dinput8.lib")
