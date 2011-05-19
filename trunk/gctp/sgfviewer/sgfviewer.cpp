@@ -611,14 +611,12 @@ int SmartWinMain(Application & app)
 #pragma comment(lib, "msdmo.lib")
 #pragma comment(lib, "quartz.lib")
 #pragma comment(lib, "strmiids.lib")
+#pragma comment(lib, "bulletcollision.lib")
+#pragma comment(lib, "linearmath.lib")
 #ifdef _DEBUG
 # pragma comment(lib, "luad.lib")
 # pragma comment(lib, "d3dx9d.lib")
-# pragma comment(lib, "libbulletcollision_d.lib")
-# pragma comment(lib, "libbulletmath_d.lib")
 #else
 # pragma comment(lib, "lua.lib")
 # pragma comment(lib, "d3dx9.lib")
-# pragma comment(lib, "libbulletcollision.lib")
-# pragma comment(lib, "libbulletmath.lib")
 #endif
