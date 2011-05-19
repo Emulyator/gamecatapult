@@ -18,7 +18,6 @@
 #include <gctp/graphic/fonttexture.hpp>
 #include <gctp/movie/player.hpp>
 #include <gctp/inputmethod.hpp>
-#include "SmartWin.h"
 
 using namespace gctp;
 using namespace gctp::graphic;
