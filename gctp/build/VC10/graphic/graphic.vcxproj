@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9D0A430D-BC72-4803-9DC8-00A62689F5BB}</ProjectGuid>
+    <RootNamespace>graphic</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\lib\vc10\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\lib\vc10\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gctp_$(ProjectName)_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gctp_$(ProjectName)</TargetName>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SmartWinDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SmartWinDir)lib;$(LibraryPath)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SmartWinDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SmartWinDir)lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DisableSpecificWarnings>4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/O2 /Ob1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DisableSpecificWarnings>4819;4996;4390;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\gctp\graphic\asciifonttexture.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\cubetexture.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\depthstencil.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\fonttexture.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\image.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\indexbuffer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\material.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\model.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\particlebuffer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\rendertarget.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\rsrc.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\shader.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\spritebuffer.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\gctp\graphic\text.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\texture.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\vertexbuffer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\wirebuffer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\dx\device.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\gctp\graphic\dx\hlslshader.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\dx\skinbrush.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\graphic\dx\stateblock.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\gctp\graphic\dx\view.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)dx\</XMLDocumentationFileName>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\gctp\common.h" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\brush.hpp" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\cubetexture.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\depthstencil.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\fonttexture.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\image.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\indexbuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\light.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\material.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\model.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\particlebuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\rendertarget.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\rsrc.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\shader.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\spritebuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\text.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\texture.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\vertexbuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\wirebuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\asciifonttexture.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\device.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\fvf.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\hlslshader.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\skinbrush.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\solidbrush.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\stateblock.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\graphic\dx\view.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

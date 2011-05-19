@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{63AE1D32-4453-472B-9304-0DBD3E558847}</ProjectGuid>
+    <RootNamespace>core</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\lib\vc10\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\lib\vc10\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gctp_$(ProjectName)_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gctp_$(ProjectName)</TargetName>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SmartWinDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SmartWinDir)lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SmartWinDir)lib;$(LibraryPath)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SmartWinDir)include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DisableSpecificWarnings>4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/O2 /Ob1 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DisableSpecificWarnings>4819;4996;4390;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\_dirent.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\gctp\app.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\archive.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\archiveeditable.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\argmap.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\buffer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\class.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\context.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\csvsa.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\db.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\dbgout.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\extension.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\factory.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\fiber.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\file.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\fileserver.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\font.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\fpsinfo.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\grabball.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\line.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\list.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\object.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\profiler.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\property.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\serializer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\signal.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\skeleton.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\gctp\stringmap.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\strutumtree.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\timer.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\tuki.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\typemap.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\wargmap.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\wstringmap.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\xfile.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\zfilter.cpp" />
+    <ClCompile Include="..\..\..\src\gctp\zipfile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\gctp\aabox.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\allocmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\app.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\archive.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\archiveeditable.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\argmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\bbstream.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\bfstream.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\bitfieldarray.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\buffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\class.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\cmdline.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\color.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\com_ptr.hpp" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="..\..\..\include\gctp\config.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\context.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\coord.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\crypt.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\cryptfilter.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\cstr.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\csv.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\csvsa.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\db.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\dbgout.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\dbgoutbuf.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\def.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\dxcomptrs.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\extension.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\factory.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\fiber.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\file.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\fileserver.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\fixed.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\font.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\fpsinfo.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\frustum.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\grabball.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\handlelist.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\handlevector.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\hrslt.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\ibstream.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\inputbuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\inputmethod.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\iobstream.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\line.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\list.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\matrix.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\matrix2.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\memory.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\mutex.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\object.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\obox.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\obstream.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\oct.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\ode.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\pathfinder.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\plane.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\pointer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\pointerlist.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\pointervector.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\profiler.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\property.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\quad.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\quat.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\rop.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\serializer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\shiftable.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\signal.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\skeleton.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\socket.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\sphere.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\stance.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\staticringbuffer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\streamringbuf.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\stringmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\strutum.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\strutumnode.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\strutumtree.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\targmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\tcstr.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\timer.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\tree.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\tstringmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\tuki.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\turi.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\typeinfo.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\typemap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\types.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\uri.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\utils.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\vector.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\wargmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\wcstr.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\wstringmap.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\wuri.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\xfile.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\zfilter.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\zipfile.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\matrix2x2.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\matrix3x3.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\matrix3x4.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\matrix4x4.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\plane3d.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\quaternion.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\rectangle.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\vector2d.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\vector3d.hpp" />
+    <ClInclude Include="..\..\..\include\gctp\math\vector4d.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\include\gctp\signal.inl" />
+    <None Include="..\..\..\include\gctp\signal_temp.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\matrix4x4.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\plane3d.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\quaternion.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\vector2d.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\vector3d.inl" />
+    <None Include="..\..\..\include\gctp\math\d3d\vector4d.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -48,7 +48,7 @@ using namespace std;
 
 namespace {
 
-	bool test(Point2 p, uint8_t button, uint8_t opt)
+	bool test(Point2 p, gctp::uint8_t button, gctp::uint8_t opt)
 	{
 		PRNN("clicked "<<p<<","<<(int)button<<","<<(int)opt);
 		return true;
@@ -62,6 +62,7 @@ namespace {
 			if(entity) {
 				entity->target()->root()->val.getLCM().position() = pos;
 				physic_world.addBox2(entity->target(), pos, 10, vel);
+				PRNN("addBox "<<pos);
 			}
 		}
 	}
@@ -87,7 +88,7 @@ extern "C" int main(int argc, char *argv[])
 	fileserver().mount(_T("../../../media"));
 	core::Context context;
 
-	FnSlot3<Point2, uint8_t, uint8_t, test> test_slot;
+	FnSlot3<Point2, gctp::uint8_t, gctp::uint8_t, test> test_slot;
 	app().guievents().dblclick_signal.connect(test_slot);
 
 	//audio::Player bgm = gctp::audio::device().ready(_T("../../../media/hugeraw.wav"));
@@ -463,18 +464,12 @@ extern "C" int main(int argc, char *argv[])
 
 #ifdef _DEBUG
 # pragma comment(lib, "zlibd.lib")
-# ifdef PHYSICSTEST
-#  pragma comment(lib, "libbulletdynamics_d.lib")
-#  pragma comment(lib, "libconvexdecomposition_d.lib")
-# endif
-#pragma comment(lib, "libbulletmath_d.lib")
-#pragma comment(lib, "libbulletcollision_d.lib")
 #else
 # pragma comment(lib, "zlib.lib")
-# ifdef PHYSICSTEST
-#  pragma comment(lib, "libbulletdynamics.lib")
-#  pragma comment(lib, "libconvexdecomposition.lib")
-# endif
-#pragma comment(lib, "libbulletmath.lib")
-#pragma comment(lib, "libbulletcollision.lib")
 #endif
+#ifdef PHYSICSTEST
+# pragma comment(lib, "BulletDynamics.lib")
+# pragma comment(lib, "ConvexDecomposition.lib")
+#endif
+#pragma comment(lib, "LinearMath.lib")
+#pragma comment(lib, "BulletCollision.lib")

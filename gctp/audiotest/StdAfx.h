@@ -11,7 +11,7 @@
 #pragma warning(disable:4786 4503)
 #endif // _MSC_VER > 1000
 
-#include "SmartWin.h"
+#include <SmartWin.h>
 
 /*#define WIN32_LEAN_AND_MEAN	// Windows ヘッダーから殆ど使用されないスタッフを除外します。
 #define _WIN32_IE	0x0550

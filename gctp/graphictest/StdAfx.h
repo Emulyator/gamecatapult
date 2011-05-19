@@ -14,7 +14,7 @@
 #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
 #define _WIN32_IE 0x0550
 
-#include "SmartWin.h"
+#include <SmartWin.h>
 #define WIN32_LEAN_AND_MEAN		// Windows ヘッダーから殆ど使用されないスタッフを除外します
 #include <windows.h>
 #define COM_NO_WINDOWS_H
