@@ -45,7 +45,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;LUA_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -60,7 +60,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;LUA_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -74,7 +74,10 @@
     <ClCompile Include="..\src\lapi.c" />
     <ClCompile Include="..\src\lauxlib.c" />
     <ClCompile Include="..\src\lbaselib.c" />
+    <ClCompile Include="..\src\lbitlib.c" />
     <ClCompile Include="..\src\lcode.c" />
+    <ClCompile Include="..\src\lcorolib.c" />
+    <ClCompile Include="..\src\lctype.c" />
     <ClCompile Include="..\src\ldblib.c" />
     <ClCompile Include="..\src\ldebug.c" />
     <ClCompile Include="..\src\ldo.c" />
@@ -100,12 +103,12 @@
     <ClCompile Include="..\src\lundump.c" />
     <ClCompile Include="..\src\lvm.c" />
     <ClCompile Include="..\src\lzio.c" />
-    <ClCompile Include="..\src\print.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\lapi.h" />
     <ClInclude Include="..\src\lauxlib.h" />
     <ClInclude Include="..\src\lcode.h" />
+    <ClInclude Include="..\src\lctype.h" />
     <ClInclude Include="..\src\ldebug.h" />
     <ClInclude Include="..\src\ldo.h" />
     <ClInclude Include="..\src\lfunc.h" />
@@ -121,6 +124,7 @@
     <ClInclude Include="..\src\ltable.h" />
     <ClInclude Include="..\src\ltm.h" />
     <ClInclude Include="..\src\lua.h" />
+    <ClInclude Include="..\src\lua.hpp" />
     <ClInclude Include="..\src\luaconf.h" />
     <ClInclude Include="..\src\lualib.h" />
     <ClInclude Include="..\src\lundump.h" />

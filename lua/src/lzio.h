@@ -1,5 +1,5 @@
 /*
-** $Id: lzio.h,v 1.21.1.1 2007/12/27 13:02:25 roberto Exp $
+** $Id: lzio.h,v 1.26 2011/07/15 12:48:03 roberto Exp $
 ** Buffered streams
 ** See Copyright Notice in lua.h
 */
@@ -17,12 +17,12 @@
 
 typedef struct Zio ZIO;
 
-#define char2int(c)	cast(int, cast(unsigned char, (c)))
-
 #ifdef LUA_MBCS
-int zgetc(ZIO *z);
+#include <wchar.h>
+LUAI_FUNC int zmbgetc(ZIO *z);
+#define zgetc(z)  zmbgetc(z)
 #else
-#define zgetc(z)  (((z)->n--)>0 ?  char2int(*(z)->p++) : luaZ_fill(z))
+#define zgetc(z)  (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : luaZ_fill(z))
 #endif
 
 typedef struct Mbuffer {
@@ -51,7 +51,6 @@ LUAI_FUNC char *luaZ_openspace (lua_State *L, Mbuffer *buff, size_t n);
 LUAI_FUNC void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader,
                                         void *data);
 LUAI_FUNC size_t luaZ_read (ZIO* z, void* b, size_t n);	/* read next n bytes */
-LUAI_FUNC int luaZ_lookahead (ZIO *z);
 
 
 
@@ -60,11 +59,13 @@ LUAI_FUNC int luaZ_lookahead (ZIO *z);
 struct Zio {
   size_t n;			/* bytes still unread */
   const char *p;		/* current position in buffer */
-  lua_Reader reader;
+  lua_Reader reader;		/* reader function */
   void* data;			/* additional data */
   lua_State *L;			/* Lua state (for reader) */
 #ifdef LUA_MBCS
-  char isbin;
+  char checked :1;
+  char isbin :1;
+  mbstate_t mbs;
 #endif
 };
 
