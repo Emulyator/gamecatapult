@@ -1,14 +1,11 @@
 /*
-** $Id: lzio.c,v 1.31.1.1 2007/12/27 13:02:25 roberto Exp $
+** $Id: lzio.c,v 1.34 2011/07/15 12:35:32 roberto Exp $
 ** a generic input stream interface
 ** See Copyright Notice in lua.h
 */
 
 
 #include <string.h>
-#ifdef LUA_MBCS
-#include <stdlib.h>
-#endif
 
 #define lzio_c
 #define LUA_CORE
@@ -21,12 +18,16 @@
 #include "lzio.h"
 
 #ifdef LUA_MBCS
-int zgetc(ZIO *z) {
-  if(z->isbin) return ((z)->n--)>0 ? char2int(*(z)->p++) : luaZ_fill(z);
+int zmbgetc(ZIO *z) {
+  if(!z->checked && z->n > 0) {
+    z->checked = 1;
+    z->isbin = (*z->p) == LUA_SIGNATURE[0];
+  }
+  if(z->isbin) return ((z)->n--)>0 ? cast_uchar(*(z)->p++) : luaZ_fill(z);
   if(z->n > 0) {
     char s[MB_LEN_MAX];
     wchar_t ret;
-    int len = mblen(z->p, z->n), l, i;
+    int len = mbrlen(z->p, z->n, &z->mbs), l, i;
     memset(s, 0, MB_LEN_MAX);
     if(len <= 0) {
       z->p++; z->n--;
@@ -43,7 +44,7 @@ int zgetc(ZIO *z) {
     for (; i < len; i++, z->n--) {
       s[i] = cast(unsigned char, *z->p++);
     }
-    mbtowc(&ret, s, len);
+    mbrtowc(&ret, s, len, &z->mbs);
     return cast(int, ret);
   }
   else return luaZ_fill(z);
@@ -57,29 +58,18 @@ int luaZ_fill (ZIO *z) {
   lua_unlock(L);
   buff = z->reader(L, z->data, &size);
   lua_lock(L);
-  if (buff == NULL || size == 0) return EOZ;
+  z->n = size - 1;
+  if (buff == NULL || size == 0)
+    return EOZ;
 #ifdef LUA_MBCS
   z->n = size;
   z->p = buff;
   return zgetc(z);
 #else
-  z->n = size - 1;
+  z->n = size - 1;  /* discount char being returned */
   z->p = buff;
-  return char2int(*(z->p++));
+  return cast_uchar(*(z->p++));
 #endif
-}
-
-
-int luaZ_lookahead (ZIO *z) {
-  if (z->n == 0) {
-    if (luaZ_fill(z) == EOZ)
-      return EOZ;
-    else {
-      z->n++;  /* luaZ_fill removed first byte; put back it */
-      z->p--;
-    }
-  }
-  return char2int(*z->p);
 }
 
 
@@ -90,7 +80,9 @@ void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader, void *data) {
   z->n = 0;
   z->p = NULL;
 #ifdef LUA_MBCS
-  z->isbin = luaZ_lookahead(z) == LUA_SIGNATURE[0];
+  z->checked = 0;
+  z->isbin = 0;
+  memset(&z->mbs, 0, sizeof(z->mbs));
 #endif
 }
 
@@ -99,8 +91,14 @@ void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader, void *data) {
 size_t luaZ_read (ZIO *z, void *b, size_t n) {
   while (n) {
     size_t m;
-    if (luaZ_lookahead(z) == EOZ)
-      return n;  /* return number of missing bytes */
+    if (z->n == 0) {  /* no bytes in buffer? */
+      if (luaZ_fill(z) == EOZ)  /* try to read more */
+        return n;  /* no more input; return number of missing bytes */
+      else {
+        z->n++;  /* luaZ_fill consumed first byte; put it back */
+        z->p--;
+      }
+    }
     m = (n <= z->n) ? n : z->n;  /* min. between n and z->n */
     memcpy(b, z->p, m);
     z->n -= m;
