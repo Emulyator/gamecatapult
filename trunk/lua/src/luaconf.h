@@ -517,6 +517,15 @@
 */
 #define LUA_MBCS
 
+#if defined(_WIN32) && defined(LUA_MBCS)
+/*
+@@ LUA_UTF8_ON_MSW enable to read UTF8 correctly on Windows.
+** Microsoft Windows cannot set locale to "*.utf8".
+** This macro turns on decording UTF8 by lua own.
+*/
+//#define LUA_UTF8_ON_MSW
+#endif
+
 #endif							/* } */
 
 
