@@ -24,13 +24,99 @@
 #include "lzio.h"
 
 #ifdef LUA_MBCS
+
 #include <wchar.h>
-#include <ctype.h>
+
+# ifdef LUA_UTF8_ON_MSW
+
+#define wchar_t int
+#define mbrlen lmbrlen
+#define mbrtowc lmbrtowc
+#define wcrtomb lwcrtomb
+
+static size_t lmbrlen(const char *src, size_t size, mbstate_t *mbs)
+{
+  if(size > 0) {
+    if(*src & 0x80) {
+      if(*src & 0x40) {
+        size_t ret;
+        if(!(*src & 0x20)) ret = 2;
+        else if(!(*src & 0x10)) ret = 3;
+        else ret = 4;
+        if(ret > size) return -2;
+        return ret;
+      }
+    }
+    else return 1;
+  }
+  return -1;
+}
+
+static size_t lmbrtowc(wchar_t *dst, const char *src, size_t size, mbstate_t *mbs)
+{
+  *dst = 0;
+  if(size > 0) {
+    const char *bytes = (const char *)src;
+    if(*bytes & 0x80) {
+      if(*bytes & 0x40) {
+        if(!(*bytes & 0x20)) {
+          if(size < 2) return -2;
+            *dst = ((bytes[0] & 0x1F) << 6) | (bytes[1] & 0x3F);
+            return 2;
+          }
+          else if(!(*bytes & 0x10)) {
+            if(size < 3) return -2;
+            *dst = ((bytes[0] & 0x0F) << 12) | ((bytes[1] & 0x3F ) << 6) | (bytes[2] & 0x3F);
+            return 3;
+          }
+          else {
+            if(size < 4) return -2;
+            *dst = ((bytes[0] & 0x07 ) << 18) | ((bytes[1] & 0x3F) << 12) | ((bytes[2] & 0x3F) << 6) | (bytes[3] & 0x3F);
+            return 4;
+          }
+      }
+    }
+    else {
+      *dst = *src;
+      return 1;
+    }
+  }
+  return -1;
+}
+
+static size_t lwcrtomb(char *dst, wchar_t src, mbstate_t *mbs)
+{
+  if(!(0xFFFFFF00&src)) {
+    dst[0] = src;
+    return 1;
+  }
+  else if(!(0xFFFFF800&src)) {
+    dst[0] = ((src >> 6) & 0x1F) | 0xC0;
+    dst[1] = (src & 0x3F) | 0x80;
+    return 2;
+  }
+  else if(!(0xFFFF0000&src)) {
+    dst[0] = ((src >> 12) & 0x0F) | 0xE0;
+    dst[1] = ((src >> 6) & 0x3F) | 0x80;
+    dst[2] = (src & 0x3F) | 0x80;
+    return 3;
+  }
+  else if(!(0xFFE00000&src)) {
+    dst[0] = ((src >> 18) & 0x07) | 0xF0;
+    dst[1] = ((src >> 12) & 0x3F) | 0x80;
+    dst[2] = ((src >> 6) & 0x3F) | 0x80;
+    dst[3] = (src & 0x3F) | 0x80;
+    return 4;
+  }
+  dst[0] = 0;
+  return -1;
+}
+# endif
+
 #endif
 
 
 #ifdef LUA_MBCS
-#include <stdio.h>
 static int mbnext(ZIO *z, int lookahead)
 {
   char s[MB_LEN_MAX];
@@ -51,7 +137,7 @@ static int mbnext(ZIO *z, int lookahead)
       else if(l > 0) {
         wchar_t c;
         mbrtowc(&c, s, i+1, &mbs);
-		return cast(int, c);
+	    return cast(int, c);
       }
 	  else if(l == -1) break;
     }
@@ -130,18 +216,18 @@ void luaX_init (lua_State *L) {
 const char *luaX_token2str (LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
 #ifdef LUA_MBCS
-    if (token > 255) {
-      char s[MB_LEN_MAX+1];
-	  mbstate_t mbs;
-      memset(s, 0, MB_LEN_MAX+1);
-	  memset(&mbs, 0, sizeof(mbs));
-      wcrtomb(s, cast(wchar_t, token), &mbs);
-      return luaO_pushfstring(ls->L, LUA_QL("%s"), s);
-    }
-#endif
+    char s[MB_LEN_MAX+1];
+	mbstate_t mbs;
+    memset(s, 0, MB_LEN_MAX+1);
+	memset(&mbs, 0, sizeof(mbs));
+    wcrtomb(s, cast(wchar_t, token), &mbs);
+    return (lisprint(token)) ? luaO_pushfstring(ls->L, LUA_QL("%s"), s) :
+                              luaO_pushfstring(ls->L, "char(%d)", token);
+#else
     lua_assert(token == cast(unsigned char, token));
     return (lisprint(token)) ? luaO_pushfstring(ls->L, LUA_QL("%c"), token) :
                               luaO_pushfstring(ls->L, "char(%d)", token);
+#endif
   }
   else {
     const char *s = luaX_tokens[token - FIRST_RESERVED];
