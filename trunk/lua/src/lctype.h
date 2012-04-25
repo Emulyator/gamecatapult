@@ -10,6 +10,10 @@
 #include "lua.h"
 
 
+#ifdef LUA_MBCS
+# define LUA_USE_CTYPE	2
+#endif
+
 /*
 ** WARNING: the functions defined here do not necessarily correspond
 ** to the similar functions in the standard C ctype.h. They are
@@ -70,6 +74,23 @@
 /* two more entries for 0 and -1 (EOZ) */
 LUAI_DDEC const lu_byte luai_ctype_[UCHAR_MAX + 2];
 
+
+#elif LUA_USE_CTYPE==2	/* }{ */
+/*
+** use standard C wctypes
+*/
+
+#include <wctype.h>
+
+
+#define lislalpha(c)	(iswalpha(c) || (c) == L'_')
+#define lislalnum(c)	(iswalnum(c) || (c) == L'_')
+#define lisdigit(c)	(iswdigit(c))
+#define lisspace(c)	(iswspace(c))
+#define lisprint(c)	(iswprint(c))
+#define lisxdigit(c)	(iswxdigit(c))
+
+#define ltolower(c)	(towlower(c))
 
 #else			/* }{ */
 
