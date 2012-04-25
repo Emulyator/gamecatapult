@@ -126,20 +126,24 @@ static int mbnext(ZIO *z, int lookahead)
   memset(s, 0, MB_LEN_MAX);
   memset(&mbs, 0, sizeof(mbstate_t));
   s[0] = cast(char, lookahead);
-  l = mbrlen(s, 1, &mbs);
+  l = (int)mbrlen(s, 1, &mbs);
   if(l >= 0) return lookahead;
   else if(l == -2) {
     int i;
     for(i = 1; i < MB_LEN_MAX; i++) {
       s[i] = zgetc(z);
-      l = mbrlen(s, i+1, &mbs);
+      memset(&mbs, 0, sizeof(mbstate_t));
+      l = (int)mbrlen(s, i+1, &mbs);
       if(l == 0) return 0;
       else if(l > 0) {
         wchar_t c;
-        mbrtowc(&c, s, i+1, &mbs);
-	    return cast(int, c);
+        memset(&mbs, 0, sizeof(mbstate_t));
+        if(mbrtowc(&c, s, cast(size_t, l), &mbs) == cast(size_t, l))
+          return cast(int, c);
+        else
+          break;
       }
-	  else if(l == -1) break;
+	    else if(l == -1) break;
     }
   }
   return '?';
@@ -178,8 +182,7 @@ static void save (LexState *ls, int c) {
   mbstate_t mbs;
   memset(s, 0, MB_LEN_MAX+1);
   memset(&mbs, 0, sizeof(mbstate_t));
-  wcrtomb(s, cast(wchar_t, c), &mbs);
-  n = strlen(s);
+  n = (int)wcrtomb(s, cast(wchar_t, c), &mbs);
   if(n <= 0) n = 1;
 #else
 # define n (1)
@@ -217,9 +220,9 @@ const char *luaX_token2str (LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
 #ifdef LUA_MBCS
     char s[MB_LEN_MAX+1];
-	mbstate_t mbs;
+    mbstate_t mbs;
     memset(s, 0, MB_LEN_MAX+1);
-	memset(&mbs, 0, sizeof(mbs));
+    memset(&mbs, 0, sizeof(mbs));
     wcrtomb(s, cast(wchar_t, token), &mbs);
     return (lisprint(token)) ? luaO_pushfstring(ls->L, LUA_QL("%s"), s) :
                               luaO_pushfstring(ls->L, "char(%d)", token);
