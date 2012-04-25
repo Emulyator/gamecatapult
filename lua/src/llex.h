@@ -10,9 +10,9 @@
 #include "lobject.h"
 #include "lzio.h"
 
-
 #ifdef LUA_MBCS
-#define FIRST_RESERVED	(((unsigned int)-1)-63)
+#include <limits.h>
+#define FIRST_RESERVED	(INT_MAX-63)
 #else
 #define FIRST_RESERVED	257
 #endif

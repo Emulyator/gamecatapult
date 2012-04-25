@@ -512,7 +512,8 @@
 #endif
 
 /*
-@@ LUA_MBCS controls let Lua lexer to consider Multi-byte charactor sequence.
+@@ LUA_MBCS controls lexer's behaivior.
+** If this is defined, lexer consider Multi-byte character sequence.
 */
 #define LUA_MBCS
 

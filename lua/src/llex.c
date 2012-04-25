@@ -7,9 +7,6 @@
 
 #include <locale.h>
 #include <string.h>
-#ifdef LUA_MBCS
-#include <ctype.h>
-#endif
 
 #define llex_c
 #define LUA_CORE
@@ -26,10 +23,45 @@
 #include "ltable.h"
 #include "lzio.h"
 
+#ifdef LUA_MBCS
+#include <wchar.h>
+#include <ctype.h>
+#endif
 
 
+#ifdef LUA_MBCS
+#include <stdio.h>
+static int mbnext(ZIO *z, int lookahead)
+{
+  char s[MB_LEN_MAX];
+  int l;
+  mbstate_t mbs;
+  if(lookahead == EOZ) return lookahead;
+  memset(s, 0, MB_LEN_MAX);
+  memset(&mbs, 0, sizeof(mbstate_t));
+  s[0] = cast(char, lookahead);
+  l = mbrlen(s, 1, &mbs);
+  if(l >= 0) return lookahead;
+  else if(l == -2) {
+    int i;
+    for(i = 1; i < MB_LEN_MAX; i++) {
+      s[i] = zgetc(z);
+      l = mbrlen(s, i+1, &mbs);
+      if(l == 0) return 0;
+      else if(l > 0) {
+        wchar_t c;
+        mbrtowc(&c, s, i+1, &mbs);
+		return cast(int, c);
+      }
+	  else if(l == -1) break;
+    }
+  }
+  return '?';
+}
+#define next(ls) (ls->current = mbnext(ls->z, zgetc(ls->z)))
+#else
 #define next(ls) (ls->current = zgetc(ls->z))
-
+#endif
 
 
 #define currIsNewline(ls)	(ls->current == '\n' || ls->current == '\r')
@@ -55,32 +87,31 @@ static l_noret lexerror (LexState *ls, const char *msg, int token);
 static void save (LexState *ls, int c) {
   Mbuffer *b = ls->buff;
 #ifdef LUA_MBCS
-  int i, len;
+  int n;
   char s[MB_LEN_MAX+1];
   mbstate_t mbs;
   memset(s, 0, MB_LEN_MAX+1);
-  memset(&mbs, 0, sizeof(mbs));
+  memset(&mbs, 0, sizeof(mbstate_t));
   wcrtomb(s, cast(wchar_t, c), &mbs);
-  len = strlen(s);
-  if(len <= 0) len = 1;
-  if (luaZ_bufflen(b) + len > luaZ_sizebuffer(b)) {
+  n = strlen(s);
+  if(n <= 0) n = 1;
+#else
+# define n (1)
+#endif
+  if (luaZ_bufflen(b) + n > luaZ_sizebuffer(b)) {
     size_t newsize;
     if (luaZ_sizebuffer(b) >= MAX_SIZET/2)
       lexerror(ls, "lexical element too long", 0);
     newsize = luaZ_sizebuffer(b) * 2;
     luaZ_resizebuffer(ls->L, b, newsize);
   }
-  for(i = 0; i < len; i++) {
-	  b->buffer[b->n++] = s[i];
+#ifdef LUA_MBCS
+  {
+    int i;
+    for(i = 0; i < n; i++) b->buffer[luaZ_bufflen(b)++] = s[i];
   }
 #else
-  if (luaZ_bufflen(b) + 1 > luaZ_sizebuffer(b)) {
-    size_t newsize;
-    if (luaZ_sizebuffer(b) >= MAX_SIZET/2)
-      lexerror(ls, "lexical element too long", 0);
-    newsize = luaZ_sizebuffer(b) * 2;
-    luaZ_resizebuffer(ls->L, b, newsize);
-  }
+# undef n
   b->buffer[luaZ_bufflen(b)++] = cast(char, c);
 #endif
 }
@@ -97,35 +128,28 @@ void luaX_init (lua_State *L) {
 
 
 const char *luaX_token2str (LexState *ls, int token) {
+  if (token < FIRST_RESERVED) {
 #ifdef LUA_MBCS
-  if (cast(unsigned int, token) < FIRST_RESERVED) {
-    if (cast(unsigned int, token) > 255) {
+    if (token > 255) {
       char s[MB_LEN_MAX+1];
 	  mbstate_t mbs;
       memset(s, 0, MB_LEN_MAX+1);
 	  memset(&mbs, 0, sizeof(mbs));
       wcrtomb(s, cast(wchar_t, token), &mbs);
-      return luaO_pushfstring(ls->L, "%s", s);
+      return luaO_pushfstring(ls->L, LUA_QL("%s"), s);
     }
-    return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token) :
-                              luaO_pushfstring(ls->L, "%c", token);
-  }
-  else
-    return luaX_tokens[cast(unsigned int, token)-FIRST_RESERVED];
-#else
-  if (token < FIRST_RESERVED) {
+#endif
     lua_assert(token == cast(unsigned char, token));
     return (lisprint(token)) ? luaO_pushfstring(ls->L, LUA_QL("%c"), token) :
                               luaO_pushfstring(ls->L, "char(%d)", token);
   }
   else {
     const char *s = luaX_tokens[token - FIRST_RESERVED];
-    if (token < TK_EOS)
+	if (token < TK_EOS)
       return luaO_pushfstring(ls->L, LUA_QS, s);
     else
       return s;
   }
-#endif
 }
 
 
@@ -198,7 +222,11 @@ void luaX_setinput (lua_State *L, LexState *ls, ZIO *z, TString *source,
                     int firstchar) {
   ls->decpoint = '.';
   ls->L = L;
+#ifdef LUA_MBCS
+  ls->current = mbnext(z, firstchar);
+#else
   ls->current = firstchar;
+#endif
   ls->lookahead.token = TK_EOS;  /* no look-ahead token */
   ls->z = z;
   ls->fs = NULL;

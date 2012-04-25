@@ -17,13 +17,8 @@
 
 typedef struct Zio ZIO;
 
-#ifdef LUA_MBCS
-#include <wchar.h>
-LUAI_FUNC int zmbgetc(ZIO *z);
-#define zgetc(z)  zmbgetc(z)
-#else
 #define zgetc(z)  (((z)->n--)>0 ?  cast_uchar(*(z)->p++) : luaZ_fill(z))
-#endif
+
 
 typedef struct Mbuffer {
   char *buffer;
@@ -62,11 +57,6 @@ struct Zio {
   lua_Reader reader;		/* reader function */
   void* data;			/* additional data */
   lua_State *L;			/* Lua state (for reader) */
-#ifdef LUA_MBCS
-  char checked :1;
-  char isbin :1;
-  mbstate_t mbs;
-#endif
 };
 
 
