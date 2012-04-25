@@ -489,9 +489,11 @@ int main (int argc, char **argv) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
-  if(!setlocale(LC_ALL, "")) {
-    l_message(argv[0], "cannot set default locale");
-    return EXIT_FAILURE;
+  if(!setlocale(LC_ALL, "ja_JP.UTF-8")) {
+    if(!setlocale(LC_ALL, "")) {
+      l_message(argv[0], "cannot set default locale");
+      return EXIT_FAILURE;
+    }
   }
   /* call 'pmain' in protected mode */
   lua_pushcfunction(L, &pmain);
