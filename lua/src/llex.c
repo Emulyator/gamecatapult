@@ -34,23 +34,34 @@
 #define mbrtowc lmbrtowc
 #define wcrtomb lwcrtomb
 
-static size_t lmbrlen(const char *src, size_t size, mbstate_t *mbs)
+static const char utf8_skip_data[] = {
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,1,1
+};
+#define lmbrlen(s, n, mbs)	((size_t)((n) > 0 ? (utf8_skip_data[*(unsigned char*)(s)] <= (n) ? utf8_skip_data[*(unsigned char*)(s)] : -2) : -2))
+/*static size_t lmbrlen(const char *src, size_t size, mbstate_t *mbs)
 {
   if(size > 0) {
-    if(*src & 0x80) {
+    if(*src & 0x80 || *src == 0xFF || *src == 0xFE) {
       if(*src & 0x40) {
         size_t ret;
         if(!(*src & 0x20)) ret = 2;
         else if(!(*src & 0x10)) ret = 3;
         else ret = 4;
-        if(ret > size) return -2;
-        return ret;
+        if(ret <= size) return ret;
       }
+      else return -1;
     }
     else return 1;
   }
-  return -1;
-}
+  return -2;
+}*/
 
 static size_t lmbrtowc(wchar_t *dst, const char *src, size_t size, mbstate_t *mbs)
 {
