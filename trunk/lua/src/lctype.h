@@ -10,7 +10,7 @@
 #include "lua.h"
 
 
-#if defined(LUA_MBCS)
+#if defined(LUA_MBCS) && !defined(LUA_USE_CTYPE)
 # define LUA_USE_CTYPE	2
 #endif
 

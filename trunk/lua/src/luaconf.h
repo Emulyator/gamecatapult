@@ -523,7 +523,7 @@
 ** Microsoft Windows cannot set locale to "*.utf8".
 ** This macro turns on decording UTF8 by lua own.
 */
-//#define LUA_UTF8_ON_MSW
+#define LUA_UTF8_ON_MSW
 #endif
 
 #endif							/* } */
