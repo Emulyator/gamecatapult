@@ -154,7 +154,7 @@ static int mbnext(ZIO *z, int lookahead)
         else
           break;
       }
-	    else if(l == -1) break;
+      else if(l == -1) break;
     }
   }
   return '?';
