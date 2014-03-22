@@ -8,6 +8,7 @@
 #include "common.h"
 #include <gctp/audio/dx/wavfile.hpp>
 #include <gctp/dbgout.hpp>
+#include <dxerr.h>
 
 #define SAFE_FREE(_p) { if(_p) free(_p); (_p) = 0; }
 

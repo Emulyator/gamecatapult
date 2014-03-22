@@ -15,6 +15,7 @@
 
 class btCollisionObject;
 class btManifoldPoint;
+struct btCollisionObjectWrapper;
 
 namespace gctp { namespace scene {
 
@@ -27,8 +28,8 @@ namespace gctp { namespace scene {
 	class PhysicController : public Object {
 	public:
 		virtual bool onContactAdded(btManifoldPoint &cp,
-			const btCollisionObject *colobj0, int partid0, int index0,
-			const btCollisionObject *colobj1, int partid1, int index1);
+			const btCollisionObjectWrapper *colObj0Wrap, int partId0, int index0,
+			const btCollisionObjectWrapper *colObj1Wrap, int partId1, int index1);
 
 		virtual bool onContactProcessed(btManifoldPoint &cp, void *body0, void *body1);
 		

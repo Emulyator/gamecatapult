@@ -12,7 +12,7 @@
  * Copyright (C) 2001,2002,2003,2004 SAM (T&GG, Org.). All rights reserved.
  */
 #include <winerror.h>
-#include <Dxerr.h>
+//#include <Dxerr.h>
 #include <iosfwd>
 #include <boost/detail/workaround.hpp>
 #include <tchar.h>
@@ -28,9 +28,16 @@ namespace gctp {
 		HRslt() : i(S_OK) {}
 		HRslt(const HRESULT &src) : i(src) {}
 		_TCHAR *message(_TCHAR *buf, std::size_t buflen) const {
-			_tcsncpy(buf, DXGetErrorString(i), buflen);
-			_tcsncpy(buf, _T(" : "), buflen);
-			_tcsncpy(buf, DXGetErrorDescription(i), buflen);
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+						  NULL,
+						  i,
+						  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+						  buf,
+						  buflen,
+						  NULL);
+			//_tcsncpy(buf, DXGetErrorString(i), buflen);
+			//_tcsncpy(buf, _T(" : "), buflen);
+			//_tcsncpy(buf, DXGetErrorDescription(i), buflen);
 			return buf;
 		}
 

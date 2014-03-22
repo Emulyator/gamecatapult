@@ -308,8 +308,7 @@ namespace gctp {
 #if defined(_STLPORT_VERSION) && !defined(_STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM)
 		typedef typename std::_Alloc_traits<TreeNode, Alloc>::allocator_type AllocatorType;
 #else
-		//typedef typename Alloc::template rebind<TreeNode>::other AllocatorType;// âΩÇ≈Ç±ÇÒÇ»èëÇ´ï˚ÇÅH
-		typedef typename Alloc::rebind<TreeNode>::other AllocatorType;
+		typedef typename Alloc::template rebind<TreeNode>::other AllocatorType;
 #endif
 		static AllocatorType allocator() { AllocatorType alloc; return alloc; }
 

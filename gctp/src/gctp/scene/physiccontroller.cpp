@@ -13,7 +13,7 @@ using namespace std;
 
 namespace gctp { namespace scene {
 
-	bool PhysicController::onContactAdded(btManifoldPoint &, const btCollisionObject *, int, int, const btCollisionObject *, int, int)
+	bool PhysicController::onContactAdded(btManifoldPoint &cp, const btCollisionObjectWrapper *colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper *colObj1Wrap, int partId1, int index1)
 	{
 		return true;
 	}

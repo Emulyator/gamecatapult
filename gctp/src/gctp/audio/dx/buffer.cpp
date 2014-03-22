@@ -9,6 +9,7 @@
 #include <gctp/audio/dx/buffer.hpp>
 #include <gctp/audio/clip.hpp>
 #include <gctp/dbgout.hpp>
+#include <dxerr.h>
 
 using namespace std;
 

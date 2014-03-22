@@ -24,7 +24,7 @@ using namespace gctp::graphic;
 using namespace std;
 using namespace SmartWin;
 
-//#define MOVIETEST
+#define MOVIETEST
 //#define MOVIE_FOR_WINDOW
 
 class TestWindow : public WidgetFactory<WidgetWindow, TestWindow>
@@ -104,7 +104,7 @@ public:
 # else
 		hr = movie_.openForTexture(_T("movie.avi"));
 		if(!hr) {
-			hr = movie_.openForTexture(_T("movie.mpg"));
+			hr = movie_.openForTexture(_T("../../../media/movie.mpg"));
 			if(!hr) {
 				GCTP_TRACE(hr);
 				close();
@@ -354,13 +354,11 @@ int SmartWinMain( Application & app )
 #  pragma comment(lib, "d3dx9d.lib")
 #  ifdef MOVIETEST
 #   pragma comment(lib, "strmbasd.lib")
-#   pragma comment(lib, "asynbasd.lib")
 #  endif
 # else
 #  pragma comment(lib, "d3dx9.lib")
 #  ifdef MOVIETEST
 #   pragma comment(lib, "strmbase.lib")
-#   pragma comment(lib, "asynbase.lib")
 #  endif
 # endif
 #endif
