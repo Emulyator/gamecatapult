@@ -20,10 +20,6 @@
 #include <btBulletDynamicsCommon.h> // for Bullet
 #include <BulletCollision/CollisionDispatch/btGhostObject.h> // for btGhostObject
 
-extern ContactProcessedCallback	gContactProcessedCallback;
-extern ContactAddedCallback		gContactAddedCallback;
-extern ContactDestroyedCallback	gContactDestroyedCallback;
-
 #include <gctp/dbgout.hpp>
 
 using namespace std;
@@ -362,17 +358,19 @@ namespace gctp { namespace scene {
 			}
 		}
 
-		static bool onContactAdded(btManifoldPoint &cp, const btCollisionObject *colobj0, int partid0, int index0, const btCollisionObject* colobj1, int partid1, int index1)
+		static bool onContactAdded(btManifoldPoint &cp,
+			const btCollisionObjectWrapper *colObj0Wrap, int partId0, int index0,
+			const btCollisionObjectWrapper *colObj1Wrap, int partId1, int index1)
 		{
-			Object *obj = (Object *)colobj0->getUserPointer();
+			Object *obj = (Object *)colObj0Wrap->getCollisionObject()->getUserPointer();
 			if(obj) {
 				Pointer<PhysicController> pc = obj;
-				if(pc) pc->onContactAdded(cp, colobj0, partid0, index0, colobj1, partid1, index1);
+				if(pc) pc->onContactAdded(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1);
 			}
-			obj = (Object *)colobj1->getUserPointer();
+			obj = (Object *)colObj0Wrap->getCollisionObject()->getUserPointer();
 			if(obj) {
 				Pointer<PhysicController> pc = obj;
-				if(pc) pc->onContactAdded(cp, colobj1, partid1, index1, colobj0, partid0, index0);
+				if(pc) pc->onContactAdded(cp, colObj1Wrap, partId1, index1, colObj0Wrap, partId0, index0);
 			}
 			//dbgout << "onContactAdded " << cp.getDistance() << ", "
 			//	<< colobj0 << ", " << partid0 << ", " << index0 << ", " << colobj1 << ", " << partid1 << ", " << index1 << endl;

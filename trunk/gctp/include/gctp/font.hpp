@@ -13,7 +13,7 @@
  */
 #include <gctp/pointer.hpp>
 #include <gctp/hrslt.hpp>
-#include "smartwin/font.h"
+#include <smartwin/Font.h>
 
 namespace gctp {
 

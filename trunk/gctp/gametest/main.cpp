@@ -462,14 +462,22 @@ extern "C" int main(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef _DEBUG
-# pragma comment(lib, "zlibd.lib")
+
+#if DEBUG
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "BulletDynamics_vs2010_debug.lib")
+#  pragma comment(lib, "ConvexDecomposition_vs2010_debug.lib")
+# endif
+#  pragma comment(lib, "LinearMath_vs2010_debug.lib")
+#  pragma comment(lib, "BulletCollision_vs2010_debug.lib")
+#  pragma comment(lib, "d3dx9d.lib")
 #else
-# pragma comment(lib, "zlib.lib")
+# ifdef PHYSICSTEST
+#  pragma comment(lib, "BulletDynamics_vs2010.lib")
+#  pragma comment(lib, "ConvexDecomposition_vs2010.lib")
+# endif
+#  pragma comment(lib, "LinearMath_vs2010.lib")
+#  pragma comment(lib, "BulletCollision_vs2010.lib")
+#  pragma comment(lib, "d3dx9.lib")
 #endif
-#ifdef PHYSICSTEST
-# pragma comment(lib, "BulletDynamics.lib")
-# pragma comment(lib, "ConvexDecomposition.lib")
-#endif
-#pragma comment(lib, "LinearMath.lib")
-#pragma comment(lib, "BulletCollision.lib")
+#  pragma comment(lib, "d3dxof.lib")

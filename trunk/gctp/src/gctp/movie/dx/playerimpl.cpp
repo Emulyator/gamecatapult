@@ -13,7 +13,7 @@
 #include <gctp/graphic.hpp>
 #include <gctp/graphic/dx/device.hpp>
 #include <gctp/graphic/texture.hpp>
-#include "streams.h"
+#include <streams.h>
 #include "asyncio.h"
 #include "asyncrdr.h"
 
@@ -679,6 +679,13 @@ namespace gctp { namespace movie { namespace dx {
 		HRslt hr;
 
 		hwnd_ = 0;
+		graph_builder_ = nullptr;
+		media_control_ = nullptr;
+		media_position_ = nullptr;
+		media_event_ = nullptr;
+		audio_ = nullptr;
+		renderer_ = nullptr;
+
 		// Create the filter graph
 		if(!(hr = graph_builder_.CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC)))
 			return hr;
